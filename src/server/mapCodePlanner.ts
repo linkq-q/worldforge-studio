@@ -2,18 +2,21 @@ import vm from 'node:vm';
 import {
   createId,
   getMapBounds,
+  getMapObjectAabbs,
   getMapObjectVisualAabbs,
   getMapPlayerMetrics,
   normalizeMapRoom,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
+  type MapObjectAabb,
   type MapRoom,
   type MapRoomOpening,
   type MapWaterBody,
   type MapWaterBodyType,
   type RoomWall
 } from '../shared/map';
+import { rayAabbIntersection } from '../shared/math';
 import { foundationBoundary, foundationTopHeight, normalizeMapFoundation, type MapFoundation } from '../shared/mapFoundation';
 import { assetFootprintRadius, normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import { planMapObjectAttachment } from '../shared/mapAttachment';
@@ -85,6 +88,7 @@ const MAX_PROBABILITY_CANDIDATES = 4_096;
 const MAX_GRASS_FIELD_RESOLUTION = 64;
 const MAX_LAYOUT_ITEMS = 64;
 const MAX_LAYOUT_ITERATIONS = 512;
+const MAX_SPATIAL_QUERIES = 128;
 const DISCOVERY_EXECUTION_TIMEOUT_MS = 500;
 const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
 const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
@@ -106,6 +110,12 @@ const MAP_CODE_TOPOLOGY_CONTRACT = `Use these topology return and geometry contr
 - api.route(...) returns the route ID string, not an object. Use const mainRouteId=api.route(...), then routeId:mainRouteId; never read .id from that string. Never use mainRoute.id.
 - api.routeNetwork returns a string[] of route IDs in edge order. api.streetGrid returns {routeIds,blocks}.
 - api.bridge accepts one object argument only: api.bridge({ waterId:'canal', assetId:api.asset(bridgeKey,0), crossingCenter:[x,z], direction:[dx,dz], dimensions:[width,height,depth] }). crossingCenter must lie inside the named water body and direction must cross two opposite shoreline boundaries. For a river, place the center on its centerline and use a direction perpendicular to the local river path. Do not distribute bridges with circlePoint.`;
+const MAP_CODE_SPATIAL_FEEDBACK_CONTRACT = `## Explicit spatial feedback
+After placing the relevant objects, use these only for sightlines, access paths or joints that your design explicitly depends on:
+- api.sightline({from:[x,y,z],to:[x,y,z],ignoreIds?,required?,label?}) returns {clear,distance,blockers:[{id,distance}],approximation:'collider-aabb'}.
+- api.passage({points:[[x,z]|[x,y,z],...],width?,height?,ignoreIds?,required?,label?}) sweeps a practical body envelope and returns the same blocker evidence plus path distance, width and height.
+- api.connectionGap({a:placementReferenceOrExistingObjectId,b:placementReferenceOrExistingObjectId,tolerance?,required?,label?}) returns connected, 3D and horizontal gap distances, axisGaps and approximation.
+Set required:true only when failure should appear in diagnostics. These bounded AABB checks never move objects, optimize an aesthetic score, or impose symmetry; use returned measurements in your own authored rule and ignore intended endpoint objects explicitly.`;
 const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
 const ENVIRONMENT_ASSET = /\b(?:tree|forest|plant|vegetation|grass|shrub|bush|flower|fern|moss|rock|stone|boulder|crystal|mushroom|cactus|reed|coral|animal|creature|wildlife|bird|fish|deer|horse|insect|nature|flora|fauna)s?\b|树|森林|植物|植被|草|灌木|花|蕨|苔藓|岩石|石头|巨石|水晶|蘑菇|仙人掌|芦苇|珊瑚|动物|生物|野生|鸟|鱼|鹿|马|昆虫|自然|生态/i;
 const ENTRANCE_ASSET = /\b(?:gate|entrance|door|portal|archway|moon gate)\b|入口|拱门|月洞门|传送门|门楼|城门|大门|主门|侧门|院门|园门|馆门|竞技场门/i;
@@ -326,6 +336,30 @@ interface GridInsideRegionInput {
   spacing: number | Point2;
   angle?: number;
   inset?: number;
+}
+
+interface SpatialAssertionInput {
+  required?: boolean;
+  label?: string;
+}
+
+interface SightlineInput extends SpatialAssertionInput {
+  from: Point3;
+  to: Point3;
+  ignoreIds?: string[];
+}
+
+interface PassageInput extends SpatialAssertionInput {
+  points: Array<Point2 | Point3>;
+  width?: number;
+  height?: number;
+  ignoreIds?: string[];
+}
+
+interface ConnectionGapInput extends SpatialAssertionInput {
+  a: string;
+  b: string;
+  tolerance?: number;
 }
 
 interface MoveObjectInput {
@@ -1263,6 +1297,61 @@ function executeMapCodePlanInternal(
       ...placementDesignMetadata(input.groupId, input.layer, input.assemblyId, input.assemblyRole)
     });
     return referenceId;
+  };
+  let spatialQueryCount = 0;
+  const spatialAabbs = (): MapObjectAabb[] => {
+    spatialQueryCount += 1;
+    if (spatialQueryCount > MAX_SPATIAL_QUERIES) throw new Error('map_code_spatial_query_limit');
+    const environmentMap = currentEnvironmentMap();
+    const spatialMap: EditableMap = {
+      ...environmentMap,
+      assets: [...new Map([...(environmentMap.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
+    };
+    const placementOperations = placements.map((placement) => ({
+      type: 'object.add' as const,
+      object: placementObject(placement, placement.referenceId, environmentMap, map.sceneMode)
+    }));
+    return getMapObjectAabbs(placementOperations.length > 0
+      ? applyMapOperations(spatialMap, placementOperations)
+      : spatialMap);
+  };
+  const spatialBlockers = (
+    from: Point3,
+    to: Point3,
+    boxes: readonly MapObjectAabb[],
+    ignored: ReadonlySet<string>
+  ): Array<{ id: string; distance: number }> => {
+    const delta: Point3 = [to[0] - from[0], to[1] - from[1], to[2] - from[2]];
+    const distance = Math.hypot(delta[0], delta[1], delta[2]);
+    if (distance < 0.000001) throw new Error('invalid_map_code_spatial_segment');
+    const nearest = new Map<string, number>();
+    for (const box of boxes) {
+      if (ignored.has(box.objectId)) continue;
+      const hit = pointInsideAabb(from, box) ? 0 : rayAabbIntersection(from, delta, box.min, box.max);
+      if (hit === null || hit > distance - 0.05) continue;
+      nearest.set(box.objectId, Math.min(nearest.get(box.objectId) ?? Infinity, hit));
+    }
+    return [...nearest]
+      .map(([id, hitDistance]) => ({ id, distance: hitDistance }))
+      .sort((left, right) => left.distance - right.distance || left.id.localeCompare(right.id))
+      .slice(0, 16);
+  };
+  const spatialBounds = (id: string, boxes: readonly MapObjectAabb[]): MapObjectAabb => {
+    const matching = boxes.filter((box) => box.objectId === id);
+    if (matching.length === 0) throw new Error(`unknown_map_code_spatial_object:${id}`);
+    return {
+      objectId: id,
+      min: [
+        Math.min(...matching.map((box) => box.min[0])),
+        Math.min(...matching.map((box) => box.min[1])),
+        Math.min(...matching.map((box) => box.min[2]))
+      ],
+      max: [
+        Math.max(...matching.map((box) => box.max[0])),
+        Math.max(...matching.map((box) => box.max[1])),
+        Math.max(...matching.map((box) => box.max[2]))
+      ]
+    };
   };
   const api = Object.freeze({
     TAU: Math.PI * 2,
@@ -2416,6 +2505,118 @@ function executeMapCodePlanInternal(
       record('assetSpace');
       const asset = assetById.get(assetId);
       return asset ? assetSpaceSummary(asset) : { evidence: 'unavailable', interior: 'unknown', supportSurfaces: [], parts: [] };
+    },
+    sightline(input: SightlineInput) {
+      record('sightline');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_sightline');
+      const from = point3(input.from);
+      const to = point3(input.to);
+      const blockers = spatialBlockers(from, to, spatialAabbs(), new Set(cleanSpatialIds(input.ignoreIds)));
+      const result = {
+        clear: blockers.length === 0,
+        distance: Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]),
+        blockers,
+        approximation: 'collider-aabb' as const
+      };
+      if (input.required && blockers[0]) {
+        const label = cleanText(input.label ?? 'declared-sightline', 80);
+        reportIssue({
+          key: `spatial:sightline:${label}:${from.join(',')}:${to.join(',')}`,
+          code: 'code.geometry-unresolved',
+          message: `空间断言 ${label} 未通过：${blockers[0].id} 在 ${blockers[0].distance.toFixed(2)}m 处阻挡视线（近似 ${result.approximation}）。`,
+          repaired: false,
+          repairHint: `Adjust only the declared ${label} sightline or explicitly ignore its intended endpoint object.`
+        });
+      }
+      return result;
+    },
+    passage(input: PassageInput) {
+      record('passage');
+      if (!input || typeof input !== 'object' || !Array.isArray(input.points) || input.points.length < 2) {
+        throw new Error('invalid_map_code_passage');
+      }
+      const metrics = getMapPlayerMetrics(map);
+      const width = clampFinite(input.width ?? metrics.radius * 2, 0.2, 20);
+      const height = clampFinite(input.height ?? metrics.height, 0.5, 20);
+      const environmentMap = currentEnvironmentMap();
+      const points = input.points.slice(0, 64).map((point) => passageCenterPoint(point, height, environmentMap));
+      const halfWidth = width / 2;
+      const halfHeight = height / 2;
+      const boxes = spatialAabbs().map((box) => ({
+        ...box,
+        min: [box.min[0] - halfWidth, box.min[1] - halfHeight, box.min[2] - halfWidth] as Point3,
+        max: [box.max[0] + halfWidth, box.max[1] + halfHeight, box.max[2] + halfWidth] as Point3
+      }));
+      const ignored = new Set(cleanSpatialIds(input.ignoreIds));
+      const nearest = new Map<string, number>();
+      let pathDistance = 0;
+      for (let index = 1; index < points.length; index += 1) {
+        const start = points[index - 1];
+        const end = points[index];
+        for (const blocker of spatialBlockers(start, end, boxes, ignored)) {
+          nearest.set(blocker.id, Math.min(nearest.get(blocker.id) ?? Infinity, pathDistance + blocker.distance));
+        }
+        pathDistance += Math.hypot(end[0] - start[0], end[1] - start[1], end[2] - start[2]);
+      }
+      const blockers = [...nearest]
+        .map(([id, distance]) => ({ id, distance }))
+        .sort((left, right) => left.distance - right.distance || left.id.localeCompare(right.id))
+        .slice(0, 16);
+      const result = {
+        clear: blockers.length === 0,
+        distance: pathDistance,
+        width,
+        height,
+        blockers,
+        approximation: 'collider-aabb' as const
+      };
+      if (input.required && blockers[0]) {
+        const label = cleanText(input.label ?? 'declared-passage', 80);
+        reportIssue({
+          key: `spatial:passage:${label}:${points.flat().join(',')}`,
+          code: 'code.geometry-unresolved',
+          message: `空间断言 ${label} 未通过：${blockers[0].id} 在 ${blockers[0].distance.toFixed(2)}m 处阻挡通道（宽 ${width.toFixed(2)}m，高 ${height.toFixed(2)}m，近似 ${result.approximation}）。`,
+          repaired: false,
+          repairHint: `Clear only the declared ${label} passage or explicitly ignore a permitted endpoint object.`
+        });
+      }
+      return result;
+    },
+    connectionGap(input: ConnectionGapInput) {
+      record('connectionGap');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_connection_gap');
+      const a = cleanText(input.a, 120);
+      const b = cleanText(input.b, 120);
+      if (!a || !b || a === b) throw new Error('invalid_map_code_connection_gap');
+      const boxes = spatialAabbs();
+      const left = spatialBounds(a, boxes);
+      const right = spatialBounds(b, boxes);
+      const axisGaps = [0, 1, 2].map((axis) => Math.max(
+        0,
+        right.min[axis] - left.max[axis],
+        left.min[axis] - right.max[axis]
+      )) as Point3;
+      const distance = Math.hypot(...axisGaps);
+      const tolerance = clampFinite(input.tolerance ?? 0.1, 0, 12);
+      const result = {
+        connected: distance <= tolerance,
+        distance,
+        horizontalDistance: Math.hypot(axisGaps[0], axisGaps[2]),
+        verticalDistance: axisGaps[1],
+        axisGaps,
+        approximation: 'collider-aabb' as const
+      };
+      if (input.required && !result.connected) {
+        const label = cleanText(input.label ?? 'declared-connection', 80);
+        reportIssue({
+          key: `spatial:connection:${label}:${a}:${b}`,
+          code: 'code.geometry-unresolved',
+          message: `空间断言 ${label} 未通过：${a} 与 ${b} 相距 ${distance.toFixed(2)}m，超过 ${tolerance.toFixed(2)}m 容差（近似 ${result.approximation}）。`,
+          repaired: false,
+          repairHint: `Close only the declared ${label} joint or add an explicit connector spanning the measured gap.`
+        });
+      }
+      return result;
     },
     placeRelative(input: Omit<AttachmentInput, 'kind'> & { localPosition: Point3 }): string {
       record('placeRelative');
@@ -3614,6 +3815,7 @@ Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(
 Relationships: api.optimizeLayout({items:[{id,position:[x,z],rotationY?,fixed?}],bounds?,iterations?,translationStep?,rotationStep?,temperature?,seed?}, items => cost) returns optimized items. The model owns the finite cost function: combine attraction, repulsion, target distance, alignment, access or other scene-specific terms. The solver only performs a bounded search over at most 64 items and 512 iterations; it does not place objects or impose a composition. Mark anchors fixed, then place the returned positions yourself.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
 ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
+${MAP_CODE_SPATIAL_FEEDBACK_CONTRACT}
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) and api.placeAlongRoute(...) use existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom'; offset remains host-relative. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
 api.place and api.placeBetween also accept assemblyId?:string and assemblyRole?:'opening'. These labels persist on objects; they do not generate geometry or change coordinates by themselves.
@@ -5739,6 +5941,28 @@ function polygonEdgeDistance2(point: Point2, points: readonly Point2[]): number 
 function point3(value: readonly number[]): Point3 {
   if (!Array.isArray(value) || value.length < 3) throw new Error('invalid_map_code_point');
   return [finite(value[0]), finite(value[1]), finite(value[2])];
+}
+
+function passageCenterPoint(value: Point2 | Point3, height: number, map: EditableMap): Point3 {
+  if (!Array.isArray(value) || value.length < 2) throw new Error('invalid_map_code_passage_point');
+  const x = finite(value[0]);
+  const z = finite(value.length >= 3 ? value[2] : value[1]);
+  const groundY = value.length >= 3 ? finite(value[1]) : sampleTerrainHeight(map, x, z);
+  return [x, groundY + height / 2, z];
+}
+
+function cleanSpatialIds(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  return [...new Set(values.flatMap((value) => {
+    const id = typeof value === 'string' ? cleanText(value, 120) : '';
+    return id ? [id] : [];
+  }))].slice(0, 64);
+}
+
+function pointInsideAabb(point: Point3, box: MapObjectAabb): boolean {
+  return point[0] >= box.min[0] && point[0] <= box.max[0]
+    && point[1] >= box.min[1] && point[1] <= box.max[1]
+    && point[2] >= box.min[2] && point[2] <= box.max[2];
 }
 
 function localToWorld3D(

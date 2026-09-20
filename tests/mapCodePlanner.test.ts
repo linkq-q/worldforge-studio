@@ -456,6 +456,10 @@ describe('map code planner', () => {
     expect(prompt).toContain('api.streetGrid({id,region');
     expect(prompt).toContain('api.placeAlongRoute({routeId');
     expect(prompt).toContain('api.placeStreetFrontage({routeId');
+    expect(prompt).toContain('api.sightline({from:[x,y,z]');
+    expect(prompt).toContain('api.passage({points:[[x,z]|[x,y,z],...]');
+    expect(prompt).toContain('api.connectionGap({a:placementReferenceOrExistingObjectId');
+    expect(prompt).toContain('never move objects, optimize an aesthetic score, or impose symmetry');
     expect(prompt).toContain('returns the route ID string, not an object');
     expect(prompt).toContain('api.routeNetwork returns a string[] of route IDs in edge order');
     expect(prompt).not.toContain('ordinary building fabric');
@@ -2747,6 +2751,80 @@ describe('map code planner', () => {
     expect(distances.every((distance) => distance > 5)).toBe(true);
     expect(Math.max(...distances) - Math.min(...distances)).toBeLessThan(0.2);
     expect(suggestion.codePlan?.functions).toEqual(['place', 'sampleBezierFramesBySpacing']);
+  });
+
+  it('reports declared sightline blockers with distance and approximation evidence', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.place({name:'view-blocker',position:[0,0,0],size:[2,4,2],terrain:false});
+      const sightline=api.sightline({
+        from:[-5,2,0],to:[5,2,0],required:true,label:'gate-to-stage'
+      });
+      if(!sightline.clear) api.place({
+        name:sightline.blockers[0].id+'@'+Math.round(sightline.blockers[0].distance),
+        position:[0,0,5]
+      });
+    }`, createEmptyMap());
+
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'object.add',
+        object: expect.objectContaining({ name: 'code-object://0@4' })
+      })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: 'code.geometry-unresolved',
+        message: expect.stringMatching(/gate-to-stage.*code-object:\/\/0.*4\.00m.*collider-aabb/i)
+      })
+    ]));
+  });
+
+  it('checks a declared passage with practical body clearance', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.place({name:'narrow-blocker',position:[0,0,0],size:[1,3,1],terrain:false});
+      const passage=api.passage({
+        points:[[-4,0],[4,0]],width:1.2,height:1.8,required:true,label:'main-access'
+      });
+      if(!passage.clear) api.place({
+        name:'blocked-'+passage.blockers[0].id,
+        position:[0,0,4]
+      });
+    }`, createEmptyMap());
+
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'object.add',
+        object: expect.objectContaining({ name: 'blocked-code-object://0' })
+      })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: 'code.geometry-unresolved',
+        message: expect.stringMatching(/main-access.*code-object:\/\/0.*2\.90m.*collider-aabb/i)
+      })
+    ]));
+  });
+
+  it('measures the gap between declared building parts without moving them', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const left=api.place({name:'left-wing',position:[-2,0,0],size:[2,2,2],terrain:false});
+      const right=api.place({name:'right-wing',position:[2,0,0],size:[2,2,2],terrain:false});
+      const gap=api.connectionGap({a:left,b:right,tolerance:0.1,required:true,label:'wing-joint'});
+      api.place({name:'gap-'+gap.distance.toFixed(1),position:[0,0,4]});
+    }`, createEmptyMap());
+
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'object.add',
+        object: expect.objectContaining({ name: 'gap-2.0' })
+      })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: 'code.geometry-unresolved',
+        message: expect.stringMatching(/wing-joint.*2\.00m.*collider-aabb/i)
+      })
+    ]));
   });
 
   it('provides bounded minimum-distance environment scattering', () => {
