@@ -62,6 +62,17 @@ describe('raw codeplan mode', () => {
     })).toThrow();
   });
 
+  it('accepts a bare top-level script without a plan wrapper', () => {
+    const code = `const spots = [];
+    for (let i = 0; i < 5; i += 1) spots.push([i * 4 - 8, 6]);
+    api.terrain('rolling', {});
+    for (const [x, z] of spots) api.place({ name: '石 ' + x, position: [x, z] });`;
+    const suggestion = executeMapCodePlan(code, createEmptyMap(), [], {
+      mode: 'discovery', requestMode: 'generate', scope: 'scene'
+    });
+    expect(suggestion.operations.filter((op) => op.type === 'object.add')).toHaveLength(5);
+  });
+
   it('keeps non-scene generation on the full sandbox', () => {
     const code = `function plan(api) {
       api.noise2D(1, 2);
