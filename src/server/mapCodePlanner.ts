@@ -3799,7 +3799,7 @@ export function buildMapCodePlannerSystemPrompt(
   const scopeContract = requestMode === 'refine'
     ? refineContext
     : scope === 'scene'
-    ? `\n## Unified scene ownership\nYou author the complete outdoor scene in one coordinate system: terrain, water, surfaces, vegetation, constructed forms, circulation and their relationships.\napi.sceneIntent and api.design are optional compression tools, not mandatory planning stages. Use them only when their persistent labels clarify the executable scene; otherwise express the composition directly with bounded math, fields, routes and placements.\nLet the user's request determine landform, ecology, architectural language, density, hierarchy, rhythm and negative space. Use the spatial APIs to keep entrances, routes, footprints, adjacency and compound structures coherent, not to force a template or optimize a diagnostic score. Intentional open space is valid and is never auto-filled merely to satisfy metadata.\n`
+    ? `\n## Unified scene ownership\nYou author the complete outdoor scene in one coordinate system: terrain, water, surfaces, vegetation, constructed forms, circulation and their relationships.\nNatural or single-focus scenes may omit api.design when persistent labels add no value. Authored scenes with multiple functional areas must call api.design once, give every major area a real region and spatial role, and assign its core placements groupId and layer. Each major built group needs a meaningful ensemble of related primary, support and detail objects plus one purposeful repeat family with multiple placements where real-world use calls for repetition. Perimeter fences, edge vegetation and scattered rocks do not satisfy core-area density.\nLet the user's request determine landform, ecology, architectural language, density, hierarchy, rhythm and negative space. Use the spatial APIs to keep entrances, routes, footprints, adjacency and compound structures coherent, not to force a template or optimize a diagnostic score. Intentional open space is valid and is never auto-filled merely to satisfy metadata.\n`
     : '';
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
@@ -3826,7 +3826,7 @@ Do not randomize the rotation of directional assets unless the requested composi
 
 ## Spatial planning boundary
 Use spatial contracts where calculation helps: connected entrances and routes, believable footprints and setbacks, explicit water/ground substrate, and connected module geometry. The model remains free to choose the scene's form, terrain, ecology, density, style and detail language.
-Inspect the scene from the viewpoints that matter to the request. Use api.design groups and assemblies only when they clarify real spatial responsibilities; they are optional semantics, not a required layer count or visual recipe.
+Inspect the scene from the viewpoints that matter to the request. Use api.design groups and assemblies for multi-area authored scenes so each functional area has executable spatial ownership; do not invent groups for a natural or genuinely single-focus scene.
 Keep generated coordinates inside bounds, important circulation usable, and repeated geometry deterministic from api.seed. Visible prompt-specific content should use real assets; proxies are for abstract markers or unavailable visuals.
 
 ## API quick reference
@@ -3860,6 +3860,7 @@ For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,sta
 
 ## Asset rules
 Declare between ${minNewAssets} and ${maxNewAssets} distinct requireAsset families; variants within one family count as one asset toward this range. Variants still require separate model generation calls, so request only useful visual diversity.
+Asset-family count is not object count. Reuse suitable families for fleets, parking rows, equipment clusters, tank arrays, lights, furniture and modular construction instead of spending the whole budget on singletons. When the minimum allows it, prefer fewer useful families with purposeful repetition; a high user-selected minimum still does not excuse leaving every family as one isolated object.
 Each requireAsset.name is short Simplified Chinese UI text; keep detailed generation guidance in prompt.
 When the minimum is greater than zero, declare and place that many prompt-specific generated assets even if reusable assets exist.
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
@@ -3877,7 +3878,7 @@ Append this orientation instruction to every generated asset prompt: "Coordinate
 4. No undefined point, invalid array index, direct array arithmetic, division by zero, invented asset ID, or unbounded placement loop.
 5. Generated assets are declared with requireAsset and bound only through api.asset.
 6. Every declared variant is referenced by at least one api.place, api.bridge or api.placeBetween call; never generate an unused variant.
-7. Required routes, supports, water/ground substrate and connected modules are physically coherent. Optional design fields do not need to be populated merely to satisfy this checklist.
+7. Required routes, supports, water/ground substrate and connected modules are physically coherent. Every major built group has a related-object ensemble and an appropriate repeated family; raw fence, edge vegetation or rock counts do not substitute for core detail.
 
 Reusable asset catalog:
 ${assetCatalog}`;
@@ -4234,9 +4235,39 @@ async function discoverMapCodeWithRepairs(
 function reviewCodeDesignComposition(map: EditableMap): MapLintIssue[] {
   const design = map.designSemantics;
   const issues: MapLintIssue[] = [];
+  const assetById = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const repeatEligible = (object: EditableMap['objects'][number]): boolean => {
+    if (!object.assetId || object.parentId || object.compositionLayer === 4) return false;
+    const asset = assetById.get(object.assetId);
+    const semantic = [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
+    return !ENVIRONMENT_ASSET.test(semantic) && !CONTINUOUS_STRUCTURE_ASSET.test(semantic);
+  };
   const parentIds = new Set(design.groups.flatMap((group) => group.parentId ? [group.parentId] : []));
   const leafGroups = design.groups.filter((group) => !parentIds.has(group.id)
     && map.objects.some((object) => object.designGroupId === group.id));
+  const ungroupedCoreFamilies = new Set(map.objects
+    .filter((object) => object.locked && !object.designGroupId && repeatEligible(object))
+    .map((object) => object.assetId));
+  if (leafGroups.length === 0 && ungroupedCoreFamilies.size >= 6) {
+    issues.push({
+      code: 'scene.program-incomplete', severity: 'warning', repaired: false,
+      message: `人工场景包含 ${ungroupedCoreFamilies.size} 类核心设施，但缺少功能分组；无法分别验证各区域的组合完整度与重复使用。`
+    });
+  }
+  for (const group of leafGroups) {
+    if (!group.region || (group.spatialRole !== 'urban-fabric' && group.spatialRole !== 'landmark-ensemble')) continue;
+    const coreObjects = map.objects.filter((object) => object.designGroupId === group.id && repeatEligible(object));
+    if (coreObjects.length < 4) continue;
+    const familyCounts = new Map<string, number>();
+    for (const object of coreObjects) familyCounts.set(object.assetId!, (familyCounts.get(object.assetId!) ?? 0) + 1);
+    if ([...familyCounts.values()].every((count) => count === 1)) {
+      issues.push({
+        code: 'scene.program-incomplete', severity: 'warning', repaired: false,
+        message: `片区「${group.name}」包含 ${coreObjects.length} 个核心物体，但缺少可复用的核心重复族；围栏、边缘植被和散石不计入该检查。`,
+        objectIds: coreObjects.map((object) => object.id)
+      });
+    }
+  }
   const guideById = new Map(map.guides.map((guide) => [guide.id, guide]));
   const groupGuides = leafGroups.map((group) => ({
     group,

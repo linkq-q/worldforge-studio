@@ -509,7 +509,11 @@ describe('map code planner', () => {
 
     expect(prompt).toContain('Unified scene ownership');
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
-    expect(prompt).toContain('optional compression tools, not mandatory planning stages');
+    expect(prompt).toContain('Natural or single-focus scenes may omit api.design');
+    expect(prompt).toContain('multiple functional areas must call api.design once');
+    expect(prompt).toContain('one purposeful repeat family');
+    expect(prompt).toContain('Perimeter fences, edge vegetation and scattered rocks do not satisfy core-area density');
+    expect(prompt).toContain('Asset-family count is not object count');
     expect(prompt).toContain('api.design({experienceMode');
     expect(prompt).toContain('does not move, add, prune, or fill objects');
     expect(prompt).toContain('api.sampleProbabilityField');
@@ -552,6 +556,34 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('## Scene pattern guide');
     expect(prompt).not.toContain('Activity-led near-field composition');
     expect(prompt.length).toBeLessThan(30_000);
+  });
+
+  it('warns when a multi-family authored scene omits functional groups or group-level reuse', () => {
+    const assets = Array.from({ length: 6 }, (_, index) => ({
+      ...testAsset(`asset-core-${index}`, `Core ${index}`), tags: []
+    }));
+    const ungrouped = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'multi-area campus'});
+      for (let index=0; index<6; index++) {
+        api.place({assetId:'asset-core-'+index,name:'设施-'+index,position:[index*4-10,index%2?6:-6],role:'structure'});
+      }
+    }`, createEmptyMap(), assets, { scope:'scene' });
+    expect(ungrouped.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code:'scene.program-incomplete', message:expect.stringContaining('功能分组') })
+    ]));
+
+    const grouped = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'operations yard'});
+      api.design({experienceMode:'immediate',intent:'operations yard',groups:[{
+        id:'yard',name:'作业区',spatialRole:'urban-fabric',region:{kind:'circle',x:0,z:0,radius:9},layers:[]
+      }],focuses:[],viewpoints:[],relations:[]});
+      for (let index=0; index<4; index++) {
+        api.place({assetId:'asset-core-'+index,name:'设备-'+index,position:[index*3-5,index%2?3:-3],groupId:'yard',layer:2,role:'environment'});
+      }
+    }`, createEmptyMap(), assets, { scope:'scene' });
+    expect(grouped.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code:'scene.program-incomplete', message:expect.stringContaining('重复族') })
+    ]));
   });
 
   it('passes the optional user focal preference in the same Code request', async () => {
