@@ -37,6 +37,31 @@ function referencedTerrainPoints(geometry: THREE.BufferGeometry): THREE.Vector3[
   return [...referenced].map((item) => new THREE.Vector3().fromBufferAttribute(positions, item));
 }
 
+function terrainBoundaryPoints(geometry: THREE.BufferGeometry): THREE.Vector3[] {
+  const positions = geometry.getAttribute('position');
+  const indices = Array.from(geometry.getIndex()?.array ?? [], Number);
+  const edges = new Map<string, { count: number; a: number; b: number }>();
+  for (let index = 0; index < indices.length; index += 3) {
+    for (const [a, b] of [
+      [indices[index], indices[index + 1]],
+      [indices[index + 1], indices[index + 2]],
+      [indices[index + 2], indices[index]]
+    ] as const) {
+      const key = a < b ? `${a}:${b}` : `${b}:${a}`;
+      const edge = edges.get(key);
+      if (edge) edge.count += 1;
+      else edges.set(key, { count: 1, a, b });
+    }
+  }
+  const boundary = new Set<number>();
+  for (const edge of edges.values()) {
+    if (edge.count !== 1) continue;
+    boundary.add(edge.a);
+    boundary.add(edge.b);
+  }
+  return [...boundary].map((index) => new THREE.Vector3().fromBufferAttribute(positions, index));
+}
+
 describe('terrain normal generation', () => {
   it('classifies building parts locally and preserves their palette colors through the renderer', async () => {
     const map = createEmptyMap('palette regression');
@@ -312,7 +337,7 @@ describe('structured map water rendering', () => {
     oceanTerrain.texture.dispose();
   });
 
-  it('hides a legacy coplanar terrain sheet instead of rendering a square ocean shelf', async () => {
+  it('lowers a legacy coplanar terrain sheet without cutting holes along the shoreline', async () => {
     const map = createEmptyMap('legacy flat island', 'legacy-flat-island', [48, 16, 48]);
     const centerX = Math.floor(map.terrain.resolutionX / 2);
     const centerZ = Math.floor(map.terrain.resolutionZ / 2);
@@ -326,16 +351,22 @@ describe('structured map water rendering', () => {
       id: 'ocean', name: 'Ocean', type: 'ocean', level: 0, depth: 8, width: 1,
       points: [[-24, -24], [24, -24], [24, 24], [-24, 24]]
     }];
+    const originalHeights = [...map.terrain.heights];
     const rendered = await buildEditableMapGroup(map);
     const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
     const terrainPoints = referencedTerrainPoints(terrain.geometry);
-    expect(Math.max(...terrainPoints.map((point) => Math.abs(point.x)))).toBeLessThan(12);
-    expect(Math.max(...terrainPoints.map((point) => Math.abs(point.z)))).toBeLessThan(12);
     const ocean = rendered.group.getObjectByName('water:ocean') as THREE.Mesh;
     const oceanTerrain = ocean.userData.waterOceanTerrain as { texture: THREE.DataTexture; sinkTarget: number };
     const boundHeights = (oceanTerrain.texture.image as unknown as { data: Float32Array }).data;
+    const boundary = terrainBoundaryPoints(terrain.geometry);
+    expect(Math.max(...boundary.map((point) => point.y))).toBeLessThanOrEqual(-2.85);
+    expect(Math.max(...boundary.map((point) => Math.abs(point.x)))).toBeLessThan(map.box.size[0] / 2 - 0.05);
+    expect(Math.max(...boundary.map((point) => Math.abs(point.z)))).toBeLessThan(map.box.size[2] / 2 - 0.05);
+    expect(terrainPoints.some((point) => point.y < -0.5 && point.y > oceanTerrain.sinkTarget + 0.5)).toBe(true);
+    expect(terrainPoints.find((point) => Math.abs(point.x) < 1e-4 && Math.abs(point.z) < 1e-4)?.y).toBeCloseTo(4);
     expect(boundHeights[0]).toBeCloseTo(oceanTerrain.sinkTarget);
     expect(boundHeights[centerZ * map.terrain.resolutionX + centerX]).toBeCloseTo(4);
+    expect(map.terrain.heights).toEqual(originalHeights);
     rendered.dispose();
   });
 
@@ -351,7 +382,7 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
-  it('adds an adaptive render-only terrain apron only beside land that reaches the ocean-map edge', async () => {
+  it('adds a rounded render-only terrain apron only beside land that reaches the ocean-map edge', async () => {
     const buildOceanMap = (size: number) => {
       const map = createEmptyMap(`ocean-${size}`, `ocean-${size}`, [size, 16, size]);
       map.terrain.heights.fill(-2);
@@ -380,6 +411,9 @@ describe('structured map water rendering', () => {
       expect(outside.length).toBeGreaterThan(0);
       expect(outside.every((point) => point.x <= -size / 2)).toBe(true);
       expect(Math.min(...outside.map((point) => point.y))).toBeLessThanOrEqual(-3);
+      const minX = Math.min(...outside.map((point) => point.x));
+      const minZ = Math.min(...outside.map((point) => point.z));
+      expect(outside.some((point) => Math.abs(point.x - minX) < 1e-4 && Math.abs(point.z - minZ) < 1e-4)).toBe(false);
       expect(map.terrain.heights).toEqual(originalHeights);
       const ocean = rendered.group.getObjectByName(`water:ocean-${size}`) as THREE.Mesh;
       const terrainBinding = ocean.userData.waterOceanTerrain as { texture: THREE.DataTexture };
@@ -396,8 +430,8 @@ describe('structured map water rendering', () => {
     const smallReach = await apronReach(48);
     const titleScaleReach = await apronReach(96);
 
-    expect(smallReach).toBeCloseTo(12, 4);
-    expect(titleScaleReach).toBeCloseTo(18, 4);
+    expect(smallReach).toBeCloseTo(6, 4);
+    expect(titleScaleReach).toBeCloseTo(6, 4);
   });
 
   it('renders overlapping same-level water blocks as one clipped surface', () => {

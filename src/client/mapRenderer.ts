@@ -1112,7 +1112,7 @@ function createOceanTerrainBinding(
 ): OceanTerrainBinding {
   const sinkTarget = Math.min(apron.sinkTarget, water.level - 0.001);
   const texture = new THREE.DataTexture(
-    oceanTerrainHeights(map, water.level, sinkTarget),
+    oceanTerrainHeights(map, water.level, sinkTarget, apron.width),
     map.terrain.resolutionX,
     map.terrain.resolutionZ,
     THREE.RedFormat,
@@ -1142,29 +1142,33 @@ function createOceanTerrainBinding(
   };
 }
 
-function oceanTerrainHeights(map: EditableMap, oceanLevel: number, sinkTarget: number): Float32Array {
+function oceanTerrainHeights(
+  map: EditableMap,
+  oceanLevel: number,
+  sinkTarget: number,
+  apronWidth: number
+): Float32Array {
   const heights = new Float32Array(map.terrain.heights);
-  const coplanar = new Uint8Array(heights.length);
-  let coplanarCount = 0;
+  const submerged = new Uint8Array(heights.length);
   for (let index = 0; index < heights.length; index += 1) {
-    if (Math.abs(heights[index] - oceanLevel) > 0.02) continue;
-    coplanar[index] = 1;
-    coplanarCount += 1;
+    if (heights[index] <= oceanLevel + 0.02) submerged[index] = 1;
   }
-  if (coplanarCount === 0) return heights;
 
-  const distances = distanceFromOutside(coplanar, map.terrain.resolutionX, map.terrain.resolutionZ);
+  const distances = distanceFromOutside(submerged, map.terrain.resolutionX, map.terrain.resolutionZ);
   const cellSize = Math.min(
     map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
     map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
   );
   const maxDepth = Math.max(0.08, oceanLevel - sinkTarget);
+  const shoreHeight = oceanLevel - Math.min(0.08, maxDepth * 0.1);
+  const slopeWidth = Math.max(cellSize * 2, apronWidth);
   for (let index = 0; index < heights.length; index += 1) {
-    if (!coplanar[index]) continue;
+    if (!submerged[index]) continue;
     const distance = Number.isFinite(distances[index])
-      ? distances[index] * cellSize
-      : maxDepth / 0.45;
-    heights[index] = oceanLevel - Math.min(maxDepth, 0.08 + distance * 0.45);
+      ? Math.max(0, distances[index] - 1) * cellSize
+      : slopeWidth;
+    const t = THREE.MathUtils.smoothstep(distance, 0, slopeWidth);
+    heights[index] = Math.min(heights[index], THREE.MathUtils.lerp(shoreHeight, sinkTarget, t));
   }
   return heights;
 }
@@ -1193,7 +1197,8 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap): 
       (ocean.texture.image as { data: Float32Array; width: number; height: number }).data = oceanTerrainHeights(
         map,
         ocean.level,
-        ocean.sinkTarget
+        ocean.sinkTarget,
+        ocean.apronWidth
       );
       ocean.texture.needsUpdate = true;
     }
@@ -1380,42 +1385,150 @@ function pushUpwardTriangle(
   else indices.push(a, c, b);
 }
 
+function pushTerrainTriangleAbove(
+  indices: number[],
+  vertices: number[],
+  uvs: number[],
+  triangle: readonly [number, number, number],
+  minHeight: number | null,
+  intersections: Map<string, number>
+): void {
+  if (minHeight === null) {
+    indices.push(...triangle);
+    return;
+  }
+  const clipped: number[] = [];
+  const append = (index: number) => {
+    if (clipped.at(-1) !== index) clipped.push(index);
+  };
+  const intersection = (start: number, end: number): number => {
+    const key = start < end ? `${start}:${end}` : `${end}:${start}`;
+    const cached = intersections.get(key);
+    if (cached !== undefined) return cached;
+    const startY = vertices[start * 3 + 1];
+    const endY = vertices[end * 3 + 1];
+    const t = THREE.MathUtils.clamp((minHeight - startY) / (endY - startY), 0, 1);
+    if (t <= 1e-6) return start;
+    if (t >= 1 - 1e-6) return end;
+    const index = vertices.length / 3;
+    vertices.push(
+      THREE.MathUtils.lerp(vertices[start * 3], vertices[end * 3], t),
+      minHeight,
+      THREE.MathUtils.lerp(vertices[start * 3 + 2], vertices[end * 3 + 2], t)
+    );
+    uvs.push(
+      THREE.MathUtils.lerp(uvs[start * 2], uvs[end * 2], t),
+      THREE.MathUtils.lerp(uvs[start * 2 + 1], uvs[end * 2 + 1], t)
+    );
+    intersections.set(key, index);
+    return index;
+  };
+
+  for (let item = 0; item < triangle.length; item += 1) {
+    const start = triangle[item];
+    const end = triangle[(item + 1) % triangle.length];
+    const startInside = vertices[start * 3 + 1] >= minHeight;
+    const endInside = vertices[end * 3 + 1] >= minHeight;
+    if (startInside) append(start);
+    if (startInside !== endInside) append(intersection(start, end));
+  }
+  if (clipped.length > 1 && clipped[0] === clipped.at(-1)) clipped.pop();
+  for (let item = 1; item < clipped.length - 1; item += 1) {
+    pushUpwardTriangle(indices, vertices, clipped[0], clipped[item], clipped[item + 1]);
+  }
+}
+
+function sampleTerrainHeightField(
+  heights: ArrayLike<number>,
+  width: number,
+  height: number,
+  x: number,
+  z: number
+): number {
+  const x0 = Math.floor(x);
+  const z0 = Math.floor(z);
+  const x1 = Math.min(width - 1, x0 + 1);
+  const z1 = Math.min(height - 1, z0 + 1);
+  const tx = x - x0;
+  const tz = z - z0;
+  const top = THREE.MathUtils.lerp(heights[z0 * width + x0] ?? 0, heights[z0 * width + x1] ?? 0, tx);
+  const bottom = THREE.MathUtils.lerp(heights[z1 * width + x0] ?? 0, heights[z1 * width + x1] ?? 0, tx);
+  return THREE.MathUtils.lerp(top, bottom, tz);
+}
+
 function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
   const terrain = map.terrain;
   const vertices: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
   const oceanApron = oceanTerrainApronProfile(map);
+  const renderCellSize = Math.min(
+    map.box.size[0] / Math.max(1, terrain.resolutionX - 1),
+    map.box.size[2] / Math.max(1, terrain.resolutionZ - 1)
+  );
+  const oceanRenderProfile = oceanApron ? {
+    ...oceanApron,
+    width: Math.min(oceanApron.width, Math.max(6, renderCellSize * 4)),
+    sinkTarget: Math.max(oceanApron.sinkTarget, oceanApron.level - 3)
+  } : null;
+  const renderHeights = oceanRenderProfile
+    ? oceanTerrainHeights(map, oceanRenderProfile.level, oceanRenderProfile.sinkTarget, oceanRenderProfile.width)
+    : terrain.heights;
+  const oceanClipHeight = oceanRenderProfile
+    ? oceanRenderProfile.sinkTarget + Math.min(
+      0.1,
+      Math.max(0.02, (oceanRenderProfile.level - oceanRenderProfile.sinkTarget) * 0.01)
+    )
+    : null;
+  const subdivisions = oceanRenderProfile ? 3 : 1;
+  const renderResolutionX = (terrain.resolutionX - 1) * subdivisions + 1;
+  const renderResolutionZ = (terrain.resolutionZ - 1) * subdivisions + 1;
+  const clipIntersections = new Map<string, number>();
 
-  for (let z = 0; z < terrain.resolutionZ; z += 1) {
-    for (let x = 0; x < terrain.resolutionX; x += 1) {
-      const point = terrainPointAt(map, x, z);
-      vertices.push(point[0], point[1], point[2]);
-      uvs.push(x / (terrain.resolutionX - 1), z / (terrain.resolutionZ - 1));
+  for (let z = 0; z < renderResolutionZ; z += 1) {
+    const sourceZ = z / subdivisions;
+    const uvZ = z / (renderResolutionZ - 1);
+    for (let x = 0; x < renderResolutionX; x += 1) {
+      const sourceX = x / subdivisions;
+      const uvX = x / (renderResolutionX - 1);
+      vertices.push(
+        -map.box.size[0] / 2 + uvX * map.box.size[0],
+        sampleTerrainHeightField(renderHeights, terrain.resolutionX, terrain.resolutionZ, sourceX, sourceZ),
+        -map.box.size[2] / 2 + uvZ * map.box.size[2]
+      );
+      uvs.push(uvX, uvZ);
     }
   }
 
-  for (let z = 0; z < terrain.resolutionZ - 1; z += 1) {
-    for (let x = 0; x < terrain.resolutionX - 1; x += 1) {
-      const a = terrainIndex(terrain, x, z);
-      const b = terrainIndex(terrain, x + 1, z);
-      const c = terrainIndex(terrain, x, z + 1);
-      const d = terrainIndex(terrain, x + 1, z + 1);
+  for (let z = 0; z < renderResolutionZ - 1; z += 1) {
+    for (let x = 0; x < renderResolutionX - 1; x += 1) {
+      const a = z * renderResolutionX + x;
+      const b = a + 1;
+      const c = a + renderResolutionX;
+      const d = c + 1;
       const centerX = (vertices[a * 3] + vertices[d * 3]) / 2;
       const centerZ = (vertices[a * 3 + 2] + vertices[d * 3 + 2]) / 2;
       if (!isPointInsidePlayableArea(map.layout, map.box.size, centerX, centerZ)) continue;
-      if (oceanApron && [a, b, c, d].every((index) => (
-        Math.abs(vertices[index * 3 + 1] - oceanApron.level) <= 0.02
-      ))) continue;
-      if ((x + z) % 2 === 0) indices.push(a, c, b, b, c, d);
-      else indices.push(a, c, d, a, d, b);
+      const triangles: Array<readonly [number, number, number]> = (x + z) % 2 === 0
+        ? [[a, c, b], [b, c, d]]
+        : [[a, c, d], [a, d, b]];
+      for (const triangle of triangles) {
+        pushTerrainTriangleAbove(
+          indices,
+          vertices,
+          uvs,
+          triangle,
+          oceanClipHeight,
+          clipIntersections
+        );
+      }
     }
   }
 
   if (map.layout.edgeMask.kind === 'none') {
-    if (oceanApron) {
-      if (oceanTerrainTouchesBoundary(map, oceanApron.level)) {
-        addOceanTerrainApron(vertices, uvs, indices, map, oceanApron);
+    if (oceanRenderProfile) {
+      if (oceanTerrainTouchesBoundary(map, oceanRenderProfile.level)) {
+        addOceanTerrainApron(vertices, uvs, indices, map, renderHeights, oceanRenderProfile);
       }
     } else addBorderSides(vertices, uvs, indices, map);
   } else addMaskBorderSides(vertices, uvs, indices, map);
@@ -1445,7 +1558,6 @@ interface OceanTerrainBinding {
 
 interface OceanTerrainApronProfile {
   width: number;
-  segments: number;
   level: number;
   sinkTarget: number;
 }
@@ -1459,10 +1571,9 @@ function oceanTerrainApronProfile(map: EditableMap): OceanTerrainApronProfile | 
   );
   const shortestSide = Math.min(map.box.size[0], map.box.size[2]);
   const width = THREE.MathUtils.clamp(cellSize * 12, shortestSide * 0.15, shortestSide * 0.25);
-  const segments = THREE.MathUtils.clamp(Math.ceil(width / Math.max(cellSize, 0.001)), 6, 24);
   const oceanLevel = Math.max(...oceans.map((water) => water.level));
   const sinkDepth = Math.max(3, cellSize * 2, ...oceans.map((water) => water.depth));
-  return { width, segments, level: oceanLevel, sinkTarget: oceanLevel - sinkDepth };
+  return { width, level: oceanLevel, sinkTarget: oceanLevel - sinkDepth };
 }
 
 function oceanTerrainTouchesBoundary(map: EditableMap, oceanLevel: number): boolean {
@@ -1484,56 +1595,89 @@ function addOceanTerrainApron(
   uvs: number[],
   indices: number[],
   map: EditableMap,
+  renderHeights: ArrayLike<number>,
   profile: OceanTerrainApronProfile
 ): void {
   const width = map.terrain.resolutionX;
   const depth = map.terrain.resolutionZ;
   if (width < 2 || depth < 2) return;
-  const step = profile.width / profile.segments;
-  const expandedWidth = width + profile.segments * 2;
-  const expandedDepth = depth + profile.segments * 2;
+  const stepX = map.box.size[0] / (width - 1);
+  const stepZ = map.box.size[2] / (depth - 1);
+  const paddingX = Math.max(1, Math.ceil(profile.width / stepX));
+  const paddingZ = Math.max(1, Math.ceil(profile.width / stepZ));
+  const expandedWidth = width + paddingX * 2;
+  const expandedDepth = depth + paddingZ * 2;
   const baseVertex = vertices.length / 3;
+  const edgeLand: Array<{ x: number; z: number; height: number; u: number; v: number }> = [];
+  const appendEdgeLand = (x: number, z: number) => {
+    const height = map.terrain.heights[terrainIndex(map.terrain, x, z)] ?? 0;
+    if (height <= profile.level + 0.05) return;
+    edgeLand.push({
+      x: -map.box.size[0] / 2 + x * stepX,
+      z: -map.box.size[2] / 2 + z * stepZ,
+      height: renderHeights[terrainIndex(map.terrain, x, z)] ?? height,
+      u: x / (width - 1),
+      v: z / (depth - 1)
+    });
+  };
+  for (let x = 0; x < width; x += 1) {
+    appendEdgeLand(x, 0);
+    appendEdgeLand(x, depth - 1);
+  }
+  for (let z = 1; z < depth - 1; z += 1) {
+    appendEdgeLand(0, z);
+    appendEdgeLand(width - 1, z);
+  }
+  if (edgeLand.length === 0) return;
+
+  const distances: number[] = [];
 
   for (let z = 0; z < expandedDepth; z += 1) {
-    const gridZ = z - profile.segments;
+    const gridZ = z - paddingZ;
     const sourceZ = THREE.MathUtils.clamp(gridZ, 0, depth - 1);
-    const offsetZ = (gridZ - sourceZ) * step;
+    const worldZ = -map.box.size[2] / 2 + gridZ * stepZ;
     for (let x = 0; x < expandedWidth; x += 1) {
-      const gridX = x - profile.segments;
+      const gridX = x - paddingX;
       const sourceX = THREE.MathUtils.clamp(gridX, 0, width - 1);
-      const offsetX = (gridX - sourceX) * step;
-      const source = terrainPointAt(map, sourceX, sourceZ);
-      const distance = Math.hypot(offsetX, offsetZ);
+      const worldX = -map.box.size[0] / 2 + gridX * stepX;
+      let nearest = edgeLand[0];
+      let distance = Number.POSITIVE_INFINITY;
+      for (const candidate of edgeLand) {
+        const candidateDistance = Math.hypot(worldX - candidate.x, worldZ - candidate.z);
+        if (candidateDistance >= distance) continue;
+        distance = candidateDistance;
+        nearest = candidate;
+      }
+      const insideMap = gridX >= 0 && gridX < width && gridZ >= 0 && gridZ < depth;
       const t = THREE.MathUtils.smoothstep(distance, 0, profile.width);
       vertices.push(
-        source[0] + offsetX,
-        THREE.MathUtils.lerp(source[1], profile.sinkTarget, t),
-        source[2] + offsetZ
+        worldX,
+        insideMap
+          ? renderHeights[terrainIndex(map.terrain, sourceX, sourceZ)] ?? 0
+          : THREE.MathUtils.lerp(nearest.height, profile.sinkTarget, t),
+        worldZ
       );
-      uvs.push(sourceX / (width - 1), sourceZ / (depth - 1));
+      uvs.push(insideMap ? sourceX / (width - 1) : nearest.u, insideMap ? sourceZ / (depth - 1) : nearest.v);
+      distances.push(distance);
     }
   }
 
   for (let z = 0; z < expandedDepth - 1; z += 1) {
-    const gridZ = z - profile.segments;
+    const gridZ = z - paddingZ;
     for (let x = 0; x < expandedWidth - 1; x += 1) {
-      const gridX = x - profile.segments;
+      const gridX = x - paddingX;
       if (gridX >= 0 && gridX < width - 1 && gridZ >= 0 && gridZ < depth - 1) continue;
-      const sourceXs = [
-        THREE.MathUtils.clamp(gridX, 0, width - 1),
-        THREE.MathUtils.clamp(gridX + 1, 0, width - 1)
-      ];
-      const sourceZs = [
-        THREE.MathUtils.clamp(gridZ, 0, depth - 1),
-        THREE.MathUtils.clamp(gridZ + 1, 0, depth - 1)
-      ];
-      if (!sourceZs.some((sourceZ) => sourceXs.some((sourceX) => (
-        (map.terrain.heights[terrainIndex(map.terrain, sourceX, sourceZ)] ?? 0) > profile.level + 0.05
-      )))) continue;
       const a = baseVertex + z * expandedWidth + x;
       const b = a + 1;
       const c = a + expandedWidth;
       const d = c + 1;
+      const apronIndex = z * expandedWidth + x;
+      if (Math.min(
+        distances[apronIndex],
+        distances[apronIndex + 1],
+        distances[apronIndex + expandedWidth],
+        distances[apronIndex + expandedWidth + 1]
+      ) >= profile.width) continue;
       indices.push(a, c, b, b, c, d);
     }
   }
