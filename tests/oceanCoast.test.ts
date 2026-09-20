@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { extractCoastLoops, smoothCoastLoops, type CoastGrid } from '../src/shared/oceanCoast';
+import { buildOceanCoastField, extractCoastLoops, sampleCoastGrid, smoothCoastLoops, type CoastGrid } from '../src/shared/oceanCoast';
+import { createEmptyMap } from '../src/shared/map';
 
 function gridFor(height: (x: number, z: number) => number): CoastGrid {
   return { width: 33, depth: 33, minX: -16, minZ: -16, stepX: 1, stepZ: 1,
@@ -7,6 +8,40 @@ function gridFor(height: (x: number, z: number) => number): CoastGrid {
 }
 
 describe('continuous ocean coast', () => {
+  it('rebuilds only the tidal band and leaves source heights and inland foundations intact', () => {
+    const map = createEmptyMap('coast');
+    const cell = map.box.size[0] / (map.terrain.resolutionX - 1);
+    map.terrain.heights = map.terrain.heights.map((_, i) => Math.max(0, Math.min(3, 15 - Math.hypot(i % map.terrain.resolutionX * cell - map.box.size[0] / 2, Math.floor(i / map.terrain.resolutionX) * cell - map.box.size[2] / 2))));
+    const before = [...map.terrain.heights];
+    const field = buildOceanCoastField(map, 0);
+    expect(sampleCoastGrid(field, 0, 0)).toBeCloseTo(3);
+    expect(sampleCoastGrid(field, 20, 0)).toBeLessThan(-1);
+    expect(field.loops).toHaveLength(1);
+    expect(map.terrain.heights).toEqual(before);
+    expect(Array.from(field.heights).every(Number.isFinite)).toBe(true);
+  });
+
+  it('extends boundary land continuously and leaves distant corners submerged', () => {
+    const map = createEmptyMap('edge coast');
+    const cell = map.box.size[0] / (map.terrain.resolutionX - 1);
+    map.terrain.heights = map.terrain.heights.map((_, i) => Math.max(0, 3 - Math.hypot(i % map.terrain.resolutionX * cell, Math.floor(i / map.terrain.resolutionX) * cell - map.box.size[2] / 2) * 0.4));
+    const field = buildOceanCoastField(map, 0);
+    expect(field.loops).toHaveLength(1);
+    expect(sampleCoastGrid(field, -map.box.size[0] / 2, 0)).toBeCloseTo(3);
+    expect(sampleCoastGrid(field, -map.box.size[0] / 2 - 2, 0)).toBeGreaterThan(field.sinkTarget);
+    expect(field.heights[0]).toBeLessThanOrEqual(field.sinkTarget);
+  });
+
+  it('gives steep rock shores a narrower submerged profile than gentle beaches', () => {
+    const fields = [0.15, 2].map(slope => {
+      const map = createEmptyMap('shore profiles');
+      const cell = map.box.size[0] / (map.terrain.resolutionX - 1);
+      map.terrain.heights = map.terrain.heights.map((_, i) => Math.max(0, (15 - Math.hypot(i % map.terrain.resolutionX * cell - map.box.size[0] / 2, Math.floor(i / map.terrain.resolutionX) * cell - map.box.size[2] / 2)) * slope));
+      return buildOceanCoastField(map, 0);
+    });
+    expect(sampleCoastGrid(fields[1], 18, 0)).toBeLessThan(sampleCoastGrid(fields[0], 18, 0) - 0.5);
+  });
+
   it('extracts sub-cell coast crossings without changing the source', () => {
     const grid = gridFor((x, z) => 8.3 - Math.hypot(x, z));
     const before = Array.from(grid.heights);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildOceanCoastField } from '../shared/oceanCoast';
 import {
   getMapPlayerMetrics,
   PLAYER_SPAWN_OBJECT_ID,
@@ -1438,100 +1439,41 @@ function pushTerrainTriangleAbove(
   }
 }
 
-function sampleTerrainHeightField(
-  heights: ArrayLike<number>,
-  width: number,
-  height: number,
-  x: number,
-  z: number
-): number {
-  const x0 = Math.floor(x);
-  const z0 = Math.floor(z);
-  const x1 = Math.min(width - 1, x0 + 1);
-  const z1 = Math.min(height - 1, z0 + 1);
-  const tx = x - x0;
-  const tz = z - z0;
-  const top = THREE.MathUtils.lerp(heights[z0 * width + x0] ?? 0, heights[z0 * width + x1] ?? 0, tx);
-  const bottom = THREE.MathUtils.lerp(heights[z1 * width + x0] ?? 0, heights[z1 * width + x1] ?? 0, tx);
-  return THREE.MathUtils.lerp(top, bottom, tz);
-}
-
 function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
   const terrain = map.terrain;
-  const vertices: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-  const oceanApron = oceanTerrainApronProfile(map);
-  const renderCellSize = Math.min(
-    map.box.size[0] / Math.max(1, terrain.resolutionX - 1),
-    map.box.size[2] / Math.max(1, terrain.resolutionZ - 1)
-  );
-  const oceanRenderProfile = oceanApron ? {
-    ...oceanApron,
-    width: Math.min(oceanApron.width, Math.max(6, renderCellSize * 4)),
-    sinkTarget: Math.max(oceanApron.sinkTarget, oceanApron.level - 3)
-  } : null;
-  const renderHeights = oceanRenderProfile
-    ? oceanTerrainHeights(map, oceanRenderProfile.level, oceanRenderProfile.sinkTarget, oceanRenderProfile.width)
-    : terrain.heights;
-  const oceanClipHeight = oceanRenderProfile
-    ? oceanRenderProfile.sinkTarget + Math.min(
-      0.1,
-      Math.max(0.02, (oceanRenderProfile.level - oceanRenderProfile.sinkTarget) * 0.01)
-    )
-    : null;
-  const subdivisions = oceanRenderProfile ? 3 : 1;
-  const renderResolutionX = (terrain.resolutionX - 1) * subdivisions + 1;
-  const renderResolutionZ = (terrain.resolutionZ - 1) * subdivisions + 1;
+  const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
+  const oceans = map.waterBodies.filter(water => water.type === 'ocean');
+  const coast = oceans.length ? buildOceanCoastField(map, Math.max(...oceans.map(water => water.level))) : null;
+  const width = coast?.width ?? terrain.resolutionX;
+  const depth = coast?.depth ?? terrain.resolutionZ;
   const clipIntersections = new Map<string, number>();
-
-  for (let z = 0; z < renderResolutionZ; z += 1) {
-    const sourceZ = z / subdivisions;
-    const uvZ = z / (renderResolutionZ - 1);
-    for (let x = 0; x < renderResolutionX; x += 1) {
-      const sourceX = x / subdivisions;
-      const uvX = x / (renderResolutionX - 1);
-      vertices.push(
-        -map.box.size[0] / 2 + uvX * map.box.size[0],
-        sampleTerrainHeightField(renderHeights, terrain.resolutionX, terrain.resolutionZ, sourceX, sourceZ),
-        -map.box.size[2] / 2 + uvZ * map.box.size[2]
-      );
-      uvs.push(uvX, uvZ);
+  for (let z = 0; z < depth; z++) {
+    for (let x = 0; x < width; x++) {
+      const point = coast
+        ? [coast.minX + x * coast.stepX, coast.heights[z * width + x], coast.minZ + z * coast.stepZ]
+        : terrainPointAt(map, x, z);
+      vertices.push(...point);
+      uvs.push(point[0] / map.box.size[0] + 0.5, point[2] / map.box.size[2] + 0.5);
     }
   }
-
-  for (let z = 0; z < renderResolutionZ - 1; z += 1) {
-    for (let x = 0; x < renderResolutionX - 1; x += 1) {
-      const a = z * renderResolutionX + x;
-      const b = a + 1;
-      const c = a + renderResolutionX;
-      const d = c + 1;
+  for (let z = 0; z < depth - 1; z++) {
+    for (let x = 0; x < width - 1; x++) {
+      const a = z * width + x, b = a + 1, c = a + width, d = c + 1;
       const centerX = (vertices[a * 3] + vertices[d * 3]) / 2;
       const centerZ = (vertices[a * 3 + 2] + vertices[d * 3 + 2]) / 2;
-      if (!isPointInsidePlayableArea(map.layout, map.box.size, centerX, centerZ)) continue;
+      if (map.layout.edgeMask.kind !== 'none'
+        && !isPointInsidePlayableArea(map.layout, map.box.size, centerX, centerZ)) continue;
       const triangles: Array<readonly [number, number, number]> = (x + z) % 2 === 0
-        ? [[a, c, b], [b, c, d]]
-        : [[a, c, d], [a, d, b]];
+        ? [[a, c, b], [b, c, d]] : [[a, c, d], [a, d, b]];
       for (const triangle of triangles) {
-        pushTerrainTriangleAbove(
-          indices,
-          vertices,
-          uvs,
-          triangle,
-          oceanClipHeight,
-          clipIntersections
-        );
+        pushTerrainTriangleAbove(indices, vertices, uvs, triangle, coast ? coast.sinkTarget + 0.01 : null, clipIntersections);
       }
     }
   }
-
-  if (map.layout.edgeMask.kind === 'none') {
-    if (oceanRenderProfile) {
-      if (oceanTerrainTouchesBoundary(map, oceanRenderProfile.level)) {
-        addOceanTerrainApron(vertices, uvs, indices, map, renderHeights, oceanRenderProfile);
-      }
-    } else addBorderSides(vertices, uvs, indices, map);
-  } else addMaskBorderSides(vertices, uvs, indices, map);
+  if (!coast) {
+    if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map);
+    else addMaskBorderSides(vertices, uvs, indices, map);
+  }
   const colors: number[] = [];
   for (let index = 0; index < vertices.length; index += 3) {
     colors.push(...terrainVertexColor(map, vertices[index], vertices[index + 1], vertices[index + 2]));
@@ -1576,112 +1518,7 @@ function oceanTerrainApronProfile(map: EditableMap): OceanTerrainApronProfile | 
   return { width, level: oceanLevel, sinkTarget: oceanLevel - sinkDepth };
 }
 
-function oceanTerrainTouchesBoundary(map: EditableMap, oceanLevel: number): boolean {
-  const { terrain } = map;
-  const threshold = oceanLevel + 0.05;
-  for (let x = 0; x < terrain.resolutionX; x += 1) {
-    if ((terrain.heights[terrainIndex(terrain, x, 0)] ?? 0) > threshold
-      || (terrain.heights[terrainIndex(terrain, x, terrain.resolutionZ - 1)] ?? 0) > threshold) return true;
-  }
-  for (let z = 1; z < terrain.resolutionZ - 1; z += 1) {
-    if ((terrain.heights[terrainIndex(terrain, 0, z)] ?? 0) > threshold
-      || (terrain.heights[terrainIndex(terrain, terrain.resolutionX - 1, z)] ?? 0) > threshold) return true;
-  }
-  return false;
-}
 
-function addOceanTerrainApron(
-  vertices: number[],
-  uvs: number[],
-  indices: number[],
-  map: EditableMap,
-  renderHeights: ArrayLike<number>,
-  profile: OceanTerrainApronProfile
-): void {
-  const width = map.terrain.resolutionX;
-  const depth = map.terrain.resolutionZ;
-  if (width < 2 || depth < 2) return;
-  const stepX = map.box.size[0] / (width - 1);
-  const stepZ = map.box.size[2] / (depth - 1);
-  const paddingX = Math.max(1, Math.ceil(profile.width / stepX));
-  const paddingZ = Math.max(1, Math.ceil(profile.width / stepZ));
-  const expandedWidth = width + paddingX * 2;
-  const expandedDepth = depth + paddingZ * 2;
-  const baseVertex = vertices.length / 3;
-  const edgeLand: Array<{ x: number; z: number; height: number; u: number; v: number }> = [];
-  const appendEdgeLand = (x: number, z: number) => {
-    const height = map.terrain.heights[terrainIndex(map.terrain, x, z)] ?? 0;
-    if (height <= profile.level + 0.05) return;
-    edgeLand.push({
-      x: -map.box.size[0] / 2 + x * stepX,
-      z: -map.box.size[2] / 2 + z * stepZ,
-      height: renderHeights[terrainIndex(map.terrain, x, z)] ?? height,
-      u: x / (width - 1),
-      v: z / (depth - 1)
-    });
-  };
-  for (let x = 0; x < width; x += 1) {
-    appendEdgeLand(x, 0);
-    appendEdgeLand(x, depth - 1);
-  }
-  for (let z = 1; z < depth - 1; z += 1) {
-    appendEdgeLand(0, z);
-    appendEdgeLand(width - 1, z);
-  }
-  if (edgeLand.length === 0) return;
-
-  const distances: number[] = [];
-
-  for (let z = 0; z < expandedDepth; z += 1) {
-    const gridZ = z - paddingZ;
-    const sourceZ = THREE.MathUtils.clamp(gridZ, 0, depth - 1);
-    const worldZ = -map.box.size[2] / 2 + gridZ * stepZ;
-    for (let x = 0; x < expandedWidth; x += 1) {
-      const gridX = x - paddingX;
-      const sourceX = THREE.MathUtils.clamp(gridX, 0, width - 1);
-      const worldX = -map.box.size[0] / 2 + gridX * stepX;
-      let nearest = edgeLand[0];
-      let distance = Number.POSITIVE_INFINITY;
-      for (const candidate of edgeLand) {
-        const candidateDistance = Math.hypot(worldX - candidate.x, worldZ - candidate.z);
-        if (candidateDistance >= distance) continue;
-        distance = candidateDistance;
-        nearest = candidate;
-      }
-      const insideMap = gridX >= 0 && gridX < width && gridZ >= 0 && gridZ < depth;
-      const t = THREE.MathUtils.smoothstep(distance, 0, profile.width);
-      vertices.push(
-        worldX,
-        insideMap
-          ? renderHeights[terrainIndex(map.terrain, sourceX, sourceZ)] ?? 0
-          : THREE.MathUtils.lerp(nearest.height, profile.sinkTarget, t),
-        worldZ
-      );
-      uvs.push(insideMap ? sourceX / (width - 1) : nearest.u, insideMap ? sourceZ / (depth - 1) : nearest.v);
-      distances.push(distance);
-    }
-  }
-
-  for (let z = 0; z < expandedDepth - 1; z += 1) {
-    const gridZ = z - paddingZ;
-    for (let x = 0; x < expandedWidth - 1; x += 1) {
-      const gridX = x - paddingX;
-      if (gridX >= 0 && gridX < width - 1 && gridZ >= 0 && gridZ < depth - 1) continue;
-      const a = baseVertex + z * expandedWidth + x;
-      const b = a + 1;
-      const c = a + expandedWidth;
-      const d = c + 1;
-      const apronIndex = z * expandedWidth + x;
-      if (Math.min(
-        distances[apronIndex],
-        distances[apronIndex + 1],
-        distances[apronIndex + expandedWidth],
-        distances[apronIndex + expandedWidth + 1]
-      ) >= profile.width) continue;
-      indices.push(a, c, b, b, c, d);
-    }
-  }
-}
 
 function addBorderSides(vertices: number[], uvs: number[], indices: number[], map: EditableMap): void {
   const terrain = map.terrain;

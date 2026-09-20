@@ -430,8 +430,10 @@ describe('structured map water rendering', () => {
     const smallReach = await apronReach(48);
     const titleScaleReach = await apronReach(96);
 
-    expect(smallReach).toBeCloseTo(6, 4);
-    expect(titleScaleReach).toBeCloseTo(6, 4);
+    // Reach follows the local profile, not a fixed apron or the map dimensions.
+    expect(smallReach).toBeGreaterThan(3);
+    expect(smallReach).toBeLessThan(9);
+    expect(titleScaleReach).toBeCloseTo(smallReach, 4);
   });
 
   it('renders overlapping same-level water blocks as one clipped surface', () => {

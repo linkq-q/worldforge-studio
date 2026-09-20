@@ -1,3 +1,6 @@
+import type { EditableMap } from './map';
+import { visualZoneWeight } from './visualDirection';
+
 /** Render-derived coast data; never written back to the authored height field. */
 export interface CoastGrid {
   heights: ArrayLike<number>;
@@ -10,6 +13,107 @@ export interface CoastGrid {
 }
 
 export type CoastPoint = readonly [number, number];
+
+export interface OceanCoastField extends CoastGrid {
+  heights: Float32Array;
+  distances: Float32Array;
+  level: number;
+  sinkTarget: number;
+  shoreWidth: number;
+  loops: CoastPoint[][];
+}
+
+const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
+
+export function buildOceanCoastField(map: EditableMap, level: number): OceanCoastField {
+  const terrain = map.terrain;
+  const stepX = map.box.size[0] / (terrain.resolutionX - 1);
+  const stepZ = map.box.size[2] / (terrain.resolutionZ - 1);
+  const cell = Math.min(stepX, stepZ);
+  const shoreWidth = Math.max(6, Math.min(12, cell * 4));
+  const sinkTarget = level - 6;
+  const paddingX = Math.ceil((shoreWidth + cell * 3) / stepX);
+  const paddingZ = Math.ceil((shoreWidth + cell * 3) / stepZ);
+  const source: CoastGrid = {
+    width: terrain.resolutionX + paddingX * 2, depth: terrain.resolutionZ + paddingZ * 2,
+    minX: -map.box.size[0] / 2 - paddingX * stepX, minZ: -map.box.size[2] / 2 - paddingZ * stepZ,
+    stepX, stepZ, heights: []
+  };
+  const sourceHeights = new Float32Array(source.width * source.depth);
+  source.heights = sourceHeights;
+  for (let z = 0; z < source.depth; z++) {
+    for (let x = 0; x < source.width; x++) {
+      const sx = Math.max(0, Math.min(terrain.resolutionX - 1, x - paddingX));
+      const sz = Math.max(0, Math.min(terrain.resolutionZ - 1, z - paddingZ));
+      const height = terrain.heights[sz * terrain.resolutionX + sx];
+      const distance = Math.hypot((x - paddingX - sx) * stepX, (z - paddingZ - sz) * stepZ);
+      // Legacy ocean maps use sea-level zero for unshaped ocean, not a land shelf.
+      const base = Math.abs(height - level) <= 0.02 ? level - 0.02 : height;
+      sourceHeights[z * source.width + x] = base + (Math.min(base, sinkTarget) - base) * smooth(distance / shoreWidth);
+    }
+  }
+  const loops = smoothCoastLoops(extractCoastLoops(source, level), cell);
+  const width = (source.width - 1) * 3 + 1, depth = (source.depth - 1) * 3 + 1;
+  const field: OceanCoastField = { ...source, width, depth, stepX: stepX / 3, stepZ: stepZ / 3,
+    heights: new Float32Array(width * depth), distances: new Float32Array(width * depth), level, sinkTarget, shoreWidth, loops };
+  const segments = loops.flatMap(loop => loop.map((a, i) => ({ a, b: loop[(i + 1) % loop.length] })));
+  // Index only the coast band; don't compare every terrain sample with every edge.
+  const buckets = new Map<string, typeof segments>();
+  const reach = shoreWidth + cell * 2;
+  for (const segment of segments) {
+    for (let z = Math.floor((Math.min(segment.a[1], segment.b[1]) - reach) / reach); z <= Math.floor((Math.max(segment.a[1], segment.b[1]) + reach) / reach); z++) {
+      for (let x = Math.floor((Math.min(segment.a[0], segment.b[0]) - reach) / reach); x <= Math.floor((Math.max(segment.a[0], segment.b[0]) + reach) / reach); x++) {
+        const key = `${x}:${z}`;
+        const bucket = buckets.get(key) ?? [];
+        bucket.push(segment);
+        buckets.set(key, bucket);
+      }
+    }
+  }
+  const rocky = map.visualSemantics.zones.filter(zone => zone.tags.includes('rocky'));
+  const sandy = map.visualSemantics.zones.filter(zone => zone.tags.includes('sand'));
+  for (let z = 0; z < depth; z++) {
+    const wz = field.minZ + z * field.stepZ;
+    const crossings = segments.filter(({ a, b }) => (a[1] > wz) !== (b[1] > wz))
+      .map(({ a, b }) => a[0] + (b[0] - a[0]) * (wz - a[1]) / (b[1] - a[1])).sort((a, b) => a - b);
+    let crossing = 0;
+    for (let x = 0; x < width; x++) {
+      const wx = field.minX + x * field.stepX;
+      while (crossing < crossings.length && crossings[crossing] < wx) crossing++;
+      const land = crossing % 2 === 1;
+      let distance = reach, nearestX = wx, nearestZ = wz;
+      for (const { a, b } of buckets.get(`${Math.floor(wx / reach)}:${Math.floor(wz / reach)}`) ?? []) {
+        const dx = b[0] - a[0], dz = b[1] - a[1];
+        const t = Math.max(0, Math.min(1, ((wx - a[0]) * dx + (wz - a[1]) * dz) / Math.max(1e-12, dx * dx + dz * dz)));
+        const px = a[0] + dx * t, pz = a[1] + dz * t;
+        const candidate = Math.hypot(wx - px, wz - pz);
+        if (candidate < distance) { distance = candidate; nearestX = px; nearestZ = pz; }
+      }
+      const index = z * width + x;
+      field.distances[index] = land ? -distance : distance;
+      const authored = sampleCoastGrid(source, wx, wz);
+      if (land) {
+        // Restrict above-water displacement to a small tidal band; foundations stay fixed.
+        const keep = Math.max(smooth(distance / (cell * 2)), smooth((authored - level) / 0.5));
+        const target = level + distance * 0.2;
+        field.heights[index] = target + (authored - target) * keep;
+      } else {
+        let rock = 0, sand = 0;
+        for (const zone of rocky) rock = Math.max(rock, visualZoneWeight(zone, nearestX, nearestZ));
+        for (const zone of sandy) sand = Math.max(sand, visualZoneWeight(zone, nearestX, nearestZ));
+        const dx = (sampleCoastGrid(source, nearestX + cell, nearestZ) - sampleCoastGrid(source, nearestX - cell, nearestZ)) / (2 * cell);
+        const dz = (sampleCoastGrid(source, nearestX, nearestZ + cell) - sampleCoastGrid(source, nearestX, nearestZ - cell)) / (2 * cell);
+        const steep = Math.max(rock, smooth((Math.hypot(dx, dz) - 0.35) / 0.65)) * (1 - sand);
+        const widthAtCoast = shoreWidth * (1 - steep * 0.5);
+        const t = Math.min(1, distance / widthAtCoast);
+        // Nonzero tangent at the waterline, horizontal tangent in deep water.
+        const profile = level + (sinkTarget - level) * (t * t * (3 - 2 * t) * 0.8 + (2 * t - t * t) * 0.2);
+        field.heights[index] = profile + (Math.min(profile, authored) - profile) * smooth(distance / (cell * 2));
+      }
+    }
+  }
+  return field;
+}
 
 export function sampleCoastGrid(grid: CoastGrid, x: number, z: number): number {
   const gx = Math.max(0, Math.min(grid.width - 1, (x - grid.minX) / grid.stepX));
