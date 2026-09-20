@@ -73,6 +73,7 @@ import {
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
 import type { AssetGenerationRequest } from './mapAi';
 import { validateMapSuggestion } from './mapSuggestionValidation';
+import { lintMap } from '../shared/mapLint';
 import { llmChat } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
 import type { MapLintIssue } from '../shared/mapLint';
@@ -81,6 +82,20 @@ import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from 
 const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
 const MAX_SCENE_OPERATIONS = 256;
+
+/**
+ * Raw codeplan experiment (branch feat/raw-codeplan-minimal-prompt):
+ * enabled only when the server starts with WORLDFORGE_RAW_CODEPLAN=1.
+ * The first generated program is the final result — no LLM repair loops, no
+ * second-pass asset adaptation, no local relocation/pruning/lint repairs.
+ * The sandbox exposes only RAW_CODEPLAN_API_KEYS; everything else is left to
+ * plain JavaScript written by the model.
+ */
+const RAW_CODEPLAN_MODE = process.env.WORLDFORGE_RAW_CODEPLAN === '1';
+const RAW_CODEPLAN_API_KEYS = [
+  'terrain', 'modifyTerrain', 'surface', 'water', 'route',
+  'grass', 'requireAsset', 'asset', 'place', 'random'
+] as const;
 const MAX_POINT_RESULTS = 512;
 const MAX_PROBABILITY_CANDIDATES = 4_096;
 const MAX_GRASS_FIELD_RESOLUTION = 64;
@@ -623,7 +638,10 @@ export async function generateMapCodeSuggestion(
         onProgress: options.onProgress
       }));
   const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
-  const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
+  const rawMode = RAW_CODEPLAN_MODE && options.scope === 'scene' && requestMode === 'generate' && map.sceneMode === 'outdoor';
+  const execution = rawMode
+    ? runRawMapCodeDiscovery(code, map, executionAssets, maxNewAssets, options)
+    : await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
   code = execution.code;
   let discovery = execution.discovery;
   options.onPlanPreview?.(distillCodePlanPreview(
@@ -698,7 +716,9 @@ export async function generateMapCodeSuggestion(
     family[task.variantIndex] = asset;
     bindings.set(task.key, family);
   });
-  const adapted = await adaptMapCodeToGeneratedAssets(
+  const adapted = rawMode
+    ? { code, discovery }
+    : await adaptMapCodeToGeneratedAssets(
     code,
     userPrompt,
     systemPrompt,
@@ -1055,6 +1075,16 @@ function runMapCodePlan(
   }
 }
 
+/** Raw mode keeps lint findings as diagnostics; lint repairs are never appended. */
+function rawLintDiagnosticsOnly(
+  map: EditableMap,
+  suggestion: MapAiSuggestion,
+  options: { repairableObjectIds?: ReadonlySet<string> }
+): MapAiSuggestion {
+  const lint = lintMap(applyMapOperations(map, suggestion.operations), options);
+  return { ...suggestion, diagnostics: [...(suggestion.diagnostics ?? []), ...lint.issues] };
+}
+
 function executeMapCodePlanInternal(
   code: string,
   map: EditableMap,
@@ -1095,6 +1125,8 @@ function executeMapCodePlanInternal(
   const mode = options.mode ?? 'final';
   const requestMode = options.requestMode ?? 'generate';
   const scope = options.scope ?? 'general';
+  const rawMode = RAW_CODEPLAN_MODE && map.sceneMode === 'outdoor'
+    && requestMode === 'generate' && scope === 'scene';
   const maxNewAssets = options.maxNewAssets ?? normalizeMapAiMaxNewAssets(undefined);
   const random = mulberry32(map.seed);
   const record = (name: string) => usedFunctions.add(name);
@@ -2733,11 +2765,14 @@ function executeMapCodePlanInternal(
     }
   });
 
+  const sandboxApi = rawMode
+    ? Object.freeze(Object.fromEntries(RAW_CODEPLAN_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
+    : api;
   const script = new vm.Script(`${cleanCode}\n;if (typeof plan !== 'function') throw new Error('missing_plan_function');\nplan(api);`, {
     filename: 'worldforge-map-plan.js'
   });
   const context = vm.createContext({
-    api,
+    api: sandboxApi,
     Math: safeMath(random),
     console: Object.freeze({ log() {}, warn() {}, error() {} })
   }, {
@@ -2875,7 +2910,7 @@ function executeMapCodePlanInternal(
     ...map,
     assets: [...new Map([...(map.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
   };
-  if (mode === 'final' && map.sceneMode === 'outdoor') fitConnectedPlacementRuns(placements, planningMap.assets ?? []);
+  if (mode === 'final' && map.sceneMode === 'outdoor' && !rawMode) fitConnectedPlacementRuns(placements, planningMap.assets ?? []);
   if (designCallCount > 0) {
     reportAssemblyIssues(designSemantics, placements, reportIssue, (assetId, key) =>
       mode === 'discovery'
@@ -3006,7 +3041,7 @@ function executeMapCodePlanInternal(
       }
     }
   }
-  const waterRepair = map.sceneMode === 'outdoor'
+  const waterRepair = map.sceneMode === 'outdoor' && !rawMode
     ? relocateOutdoorWaterIntrusions(terrainMap, objectOperations, placements, assets, designSemantics)
     : { operations: objectOperations, count: 0, conflicts: [] };
   const substrateConflicts = mergeSubstrateConflicts([
@@ -3023,7 +3058,7 @@ function executeMapCodePlanInternal(
       repairHint: `Edit only group ${conflict.groupId}: declare the intended dry/water/amphibious/underwater substrate, then resolve its local shoreline, terrain or placement calls without translating the whole composition.`
     });
   }
-  const accessRepair = map.sceneMode === 'outdoor' && scope === 'scene'
+  const accessRepair = map.sceneMode === 'outdoor' && scope === 'scene' && !rawMode
     ? relocateOutdoorAccessBlockers(terrainMap, waterRepair.operations, assets)
     : { operations: waterRepair.operations, count: 0 };
   const operations: MapOperation[] = [
@@ -3047,7 +3082,7 @@ function executeMapCodePlanInternal(
     operations.push(...relationOperations);
     operations.push({ type: 'map.update', designSemantics });
   }
-  const clearanceOperations = map.sceneMode === 'outdoor' && operations.length > 0
+  const clearanceOperations = map.sceneMode === 'outdoor' && operations.length > 0 && !rawMode
     ? compileMapNaturalClearance(applyMapOperations(planningMap, operations))
     : [];
   operations.push(...clearanceOperations);
@@ -3146,7 +3181,10 @@ function executeMapCodePlanInternal(
     ]
   };
   const validated = scopedOperations.length
-    ? validateMapSuggestion(planningMap, candidate, { repairableObjectIds }).suggestion : candidate;
+    ? rawMode
+      ? rawLintDiagnosticsOnly(planningMap, candidate, { repairableObjectIds })
+      : validateMapSuggestion(planningMap, candidate, { repairableObjectIds }).suggestion
+    : candidate;
   const boundedOperations = scopeMapRefinement(planningMap, validated.operations, options.refineScope ?? {});
   if (scopedOperations.length !== suggestion.operations.length || boundedOperations.length !== validated.operations.length) {
     validated.diagnostics = [...(validated.diagnostics ?? []), {
@@ -3517,6 +3555,50 @@ function mapRefineSpatialSummary(map: EditableMap) {
   };
 }
 
+/**
+ * Minimal raw-mode system prompt: only the ten basic APIs and the spatial
+ * rhythm mandate. Every other technique (curves, sampling, noise, connected
+ * modules) is intentionally left for the model to author in plain JavaScript.
+ */
+export function buildRawSceneCodeSystemPrompt(
+  map: EditableMap,
+  minNewAssets: number,
+  maxNewAssets: number
+): string {
+  const bounds = getMapBounds(map);
+  return `You are a scene composer. Write ONE JavaScript function \`function plan(api) { ... }\` that lays out the complete outdoor scene on a 2D map (x/z are ground coordinates, y is terrain height). This first version is final — nobody will iterate on it.
+
+Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}. \`Math\` is available and \`Math.random\` is seeded, so it is deterministic.
+
+You have total creative freedom: theme, landform, architecture, vegetation and density are yours to derive from the user's request. Your one standing duty is SPATIAL RHYTHM: compose like music. Alternate open and enclosed areas, dense and sparse patches, tall and low masses. Stagger elements irregularly — never uniform grids, never even spacing. Give the scene one dominant focus, a few subordinate ones, deliberate sightline reveals and honest empty space.
+
+Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
+
+The sandbox exposes exactly these 10 APIs. Everything else is yours to build: plain JavaScript is fully available — \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, local helper functions, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`). Write your own helpers freely: curve sampling, grid or Poisson point sets, value noise, path subdivision, jitter, orientation math — all of it is just JS you author yourself. For example:
+
+  function jitter(point, radius) {
+    return [point[0] + (Math.random() - 0.5) * radius, point[1] + (Math.random() - 0.5) * radius];
+  }
+
+The 10 APIs:
+1. api.terrain(preset, {amplitude?, roughness?, seed?}) — preset: 'plain'|'rolling'|'hilly'|'mountainous'|'dunes'|'islands'|'mesa'|'canyon'; 'plain' stays flat.
+2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island', region:{kind:'circle',center:[x,z],radius}|{kind:'path',points, width}|{kind:'polygon',points}, amplitude, softness?}) — local landform.
+3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving', material?, region, intensity?}) — paints existing terrain; cannot create height.
+4. api.water(id, {type:'lake'|'river'|'ocean', points:[[x,z],...], level, depth}).
+5. api.route({id, name?, points:[[x,z],...], width?, curve?:'polyline'|'catmull-rom', closed?, surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none'}) — returns the route id; paints the path unless surface:'none'.
+6. api.grass(id, region, {preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss', density?, height?, mix?:{short?,tall?,flowers?}}).
+7. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'structure'|'environment', variants?, optional?}).
+8. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
+9. api.place({assetId, name?, position:[x,z], rotationY?, scale?, role?}) — terrain height auto-sampled; rotationY is radians around Y, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
+10. api.random(min?, max?) — seeded.
+
+Rules:
+- Declare ${minNewAssets}..${maxNewAssets} requireAsset families; place every declared variant at least once.
+- Return only the function body: no markdown, imports, async, eval, timers, network, or global state. Synchronous code, finite numbers only.
+- Loops must be bounded: at most ${MAX_PLACEMENTS} placements and ${MAX_SCENE_OPERATIONS} scene operations, comfortably under one second of work.
+- Keep every coordinate inside the bounds; guard array indices and divisions.`;
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -3529,6 +3611,9 @@ export function buildMapCodePlannerSystemPrompt(
 ): string {
   if (map.sceneMode === 'indoor') {
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
+  }
+  if (RAW_CODEPLAN_MODE && requestMode === 'generate' && scope === 'scene') {
+    return buildRawSceneCodeSystemPrompt(map, minNewAssets, maxNewAssets);
   }
   const bounds = getMapBounds(map);
   const assetCatalog = assetCatalogContext(assets);
@@ -3795,6 +3880,35 @@ function retainCodePlan(
       }
     }
   };
+}
+
+/**
+ * Raw mode: execute the discovery sandbox exactly once. A failing program
+ * fails the whole generation — no LLM repair request is ever issued.
+ */
+function runRawMapCodeDiscovery(
+  code: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  maxNewAssets: number,
+  options: MapCodePlannerOptions
+): { code: string; discovery: CodeExecutionResult; repairAttempts: number } {
+  try {
+    const discovery = runMapCodePlan(code, map, assets, {
+      refineScope: options.mode === 'refine' ? options : undefined,
+      mode: 'discovery',
+      requestMode: 'generate',
+      minNewAssets: options.minNewAssets,
+      maxNewAssets,
+      scope: options.scope,
+      refinableObjectIds: new Set(options.refinableObjectIds ?? []),
+      onPlanPreview: options.onPlanPreview
+    });
+    return { code, discovery, repairAttempts: 0 };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    throw new Error(`map_code_execution_failed:${mapCodeExecutionErrorDetail(error, code)}`);
+  }
 }
 
 async function discoverMapCodeWithRepairs(

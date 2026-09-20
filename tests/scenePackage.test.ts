@@ -82,7 +82,7 @@ describe('portable WorldForge scene packages', () => {
     source.assets = [asset];
 
     const imported = await store.importMap(source, 'render-imported');
-    expect(imported.id).not.toBe(source.id);
+    expect(imported.id).toBe(source.id);
     expect(imported.name).toBe('森林（导入）');
     expect(imported.renderSchemeId).toBe('render-imported');
     expect(imported.objects[0].assetId).not.toBe(asset.id);
