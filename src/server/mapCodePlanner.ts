@@ -2768,7 +2768,12 @@ function executeMapCodePlanInternal(
   const sandboxApi = rawMode
     ? Object.freeze(Object.fromEntries(RAW_CODEPLAN_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
     : api;
-  const script = new vm.Script(`${cleanCode}\n;if (typeof plan !== 'function') throw new Error('missing_plan_function');\nplan(api);`, {
+  // Raw mode accepts a bare top-level script: wrap it as plan(api) so the
+  // model may ignore the wrapper convention without failing the whole run.
+  const entryCode = rawMode && !/\bfunction\s+plan\s*\(/.test(cleanCode)
+    ? `function plan(api) {\n${cleanCode}\n}`
+    : cleanCode;
+  const script = new vm.Script(`${entryCode}\n;if (typeof plan !== 'function') throw new Error('missing_plan_function');\nplan(api);`, {
     filename: 'worldforge-map-plan.js'
   });
   const context = vm.createContext({
