@@ -146,6 +146,24 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toContain('foundation');
   });
 
+  it('lets explicit terrain placement ground a three-component outdoor position', () => {
+    const map = createEmptyMap('Grounded', 'grounded-three-component', [24, 8, 24]);
+    map.terrain.heights.fill(2.5);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.place({ name: '贴地厂房', position: [3, 0, 4], terrain: true, role: 'structure' });
+      api.place({ name: '抬高平台', position: [-3, 1.25, 4], terrain: true, role: 'structure' });
+      api.place({ name: '固定标记', position: [0, 0, -4], terrain: false, role: 'environment' });
+    }`, map);
+    const additions = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(additions[0].object.heightMode).toBe('terrain');
+    expect(additions[0].object.transform?.position).toEqual([3, 2.5, 4]);
+    expect(additions[1].object.heightMode).toBe('fixed');
+    expect(additions[1].object.transform?.position).toEqual([-3, 3.75, 4]);
+    expect(additions[2].object.heightMode).toBe('fixed');
+    expect(additions[2].object.transform?.position).toEqual([0, 0, -4]);
+  });
+
   it('skips foundations that exceed the bounded thickness and reports why', () => {
     const map = createEmptyMap('Steep', 'steep-foundation', [24, 12, 24]);
     const suggestion = executeMapCodePlan(`function plan(api) {

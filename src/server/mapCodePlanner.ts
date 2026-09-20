@@ -1273,9 +1273,11 @@ function executeMapCodePlanInternal(
     }
     if (input.position === undefined && !roomOpeningId) throw new Error('invalid_map_code_position');
     const terrain = map.sceneMode !== 'indoor'
-      && input.terrain !== false
       && input.position !== undefined
-      && placementUsesTerrain(input.position);
+      && (input.terrain === true || (input.terrain !== false && placementUsesTerrain(input.position)));
+    const terrainOffset = input.terrain === true && input.position !== undefined
+      ? placementExplicitHeight(input.position)
+      : undefined;
     const position = input.position === undefined
       ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
       : placementPosition(input.position, map, terrain);
@@ -1299,7 +1301,8 @@ function executeMapCodePlanInternal(
       scale: fitted.scale,
       size: dimensions ?? point3(input.size ?? [1, 1, 1]),
       ...(dimensions ? { fitToDimensions: true } : {}),
-      heightMode: terrain ? 'terrain' : 'fixed',
+      heightMode: terrain && !terrainOffset ? 'terrain' : 'fixed',
+      ...(terrain && terrainOffset ? { terrainOffset } : {}),
       role,
       semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
       ...(roomOpeningId ? { roomOpeningId } : {}),
@@ -3811,7 +3814,7 @@ Allowed JavaScript: const/let, numbers, strings, arrays, plain objects, local he
 ## World and coordinate contract
 This is a Y-up 3D placement API with horizontal planning in x/z. Positions may include y, but asset orientation remains yaw-only through rotationY/facing.
 Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}.
-place({position:[x,z]}) samples terrain automatically; place({position:[x,y,z]}) uses fixed height.
+place({position:[x,z]}) samples terrain automatically; place({position:[x,y,z]}) uses fixed height unless terrain:true. With terrain:true, y is an offset above the final terrain, so ordinary ground objects should use [x,z] or [x,0,z] with terrain:true instead of fixed zero height.
 Every generated point supports both point[0]/point[1] and point.x/point.z.
 Never add or subtract arrays directly. Use [a[0] - b[0], a[1] - b[1]]. Never read points[index + 1] without checking index < points.length - 1. Guard divisions and only pass finite numbers.
 
@@ -3848,7 +3851,7 @@ Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?
 ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
 ${MAP_CODE_SPATIAL_FEEDBACK_CONTRACT}
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
-Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) and api.placeAlongRoute(...) use existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom'; offset remains host-relative. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
+Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); terrain:true makes a three-component position terrain-relative, with y as its elevation offset. api.placeStreetFrontage(...) and api.placeAlongRoute(...) use existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom'; offset remains host-relative. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
 api.place and api.placeBetween also accept assemblyId?:string and assemblyRole?:'opening'. These labels persist on objects; they do not generate geometry or change coordinates by themselves.
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId); api.noChange(reason). These APIs are available only during refinement. noChange is exclusive: use it only when no operation is needed.
@@ -5446,11 +5449,19 @@ function placementPosition(value: PlacementInput['position'], map: EditableMap, 
   if (value && typeof value === 'object' && !Array.isArray(value) && 'point' in value) {
     return placementPosition(value.point, map, terrain);
   }
-  if (Array.isArray(value) && value.length === 3) return point3(value);
+  if (Array.isArray(value) && value.length === 3) {
+    const position = point3(value);
+    return terrain
+      ? [position[0], sampleTerrainHeight(map, position[0], position[2]) + position[1], position[2]]
+      : position;
+  }
   if (value && typeof value === 'object' && !Array.isArray(value) && 'x' in value && 'z' in value) {
     const x = finite(value.x);
     const z = finite(value.z);
-    if (value.y !== undefined) return [x, finite(value.y), z];
+    if (value.y !== undefined) {
+      const y = finite(value.y);
+      return [x, terrain ? sampleTerrainHeight(map, x, z) + y : y, z];
+    }
     return [x, terrain ? sampleTerrainHeight(map, x, z) : map.sceneMode === 'indoor' ? map.room?.position[1] ?? 0 : 0, z];
   }
   if (Array.isArray(value) && value.length === 2) {
@@ -5811,6 +5822,13 @@ function point2(value: unknown): Point2 {
     if (input.x !== undefined && input.y !== undefined) return [finite(input.x), finite(input.y)];
   }
   throw new Error(`invalid_map_code_point:${describeCodeValue(value)}`);
+}
+
+function placementExplicitHeight(value: PlacementInput['position']): number | undefined {
+  if (Array.isArray(value)) return value.length === 3 ? finite(value[1]) : undefined;
+  if (!value || typeof value !== 'object') return undefined;
+  if ('point' in value) return placementExplicitHeight(value.point);
+  return 'y' in value && value.y !== undefined ? finite(value.y) : undefined;
 }
 
 function normalizeCodeEnvironmentOptions(value: unknown): MapEnvironmentSampleOptions {
