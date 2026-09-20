@@ -195,6 +195,37 @@ describe('map code planner', () => {
     expect(suggestion.operations.some((operation) => operation.type === 'object.update' && operation.objectId === house.id)).toBe(false);
   });
 
+  it('reuses existing visual bounds across a batch of foundations', () => {
+    const asset: MapAsset = {
+      ...testAsset('asset-complex-foundation', '复杂厂房'),
+      tags: [],
+      modelJson: {
+        format: 2,
+        nodes: Array.from({ length: 120 }, (_, index) => ({
+          id: `node-${index}`,
+          transform: { pos: [index % 10, (index % 3) / 10, Math.floor(index / 10) % 10] },
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 } }
+        }))
+      }
+    };
+    const map = createEmptyMap('Foundation batch', 'foundation-batch', [96, 16, 96]);
+    map.assets = [asset];
+    for (let index = 0; index < 96; index += 1) {
+      const object = createMapObject(`厂房-${index}`, asset.id);
+      object.id = `factory-${index}`;
+      object.transform.position = [(index % 12) * 6 - 33, 0, Math.floor(index / 12) * 6 - 21];
+      map.objects.push(object);
+    }
+    const targets = map.objects.slice(0, 26).map((object) => object.id);
+
+    expect(() => executeMapCodePlan(`function plan(api) {
+      const ids=${JSON.stringify(targets)};
+      for (let index=0; index<ids.length; index++) {
+        api.foundation({name:'基础-'+index,under:[ids[index]],margin:0.2,maxThickness:4});
+      }
+    }`, map, [asset], { scope:'scene', executionTimeoutMs:100 })).not.toThrow();
+  });
+
   it('gives indoor maps one room-native Code Composer contract', () => {
     const map = createEmptyMap('Classroom', 'indoor-code-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
     const prompt = buildMapCodePlannerSystemPrompt(map, [], 3, 8, 'scene');

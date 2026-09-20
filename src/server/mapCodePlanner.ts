@@ -1145,6 +1145,7 @@ function executeMapCodePlanInternal(
   const executionIssues = new Map<string, CodeExecutionIssue>();
   let cachedEnvironmentOperationCount = -1;
   let cachedEnvironmentMap: EditableMap | null = null;
+  let cachedExistingVisualAabbs: MapObjectAabb[] | null = null;
   const currentEnvironmentMap = (): EditableMap => {
     if (cachedEnvironmentOperationCount !== sceneOperations.length) {
       cachedEnvironmentOperationCount = sceneOperations.length;
@@ -1154,6 +1155,9 @@ function executeMapCodePlanInternal(
     }
     return cachedEnvironmentMap ?? map;
   };
+  const existingVisualAabbs = (): MapObjectAabb[] => (
+    cachedExistingVisualAabbs ??= getMapObjectVisualAabbs(map)
+  );
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   // Asset geometry is immutable during one run; keep model traversal outside the sandbox time budget.
@@ -2472,7 +2476,7 @@ function executeMapCodePlanInternal(
         ? [...new Set(input.under.filter((id): id is string => typeof id === 'string' && id.trim().length > 0))].slice(0, 64)
         : [];
       const linkedPlacements = linked.flatMap((id) => placements.filter((placement) => placement.referenceId === id));
-      const existingBounds = new Map(getMapObjectVisualAabbs(map).map((bounds) => [bounds.objectId, bounds]));
+      const existingBounds = new Map(existingVisualAabbs().map((bounds) => [bounds.objectId, bounds]));
       const linkedBounds = linked.flatMap((id) => {
         const placement = linkedPlacements.find((candidate) => candidate.referenceId === id);
         if (placement) return [{
