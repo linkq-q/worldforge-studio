@@ -1,3 +1,4 @@
+vi.hoisted(() => { (process.env as any).WORLDFORGE_RAW_CODEPLAN = '0'; });
 import { describe, expect, it, vi } from 'vitest';
 import {
   createEmptyMap,

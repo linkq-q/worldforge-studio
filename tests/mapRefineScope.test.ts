@@ -1,3 +1,4 @@
+vi.hoisted(() => { (process.env as any).WORLDFORGE_RAW_CODEPLAN = '0'; });
 import { describe, expect, it, vi } from 'vitest';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms } from '../src/shared/map';
 import { applyMapOperations, type CodePlanPreviewPayload } from '../src/shared/mapOperations';

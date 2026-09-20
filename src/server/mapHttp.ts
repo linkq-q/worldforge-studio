@@ -621,8 +621,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const refinableObjectIds = baseOperations.flatMap((operation) => (
         operation.type === 'object.add' && operation.object.id ? [operation.object.id] : []
       ));
-      const modelProvider = body.assetProvider
-        ?? (provider === 'deepseek-v4-pro' ? 'deepseek' : provider);
+      // Branch default: codeplan LLM uses the requested chat provider while
+      // asset generation defaults to deepseek (override with assetProvider).
+      const modelProvider = body.assetProvider ?? 'deepseek';
       const planningAssets = dedupeAssets([
         ...assets,
         ...(planningMap.assets ?? []),

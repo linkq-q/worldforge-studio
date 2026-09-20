@@ -1,3 +1,4 @@
+vi.hoisted(() => { (process.env as any).WORLDFORGE_RAW_CODEPLAN = '0'; });
 import http from 'node:http';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';

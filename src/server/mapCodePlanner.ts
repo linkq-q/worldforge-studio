@@ -80,16 +80,16 @@ import type { MapLintIssue } from '../shared/mapLint';
 import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from '../shared/mapRefineScope';
 
 /**
- * Raw codeplan experiment (branch feat/raw-codeplan-minimal-prompt):
- * enabled only when the server starts with WORLDFORGE_RAW_CODEPLAN=1.
- * The first generated program is the final result — no LLM repair loops, no
+ * Raw codeplan default for this experiment branch (feat/raw-codeplan-minimal-prompt):
+ * the first generated program is the final result — no LLM repair loops, no
  * second-pass asset adaptation, no local relocation/pruning/lint repairs.
  * Engine caps (placements, scene operations, code length, route points,
  * sandbox timeouts) are lifted so the AI's output lands verbatim.
  * The sandbox exposes only RAW_CODEPLAN_API_KEYS; everything else is left to
  * plain JavaScript written by the model.
+ * Set WORLDFORGE_RAW_CODEPLAN=0 to restore the standard managed pipeline.
  */
-const RAW_CODEPLAN_MODE = process.env.WORLDFORGE_RAW_CODEPLAN === '1';
+const RAW_CODEPLAN_MODE = process.env.WORLDFORGE_RAW_CODEPLAN !== '0';
 const RAW_CODEPLAN_API_KEYS = [
   'terrain', 'modifyTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'

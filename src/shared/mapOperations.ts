@@ -251,15 +251,17 @@ const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 
 const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten']);
 const GRASS_BRUSH_MODES = new Set<GrassBrushMode>(['add', 'erase', 'density', 'smooth']);
 /**
- * Raw-codeplan experiment lifts the per-transaction cap via
- * WORLDFORGE_MAX_OPERATIONS (server env, mirrored into the client bundle by a
- * vite define) so unedited AI output can be applied verbatim.
+ * Per-transaction cap. This experiment branch defaults to an unbounded
+ * raw-codeplan setup; WORLDFORGE_MAX_OPERATIONS (mirrored into the client
+ * bundle by a vite define) overrides, with 2,000 restored when invalid.
  */
 const MAX_OPERATIONS = (() => {
-  const lifted = typeof process !== 'undefined' && process.env
-    ? Number(process.env.WORLDFORGE_MAX_OPERATIONS ?? '')
-    : Number.NaN;
-  return Number.isFinite(lifted) && lifted > 0 ? Math.floor(lifted) : 2_000;
+  const raw = typeof process !== 'undefined' && process.env ? process.env.WORLDFORGE_MAX_OPERATIONS : undefined;
+  if (raw !== undefined) {
+    const lifted = Number(raw);
+    return Number.isFinite(lifted) && lifted > 0 ? Math.floor(lifted) : 2_000;
+  }
+  return 50_000;
 })();
 
 export function applyMapOperations(map: EditableMap, operations: readonly MapOperation[]): EditableMap {
