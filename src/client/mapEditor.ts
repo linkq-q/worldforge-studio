@@ -449,6 +449,9 @@ class MapEditor {
   private mapAiConfirmCompositionPlan = false;
   private pendingCompositionPlan: SceneCompositionPlan | null = null;
   private pendingCodeSuggestion: MapAiSuggestion | null = null;
+
+  /** Branch default (feat/raw-codeplan-minimal-prompt): the greybox plan auto-approves so one click runs the full raw pipeline. */
+  private readonly rawCodeplanAutoApprove = true;
   private codePlanPreviewPayload: CodePlanPreviewPayload | null = null;
   private codePlanSaved = false;
   private activeAssetLibraryId = '';
@@ -2402,6 +2405,7 @@ class MapEditor {
     this.clearCodePlanPreview();
     this.startMapAgentProgressTimer();
     const stageName = map.sceneMode === 'indoor' ? '室内功能规划' : '室外灰盒构图';
+    let autoApproveCode: string | null = null;
     this.setBusy(true, `AI 正在生成${stageName}与资产清单...`);
     this.renderMapAiPanel();
     try {
@@ -2435,7 +2439,10 @@ class MapEditor {
       this.pendingCodeSuggestion = suggestion;
       this.codePlanSaved = false;
       updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: `${stageName}与资产清单已生成，等待确认` });
-      this.state.message = `${stageName}已生成；确认前不会生成任何 3D 资产`;
+      this.state.message = this.rawCodeplanAutoApprove
+        ? `${stageName}已生成，正在自动继续生成资产与场景`
+        : `${stageName}已生成；确认前不会生成任何 3D 资产`;
+      autoApproveCode = this.rawCodeplanAutoApprove ? suggestion.codePlan.code : null;
     } catch (error) {
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const detail = humanizeAgentError(error);
@@ -2450,6 +2457,9 @@ class MapEditor {
       this.stopMapAgentProgressTimer();
       this.setBusy(false);
       this.renderPanels();
+    }
+    if (autoApproveCode) {
+      await this.generateMapAiPreview('generate', undefined, undefined, false, false, autoApproveCode);
     }
   }
 
