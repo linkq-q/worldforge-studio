@@ -444,6 +444,7 @@ class MapEditor {
   private mapAiTargetRegionId = '';
   private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
+  private mapAiPaletteId = '';
   private mapAiUseSceneAgent = true;
   private mapAiReuseExistingAssets = false;
   private mapAiConfirmCompositionPlan = false;
@@ -1170,7 +1171,7 @@ class MapEditor {
           this.mapAiMaxNewAssets = plan.options.maxNewAssets;
           this.mapAiReuseExistingAssets = plan.options.reuseExistingAssets;
           this.activeAssetLibraryId = plan.options.assetLibraryId;
-          this.selectedPaletteId = plan.options.paletteId;
+          this.mapAiPaletteId = plan.options.paletteId;
           this.pendingCodeSuggestion = plan.suggestion;
           this.codePlanSaved = true;
           if (plan.preview) this.showCodePlanPreview(plan.preview);
@@ -1546,7 +1547,7 @@ class MapEditor {
             <span>生成后吸附色卡（可选）</span>
             <select id="map-ai-color-palette" ${this.state.busy ? 'disabled' : ''}>
               <option value="">不套用色卡</option>
-              ${this.state.colorPalettes.map((palette) => `<option value="${escapeHtml(palette.id)}" ${palette.id === this.selectedPaletteId ? 'selected' : ''}>${escapeHtml(palette.name)} · ${palette.colors.length} 色</option>`).join('')}
+              ${this.state.colorPalettes.map((palette) => `<option value="${escapeHtml(palette.id)}" ${palette.id === this.mapAiPaletteId ? 'selected' : ''}>${escapeHtml(palette.name)} · ${palette.colors.length} 色</option>`).join('')}
             </select>
           </label>
           ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
@@ -1683,7 +1684,7 @@ class MapEditor {
       this.mapAiFocusPrompt = (event.target as HTMLInputElement).value;
     });
     host.querySelector<HTMLSelectElement>('#map-ai-color-palette')?.addEventListener('change', (event) => {
-      this.selectColorPalette((event.target as HTMLSelectElement).value);
+      this.mapAiPaletteId = (event.target as HTMLSelectElement).value;
     });
     for (const button of host.querySelectorAll<HTMLButtonElement>('[data-map-design-group]')) {
       button.addEventListener('click', () => {
@@ -2366,7 +2367,7 @@ class MapEditor {
           maxNewAssets: this.mapAiMaxNewAssets,
           reuseExistingAssets: this.mapAiReuseExistingAssets,
           assetLibraryId: this.activeAssetLibraryId,
-          paletteId: this.selectedPaletteId
+          paletteId: this.mapAiPaletteId
         }
       });
       this.codePlanSaved = true;
@@ -2416,7 +2417,7 @@ class MapEditor {
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
             minNewAssets: this.mapAiMinNewAssets,
             maxNewAssets: this.mapAiMaxNewAssets,
-            paletteId: this.selectedPaletteId || undefined,
+            paletteId: this.mapAiPaletteId || undefined,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             planOnly: true
@@ -2514,7 +2515,7 @@ class MapEditor {
             approvedCode,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
-            paletteId: this.selectedPaletteId || undefined,
+            paletteId: this.mapAiPaletteId || undefined,
             selectedObjectIds: [...this.selectedObjectIds],
             parentTraceId: previousSuggestion?.generationTraceId ?? this.pendingCodeSuggestion?.generationTraceId
               ?? (mode === 'refine' ? this.state.undoTransaction?.ai?.generationTraceId : undefined),
