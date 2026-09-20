@@ -4,6 +4,13 @@ import { createEmptyMap } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 
 describe('terrain semantic appearance', () => {
+  it('does not shade derived seabed top surfaces as vertical dark skirts', () => {
+    const map = createEmptyMap('submerged coast');
+    const side = terrainVertexColor(map, 0, -2, 0);
+    const seabed = terrainVertexColor(map, 0, -2, 0, undefined, -2);
+    expect(seabed.reduce((a, b) => a + b, 0)).toBeGreaterThan(side.reduce((a, b) => a + b, 0));
+    expect(terrainVertexColor(map, 0, -2, 0)).toEqual(side);
+  });
   it('renders a sand surface as sand instead of the green floor palette', () => {
     const baseline = terrainVertexColor(createEmptyMap('green baseline'), 0, 0, 0);
     const map = applyMapOperations(createEmptyMap('sand appearance'), [{

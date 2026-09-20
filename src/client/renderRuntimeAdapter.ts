@@ -748,7 +748,10 @@ export class RenderRuntimeAdapter {
       this.ssaoPass.setSharedNormalDepth(normalTexture, depthTexture);
     }
     if (this.fogPass.enabled && depthTexture) {
-      bindDistanceFogDepth(this.fogPass, depthTexture, this.camera);
+      const oceanLevels = this.waterBindings.filter(binding => binding.mesh.visible && binding.mesh.userData.waterBodyType === 'ocean')
+        .map(binding => (binding.mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined)?.level)
+        .filter((level): level is number => typeof level === 'number' && Number.isFinite(level));
+      bindDistanceFogDepth(this.fogPass, depthTexture, this.camera, oceanLevels.length ? Math.max(...oceanLevels) : undefined);
     }
     if (this.curvaturePass.enabled) {
       this.curvaturePass.uniforms.tNormal.value = normalTexture;

@@ -1453,6 +1453,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     if (uUseOceanTerrain) {
       float edgeOpacity = uWaterMode < 0.5 ? 0.58 : 0.42;
       alpha = mix(baseOpacity * edgeOpacity, baseOpacity, smoothstep(0.02, 0.65, oceanWaterDepth));
+      // Ocean geometry may end only after transmission has reached zero. Keep
+      // the authored transparency in the shallows, not at the seabed cut edge.
+      float oceanDepthFraction = max(oceanWaterDepth, 0.0) / max(uOceanLevel - uOceanTerrainSinkTarget, 0.001);
+      float oceanDeepOcclusion = smoothstep(0.2, 0.8, oceanDepthFraction);
+      alpha = mix(alpha, 1.0, oceanDeepOcclusion);
       alpha = mix(alpha, 1.0, foam * 0.65);
     }
     gl_FragColor = vec4(finalColor, alpha);

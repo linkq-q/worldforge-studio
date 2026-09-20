@@ -539,7 +539,7 @@ function applyTerrainGrassTint(
     const x = positions.getX(index);
     const y = positions.getY(index);
     const z = positions.getZ(index);
-    const base = terrainVertexColor(map, x, y, z, palette);
+    const base = terrainVertexColor(map, x, y, z, palette, geometry.userData.oceanCoast ? y : undefined);
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
@@ -1459,7 +1459,8 @@ function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null): 
   }
   const colors: number[] = [];
   for (let index = 0; index < vertices.length; index += 3) {
-    colors.push(...terrainVertexColor(map, vertices[index], vertices[index + 1], vertices[index + 2]));
+    // A derived underwater slope is a top surface, not a dark vertical skirt.
+    colors.push(...terrainVertexColor(map, vertices[index], vertices[index + 1], vertices[index + 2], undefined, coast ? vertices[index + 1] : undefined));
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));

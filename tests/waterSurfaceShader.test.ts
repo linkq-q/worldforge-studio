@@ -96,6 +96,14 @@ describe('WaterSurface shader', () => {
     expect(surface.material.fragmentShader).toContain('if (oceanWaterDepth <= 0.025) discard;');
     expect(surface.material.fragmentShader).toContain('shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))');
     expect(surface.material.fragmentShader).toContain('foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);');
+    expect(surface.material.fragmentShader).toContain('float oceanDeepOcclusion = smoothstep(0.2, 0.8, oceanDepthFraction);');
+    expect(surface.material.fragmentShader).toContain('alpha = mix(alpha, 1.0, oceanDeepOcclusion);');
+    // Even a low-opacity scheme must fully hide the cut at 99% sink depth,
+    // before either the terrain boundary or far-ocean background can show.
+    for (const opacity of [0.05, 0.4, 1]) {
+      const transmission = 1 - THREE.MathUtils.lerp(opacity, 1, THREE.MathUtils.smoothstep(0.99, 0.2, 0.8));
+      expect(transmission).toBe(0);
+    }
 
     const splash = surface.setOceanShoreSplashPoints([[1, 2], new THREE.Vector2(3, 4)]);
     expect(splash?.name).toBe('OceanShoreSplash');

@@ -367,6 +367,9 @@ describe('structured map water rendering', () => {
     expect(terrainPoints.find((point) => Math.abs(point.x) < 1e-4 && Math.abs(point.z) < 1e-4)?.y).toBeCloseTo(4);
     expect(boundHeights[0]).toBeCloseTo(oceanTerrain.sinkTarget);
     const field = terrain.geometry.userData.oceanCoast as OceanCoastField;
+    // The cut must be behind the fully opaque part of ocean depth shading (80%).
+    expect(boundary.length).toBeGreaterThan(0);
+    expect(boundary.every(point => (field.level - point.y) / (field.level - field.sinkTarget) > 0.95)).toBe(true);
     expect(boundHeights).toBe(field.heights);
     expect(sampleCoastGrid({ ...field, heights: boundHeights }, 0, 0)).toBeCloseTo(4);
     const positions = terrain.geometry.getAttribute('position');

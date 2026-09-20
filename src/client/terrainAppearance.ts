@@ -27,9 +27,10 @@ export function terrainVertexColor(
   x: number,
   y: number,
   z: number,
-  palette?: TerrainPaletteColors
+  palette?: TerrainPaletteColors,
+  renderSurfaceHeight?: number
 ): [number, number, number] {
-  const surfaceY = sampleTerrainHeight(map, x, z);
+  const surfaceY = renderSurfaceHeight ?? sampleTerrainHeight(map, x, z);
   const base = new THREE.Color(palette?.base ?? map.box.colors.floor);
   if (y < surfaceY - 0.05) return colorTuple(base.multiplyScalar(0.42));
 
