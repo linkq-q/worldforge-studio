@@ -10,7 +10,44 @@ import {
 } from './map';
 import { distanceToWater, isNearWater } from './mapWater';
 import { habitatBandSuitability, type HabitatBand } from './mapHabitat';
-import { terrainFootprintSlopeDegrees } from './mapTerrainAnalysis';
+import {
+  createMapEnvironmentSampler,
+  terrainFootprintSlopeDegrees,
+  type MapEnvironmentSample,
+  type MapEnvironmentSampleOptions
+} from './mapTerrainAnalysis';
+
+export interface MapProbabilityCluster {
+  strength?: number;
+  scale?: number;
+  seed?: number;
+}
+
+export interface MapProbabilityMark {
+  id: string;
+  minDistance?: number;
+  maxPoints?: number;
+  cluster?: MapProbabilityCluster;
+}
+
+export interface MapProbabilityFieldOptions extends MapEnvironmentSampleOptions {
+  maxPoints?: number;
+  candidates?: number;
+  minDistance?: number;
+  seed?: number;
+  cluster?: MapProbabilityCluster;
+  marks?: MapProbabilityMark[];
+}
+
+export interface MapProbabilityFieldSample extends MapEnvironmentSample {
+  index: number;
+}
+
+export interface MapProbabilityFieldPoint {
+  x: number;
+  z: number;
+  mark?: string;
+}
 
 export interface MapScatterPlan {
   assetIds: string[];
@@ -80,6 +117,90 @@ interface OccupiedCircle {
   z: number;
   radius: number;
   assetId?: string;
+}
+
+export function sampleMapProbabilityField(
+  map: EditableMap,
+  rawBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+  options: MapProbabilityFieldOptions,
+  weightFunction: (
+    sample: Readonly<MapProbabilityFieldSample>,
+    index: number
+  ) => number | Readonly<Record<string, number>>
+): MapProbabilityFieldPoint[] {
+  const bounds = {
+    minX: finiteNumber(rawBounds.minX),
+    maxX: finiteNumber(rawBounds.maxX),
+    minZ: finiteNumber(rawBounds.minZ),
+    maxZ: finiteNumber(rawBounds.maxZ)
+  };
+  if (bounds.maxX <= bounds.minX || bounds.maxZ <= bounds.minZ) throw new Error('invalid_probability_field_bounds');
+  const maxPoints = boundedInteger(options.maxPoints ?? 128, 1, 512);
+  const candidates = boundedInteger(options.candidates ?? maxPoints * 8, 1, 4096);
+  const minDistance = Math.max(0, finiteNumber(options.minDistance ?? 0));
+  const random = mulberry32(Math.trunc(finiteNumber(options.seed ?? map.seed)));
+  const marks = normalizeProbabilityMarks(options.marks, maxPoints);
+  const countByMark = new Map<string, number>();
+  const points: MapProbabilityFieldPoint[] = [];
+  const sampleEnvironment = createMapEnvironmentSampler(map, options);
+
+  for (let index = 0; index < candidates && points.length < maxPoints; index += 1) {
+    const x = bounds.minX + random() * (bounds.maxX - bounds.minX);
+    const z = bounds.minZ + random() * (bounds.maxZ - bounds.minZ);
+    const sample = Object.freeze({
+      ...sampleEnvironment(x, z),
+      index
+    });
+    const rawWeight = weightFunction(sample, index);
+    let mark: MapProbabilityMark | undefined;
+    if (typeof rawWeight === 'number') {
+      const weight = probabilityWeight(rawWeight)
+        * scatterClusterWeight(x, z, options.cluster, options.seed ?? map.seed);
+      if (random() > Math.min(1, weight)) continue;
+    } else {
+      if (!rawWeight || typeof rawWeight !== 'object' || marks.length === 0) {
+        throw new Error('invalid_probability_field_marks');
+      }
+      const choices = marks.flatMap((candidate) => {
+        if ((countByMark.get(candidate.id) ?? 0) >= (candidate.maxPoints ?? maxPoints)) return [];
+        const candidateWeight = probabilityWeight(rawWeight[candidate.id])
+          * scatterClusterWeight(x, z, candidate.cluster ?? options.cluster, options.seed ?? map.seed);
+        return candidateWeight > 0 ? [{ mark: candidate, weight: candidateWeight }] : [];
+      });
+      const totalWeight = choices.reduce((sum, choice) => sum + choice.weight, 0);
+      if (totalWeight <= 0 || random() > Math.min(1, totalWeight)) continue;
+      let selection = random() * totalWeight;
+      const selected = choices.find((choice) => {
+        selection -= choice.weight;
+        return selection <= 0;
+      }) ?? choices[choices.length - 1];
+      mark = selected?.mark;
+      if (!mark) continue;
+    }
+    const requiredSpacing = Math.max(minDistance, mark?.minDistance ?? 0);
+    if (points.some((existing) => {
+      const sameMark = existing.mark === mark?.id;
+      const spacing = sameMark ? requiredSpacing : minDistance;
+      return spacing > 0 && Math.hypot(existing.x - x, existing.z - z) < spacing;
+    })) continue;
+    points.push({ x, z, ...(mark ? { mark: mark.id } : {}) });
+    if (mark) countByMark.set(mark.id, (countByMark.get(mark.id) ?? 0) + 1);
+  }
+  return points;
+}
+
+export function scatterClusterWeight(
+  x: number,
+  z: number,
+  cluster: MapProbabilityCluster | undefined,
+  fallbackSeed: number
+): number {
+  const strength = clamp(finiteNumber(cluster?.strength, 0), 0, 1);
+  if (strength <= 0) return 1;
+  const scale = Math.max(0.0001, Math.abs(finiteNumber(cluster?.scale, 0.08)));
+  const seed = Math.trunc(finiteNumber(cluster?.seed, fallbackSeed));
+  const patch = smooth(clusterNoise(x * scale, z * scale, seed));
+  return 1 - strength + strength * (0.2 + patch * 0.8);
 }
 
 export function expandMapScatter(
@@ -416,6 +537,44 @@ function mulberry32(seed: number): () => number {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+function normalizeProbabilityMarks(
+  values: readonly MapProbabilityMark[] | undefined,
+  maxPoints: number
+): MapProbabilityMark[] {
+  const marks: MapProbabilityMark[] = [];
+  const ids = new Set<string>();
+  for (const value of values?.slice(0, 32) ?? []) {
+    const id = typeof value?.id === 'string' ? value.id.trim().slice(0, 80) : '';
+    if (!id || ids.has(id)) continue;
+    ids.add(id);
+    marks.push({
+      id,
+      minDistance: Math.max(0, finiteNumber(value.minDistance, 0)),
+      maxPoints: boundedInteger(value.maxPoints ?? maxPoints, 1, maxPoints),
+      ...(value.cluster ? { cluster: value.cluster } : {})
+    });
+  }
+  return marks;
+}
+
+function probabilityWeight(value: unknown): number {
+  if (value === undefined) return 0;
+  const weight = Number(value);
+  if (!Number.isFinite(weight)) throw new Error('invalid_probability_field_weight');
+  return clamp(weight, 0, 1);
+}
+
+function boundedInteger(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.floor(finiteNumber(value))));
+}
+
+function finiteNumber(value: unknown, fallback?: number): number {
+  const number = Number(value);
+  if (Number.isFinite(number)) return number;
+  if (fallback !== undefined) return fallback;
+  throw new Error('invalid_probability_field_number');
 }
 
 function clamp(value: number, min: number, max: number): number {

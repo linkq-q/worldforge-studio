@@ -496,6 +496,10 @@ describe('map code planner', () => {
     expect(prompt).toContain('does not move, add, prune, or fill objects');
     expect(prompt).toContain('api.sampleProbabilityField');
     expect(prompt).toContain('api.grassField');
+    expect(prompt).toContain('api.environmentSample');
+    expect(prompt).toContain('guideDistance and signed regionDistance');
+    expect(prompt).toContain('marks?:[{id,minDistance?,maxPoints?,cluster?}]');
+    expect(prompt).toContain('Cross-mark spacing uses the global minDistance');
     expect(prompt).toContain('api.optimizeLayout');
     expect(prompt).toContain("substrate?:'dry'|'water'|'amphibious'|'underwater'");
     expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
@@ -2899,6 +2903,82 @@ describe('map code planner', () => {
 
     expect(positionsFor(11)).toEqual(positionsFor(11));
     expect(positionsFor(11)).not.toEqual(positionsFor(99));
+  });
+
+  it('shares one environment sample across direct, probability, and grass callbacks', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'road',points:[[-20,0],[20,0]],width:2,surface:'none'});
+      api.water('pond',{type:'lake',points:[[-2,8],[2,8],[2,12],[-2,12]],level:0,depth:1});
+      const environment={guideIds:['road'],region:{kind:'circle',x:0,z:0,radius:6}};
+      const direct=api.environmentSample([0,4],environment);
+      api.place({name:['env',direct.height,direct.slope,direct.waterDistance,direct.guideDistance,direct.regionDistance].join('-'),position:[0,0,20]});
+      const points=api.sampleProbabilityField({
+        bounds:{minX:-8,maxX:8,minZ:-8,maxZ:8},maxPoints:5,candidates:20,seed:17,...environment
+      }, sample => {
+        const same=api.environmentSample([sample.x,sample.z],environment);
+        return same.height===sample.height && same.slope===sample.slope
+          && same.waterDistance===sample.waterDistance && same.guideDistance===sample.guideDistance
+          && same.regionDistance===sample.regionDistance ? 1 : 0;
+      });
+      for(const point of points) api.place({name:'shared-probability',position:point});
+      api.grassField({id:'shared-grass',resolution:[3,3],...environment}, sample => {
+        const same=api.environmentSample([sample.x,sample.z],environment);
+        return same.height===sample.height && same.slope===sample.slope
+          && same.waterDistance===sample.waterDistance && same.guideDistance===sample.guideDistance
+          && same.regionDistance===sample.regionDistance ? 1 : 0;
+      });
+    }`, createEmptyMap());
+    const names = suggestion.operations.flatMap((operation) => operation.type === 'object.add' ? [operation.object.name] : []);
+    const density = suggestion.operations.find((operation) => operation.type === 'grass.density.set');
+
+    expect(names.find((name) => name?.startsWith('env-'))).toMatch(/^env-0-0-\d+(?:\.\d+)?-3--2$/);
+    expect(names.filter((name) => name === 'shared-probability')).toHaveLength(5);
+    expect(density?.type).toBe('grass.density.set');
+    if (density?.type !== 'grass.density.set') throw new Error('missing shared grass field');
+    expect(density.densities).toEqual(new Array(9).fill(1));
+  });
+
+  it('samples deterministic clustered marks with per-mark spacing and quotas', () => {
+    const code = `function plan(api) {
+      const points=api.sampleProbabilityField({
+        bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20},maxPoints:42,candidates:4096,minDistance:0.2,seed:73,
+        marks:[
+          {id:'tree',minDistance:5,maxPoints:12,cluster:{strength:0.8,scale:0.08,seed:11}},
+          {id:'flower',minDistance:1,maxPoints:30,cluster:{strength:0.35,scale:0.18,seed:29}}
+        ]
+      }, sample => ({
+        tree:0.4*(1-api.smoothstep(10,26,Math.hypot(sample.x,sample.z))),
+        flower:0.8
+      }));
+      for(const point of points) api.place({name:point.mark,position:point});
+    }`;
+    const map = createEmptyMap();
+    const first = executeMapCodePlan(code, map);
+    const second = executeMapCodePlan(code, map);
+    const placements = (suggestion: typeof first) => suggestion.operations.flatMap((operation) => {
+      if (operation.type !== 'object.add') return [];
+      return [{
+        name: operation.object.name,
+        position: operation.object.transform?.position?.slice() ?? []
+      }];
+    });
+    const result = placements(first);
+    const trees = result.filter((item) => item.name === 'tree');
+    const flowers = result.filter((item) => item.name === 'flower');
+
+    expect(placements(second)).toEqual(result);
+    expect(trees).toHaveLength(12);
+    expect(flowers).toHaveLength(30);
+    for (const group of [{ items: trees, spacing: 5 }, { items: flowers, spacing: 1 }]) {
+      for (let left = 0; left < group.items.length; left += 1) {
+        for (let right = left + 1; right < group.items.length; right += 1) {
+          expect(Math.hypot(
+            group.items[left].position[0] - group.items[right].position[0],
+            group.items[left].position[2] - group.items[right].position[2]
+          )).toBeGreaterThanOrEqual(group.spacing);
+        }
+      }
+    }
   });
 
   it('serializes custom grass callbacks into a bounded density operation', () => {

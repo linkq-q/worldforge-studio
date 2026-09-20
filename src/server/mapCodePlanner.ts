@@ -20,6 +20,17 @@ import { rayAabbIntersection } from '../shared/math';
 import { foundationBoundary, foundationTopHeight, normalizeMapFoundation, type MapFoundation } from '../shared/mapFoundation';
 import { assetFootprintRadius, normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import { planMapObjectAttachment } from '../shared/mapAttachment';
+import {
+  sampleMapProbabilityField,
+  type MapProbabilityCluster,
+  type MapProbabilityMark
+} from '../shared/mapScatter';
+import {
+  createMapEnvironmentSampler,
+  sampleMapEnvironment,
+  type MapEnvironmentSample,
+  type MapEnvironmentSampleOptions
+} from '../shared/mapTerrainAnalysis';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import { calculateModelVisualBounds, inspectModelSpace, type Aabb } from '../shared/modelBounds';
@@ -79,12 +90,12 @@ import { llmChat } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
 import type { MapLintIssue } from '../shared/mapLint';
 import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from '../shared/mapRefineScope';
+import type { VisualZoneRegion } from '../shared/visualDirection';
 
 const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
 const MAX_SCENE_OPERATIONS = 256;
 const MAX_POINT_RESULTS = 512;
-const MAX_PROBABILITY_CANDIDATES = 4_096;
 const MAX_GRASS_FIELD_RESOLUTION = 64;
 const MAX_LAYOUT_ITEMS = 64;
 const MAX_LAYOUT_ITERATIONS = 512;
@@ -102,7 +113,7 @@ api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cl
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true only when the authored area must exclude loose natural objects. Route surfaces are clear automatically.
 api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge, height is terrain Y; choose each layer's band from the intended ecology, not from a scene-name keyword.
-api.grassField({id:'short-id',name?,preset?,resolution?:number|[x,z],height?,mix?,seed?}, sample => density) writes a serializable bounded density field. sample provides x,z,u,v,height,slope,waterDistance,index; return a finite value from 0 to 1.
+api.environmentSample([x,z],{guideIds?:string[],region?:circle|path|polygon}) returns x,z,height,slope,waterDistance,guideDistance and signed regionDistance when region is requested; negative regionDistance is inside. api.grassField accepts the same guideIds/region options and writes a serializable bounded density field. Its sample adds u,v,index to the same environment values; return a finite density from 0 to 1.
 api.foundation({name?,shape:'capsule'|'rounded-rectangle'|'polygon'|'path',under?:[objectReferenceOrExistingId,...],position?:[x,z]|[x,y,z],width?,depth?,margin?,cornerRadius?,points?:[[localX,localZ],...],curve?:'polyline'|'catmull-rom',closed?,top?:'level'|'slope'|'steps',thickness?,maxThickness?,slope?,slopeDirection?:radians,stepHeight?,stepCount?,material?}); The top is walkable, the bottom follows terrain, and terrain is never flattened.
 Mechanical ownership: preset:'plain' always writes a zero-height field; amplitude and roughness do not change it. api.terrain and api.modifyTerrain create landform elevation. An island modifier raises its region and turns otherwise non-positive surrounding terrain into a sloped submerged seabed; do not add a rectangular ground shelf around it. layout:'coast' deterministically varies the shoreline; softness controls its transition width and variation controls contour and relief variation. api.surface only paints existing terrain and cannot create land, water or a shoreline. Water points define the actual water coverage. Island and archipelago terrain add a default map ocean only when this transaction defines no explicit ocean; an explicit ocean is authoritative. When one landmass boundary owns terrain, surface and optional design regions, declare one const landRegion={...} and reuse that exact region instead of redrawing nearly matching boundaries; use a rectangular boundary only when the intended landform is rectangular.
 Enum fields are closed choices, not descriptions. Put descriptive meaning in id/name or comments; never write phrases such as "gentle central basin" in modifier or "packed earth" in surface.`;
@@ -1962,14 +1973,9 @@ function executeMapCodePlanInternal(
     },
     grassField(
       optionsValue: Record<string, unknown>,
-      densityFunction: (sample: {
-        x: number;
-        z: number;
+      densityFunction: (sample: MapEnvironmentSample & {
         u: number;
         v: number;
-        height: number;
-        slope: number;
-        waterDistance: number;
         index: number;
       }) => number
     ): string {
@@ -2017,6 +2023,8 @@ function executeMapCodePlanInternal(
         });
       }
       const environmentMap = currentEnvironmentMap();
+      const environmentOptions = normalizeCodeEnvironmentOptions(options);
+      const sampleEnvironment = createMapEnvironmentSampler(environmentMap, environmentOptions);
       const bounds = getMapBounds(environmentMap);
       const densities: number[] = [];
       for (let zIndex = 0; zIndex < resolution[1]; zIndex += 1) {
@@ -2027,13 +2035,9 @@ function executeMapCodePlanInternal(
           const x = bounds.minX + u * (bounds.maxX - bounds.minX);
           const index = zIndex * resolution[0] + xIndex;
           const density = densityFunction(Object.freeze({
-            x,
-            z,
+            ...sampleEnvironment(x, z),
             u,
             v,
-            height: sampleTerrainHeight(environmentMap, x, z),
-            slope: terrainSlopeDegrees(environmentMap, x, z),
-            waterDistance: distanceToWater(environmentMap, x, z),
             index
           }));
           densities.push(clampFinite(density, 0, 1));
@@ -2182,6 +2186,16 @@ function executeMapCodePlanInternal(
       const point = point2(pointValue);
       return nearestDryPoint(currentEnvironmentMap(), point, clampFinite(clearance, 0, 12));
     },
+    environmentSample(pointValue: Point2, optionsValue: Record<string, unknown> = {}) {
+      record('environmentSample');
+      const point = point2(pointValue);
+      return Object.freeze(sampleMapEnvironment(
+        currentEnvironmentMap(),
+        point[0],
+        point[1],
+        normalizeCodeEnvironmentOptions(optionsValue)
+      ));
+    },
     waterPoint(waterIdValue: string, pointValue: Point2, draft = 0): Point3 {
       record('waterPoint');
       const waterId = cleanText(waterIdValue, 80);
@@ -2314,14 +2328,31 @@ function executeMapCodePlanInternal(
         candidates?: number;
         minDistance?: number;
         seed?: number;
+        guideIds?: string[];
+        region?: unknown;
+        cluster?: MapProbabilityCluster;
+        marks?: MapProbabilityMark[];
       },
-      weightFunction: (point: Point2 & { x: number; z: number }, index: number) => number
-    ): Point2[] {
+      weightFunction: (
+        point: Point2 & MapEnvironmentSample & { index: number },
+        index: number
+      ) => number | Readonly<Record<string, number>>
+    ): Array<Point2 & { x: number; z: number; mark?: string }> {
       record('sampleProbabilityField');
       if (!options || typeof options !== 'object') throw new Error('invalid_probability_field_options');
       if (typeof weightFunction !== 'function') throw new Error('invalid_probability_field_function');
-      const bounds = normalizePoissonBounds(options.bounds, getMapBounds(map));
-      return sampleProbabilityFieldPoints(bounds, { ...options, seed: options.seed ?? map.seed }, weightFunction);
+      const environmentMap = currentEnvironmentMap();
+      const bounds = normalizePoissonBounds(options.bounds, getMapBounds(environmentMap));
+      return sampleMapProbabilityField(environmentMap, bounds, {
+        maxPoints: options.maxPoints,
+        candidates: options.candidates,
+        minDistance: options.minDistance,
+        seed: options.seed ?? map.seed,
+        cluster: options.cluster,
+        marks: options.marks,
+        ...normalizeCodeEnvironmentOptions(options)
+      }, (sample, index) => weightFunction(codeEnvironmentPoint(sample), index))
+        .map((sample) => codeMarkedPoint(sample.x, sample.z, sample.mark));
     },
     optimizeLayout(
       options: {
@@ -3811,7 +3842,7 @@ Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coo
 3D local frames: api.localToWorld3D(local:[right,up,forward],origin:[x,y,z],forward:[x,y,z],up?:[x,y,z]) -> [x,y,z]. It builds an orthonormal frame and rejects zero or parallel axes. Use it when one compact local rule should drive elevated, tilted or repeated positions; it does not rotate asset geometry beyond the existing rotationY/facing contract.
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1]; api.grassField({id,name?,preset?,resolution?,...}, sample => density) persists a bounded custom density grid instead of executable code.
-Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points; api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?}, (point,index) => weight) -> points. Omitted seeds default to api.seed. Weight is clamped to [0,1], candidates to 4096 and results to 512, so use any bounded mathematical field that serves the scene rather than choosing from a closed formula list.
+Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,guideIds?,region?,cluster?:{strength,scale,seed},marks?:[{id,minDistance?,maxPoints?,cluster?}]}, (sample,index) => weightOrMarkWeights) returns points with optional point.mark. sample uses the same environment values as environmentSample. A scalar callback preserves ordinary custom fields; with marks, return {[markId]:weight} and give each mark its own spacing, quota and optional cluster parameters. Cross-mark spacing uses the global minDistance, so trees, flowers or any other labels remain model-authored rather than hard-coded. Omitted seeds default to api.seed. Weights are clamped to [0,1], candidates to 4096 and results to 512.
 Relationships: api.optimizeLayout({items:[{id,position:[x,z],rotationY?,fixed?}],bounds?,iterations?,translationStep?,rotationStep?,temperature?,seed?}, items => cost) returns optimized items. The model owns the finite cost function: combine attraction, repulsion, target distance, alignment, access or other scene-specific terms. The solver only performs a bounded search over at most 64 items and 512 iterations; it does not place objects or impose a composition. Mark anchors fixed, then place the returned positions yourself.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
 ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
@@ -5782,6 +5813,63 @@ function point2(value: unknown): Point2 {
   throw new Error(`invalid_map_code_point:${describeCodeValue(value)}`);
 }
 
+function normalizeCodeEnvironmentOptions(value: unknown): MapEnvironmentSampleOptions {
+  const input = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const guideIds = cleanSpatialIds(input.guideIds);
+  const region = input.region === undefined ? undefined : normalizeCodeEnvironmentRegion(input.region);
+  return {
+    ...(guideIds.length > 0 ? { guideIds } : {}),
+    ...(region ? { region } : {})
+  };
+}
+
+function normalizeCodeEnvironmentRegion(value: unknown): VisualZoneRegion {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('invalid_map_code_environment_region');
+  }
+  const input = value as Record<string, unknown>;
+  if (input.kind === 'circle') {
+    const center = input.center === undefined ? [finite(input.x), finite(input.z)] as Point2 : point2(input.center);
+    return { kind: 'circle', x: center[0], z: center[1], radius: Math.max(0, finite(input.radius)) };
+  }
+  if (input.kind === 'path') {
+    const points = codePointArray(input.points, 'invalid_map_code_environment_region').slice(0, 64);
+    if (points.length < 2) throw new Error('invalid_map_code_environment_region');
+    return { kind: 'path', points, width: Math.max(0, finite(input.width)) };
+  }
+  if (input.kind === 'polygon') {
+    const points = codePointArray(input.points, 'invalid_map_code_environment_region').slice(0, 64);
+    if (points.length < 3) throw new Error('invalid_map_code_environment_region');
+    return { kind: 'polygon', points };
+  }
+  throw new Error('invalid_map_code_environment_region');
+}
+
+function codeEnvironmentPoint(
+  sample: MapEnvironmentSample & { index: number }
+): Point2 & MapEnvironmentSample & { index: number } {
+  const point = codePoint(sample.x, sample.z) as Point2 & MapEnvironmentSample & { index: number };
+  Object.defineProperties(point, {
+    height: { value: sample.height, enumerable: true },
+    slope: { value: sample.slope, enumerable: true },
+    waterDistance: { value: sample.waterDistance, enumerable: true },
+    guideDistance: { value: sample.guideDistance, enumerable: true },
+    index: { value: sample.index, enumerable: true },
+    ...(sample.regionDistance === undefined
+      ? {}
+      : { regionDistance: { value: sample.regionDistance, enumerable: true } })
+  });
+  return Object.freeze(point);
+}
+
+function codeMarkedPoint(x: number, z: number, mark?: string): Point2 & { x: number; z: number; mark?: string } {
+  const point = codePoint(x, z) as Point2 & { x: number; z: number; mark?: string };
+  if (mark) Object.defineProperty(point, 'mark', { value: mark, enumerable: true });
+  return point;
+}
+
 function codePoint(x: number, z: number): Point2 {
   const point: Point2 = [finite(x), finite(z)];
   Object.defineProperties(point, {
@@ -6146,46 +6234,6 @@ function poissonDiskPoints(
     }
   }
   return points;
-}
-
-function sampleProbabilityFieldPoints(
-  rawBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
-  options: { maxPoints?: number; candidates?: number; minDistance?: number; seed?: number },
-  weightFunction: (point: Point2 & { x: number; z: number }, index: number) => number
-): Point2[] {
-  const bounds = {
-    minX: finite(rawBounds.minX),
-    maxX: finite(rawBounds.maxX),
-    minZ: finite(rawBounds.minZ),
-    maxZ: finite(rawBounds.maxZ)
-  };
-  if (bounds.maxX <= bounds.minX || bounds.maxZ <= bounds.minZ) throw new Error('invalid_probability_field_bounds');
-  const maxPoints = boundedCount(options.maxPoints ?? 128, 1, MAX_POINT_RESULTS);
-  const candidates = boundedCount(options.candidates ?? maxPoints * 8, 1, MAX_PROBABILITY_CANDIDATES);
-  const minDistance = Math.max(0, finite(options.minDistance ?? 0));
-  const random = mulberry32(Math.trunc(finite(options.seed ?? 1)));
-  const points: Point2[] = [];
-  for (let index = 0; index < candidates && points.length < maxPoints; index += 1) {
-    const point = codePoint(
-      bounds.minX + random() * (bounds.maxX - bounds.minX),
-      bounds.minZ + random() * (bounds.maxZ - bounds.minZ)
-    ) as Point2 & { x: number; z: number };
-    const weight = clampFinite(weightFunction(Object.freeze(point), index), 0, 1);
-    if (random() > weight) continue;
-    if (minDistance > 0 && points.some((existing) => Math.hypot(existing[0] - point[0], existing[1] - point[1]) < minDistance)) {
-      continue;
-    }
-    points.push(point);
-  }
-  return points;
-}
-
-function terrainSlopeDegrees(map: EditableMap, x: number, z: number): number {
-  const stepX = Math.max(0.05, map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1));
-  const stepZ = Math.max(0.05, map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1));
-  const dx = (sampleTerrainHeight(map, x + stepX, z) - sampleTerrainHeight(map, x - stepX, z)) / (stepX * 2);
-  const dz = (sampleTerrainHeight(map, x, z + stepZ) - sampleTerrainHeight(map, x, z - stepZ)) / (stepZ * 2);
-  return Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
 }
 
 function optimizeLayoutItems(

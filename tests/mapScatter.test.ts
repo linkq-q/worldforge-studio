@@ -5,8 +5,12 @@ import {
   expandMapScatter,
   type MapScatterPlan
 } from '../src/shared/mapScatter';
-import { terrainFootprintSlopeDegrees, terrainSlopeDegrees } from '../src/shared/mapTerrainAnalysis';
-import { isNearWater } from '../src/shared/mapWater';
+import {
+  sampleMapEnvironment,
+  terrainFootprintSlopeDegrees,
+  terrainSlopeDegrees
+} from '../src/shared/mapTerrainAnalysis';
+import { distanceToWater, isNearWater } from '../src/shared/mapWater';
 
 const treeAsset = {
   id: 'asset-tree',
@@ -36,6 +40,35 @@ const shrubAsset = {
 } satisfies MapAsset;
 
 describe('deterministic map scatter', () => {
+  it('samples one shared terrain, water, guide, and requested-region environment', () => {
+    const map = createEmptyMap('environment sample', 'environment-sample');
+    map.guides = [{
+      id: 'road', name: 'Road', points: [[-10, 0], [10, 0]], curve: 'polyline', closed: false, width: 2, tags: ['road']
+    }];
+    map.waterBodies = [{
+      id: 'pond', name: 'Pond', type: 'lake', level: 0, depth: 1, width: 1,
+      points: [[-1, 9], [1, 9], [1, 11], [-1, 11]]
+    }];
+
+    const sample = sampleMapEnvironment(map, 0, 5, {
+      guideIds: ['road'],
+      region: { kind: 'circle', x: 0, z: 0, radius: 2 }
+    });
+
+    expect(sample).toEqual(expect.objectContaining({
+      x: 0,
+      z: 5,
+      height: 0,
+      slope: 0,
+      guideDistance: 4,
+      regionDistance: 3
+    }));
+    expect(sample.waterDistance).toBeCloseTo(distanceToWater(map, 0, 5));
+    expect(sampleMapEnvironment(map, 0, 0, {
+      region: { kind: 'circle', x: 0, z: 0, radius: 2 }
+    }).regionDistance).toBe(-2);
+  });
+
   it('avoids water and steep terrain while preserving spacing and seed stability', () => {
     const map = createEmptyMap('scatter', 'map-scatter');
     map.assets = [treeAsset];
