@@ -460,7 +460,11 @@ describe('map code planner', () => {
     expect(prompt).toContain('api.terrain');
     expect(prompt).toContain('api.modifyTerrain');
     expect(prompt).toContain("preset:'plain' always writes a zero-height field");
+    expect(prompt).toContain('turns otherwise non-positive surrounding terrain into a sloped submerged seabed');
+    expect(prompt).toContain("layout:'coast' deterministically varies the shoreline");
     expect(prompt).toContain('api.surface only paints existing terrain and cannot create land, water or a shoreline');
+    expect(prompt).toContain('an explicit ocean is authoritative');
+    expect(prompt).toContain('declare one const landRegion={...} and reuse that exact region');
     expect(prompt).toContain('use a rectangular boundary only when the intended landform is rectangular');
     expect(prompt).toContain('api.water');
     expect(prompt).toContain('api.grass');

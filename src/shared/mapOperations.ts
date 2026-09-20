@@ -257,6 +257,12 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
   if (operations.length > MAX_OPERATIONS) throw new Error('too_many_operations');
 
   let next = normalizeMap(map);
+  const transactionDefinesOcean = operations.some((operation) => (
+    operation?.type === 'water.add' && operation.water?.type === 'ocean'
+  ));
+  if (transactionDefinesOcean) {
+    next.waterBodies = next.waterBodies.filter((water) => water.id !== 'terrain-ocean');
+  }
   let terrainChanged = false;
   for (const operation of operations) {
     if (!operation || typeof operation !== 'object' || typeof operation.type !== 'string') {
@@ -313,7 +319,9 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'terrain.generate': {
         const params = generateTerrainInPlace(next, operation);
         terrainChanged = true;
-        if (params.preset === 'island' || params.preset === 'archipelago') ensureTerrainOcean(next);
+        if ((params.preset === 'island' || params.preset === 'archipelago') && !transactionDefinesOcean) {
+          ensureTerrainOcean(next);
+        }
         else next.waterBodies = next.waterBodies.filter((water) => water.id !== 'terrain-ocean');
         if (params.preset === 'dune-desert') {
           applyTerrainSurfaceInPlace(next, {
@@ -327,7 +335,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       }
       case 'terrain.modify': {
         const params = applyTerrainModifierInPlace(next, operation);
-        if (params.modifier === 'island') ensureTerrainOcean(next);
+        if (params.modifier === 'island' && !transactionDefinesOcean) ensureTerrainOcean(next);
         terrainChanged = true;
         break;
       }
@@ -571,7 +579,11 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
 }
 
 function ensureTerrainOcean(map: EditableMap): void {
-  const existing = map.waterBodies.find((water) => water.type === 'ocean');
+  if (map.waterBodies.some((water) => water.type === 'ocean' && water.id !== 'terrain-ocean')) {
+    map.waterBodies = map.waterBodies.filter((water) => water.id !== 'terrain-ocean');
+    return;
+  }
+  const existing = map.waterBodies.find((water) => water.id === 'terrain-ocean');
   const points = mapBoundsPolygon(map).points;
   const ocean: MapWaterBody = {
     id: existing?.id ?? 'terrain-ocean',

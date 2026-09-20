@@ -38,6 +38,8 @@ describe('deterministic terrain generation', () => {
     const map = createEmptyMap('island', 'terrain-island');
     generateTerrainInPlace(map, { preset: 'island', seed: 7, amplitude: 6, roughness: 0.5 });
     expect(sampleTerrainHeight(map, 0, 0)).toBeGreaterThan(sampleTerrainHeight(map, 23, 23));
+    expect(sampleTerrainHeight(map, 23, 0)).toBeLessThan(0);
+    expect(sampleTerrainHeight(map, 23, 23)).toBeLessThan(sampleTerrainHeight(map, 23, 0));
   });
 
   it('applies local brushes after the generated base inside one transaction', () => {
@@ -295,11 +297,97 @@ describe('deterministic terrain generation', () => {
       region: { kind: 'circle', x: 0, z: 0, radius: 10 }, amplitude: 5
     }]);
     expect(stampedIsland.waterBodies).toContainEqual(expect.objectContaining({ type: 'ocean', level: 0 }));
+    expect(sampleTerrainHeight(stampedIsland, 0, 0)).toBeGreaterThan(3);
+    expect(sampleTerrainHeight(stampedIsland, 20, 20)).toBeLessThan(-1);
 
     const hills = applyMapOperations(island, [
       { type: 'terrain.generate', preset: 'hills', seed: 6, amplitude: 4, roughness: 0.4 }
     ]);
     expect(hills.waterBodies).not.toContainEqual(expect.objectContaining({ id: 'terrain-ocean' }));
+  });
+
+  it('submerges unused plain terrain around multiple islands without cutting existing high ground', () => {
+    const archipelago = applyMapOperations(createEmptyMap('local archipelago'), [
+      {
+        type: 'terrain.modify', modifier: 'island', layout: 'coast',
+        region: { kind: 'circle', x: -12, z: 0, radius: 8 }, amplitude: 5, seed: 11
+      },
+      {
+        type: 'terrain.modify', modifier: 'island', layout: 'coast',
+        region: { kind: 'circle', x: 12, z: 0, radius: 8 }, amplitude: 4, seed: 12
+      }
+    ]);
+    expect(sampleTerrainHeight(archipelago, -12, 0)).toBeGreaterThan(3);
+    expect(sampleTerrainHeight(archipelago, 12, 0)).toBeGreaterThan(2.5);
+    expect(sampleTerrainHeight(archipelago, 0, 20)).toBeLessThan(-1);
+
+    const raisedBase = createEmptyMap('raised coast');
+    raisedBase.terrain.heights.fill(2);
+    const preserved = applyMapOperations(raisedBase, [{
+      type: 'terrain.modify', modifier: 'island',
+      region: { kind: 'circle', x: 0, z: 0, radius: 8 }, amplitude: 3
+    }]);
+    expect(sampleTerrainHeight(preserved, 20, 20)).toBeCloseTo(2);
+  });
+
+  it('uses coast layout to create a deterministic non-circular island shoreline', () => {
+    const createCoast = () => applyMapOperations(createEmptyMap('coast'), [{
+      type: 'terrain.modify' as const,
+      modifier: 'island' as const,
+      region: { kind: 'circle' as const, x: 0, z: 0, radius: 20 },
+      amplitude: 5,
+      softness: 0.5,
+      variation: 0.8,
+      layout: 'coast' as const,
+      seed: 23
+    }]);
+    const first = createCoast();
+    const second = createCoast();
+    const shorelineRadii = Array.from({ length: 24 }, (_, index) => {
+      const angle = index / 24 * Math.PI * 2;
+      let shoreline = 0;
+      for (let radius = 12; radius <= 27; radius += 0.25) {
+        const height = sampleTerrainHeight(first, Math.cos(angle) * radius, Math.sin(angle) * radius);
+        if (height > 0.03) shoreline = radius;
+      }
+      return shoreline;
+    });
+
+    expect(first.terrain.heights).toEqual(second.terrain.heights);
+    expect(Math.max(...shorelineRadii) - Math.min(...shorelineRadii)).toBeGreaterThan(2);
+  });
+
+  it('keeps an explicit ocean authoritative regardless of operation order', () => {
+    const explicitOcean = {
+      type: 'water.add' as const,
+      water: {
+        id: 'authored-ocean',
+        name: 'Authored ocean',
+        type: 'ocean' as const,
+        level: 0.65,
+        points: [[-32, -32], [32, -32], [32, 32], [-32, 32]] as Array<[number, number]>
+      }
+    };
+    const island = {
+      type: 'terrain.modify' as const,
+      modifier: 'island' as const,
+      region: { kind: 'circle' as const, x: 0, z: 0, radius: 18 },
+      amplitude: 5
+    };
+
+    for (const operations of [[island, explicitOcean], [explicitOcean, island]]) {
+      const result = applyMapOperations(createEmptyMap('explicit ocean'), operations);
+      expect(result.waterBodies.filter((water) => water.type === 'ocean')).toEqual([
+        expect.objectContaining({ id: 'authored-ocean', level: 0.65 })
+      ]);
+      expect(result.waterBodies.some((water) => water.id === 'terrain-ocean')).toBe(false);
+    }
+
+    const existingOcean = applyMapOperations(createEmptyMap('existing ocean'), [explicitOcean]);
+    const refinedIsland = applyMapOperations(existingOcean, [island]);
+    expect(refinedIsland.waterBodies.filter((water) => water.type === 'ocean')).toEqual([
+      expect.objectContaining({ id: 'authored-ocean', level: 0.65 })
+    ]);
   });
 
   it('re-grounds terrain-following objects and preserves fixed-height objects', () => {

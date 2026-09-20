@@ -229,9 +229,10 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
           break;
         }
         case 'island': {
-          const radius = Math.min(1.25, Math.hypot(nx, nz));
+          const radius = Math.hypot(nx, nz);
           const falloff = smoothstep(1.08, 0.16, radius);
-          height = params.amplitude * (falloff * (0.55 + detail * 0.38) - (1 - falloff) * 0.08);
+          const seabed = smoothstep(0.68, 1.22, radius) * (0.36 + detail * 0.14);
+          height = params.amplitude * (falloff * (0.55 + detail * 0.38) - (1 - falloff) * seabed);
           break;
         }
         case 'archipelago': {
@@ -239,7 +240,10 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
             const radius = Math.hypot(nx - center.x, nz - center.z) / center.radius;
             return Math.max(strongest, smoothstep(1.05, 0.08, radius) * center.height);
           }, 0);
-          height = params.amplitude * (island * (0.55 + detail * 0.35) - (1 - island) * 0.09);
+          const seabed = (1 - island) * (
+            0.18 + smoothstep(0.55, 1.25, Math.hypot(nx, nz)) * (0.28 + detail * 0.08)
+          );
+          height = params.amplitude * (island * (0.55 + detail * 0.35) - seabed);
           break;
         }
         case 'canyon': {
@@ -316,8 +320,28 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
       const effectiveSoftness = params.modifier === 'cliff'
         ? Math.max(0.16, params.softness)
         : params.softness;
-      const weight = regionWeight(params.region, point[0], point[2], effectiveSoftness);
-      if (weight <= 0) continue;
+      const islandSignedDistance = effectiveModifier === 'island'
+        ? islandRegionSignedDistance(
+            params.region,
+            point[0],
+            point[2],
+            params.variation,
+            params.seed,
+            params.layout === 'coast'
+          )
+        : 0;
+      const weight = effectiveModifier === 'island' && params.layout === 'coast'
+        ? islandCoastWeight(
+            params.region,
+            point[0],
+            point[2],
+            effectiveSoftness,
+            params.variation,
+            params.seed,
+            params.access
+          )
+        : regionWeight(params.region, point[0], point[2], effectiveSoftness);
+      if (weight <= 0 && effectiveModifier !== 'island') continue;
       const index = terrainIndex(terrain, xIndex, zIndex);
       const current = terrain.heights[index] ?? 0;
       const noise = fbm(
@@ -436,7 +460,17 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
           break;
         }
         case 'island': {
-          next = current + params.amplitude * (0.72 + noise * 0.12) * weight;
+          const islandHeight = params.amplitude * (0.72 + noise * 0.12);
+          if (current <= 0) {
+            const maxSeabedDepth = Math.min(-TERRAIN_MIN_HEIGHT * 0.75, Math.max(3, params.amplitude * 0.75));
+            const seabed = -Math.min(
+              maxSeabedDepth,
+              0.08 + Math.max(0, -islandSignedDistance) * 0.45
+            );
+            next = lerp(Math.min(current, seabed), islandHeight, weight);
+          } else {
+            next = current + islandHeight * weight;
+          }
           break;
         }
       }
@@ -555,6 +589,48 @@ function regionWeight(region: TerrainRegion, x: number, z: number, softness: num
   if (softness <= 0) return 1;
   const feather = Math.max(0.05, regionScale(region) * softness * 0.2);
   return smoothstep(0, feather, polygonEdgeDistance(x, z, region.points));
+}
+
+function islandCoastWeight(
+  region: TerrainRegion,
+  x: number,
+  z: number,
+  softness: number,
+  variation: number,
+  seed: number,
+  access: TerrainAccessMode
+): number {
+  const scale = Math.max(0.5, regionScale(region));
+  const signedDistance = islandRegionSignedDistance(region, x, z, variation, seed, true);
+  if (!Number.isFinite(signedDistance)) return 0;
+  const transitionRatio = Math.max(
+    0.04 + softness * 0.18,
+    access === 'walkable' ? 0.13 : 0
+  );
+  return smoothstep(0, scale * transitionRatio, signedDistance);
+}
+
+function islandRegionSignedDistance(
+  region: TerrainRegion,
+  x: number,
+  z: number,
+  variation: number,
+  seed: number,
+  coast: boolean
+): number {
+  if (region.kind === 'path') return Number.NEGATIVE_INFINITY;
+  const signedDistance = region.kind === 'circle'
+    ? region.radius - Math.hypot(x - region.x, z - region.z)
+    : (pointInPolygon(x, z, region.points) ? 1 : -1) * polygonEdgeDistance(x, z, region.points);
+  if (!coast) return signedDistance;
+  const scale = Math.max(0.5, regionScale(region));
+  const contourNoise = fbm(
+    x / scale * 2.2,
+    z / scale * 2.2,
+    seed + 6151,
+    0.3 + variation * 0.5
+  );
+  return signedDistance + contourNoise * scale * variation * 0.12;
 }
 
 function mountainRegionWeight(region: TerrainRegion, x: number, z: number, softness: number): number {

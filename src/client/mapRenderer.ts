@@ -1110,8 +1110,9 @@ function createOceanTerrainBinding(
   water: MapWaterBody,
   apron: OceanTerrainApronProfile
 ): OceanTerrainBinding {
+  const sinkTarget = Math.min(apron.sinkTarget, water.level - 0.001);
   const texture = new THREE.DataTexture(
-    new Float32Array(map.terrain.heights),
+    oceanTerrainHeights(map, water.level, sinkTarget),
     map.terrain.resolutionX,
     map.terrain.resolutionZ,
     THREE.RedFormat,
@@ -1136,9 +1137,36 @@ function createOceanTerrainBinding(
     center: [0, 0],
     level: water.level,
     apronWidth: apron.width,
-    sinkTarget: Math.min(apron.sinkTarget, water.level - 0.001),
+    sinkTarget,
     splashPoints
   };
+}
+
+function oceanTerrainHeights(map: EditableMap, oceanLevel: number, sinkTarget: number): Float32Array {
+  const heights = new Float32Array(map.terrain.heights);
+  const coplanar = new Uint8Array(heights.length);
+  let coplanarCount = 0;
+  for (let index = 0; index < heights.length; index += 1) {
+    if (Math.abs(heights[index] - oceanLevel) > 0.02) continue;
+    coplanar[index] = 1;
+    coplanarCount += 1;
+  }
+  if (coplanarCount === 0) return heights;
+
+  const distances = distanceFromOutside(coplanar, map.terrain.resolutionX, map.terrain.resolutionZ);
+  const cellSize = Math.min(
+    map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
+    map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
+  );
+  const maxDepth = Math.max(0.08, oceanLevel - sinkTarget);
+  for (let index = 0; index < heights.length; index += 1) {
+    if (!coplanar[index]) continue;
+    const distance = Number.isFinite(distances[index])
+      ? distances[index] * cellSize
+      : maxDepth / 0.45;
+    heights[index] = oceanLevel - Math.min(maxDepth, 0.08 + distance * 0.45);
+  }
+  return heights;
 }
 
 function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap): void {
@@ -1162,7 +1190,11 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap): 
     }
     const ocean = mesh.userData.waterOceanTerrain as OceanTerrainBinding | undefined;
     if (ocean?.texture?.isDataTexture) {
-      (ocean.texture.image as { data: Float32Array; width: number; height: number }).data = new Float32Array(map.terrain.heights);
+      (ocean.texture.image as { data: Float32Array; width: number; height: number }).data = oceanTerrainHeights(
+        map,
+        ocean.level,
+        ocean.sinkTarget
+      );
       ocean.texture.needsUpdate = true;
     }
   });
@@ -1219,30 +1251,30 @@ function segmentsTouch(
     || onSegment(a, b, c) || onSegment(a, b, d) || onSegment(c, d, a) || onSegment(c, d, b);
 }
 
-function distanceFromOutside(inside: Uint8Array, resolution: number): Float32Array {
+function distanceFromOutside(inside: Uint8Array, width: number, height = width): Float32Array {
   const distances = new Float32Array(inside.length);
   const diagonal = Math.SQRT2;
   for (let index = 0; index < inside.length; index += 1) {
     distances[index] = inside[index] ? Number.POSITIVE_INFINITY : 0;
   }
-  for (let row = 0; row < resolution; row += 1) {
-    for (let column = 0; column < resolution; column += 1) {
-      const index = row * resolution + column;
+  for (let row = 0; row < height; row += 1) {
+    for (let column = 0; column < width; column += 1) {
+      const index = row * width + column;
       if (!inside[index]) continue;
       if (column > 0) distances[index] = Math.min(distances[index], distances[index - 1] + 1);
-      if (row > 0) distances[index] = Math.min(distances[index], distances[index - resolution] + 1);
-      if (column > 0 && row > 0) distances[index] = Math.min(distances[index], distances[index - resolution - 1] + diagonal);
-      if (column + 1 < resolution && row > 0) distances[index] = Math.min(distances[index], distances[index - resolution + 1] + diagonal);
+      if (row > 0) distances[index] = Math.min(distances[index], distances[index - width] + 1);
+      if (column > 0 && row > 0) distances[index] = Math.min(distances[index], distances[index - width - 1] + diagonal);
+      if (column + 1 < width && row > 0) distances[index] = Math.min(distances[index], distances[index - width + 1] + diagonal);
     }
   }
-  for (let row = resolution - 1; row >= 0; row -= 1) {
-    for (let column = resolution - 1; column >= 0; column -= 1) {
-      const index = row * resolution + column;
+  for (let row = height - 1; row >= 0; row -= 1) {
+    for (let column = width - 1; column >= 0; column -= 1) {
+      const index = row * width + column;
       if (!inside[index]) continue;
-      if (column + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + 1] + 1);
-      if (row + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + resolution] + 1);
-      if (column + 1 < resolution && row + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + resolution + 1] + diagonal);
-      if (column > 0 && row + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + resolution - 1] + diagonal);
+      if (column + 1 < width) distances[index] = Math.min(distances[index], distances[index + 1] + 1);
+      if (row + 1 < height) distances[index] = Math.min(distances[index], distances[index + width] + 1);
+      if (column + 1 < width && row + 1 < height) distances[index] = Math.min(distances[index], distances[index + width + 1] + diagonal);
+      if (column > 0 && row + 1 < height) distances[index] = Math.min(distances[index], distances[index + width - 1] + diagonal);
     }
   }
   return distances;
@@ -1353,6 +1385,7 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
   const vertices: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
+  const oceanApron = oceanTerrainApronProfile(map);
 
   for (let z = 0; z < terrain.resolutionZ; z += 1) {
     for (let x = 0; x < terrain.resolutionX; x += 1) {
@@ -1371,16 +1404,21 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
       const centerX = (vertices[a * 3] + vertices[d * 3]) / 2;
       const centerZ = (vertices[a * 3 + 2] + vertices[d * 3 + 2]) / 2;
       if (!isPointInsidePlayableArea(map.layout, map.box.size, centerX, centerZ)) continue;
+      if (oceanApron && [a, b, c, d].every((index) => (
+        Math.abs(vertices[index * 3 + 1] - oceanApron.level) <= 0.02
+      ))) continue;
       if ((x + z) % 2 === 0) indices.push(a, c, b, b, c, d);
       else indices.push(a, c, d, a, d, b);
     }
   }
 
-  const oceanApron = oceanTerrainApronProfile(map);
-  if (oceanApron && map.layout.edgeMask.kind === 'none') {
-    addOceanTerrainApron(vertices, uvs, indices, map, oceanApron);
-  } else if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map);
-  else addMaskBorderSides(vertices, uvs, indices, map);
+  if (map.layout.edgeMask.kind === 'none') {
+    if (oceanApron) {
+      if (oceanTerrainTouchesBoundary(map, oceanApron.level)) {
+        addOceanTerrainApron(vertices, uvs, indices, map, oceanApron);
+      }
+    } else addBorderSides(vertices, uvs, indices, map);
+  } else addMaskBorderSides(vertices, uvs, indices, map);
   const colors: number[] = [];
   for (let index = 0; index < vertices.length; index += 3) {
     colors.push(...terrainVertexColor(map, vertices[index], vertices[index + 1], vertices[index + 2]));
@@ -1408,6 +1446,7 @@ interface OceanTerrainBinding {
 interface OceanTerrainApronProfile {
   width: number;
   segments: number;
+  level: number;
   sinkTarget: number;
 }
 
@@ -1423,7 +1462,21 @@ function oceanTerrainApronProfile(map: EditableMap): OceanTerrainApronProfile | 
   const segments = THREE.MathUtils.clamp(Math.ceil(width / Math.max(cellSize, 0.001)), 6, 24);
   const oceanLevel = Math.max(...oceans.map((water) => water.level));
   const sinkDepth = Math.max(3, cellSize * 2, ...oceans.map((water) => water.depth));
-  return { width, segments, sinkTarget: oceanLevel - sinkDepth };
+  return { width, segments, level: oceanLevel, sinkTarget: oceanLevel - sinkDepth };
+}
+
+function oceanTerrainTouchesBoundary(map: EditableMap, oceanLevel: number): boolean {
+  const { terrain } = map;
+  const threshold = oceanLevel + 0.05;
+  for (let x = 0; x < terrain.resolutionX; x += 1) {
+    if ((terrain.heights[terrainIndex(terrain, x, 0)] ?? 0) > threshold
+      || (terrain.heights[terrainIndex(terrain, x, terrain.resolutionZ - 1)] ?? 0) > threshold) return true;
+  }
+  for (let z = 1; z < terrain.resolutionZ - 1; z += 1) {
+    if ((terrain.heights[terrainIndex(terrain, 0, z)] ?? 0) > threshold
+      || (terrain.heights[terrainIndex(terrain, terrain.resolutionX - 1, z)] ?? 0) > threshold) return true;
+  }
+  return false;
 }
 
 function addOceanTerrainApron(
@@ -1466,6 +1519,17 @@ function addOceanTerrainApron(
     for (let x = 0; x < expandedWidth - 1; x += 1) {
       const gridX = x - profile.segments;
       if (gridX >= 0 && gridX < width - 1 && gridZ >= 0 && gridZ < depth - 1) continue;
+      const sourceXs = [
+        THREE.MathUtils.clamp(gridX, 0, width - 1),
+        THREE.MathUtils.clamp(gridX + 1, 0, width - 1)
+      ];
+      const sourceZs = [
+        THREE.MathUtils.clamp(gridZ, 0, depth - 1),
+        THREE.MathUtils.clamp(gridZ + 1, 0, depth - 1)
+      ];
+      if (!sourceZs.some((sourceZ) => sourceXs.some((sourceX) => (
+        (map.terrain.heights[terrainIndex(map.terrain, sourceX, sourceZ)] ?? 0) > profile.level + 0.05
+      )))) continue;
       const a = baseVertex + z * expandedWidth + x;
       const b = a + 1;
       const c = a + expandedWidth;
