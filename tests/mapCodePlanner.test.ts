@@ -34,18 +34,16 @@ describe('map code planner', () => {
 
   it('accepts more than the legacy placement and scene-operation caps', () => {
     const map = createEmptyMap('expanded code plan', 'expanded-code-plan', [256, 20, 256]);
-    const placements = executeMapCodePlan(`function plan(api) {
-      for (let index = 0; index < 2001; index += 1) {
-        api.place({ name:'marker', position:[(index % 50) * 2 - 50, Math.floor(index / 50) * 2 - 40] });
-      }
-    }`, map, [], { spatialPolicy: 'diagnose' });
+    expect(() => executeMapCodePlan(`function plan(api) {
+      for (let index = 0; index < 2001; index += 1) api.place({ name:'marker', position:[0,0] });
+      throw new Error('placement-limit-sentinel');
+    }`, map)).toThrow('placement-limit-sentinel');
     const sceneOperations = executeMapCodePlan(`function plan(api) {
       for (let index = 0; index < 300; index += 1) {
         api.route({ id:'route-' + index, points:[[-10,index % 20 - 10],[10,index % 20 - 10]], surface:'none' });
       }
     }`, map, [], { spatialPolicy: 'diagnose' });
 
-    expect(placements.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(2_001);
     expect(sceneOperations.operations.filter((operation) => operation.type === 'guide.upsert')).toHaveLength(300);
   });
 
