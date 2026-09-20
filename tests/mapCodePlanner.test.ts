@@ -3421,7 +3421,7 @@ describe('map code planner', () => {
     }
   });
 
-  it('streams partial layouts from discovery attempts that crash mid-execution', async () => {
+  it('does not execute unchanged code again after a repair response is rejected', async () => {
     const code = `function plan(api) {
       api.terrain('plain');
       const hut = api.requireAsset({
@@ -3444,8 +3444,9 @@ describe('map code planner', () => {
       onPlanPreview: (plan) => plans.push(plan)
     })).rejects.toThrow('map_code_execution_failed');
 
-    // Invalid whole-program repair responses are rejected; the original partial layout survives.
-    expect(plans).toHaveLength(2);
+    // Invalid whole-program repair responses are rejected without rerunning the same program.
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(plans).toHaveLength(1);
     for (const plan of plans) {
       expect(plan.summary).toContain('执行中断');
       expect(plan.placements).toHaveLength(1);

@@ -4220,7 +4220,7 @@ async function discoverMapCodeWithRepairs(
         code = applyLocalCodeRepair(code, repairResponse);
       } catch (repairError) {
         recordGenerationTrace('code.repair.rejected', { reason: repairError, retainedCode: code });
-        if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
+        throw new Error(`map_code_execution_failed:${executionError}`);
       }
     }
   }
