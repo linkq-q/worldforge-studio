@@ -213,7 +213,7 @@ describe('bounded scene program', () => {
     expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.mountOn');
   });
 
-  it('persists design groups, focus roles, composition layers and relationship layout in one program result', () => {
+  it('persists design groups, focus roles, layers and declarative relations without reshaping placements', () => {
     const table = asset('table-a', 'Reading Table', ['table']);
     table.colliderPlan.boxes = [{ min: [-1.5, 0, -0.8], max: [1.5, 0.9, 0.8] }];
     table.footprintRadius = 1.5;
@@ -238,10 +238,10 @@ describe('bounded scene program', () => {
     expect(tableObject.designGroupId).toBe('reading');
     expect(tableObject.compositionLayer).toBe(2);
     expect(chairs.every((object) => object.designGroupId === 'reading' && object.compositionLayer === 3)).toBe(true);
-    expect(chairs.every((object) => Math.hypot(
-      object.transform.position[0] - tableObject.transform.position[0],
-      object.transform.position[2] - tableObject.transform.position[2]
-    ) < 4)).toBe(true);
+    expect(generated.designSemantics.relations).toEqual([
+      expect.objectContaining({ id:'chairs-around-table', kind:'attract' })
+    ]);
+    expect(result.operations.some((operation) => operation.type === 'object.update')).toBe(false);
   });
 
   it('rejects arbitrary JavaScript and stops programs that exceed loop budgets', () => {

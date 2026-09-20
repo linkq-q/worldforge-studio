@@ -334,6 +334,9 @@ describe('map code planner', () => {
     const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 2, 4);
 
     expect(prompt).toContain('Return only one synchronous JavaScript function: function plan(api) { ... }.');
+    expect(prompt).toContain('Y-up 3D placement API with horizontal planning in x/z');
+    expect(prompt).not.toContain('This is a 2D environment layout API');
+    expect(prompt).toContain('asset orientation remains yaw-only');
     expect(prompt).toContain('Every generated point supports both point[0]/point[1] and point.x/point.z.');
     expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
     expect(prompt).toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
@@ -440,7 +443,7 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
     expect(prompt).toContain('optional compression tools, not mandatory planning stages');
     expect(prompt).toContain('api.design({experienceMode');
-    expect(prompt).toContain('does not add objects, prune objects, or fill density');
+    expect(prompt).toContain('does not move, add, prune, or fill objects');
     expect(prompt).toContain('api.sampleProbabilityField');
     expect(prompt).toContain('api.grassField');
     expect(prompt).toContain('api.optimizeLayout');
@@ -2024,7 +2027,7 @@ describe('map code planner', () => {
     expect(isPointInsideWaterBody(water, end[0], end[1] + 2, applied)).toBe(false);
   });
 
-  it('persists AI-authored design groups, focuses, layers and deterministic relations in the same transaction', () => {
+  it('persists AI-authored design relations without silently reshaping placements', () => {
     const map = createEmptyMap();
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.sceneIntent({kind:'authored',reason:'garden'});
@@ -2049,7 +2052,10 @@ describe('map code planner', () => {
     expect(focus.objectId).toBe(pavilion?.id);
     expect(pavilion?.designGroupId).toBe('garden');
     expect(stones).toHaveLength(6);
-    expect(stones.every((stone) => Math.hypot(stone.transform.position[0], stone.transform.position[2]) <= 4.01)).toBe(true);
+    expect(stones.map((stone) => stone.transform.position[0])).toEqual([10, 12, 14, 16, 18, 20]);
+    expect(applied.designSemantics.relations).toEqual([
+      expect.objectContaining({ id:'stone-to-pavilion', kind:'attract', minDistance:2, maxDistance:4 })
+    ]);
     expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining(['design', 'place', 'sceneIntent']));
   });
 
@@ -2749,6 +2755,26 @@ describe('map code planner', () => {
       }
     }
     expect(first.codePlan?.functions).toEqual(expect.arrayContaining(['noise2D', 'place', 'sampleProbabilityField']));
+  });
+
+  it('inherits the map seed when a probability field does not override it', () => {
+    const code = `function plan(api) {
+      const points = api.sampleProbabilityField(
+        { bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20}, maxPoints:12, candidates:24 },
+        () => 1
+      );
+      for (const point of points) api.place({name:'seeded-point',position:point});
+    }`;
+    const positionsFor = (seed: number) => {
+      const map = createEmptyMap();
+      map.seed = seed;
+      return executeMapCodePlan(code, map).operations.flatMap((operation) => operation.type === 'object.add'
+        ? [operation.object.transform?.position]
+        : []);
+    };
+
+    expect(positionsFor(11)).toEqual(positionsFor(11));
+    expect(positionsFor(11)).not.toEqual(positionsFor(99));
   });
 
   it('serializes custom grass callbacks into a bounded density operation', () => {

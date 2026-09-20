@@ -38,7 +38,6 @@ import {
   type TerrainSurfaceKind
 } from '../shared/terrainGeneration';
 import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from '../shared/mapDesign';
-import { compileMapDesignRelations } from '../shared/mapDesignRelations';
 
 export interface SceneProgramDiagnostic {
   severity: 'info' | 'warning' | 'error';
@@ -115,7 +114,6 @@ export function executeSceneProgram(
   environment.set('scene', createSceneApi(context));
   for (const statement of file.statements) executeStatement(statement, environment, context);
   if (context.design) {
-    for (const operation of compileMapDesignRelations(context.workingMap, context.design)) emit(context, operation);
     emit(context, { type: 'map.update', designSemantics: resolveDesignFocusObjects(context.workingMap, context.design) });
   }
   if (context.renderPromptSuggestions.length > 0) {

@@ -1,5 +1,5 @@
-import { createMapObject, sampleTerrainHeight, type EditableMap, type MapAsset, type MapObject } from './map';
-import type { MapDesignRelation, MapDesignSemantics } from './mapDesign';
+import { createMapObject, type EditableMap, type MapAsset, type MapObject } from './map';
+import type { MapDesignSemantics } from './mapDesign';
 import type { MapOperation } from './mapOperations';
 import { expandMapScatter, mapAssetFootprintRadius } from './mapScatter';
 
@@ -7,32 +7,6 @@ const NATURAL_DETAIL = /\b(?:tree|pine|bamboo|plant|shrub|bush|flower|rock|stone
 const VEGETATION_DETAIL = /\b(?:tree|pine|bamboo|plant|shrub|bush|flower)\b|树木?|松柏?|松树|竹林?|竹丛|植被|植物|灌木|花木|花卉|花丛/i;
 const ROCK_DETAIL = /\b(?:rock|stone|boulder)\b|太湖石|假山|山石|景石|石块|岩石|巨石/i;
 const MAX_DESIGN_FILL_OBJECTS = 96;
-
-/** Semantic support never reparents objects; physical support requires an explicit attachment. */
-export function compileMapDesignRelations(map: EditableMap, design: MapDesignSemantics): MapOperation[] {
-  const updates = new Map<string, [number, number, number]>();
-  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
-  for (const relation of design.relations) {
-    if (relation.kind === 'support') continue;
-    // A group-to-group relation describes composition; only explicit loose objects may be rearranged.
-    if (!relation.sourceSelector.trim() || (relation.kind === 'attract' && !relation.targetSelector?.trim())) continue;
-    const sources = selectObjects(map, relation.sourceSelector, relation.sourceGroupId, assets)
-      .filter((object) => !object.locked && !object.assemblyId);
-    if (sources.length === 0) continue;
-    if (relation.kind === 'attract') {
-      const target = selectObjects(map, relation.targetSelector ?? '', relation.targetGroupId, assets)[0];
-      if (!target) continue;
-      arrangeAround(map, sources.filter((source) => source.id !== target.id), target, relation, assets, updates);
-    } else {
-      spreadApart(map, sources, relation, assets, updates);
-    }
-  }
-  return [...updates].map(([objectId, position]) => ({
-    type: 'object.update' as const,
-    objectId,
-    patch: { transform: { position } }
-  }));
-}
 
 /** Bind semantic focus selectors after placement IDs are known. */
 export function resolveMapDesignFocusObjects(map: EditableMap, design: MapDesignSemantics): MapDesignSemantics {
@@ -189,55 +163,6 @@ export function compileMapDesignDensityFill(map: EditableMap, design: MapDesignS
   return operations;
 }
 
-function arrangeAround(
-  map: EditableMap,
-  sources: MapObject[],
-  target: MapObject,
-  relation: MapDesignRelation,
-  assets: Map<string, MapAsset>,
-  updates: Map<string, [number, number, number]>
-): void {
-  if (sources.length === 0) return;
-  const targetRadius = footprint(target, assets);
-  const tone = relation.strength === 'tight' ? 0.9 : relation.strength === 'open' ? 1.45 : 1.12;
-  const ordered = [...sources].sort((left, right) => left.id.localeCompare(right.id));
-  const startAngle = Math.atan2(
-    ordered[0].transform.position[2] - target.transform.position[2],
-    ordered[0].transform.position[0] - target.transform.position[0]
-  );
-  ordered.forEach((source, index) => {
-    const natural = (targetRadius + footprint(source, assets) + 0.2) * tone;
-    const radius = clamp(natural, relation.minDistance ?? 0.2, relation.maxDistance ?? Math.max(1, natural * 1.2));
-    const angle = startAngle + index * Math.PI * 2 / ordered.length;
-    const x = target.transform.position[0] + Math.cos(angle) * radius;
-    const z = target.transform.position[2] + Math.sin(angle) * radius;
-    updates.set(source.id, [x, groundedY(map, source, x, z), z]);
-  });
-}
-
-function spreadApart(
-  map: EditableMap,
-  sources: MapObject[],
-  relation: MapDesignRelation,
-  assets: Map<string, MapAsset>,
-  updates: Map<string, [number, number, number]>
-): void {
-  if (sources.length < 2) return;
-  const center = sources.reduce((sum, object) => [
-    sum[0] + object.transform.position[0],
-    sum[1] + object.transform.position[2]
-  ], [0, 0]).map((value) => value / sources.length) as [number, number];
-  const averageRadius = sources.reduce((sum, source) => sum + footprint(source, assets), 0) / sources.length;
-  const tone = relation.strength === 'tight' ? 1 : relation.strength === 'open' ? 1.8 : 1.35;
-  const radius = Math.max(relation.minDistance ?? 0, averageRadius * tone, sources.length * averageRadius / Math.PI);
-  [...sources].sort((left, right) => left.id.localeCompare(right.id)).forEach((source, index) => {
-    const angle = index * Math.PI * 2 / sources.length;
-    const x = center[0] + Math.cos(angle) * radius;
-    const z = center[1] + Math.sin(angle) * radius;
-    updates.set(source.id, [x, groundedY(map, source, x, z), z]);
-  });
-}
-
 function selectObjects(
   map: EditableMap,
   selector: string,
@@ -255,16 +180,6 @@ function selectObjects(
       || asset?.name.toLowerCase().includes(needle)
       || asset?.tags?.some((tag) => tag.toLowerCase() === needle || tag.toLowerCase().includes(needle));
   });
-}
-
-function footprint(object: MapObject, assets: Map<string, MapAsset>): number {
-  const radius = object.assetId ? assets.get(object.assetId)?.footprintRadius : undefined;
-  return Math.max(0.15, (radius ?? Math.max(object.transform.size[0], object.transform.size[2]) / 2)
-    * Math.max(object.transform.scale[0], object.transform.scale[2]));
-}
-
-function groundedY(map: EditableMap, object: MapObject, x: number, z: number): number {
-  return object.heightMode === 'terrain' ? sampleTerrainHeight(map, x, z) : object.transform.position[1];
 }
 
 function stableObjectScore(object: MapObject): number {

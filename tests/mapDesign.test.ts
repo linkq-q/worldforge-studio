@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
 import { normalizeMapDesignSemantics } from '../src/shared/mapDesign';
-import { compileMapDesignDensityFill, compileMapDesignPruning, compileMapDesignRelations } from '../src/shared/mapDesignRelations';
+import { compileMapDesignDensityFill, compileMapDesignPruning } from '../src/shared/mapDesignRelations';
 import { applyMapOperations } from '../src/shared/mapOperations';
 
 describe('map design semantics', () => {
@@ -81,7 +81,7 @@ describe('map design semantics', () => {
     ]);
   });
 
-  it('keeps semantic support separate from physical parent placement', () => {
+  it('persists semantic support without creating physical parent placement', () => {
     const table = asset('table', '桌子', [2, 1, 1]);
     const computer = asset('computer', '电脑', [0.5, 0.4, 0.4]);
     const map = createEmptyMap('support');
@@ -95,8 +95,9 @@ describe('map design semantics', () => {
     }, map.box.size);
 
     const before = structuredClone(computerObject);
-    expect(compileMapDesignRelations(map, design)).toEqual([]);
-    expect(computerObject.parentId).toBeNull();
+    const saved = applyMapOperations(map, [{ type:'map.update', designSemantics:design }]);
+    expect(saved.designSemantics.relations).toEqual([expect.objectContaining({ kind:'support' })]);
+    expect(saved.objects.find((object) => object.id === computerObject.id)?.parentId).toBeNull();
     expect(computerObject).toEqual(before);
   });
 
@@ -162,7 +163,8 @@ describe('map design semantics', () => {
       assemblies: [{ id: 'city-wall', groupId: 'city', topology: 'loop' }],
       relations: [{ id: 'city-to-entry', kind: 'attract', sourceGroupId: 'city', targetGroupId: 'entry' }]
     }, map.box.size);
-    expect(compileMapDesignRelations(map, design)).toEqual([]);
+    const saved = applyMapOperations(map, [{ type:'map.update', designSemantics:design }]);
+    expect(saved.designSemantics.relations).toEqual([expect.objectContaining({ kind:'attract' })]);
     expect(wall.transform.position).toEqual([20, 0, 20]);
   });
 
@@ -190,7 +192,8 @@ describe('map design semantics', () => {
       }]
     }, map.box.size);
 
-    expect(compileMapDesignRelations(map, design)).toEqual([]);
+    const saved = applyMapOperations(map, [{ type:'map.update', designSemantics:design }]);
+    expect(saved.designSemantics.relations).toEqual([expect.objectContaining({ kind:'support' })]);
     expect(map.objects.map((object) => object.parentId)).toEqual([null, null, null]);
     expect(left.transform.position).toEqual([-30, 0, 20]);
     expect(right.transform.position).toEqual([30, 0, -20]);
