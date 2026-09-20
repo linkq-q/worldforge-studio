@@ -34,4 +34,17 @@ describe('map AI controls', () => {
     expect(mapAiSource).toContain('revisionMode: options.codeRevisionMode');
     expect(mapAiSource).toContain('spatialPolicy: options.codeSpatialPolicy');
   });
+
+  it('separates planning and asset-generation providers', () => {
+    expect(source).toContain("private mapAiProvider: ChatProvider = 'gpt';");
+    expect(source).toContain("private mapAiAssetProvider: ModelProvider | '' = '';");
+    expect(source).toContain('id="map-ai-provider"');
+    expect(source).toContain('id="map-ai-asset-provider"');
+    expect(source).toContain('跟随规划模型');
+    expect(source.match(/assetProvider: this\.mapAiAssetProvider/g)).toHaveLength(3);
+    expect(source).toContain("plan.options.provider ?? 'gpt'");
+    expect(source).toContain("plan.options.assetProvider ?? ''");
+    expect(httpSource).toContain('isModelProvider(body.assetProvider)');
+    expect(httpSource).toContain('body.assetProvider ?? modelProviderForChatProvider(provider)');
+  });
 });

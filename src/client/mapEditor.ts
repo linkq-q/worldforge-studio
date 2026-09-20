@@ -171,11 +171,14 @@ import {
   type TerrainSurfaceKind
 } from '../shared/terrainGeneration';
 import {
+  CHAT_PROVIDER_OPTIONS,
+  MODEL_PROVIDERS,
   type AgentProgressEvent,
   type ChatProvider,
   type MapCodePromptMode,
   type MapCodeRevisionMode,
-  type MapCodeSpatialPolicy
+  type MapCodeSpatialPolicy,
+  type ModelProvider
 } from '../shared/protocol';
 import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
@@ -447,6 +450,7 @@ class MapEditor {
   private mapAiTargetRegionId = '';
   private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
+  private mapAiAssetProvider: ModelProvider | '' = '';
   private mapAiPaletteId = '';
   private mapAiCodePromptMode: MapCodePromptMode = 'standard';
   private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';
@@ -1178,6 +1182,8 @@ class MapEditor {
           this.mapAiReuseExistingAssets = plan.options.reuseExistingAssets;
           this.activeAssetLibraryId = plan.options.assetLibraryId;
           this.mapAiPaletteId = plan.options.paletteId;
+          this.mapAiProvider = plan.options.provider ?? 'gpt';
+          this.mapAiAssetProvider = plan.options.assetProvider ?? '';
           this.mapAiCodePromptMode = plan.options.codePromptMode ?? 'standard';
           this.mapAiCodeRevisionMode = plan.options.codeRevisionMode ?? 'repair';
           this.mapAiCodeSpatialPolicy = plan.options.codeSpatialPolicy ?? 'repair';
@@ -1553,6 +1559,19 @@ class MapEditor {
         </label>
         <div class="map-ai-options">
           <label class="field compact">
+            <span>规划模型</span>
+            <select id="map-ai-provider" ${this.state.busy ? 'disabled' : ''}>
+              ${CHAT_PROVIDER_OPTIONS.map((provider) => `<option value="${provider.key}" ${provider.key === this.mapAiProvider ? 'selected' : ''} ${provider.disabled ? 'disabled' : ''}>${escapeHtml(provider.label)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field compact">
+            <span>资产生成模型</span>
+            <select id="map-ai-asset-provider" ${this.state.busy ? 'disabled' : ''}>
+              <option value="" ${this.mapAiAssetProvider === '' ? 'selected' : ''}>跟随规划模型</option>
+              ${MODEL_PROVIDERS.map((provider) => `<option value="${provider}" ${provider === this.mapAiAssetProvider ? 'selected' : ''}>${provider.toUpperCase()}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field compact">
             <span>生成后吸附色卡（可选）</span>
             <select id="map-ai-color-palette" ${this.state.busy ? 'disabled' : ''}>
               <option value="">不套用色卡</option>
@@ -1715,6 +1734,12 @@ class MapEditor {
     });
     host.querySelector<HTMLSelectElement>('#map-ai-color-palette')?.addEventListener('change', (event) => {
       this.mapAiPaletteId = (event.target as HTMLSelectElement).value;
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-provider')?.addEventListener('change', (event) => {
+      this.mapAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-asset-provider')?.addEventListener('change', (event) => {
+      this.mapAiAssetProvider = (event.target as HTMLSelectElement).value as ModelProvider | '';
     });
     for (const button of host.querySelectorAll<HTMLButtonElement>('[data-map-design-group]')) {
       button.addEventListener('click', () => {
@@ -2409,7 +2434,9 @@ class MapEditor {
           paletteId: this.mapAiPaletteId,
           codePromptMode: this.mapAiCodePromptMode,
           codeRevisionMode: this.mapAiCodeRevisionMode,
-          codeSpatialPolicy: this.mapAiCodeSpatialPolicy
+          codeSpatialPolicy: this.mapAiCodeSpatialPolicy,
+          provider: this.mapAiProvider,
+          assetProvider: this.mapAiAssetProvider
         }
       });
       this.codePlanSaved = true;
@@ -2455,6 +2482,7 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.mapAiProvider,
+            assetProvider: this.mapAiAssetProvider || undefined,
             reuseExistingAssets: this.mapAiReuseExistingAssets,
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
             minNewAssets: this.mapAiMinNewAssets,
@@ -2549,6 +2577,7 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.mapAiProvider,
+            assetProvider: this.mapAiAssetProvider || undefined,
             reuseExistingAssets: this.mapAiReuseExistingAssets,
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
             minNewAssets: visualRepair ? 0 : this.mapAiMinNewAssets,

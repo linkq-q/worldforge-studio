@@ -50,6 +50,7 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('indoor_prompt_requires_indoor_map'))).toContain('【场景类型不匹配】');
     expect(humanizeAgentError(new Error('Failed to fetch'))).toContain('【连接失败】');
     expect(humanizeAgentError(new Error('chat_service_unreachable'))).toContain('【AI 服务连接失败】');
+    expect(humanizeAgentError(new Error('asset_provider_unavailable'))).toContain('【资产模型不可用】');
     expect(humanizeAgentError(new Error('scene_agent_iteration_budget_exceeded'))).toContain('【Scene Agent 未收敛】');
     expect(humanizeAgentError(new Error('map_code_execution_failed:Error: Script execution timed out after 250ms')))
       .toContain('【场景 Code 执行超时】');

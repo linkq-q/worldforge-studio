@@ -6,6 +6,7 @@ import {
   MODEL_PROVIDERS,
   type AgentProgressEvent,
   type ChatProvider,
+  type ModelProvider,
   type ModelJobState
 } from '../shared/protocol';
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
@@ -20,7 +21,7 @@ const generationMaterialTagVocabulary = compactMaterialTagVocabulary(materialTag
 
 export interface ModelApiOptions {
   apiBase?: string;
-  providers?: readonly string[];
+  providers?: readonly ModelProvider[];
   mode?: ModelGenerationMode;
   materialTags?: unknown | false;
   seeded?: boolean;

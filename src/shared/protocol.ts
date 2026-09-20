@@ -21,6 +21,7 @@ export const DEFAULT_INPUT: InputState = {
 
 export const MODEL_API_BASE = 'https://voxel-studio-backend.zeabur.app';
 export const MODEL_PROVIDERS = ['fireworks', 'glm', 'gpt', 'deepseek'] as const;
+export type ModelProvider = typeof MODEL_PROVIDERS[number];
 export const CHAT_PROVIDER_OPTIONS = [
   { key: 'gpt', label: 'GPT', disabled: false },
   { key: 'glm', label: 'GLM 5', disabled: true },
@@ -31,6 +32,14 @@ export type ChatProvider = typeof CHAT_PROVIDER_OPTIONS[number]['key'];
 export type MapCodePromptMode = 'standard' | 'minimal';
 export type MapCodeRevisionMode = 'repair' | 'first-pass';
 export type MapCodeSpatialPolicy = 'repair' | 'diagnose';
+
+export function isModelProvider(value: unknown): value is ModelProvider {
+  return typeof value === 'string' && MODEL_PROVIDERS.some((provider) => provider === value);
+}
+
+export function modelProviderForChatProvider(provider: ChatProvider): ModelProvider {
+  return provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
+}
 
 export interface InputState {
   forward: boolean;

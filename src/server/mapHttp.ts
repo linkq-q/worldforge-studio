@@ -13,11 +13,14 @@ import {
 } from '../shared/map';
 import {
   CHAT_PROVIDER_OPTIONS,
+  isModelProvider,
+  modelProviderForChatProvider,
   type AgentProgressEvent,
   type ChatProvider,
   type MapCodePromptMode,
   type MapCodeRevisionMode,
   type MapCodeSpatialPolicy,
+  type ModelProvider,
   type Vec3
 } from '../shared/protocol';
 import {
@@ -549,6 +552,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const body = await readJson<{
       prompt?: string;
       provider?: ChatProvider;
+      assetProvider?: ModelProvider;
       baseOperations?: MapOperation[];
       reuseExistingAssets?: boolean;
       assetLibraryId?: string;
@@ -575,6 +579,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    if (body.assetProvider !== undefined && !isModelProvider(body.assetProvider)) {
+      throw new HttpError(400, 'asset_provider_unavailable');
+    }
     const controller = new AbortController();
     const stream = acceptsEventStream(req);
     if (stream) beginSse(res);
@@ -626,7 +633,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const refinableObjectIds = baseOperations.flatMap((operation) => (
         operation.type === 'object.add' && operation.object.id ? [operation.object.id] : []
       ));
-      const modelProvider = provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
+      const modelProvider = body.assetProvider ?? modelProviderForChatProvider(provider);
       const planningAssets = dedupeAssets([
         ...assets,
         ...(planningMap.assets ?? []),

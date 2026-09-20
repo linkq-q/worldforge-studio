@@ -75,6 +75,7 @@ export function humanizeAgentError(error: unknown): string {
     ecology_region_content_locked: '【目标区块已锁定】该区块禁止重新生成内容。请先关闭“锁定内容”，再重试。',
     unknown_visual_zone: '【目标区域失效】所选视觉区域已不存在。请改为整张地图或重新选择区域。',
     provider_unavailable: '【模型不可用】所选 AI 提供方当前不可用。请切换可用模型后重试。',
+    asset_provider_unavailable: '【资产模型不可用】所选资产生成模型不可用。请改为跟随规划模型或选择列表中的资产模型。',
     chat_service_unreachable: '【AI 服务连接失败】本地编辑器仍可访问，但它无法连接上游 AI 模型服务。请稍后重试或切换模型提供方；本次规划没有应用。',
     missing_prompt: '【缺少提示词】没有收到可用的地图提示词。请填写生成要求后重试。',
     map_layout_incomplete_partition: '【分区拓扑校验失败】AI 给出的区块存在重叠或缺口，自动修正后仍未完整覆盖地图。请简化分区描述后重试。',
