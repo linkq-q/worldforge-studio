@@ -3591,7 +3591,7 @@ The 10 APIs:
 3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving', material?, region, intensity?}) — paints existing terrain; cannot create height.
 4. api.water(id, {type:'lake'|'river'|'ocean', points:[[x,z],...], level, depth}).
 5. api.route({id, name?, points:[[x,z],...], width?, curve?:'polyline'|'catmull-rom', closed?, surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none'}) — returns the route id; paints the path unless surface:'none'.
-6. api.grass(id, region, {preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss', density?, height?, mix?:{short?,tall?,flowers?}}).
+6. api.grass(id, region, {preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss', density?, height?, mix?:{short?,tall?,flowers?}}) — hard engine cap: at most 8 grass layers per map.
 7. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'structure'|'environment', variants?, optional?}).
 8. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
 9. api.place({assetId, name?, position:[x,z], rotationY?, scale?, role?}) — terrain height auto-sampled; rotationY is radians around Y, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
