@@ -74,12 +74,21 @@ export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassDrawCalls: number;
 }
 
+export interface MapBuildProfile {
+  setupMs: number;
+  primitiveBatchMs: number;
+  objectVisualMs: number;
+  finalizeMs: number;
+  totalMs: number;
+}
+
 export interface RenderedMap {
   group: THREE.Group;
   modelsRoot: THREE.Group;
   runtimeIndex: RuntimeIndex;
   objectGroups: Map<string, THREE.Group>;
   pickables: THREE.Object3D[];
+  buildProfile: MapBuildProfile;
   syncObjectTransform: (objectId: string) => void;
   update: (deltaTime: number, camera: THREE.Camera, maxDistance: number) => void;
   restoreMaterialEffects: () => void;
@@ -142,6 +151,7 @@ export interface MapMotionAdapter {
 }
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
+  const buildStartedAt = performance.now();
   const normalizedMap = normalizeMap(input);
   // Keep the persisted map/collider data untouched; only the render snapshot gets micro-offsets.
   const zFighting = resolveMapModelZFighting(normalizedMap);
@@ -229,6 +239,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     else modelsRoot.add(group);
   }
   modelsRoot.updateMatrixWorld(true);
+  const primitiveBatchStartedAt = performance.now();
   const instancing = await buildMapPrimitiveBatches(map.objects.flatMap((object) => {
     const asset = object.visible && object.assetId ? assets.get(object.assetId) : undefined;
     const objectGroup = objectGroups.get(object.id);
@@ -241,12 +252,14 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     modelsRoot,
     materialTagPolicy: map.materialTagPolicy
   });
+  const primitiveBatchFinishedAt = performance.now();
   const paletteMaterials = new PaletteMaterialRuntime(
     instancing.runtimeIndex,
     createPalettePartResolver(map, assets)
   );
   modelsRoot.add(instancing.root);
   await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);
+  const objectVisualFinishedAt = performance.now();
   if (options.motionAdapter) {
     for (const object of map.objects) {
       if (!object.visible || !object.behavior?.animation || !object.assetId) continue;
@@ -292,12 +305,22 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     root.add(localLights.group);
   };
 
+  const buildFinishedAt = performance.now();
+  const buildProfile: MapBuildProfile = {
+    setupMs: primitiveBatchStartedAt - buildStartedAt,
+    primitiveBatchMs: primitiveBatchFinishedAt - primitiveBatchStartedAt,
+    objectVisualMs: objectVisualFinishedAt - primitiveBatchFinishedAt,
+    finalizeMs: buildFinishedAt - objectVisualFinishedAt,
+    totalMs: buildFinishedAt - buildStartedAt
+  };
+
   return {
     group: root,
     modelsRoot,
     runtimeIndex: instancing.runtimeIndex,
     objectGroups,
     pickables,
+    buildProfile,
     syncObjectTransform: (id) => { instancing.syncObjectTransform(id); if (artPlan?.lights.length) setArtLights(); },
     update: (deltaTime, camera, maxDistance) => {
       materialElapsedSeconds += deltaTime;

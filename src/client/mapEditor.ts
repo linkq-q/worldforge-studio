@@ -6067,7 +6067,12 @@ class MapEditor {
     });
     const rebuildMs = performance.now() - rebuildStartedAt;
     if (rebuildMs > 100) {
-      console.info(`[perf] scene rebuild: ${this.mapWithEditorAssets().objects.length} objects in ${rebuildMs.toFixed(0)}ms`);
+      const profile = next.buildProfile;
+      console.info(
+        `[perf] scene rebuild: ${this.mapWithEditorAssets().objects.length} objects in ${rebuildMs.toFixed(0)}ms `
+        + `(setup ${profile.setupMs.toFixed(0)}, batches ${profile.primitiveBatchMs.toFixed(0)}, `
+        + `visuals ${profile.objectVisualMs.toFixed(0)}, finalize ${profile.finalizeMs.toFixed(0)})`
+      );
     }
     if (previous) {
       this.renderScene?.attach(null);
