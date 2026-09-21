@@ -360,16 +360,17 @@ describe('structured map water rendering', () => {
     const oceanTerrain = ocean.userData.waterOceanTerrain as { texture: THREE.DataTexture; sinkTarget: number };
     const boundHeights = (oceanTerrain.texture.image as unknown as { data: Float32Array }).data;
     const boundary = terrainBoundaryPoints(terrain.geometry);
-    expect(Math.max(...boundary.map((point) => point.y))).toBeLessThanOrEqual(-2.85);
-    expect(Math.max(...boundary.map((point) => Math.abs(point.x)))).toBeLessThan(map.box.size[0] / 2 - 0.05);
-    expect(Math.max(...boundary.map((point) => Math.abs(point.z)))).toBeLessThan(map.box.size[2] / 2 - 0.05);
+    expect(Math.max(...boundary.map((point) => point.y))).toBeLessThanOrEqual(-20);
+    expect(Math.max(...boundary.map((point) => Math.abs(point.x)))).toBeGreaterThan(map.box.size[0] / 2);
+    expect(Math.max(...boundary.map((point) => Math.abs(point.z)))).toBeGreaterThan(map.box.size[2] / 2);
     expect(terrainPoints.some((point) => point.y < -0.5 && point.y > oceanTerrain.sinkTarget + 0.5)).toBe(true);
     expect(terrainPoints.find((point) => Math.abs(point.x) < 1e-4 && Math.abs(point.z) < 1e-4)?.y).toBeCloseTo(4);
-    expect(boundHeights[0]).toBeCloseTo(oceanTerrain.sinkTarget);
     const field = terrain.geometry.userData.oceanCoast as OceanCoastField;
-    // The cut must be behind the fully opaque part of ocean depth shading (80%).
+    expect(boundHeights[0]).toBeCloseTo(field.floorTarget);
+    // The render-only seabed must continue below the opaque-water threshold instead of
+    // exposing a triangle-clipped silhouette near the island.
     expect(boundary.length).toBeGreaterThan(0);
-    expect(boundary.every(point => (field.level - point.y) / (field.level - field.sinkTarget) > 0.95)).toBe(true);
+    expect(boundary.every(point => point.y <= field.floorTarget + 0.02)).toBe(true);
     expect(boundHeights).toBe(field.heights);
     expect(sampleCoastGrid({ ...field, heights: boundHeights }, 0, 0)).toBeCloseTo(4);
     const positions = terrain.geometry.getAttribute('position');
@@ -382,7 +383,7 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
-  it('omits the ocean apron when an island stays inside the map boundary', async () => {
+  it('keeps a contained island apron below the visible seabed instead of cutting it off', async () => {
     const map = applyMapOperations(createEmptyMap('contained island', 'contained-island', [48, 16, 48]), [{
       type: 'terrain.modify', modifier: 'island', layout: 'coast',
       region: { kind: 'circle', x: 0, z: 0, radius: 12 }, amplitude: 5, seed: 9
@@ -390,11 +391,13 @@ describe('structured map water rendering', () => {
     const rendered = await buildEditableMapGroup(map);
     const geometry = (rendered.group.getObjectByName('terrain') as THREE.Mesh).geometry;
     const outside = referencedTerrainPoints(geometry).filter((point) => Math.abs(point.x) > 24 || Math.abs(point.z) > 24);
-    expect(outside).toHaveLength(0);
+    const field = geometry.userData.oceanCoast as OceanCoastField;
+    expect(outside.length).toBeGreaterThan(0);
+    expect(terrainBoundaryPoints(geometry).every((point) => point.y <= field.floorTarget + 0.02)).toBe(true);
     rendered.dispose();
   });
 
-  it('adds a rounded render-only terrain apron only beside land that reaches the ocean-map edge', async () => {
+  it('sinks the map-edge continuation below opaque water before its hidden floor', async () => {
     const buildOceanMap = (size: number) => {
       const map = createEmptyMap(`ocean-${size}`, `ocean-${size}`, [size, 16, size]);
       map.terrain.heights.fill(-2);
@@ -420,12 +423,15 @@ describe('structured map water rendering', () => {
       const terrainGeometry = (rendered.group.getObjectByName('terrain') as THREE.Mesh).geometry;
       const outside = referencedTerrainPoints(terrainGeometry)
         .filter((point) => Math.abs(point.x) > size / 2 || Math.abs(point.z) > size / 2);
+      const field = terrainGeometry.userData.oceanCoast as OceanCoastField;
+      const visibleOutside = outside.filter((point) => point.y > field.floorTarget + 0.5);
       expect(outside.length).toBeGreaterThan(0);
-      expect(outside.every((point) => point.x <= -size / 2)).toBe(true);
-      expect(Math.min(...outside.map((point) => point.y))).toBeLessThanOrEqual(-3);
-      const minX = Math.min(...outside.map((point) => point.x));
-      const minZ = Math.min(...outside.map((point) => point.z));
-      expect(outside.some((point) => Math.abs(point.x - minX) < 1e-4 && Math.abs(point.z - minZ) < 1e-4)).toBe(false);
+      expect(visibleOutside.length).toBeGreaterThan(0);
+      expect(visibleOutside
+        .filter((point) => point.x > -size / 2 + 0.02)
+        .every((point) => point.y <= field.sinkTarget + 0.02)).toBe(true);
+      expect(Math.min(...outside.map((point) => point.y))).toBeCloseTo(field.floorTarget);
+      expect(terrainBoundaryPoints(terrainGeometry).every((point) => point.y <= field.floorTarget + 0.02)).toBe(true);
       expect(map.terrain.heights).toEqual(originalHeights);
       const ocean = rendered.group.getObjectByName(`water:ocean-${size}`) as THREE.Mesh;
       const terrainBinding = ocean.userData.waterOceanTerrain as { texture: THREE.DataTexture };
@@ -437,7 +443,7 @@ describe('structured map water rendering', () => {
       const updatedHeights = (boundTexture.image as unknown as { data: Float32Array }).data;
       expect(updatedHeights).toBe(updated.heights);
       expect(sampleCoastGrid({ ...updated, heights: updatedHeights }, -size / 2, -size / 2)).toBeCloseTo(5);
-      const reach = Math.max(...outside.flatMap((point) => [Math.abs(point.x), Math.abs(point.z)])) - size / 2;
+      const reach = Math.max(...visibleOutside.flatMap((point) => [Math.abs(point.x), Math.abs(point.z)])) - size / 2;
       rendered.dispose();
       return reach;
     };
@@ -447,7 +453,7 @@ describe('structured map water rendering', () => {
 
     // Reach follows the local profile, not a fixed apron or the map dimensions.
     expect(smallReach).toBeGreaterThan(3);
-    expect(smallReach).toBeLessThan(9);
+    expect(smallReach).toBeLessThan(12);
     expect(titleScaleReach).toBeCloseTo(smallReach, 4);
   });
 

@@ -51,7 +51,8 @@ describe('continuous ocean coast', () => {
     expect(field.loops).toHaveLength(1);
     expect(sampleCoastGrid(field, -map.box.size[0] / 2, 0)).toBeCloseTo(3);
     expect(sampleCoastGrid(field, -map.box.size[0] / 2 - 2, 0)).toBeGreaterThan(field.sinkTarget);
-    expect(field.heights[0]).toBeLessThanOrEqual(field.sinkTarget);
+    expect(field.floorTarget).toBeLessThan(field.sinkTarget - 12);
+    expect(field.heights[0]).toBeCloseTo(field.floorTarget);
   });
 
   it('gives steep rock shores a narrower submerged profile than gentle beaches', () => {

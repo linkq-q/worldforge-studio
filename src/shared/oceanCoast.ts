@@ -20,6 +20,7 @@ export interface OceanCoastField extends CoastGrid {
   distances: Float32Array;
   level: number;
   sinkTarget: number;
+  floorTarget: number;
   shoreWidth: number;
   loops: CoastPoint[][];
 }
@@ -37,6 +38,7 @@ export function buildOceanCoastField(map: EditableMap, level: number): OceanCoas
   const cell = Math.min(stepX, stepZ);
   const shoreWidth = Math.max(6, Math.min(12, cell * 4));
   const sinkTarget = level - 6;
+  const floorTarget = level - Math.max(24, map.box.size[1] * 2);
   const paddingX = Math.ceil((shoreWidth + cell * 3) / stepX);
   const paddingZ = Math.ceil((shoreWidth + cell * 3) / stepZ);
   const source: CoastGrid = {
@@ -58,7 +60,9 @@ export function buildOceanCoastField(map: EditableMap, level: number): OceanCoas
       const base = explicitOceans.length
         ? height
         : Math.abs(height - level) <= 0.02 ? level - 0.02 : height;
-      sourceHeights[z * source.width + x] = base + (Math.min(base, sinkTarget) - base) * smooth(distance / shoreWidth);
+      const sunk = base + (Math.min(base, sinkTarget) - base) * smooth(distance / shoreWidth);
+      sourceHeights[z * source.width + x] = sunk + (floorTarget - sunk)
+        * smooth((distance - shoreWidth) / (cell * 3));
       if (explicitOceans.length) {
         const wx = source.minX + x * stepX;
         const wz = source.minZ + z * stepZ;
@@ -74,7 +78,7 @@ export function buildOceanCoastField(map: EditableMap, level: number): OceanCoas
   const loops = smoothCoastLoops(extractCoastLoops({ ...source, heights: coastHeights }, level), cell);
   const width = (source.width - 1) * 3 + 1, depth = (source.depth - 1) * 3 + 1;
   const field: OceanCoastField = { ...source, width, depth, stepX: stepX / 3, stepZ: stepZ / 3,
-    heights: new Float32Array(width * depth), distances: new Float32Array(width * depth), level, sinkTarget, shoreWidth, loops };
+    heights: new Float32Array(width * depth), distances: new Float32Array(width * depth), level, sinkTarget, floorTarget, shoreWidth, loops };
   const segments = loops.flatMap(loop => loop.map((a, i) => ({ a, b: loop[(i + 1) % loop.length] })));
   // Index only the coast band; don't compare every terrain sample with every edge.
   const buckets = new Map<string, typeof segments>();

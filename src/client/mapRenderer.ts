@@ -1371,65 +1371,11 @@ function pushUpwardTriangle(
   else indices.push(a, c, b);
 }
 
-function pushTerrainTriangleAbove(
-  indices: number[],
-  vertices: number[],
-  uvs: number[],
-  triangle: readonly [number, number, number],
-  minHeight: number | null,
-  intersections: Map<string, number>
-): void {
-  if (minHeight === null) {
-    indices.push(...triangle);
-    return;
-  }
-  const clipped: number[] = [];
-  const append = (index: number) => {
-    if (clipped.at(-1) !== index) clipped.push(index);
-  };
-  const intersection = (start: number, end: number): number => {
-    const key = start < end ? `${start}:${end}` : `${end}:${start}`;
-    const cached = intersections.get(key);
-    if (cached !== undefined) return cached;
-    const startY = vertices[start * 3 + 1];
-    const endY = vertices[end * 3 + 1];
-    const t = THREE.MathUtils.clamp((minHeight - startY) / (endY - startY), 0, 1);
-    if (t <= 1e-6) return start;
-    if (t >= 1 - 1e-6) return end;
-    const index = vertices.length / 3;
-    vertices.push(
-      THREE.MathUtils.lerp(vertices[start * 3], vertices[end * 3], t),
-      minHeight,
-      THREE.MathUtils.lerp(vertices[start * 3 + 2], vertices[end * 3 + 2], t)
-    );
-    uvs.push(
-      THREE.MathUtils.lerp(uvs[start * 2], uvs[end * 2], t),
-      THREE.MathUtils.lerp(uvs[start * 2 + 1], uvs[end * 2 + 1], t)
-    );
-    intersections.set(key, index);
-    return index;
-  };
-
-  for (let item = 0; item < triangle.length; item += 1) {
-    const start = triangle[item];
-    const end = triangle[(item + 1) % triangle.length];
-    const startInside = vertices[start * 3 + 1] >= minHeight;
-    const endInside = vertices[end * 3 + 1] >= minHeight;
-    if (startInside) append(start);
-    if (startInside !== endInside) append(intersection(start, end));
-  }
-  if (clipped.length > 1 && clipped[0] === clipped.at(-1)) clipped.pop();
-  for (let item = 1; item < clipped.length - 1; item += 1) {
-    pushUpwardTriangle(indices, vertices, clipped[0], clipped[item], clipped[item + 1]);
-  }
-}
-
 function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null): THREE.BufferGeometry {
   const terrain = map.terrain;
   const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
   const width = coast?.width ?? terrain.resolutionX;
   const depth = coast?.depth ?? terrain.resolutionZ;
-  const clipIntersections = new Map<string, number>();
   for (let z = 0; z < depth; z++) {
     for (let x = 0; x < width; x++) {
       const point = coast
@@ -1448,9 +1394,7 @@ function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null): 
         && !isPointInsidePlayableArea(map.layout, map.box.size, centerX, centerZ)) continue;
       const triangles: Array<readonly [number, number, number]> = (x + z) % 2 === 0
         ? [[a, c, b], [b, c, d]] : [[a, c, d], [a, d, b]];
-      for (const triangle of triangles) {
-        pushTerrainTriangleAbove(indices, vertices, uvs, triangle, coast ? coast.sinkTarget + 0.01 : null, clipIntersections);
-      }
+      for (const triangle of triangles) pushUpwardTriangle(indices, vertices, ...triangle);
     }
   }
   if (!coast) {
