@@ -79,16 +79,11 @@ export function configureDistanceFogPass(pass: UniformPass, color: string, densi
 export function bindDistanceFogDepth(
   pass: UniformPass,
   depthTexture: THREE.DepthTexture,
-  camera: THREE.PerspectiveCamera,
-  oceanLevel?: number
+  camera: THREE.PerspectiveCamera
 ): void {
   if (pass.uniforms.tDepth) pass.uniforms.tDepth.value = depthTexture;
   if (pass.uniforms.uCameraNear) pass.uniforms.uCameraNear.value = camera.near;
   if (pass.uniforms.uCameraFar) pass.uniforms.uCameraFar.value = camera.far;
-  if (pass.uniforms.uFogOceanEnabled) pass.uniforms.uFogOceanEnabled.value = Number.isFinite(oceanLevel);
-  if (pass.uniforms.uFogOceanLevel) pass.uniforms.uFogOceanLevel.value = oceanLevel ?? 0;
-  (pass.uniforms.uFogInverseProjection?.value as THREE.Matrix4 | undefined)?.copy(camera.projectionMatrixInverse);
-  (pass.uniforms.uFogCameraWorld?.value as THREE.Matrix4 | undefined)?.copy(camera.matrixWorld);
 }
 
 export function syncWaterSurfaceEnvironment(

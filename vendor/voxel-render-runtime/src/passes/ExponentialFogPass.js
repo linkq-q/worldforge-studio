@@ -33,10 +33,6 @@ const ExponentialFogShader = {
     uFogStartDistance: { value: 0.0 },
     uFogExpPow:        { value: 2.0 },
     uFogSkyFade:       { value: 0.0 },
-    uFogOceanEnabled:  { value: false },
-    uFogOceanLevel:    { value: 0.0 },
-    uFogInverseProjection: { value: new THREE.Matrix4() },
-    uFogCameraWorld:   { value: new THREE.Matrix4() },
     // Debug: 0 = normal, 1 = show fogFactor as greyscale
     uFogDebugMode:     { value: 0 },
   },
@@ -60,10 +56,6 @@ const ExponentialFogShader = {
     uniform float uFogExpPow;
     uniform float uFogSkyFade;
     uniform float uFogDebugMode;
-    uniform bool uFogOceanEnabled;
-    uniform float uFogOceanLevel;
-    uniform mat4 uFogInverseProjection;
-    uniform mat4 uFogCameraWorld;
     varying vec2 vUv;
 
     float linearizeDepth(float depthSample) {
@@ -76,25 +68,12 @@ const ExponentialFogShader = {
       vec4 inColor = texture2D(tDiffuse, vUv);
       float depthSample = texture2D(tDepth, vUv).r;
       float dist = linearizeDepth(depthSample);
-      bool oceanInFront = false;
-      if (uFogOceanEnabled) {
-        vec4 viewFar = uFogInverseProjection * vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
-        vec3 viewRay = normalize(viewFar.xyz / viewFar.w);
-        vec3 worldRay = mat3(uFogCameraWorld) * viewRay;
-        vec3 origin = uFogCameraWorld[3].xyz;
-        if (origin.y > uFogOceanLevel && worldRay.y < -0.00001) {
-          float rayDistance = (uFogOceanLevel - origin.y) / worldRay.y;
-          float surfaceDepth = -viewRay.z * rayDistance;
-          oceanInFront = surfaceDepth > 0.0 && surfaceDepth < dist;
-          if (oceanInFront) dist = surfaceDepth;
-        }
-      }
 
       float d = max(dist - uFogStartDistance, 0.0);
       float fogFactor = 1.0 - exp(-pow(d * uFogDensity, uFogExpPow));
       fogFactor = clamp(fogFactor, 0.0, 1.0);
 
-      bool isSky = depthSample >= 0.9999 && !oceanInFront;
+      bool isSky = depthSample >= 0.9999;
       float skyWeight = isSky ? uFogSkyFade : 1.0;
       fogFactor *= skyWeight;
 

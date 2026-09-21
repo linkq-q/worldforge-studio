@@ -29,25 +29,17 @@ function fogPass() {
 }
 
 describe('render environment bridge', () => {
-  it('caps ocean fog at the water surface without changing water input depth', () => {
+  it('keeps distance fog tied to scene depth instead of an analytic ocean plane', () => {
     const pass = createExponentialFogPass();
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
     camera.position.set(0, 20, 30);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
     const texture = new THREE.DepthTexture(4, 4);
-    bindDistanceFogDepth(pass, texture, camera, 0);
-    expect(pass.uniforms.tDepth.value).toBe(texture);
-    expect(pass.uniforms.uFogOceanEnabled.value).toBe(true);
-    expect(pass.uniforms.uFogCameraWorld.value.equals(camera.matrixWorld)).toBe(true);
-    expect(pass.material.fragmentShader).toContain('if (oceanInFront) dist = surfaceDepth;');
-    expect(pass.material.fragmentShader).toContain('depthSample >= 0.9999 && !oceanInFront');
-    const viewRay = new THREE.Vector3(0, 0, 1).applyMatrix4(camera.projectionMatrixInverse).normalize();
-    const worldRay = viewRay.clone().transformDirection(camera.matrixWorld);
-    const surfaceDepth = -viewRay.z * (-camera.position.y / worldRay.y);
-    expect(surfaceDepth).toBeCloseTo(Math.hypot(20, 30));
     bindDistanceFogDepth(pass, texture, camera);
-    expect(pass.uniforms.uFogOceanEnabled.value).toBe(false);
+    expect(pass.uniforms.tDepth.value).toBe(texture);
+    expect(pass.uniforms).not.toHaveProperty('uFogOceanEnabled');
+    expect(pass.material.fragmentShader).not.toContain('oceanInFront');
     texture.dispose();
     pass.dispose();
   });
