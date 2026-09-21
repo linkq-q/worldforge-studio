@@ -56,6 +56,7 @@ export interface MapPrimitiveBatchStats {
   instancedParts: number;
   batchedMeshParts: number;
   fallbackMeshParts: number;
+  fallbackVisualClones: number;
   batchCount: number;
   effectBatchCount: number;
   effectBatchParts: number;
@@ -142,6 +143,7 @@ export async function buildMapPrimitiveBatches(
   const preparedTemplates = new Set<PreparedTemplate>();
   const handledObjectIds = new Set<string>();
   const objectGroups = new Map<string, THREE.Group>();
+  let fallbackVisualClones = 0;
 
   for (const input of inputs) {
     objectGroups.set(input.objectId, input.objectGroup);
@@ -158,7 +160,9 @@ export async function buildMapPrimitiveBatches(
     }
     input.objectGroup.updateWorldMatrix(true, false);
     batcher.compile(input.objectId, input.objectGroup);
-    template.usedByFallback = addFallbackVisual(input, template.group, batchableNodeIds, runtimeIndex) || template.usedByFallback;
+    const fallback = addFallbackVisual(input, template.group, batchableNodeIds, runtimeIndex);
+    fallbackVisualClones += fallback.cloned ? 1 : 0;
+    template.usedByFallback = fallback.usedByFallback || template.usedByFallback;
     handledObjectIds.add(input.objectId);
   }
 
@@ -236,6 +240,7 @@ export async function buildMapPrimitiveBatches(
         instancedParts,
         batchedMeshParts,
         fallbackMeshParts: Math.max(0, totalParts - instancedParts - batchedMeshParts),
+        fallbackVisualClones,
         batchCount: (audit.batchCount ?? 0) + materialStats.effectBatchCount,
         ...materialStats,
         runtimeIndexPartRefs: runtimeAudit.partToRenderCount,
@@ -346,7 +351,11 @@ function addFallbackVisual(
   template: THREE.Group,
   batchableNodeIds: Set<string>,
   runtimeIndex: RuntimeIndex
-): boolean {
+): { usedByFallback: boolean; cloned: boolean } {
+  if (!hasUnbatchedMesh(template, batchableNodeIds)) {
+    addSelectionProxy(input.objectGroup, template);
+    return { usedByFallback: false, cloned: false };
+  }
   const visual = cloneAssetVisual(template);
   if (hasAuthoredWater(template.userData.materialTagSource)) {
     // Batching removes the static basin/rim meshes from the visible fallback tree.
@@ -363,10 +372,17 @@ function addFallbackVisual(
       batchedMeshes.push(child);
     }
   });
-  for (const mesh of batchedMeshes) mesh.removeFromParent();
+  for (const mesh of batchedMeshes) {
+    mesh.removeFromParent();
+    const batchedMesh = mesh as THREE.Mesh;
+    const materials: THREE.Material[] = Array.isArray(batchedMesh.material)
+      ? batchedMesh.material
+      : [batchedMesh.material];
+    materials.forEach((material) => material.dispose());
+  }
   if (!hasVisibleMesh(visual)) {
     addSelectionProxy(input.objectGroup, template);
-    return false;
+    return { usedByFallback: false, cloned: true };
   }
   visual.traverse((child) => {
     child.userData.mapObjectId = input.objectId;
@@ -385,7 +401,15 @@ function addFallbackVisual(
     }
   });
   input.objectGroup.add(visual);
-  return true;
+  return { usedByFallback: true, cloned: true };
+}
+
+function hasUnbatchedMesh(template: THREE.Object3D, batchableNodeIds: Set<string>): boolean {
+  let found = false;
+  template.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh && !batchableNodeIds.has(String(child.userData.nodeId ?? ''))) found = true;
+  });
+  return found;
 }
 
 function applyBaseRecipe(

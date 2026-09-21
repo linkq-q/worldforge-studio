@@ -585,6 +585,7 @@ describe('structured map water rendering', () => {
     expect(batch.count).toBe(4);
     expect(batch.userData.resolveMapObjectId({ object: batch, instanceId: 2 })).toBe('shrub-2');
     expect(rendered.pickables).toContain(batch);
+    expect(rendered.getDebugStats().fallbackVisualClones).toBe(0);
 
     const selected = rendered.objectGroups.get('shrub-2') as THREE.Group;
     selected.position.x = 20;
@@ -672,7 +673,8 @@ describe('structured map water rendering', () => {
     expect(rendered.getDebugStats()).toMatchObject({
       totalParts: 2,
       effectBatchParts: 0,
-      fallbackMeshParts: 2
+      fallbackMeshParts: 2,
+      fallbackVisualClones: 2
     });
     rendered.dispose();
   });
