@@ -171,7 +171,7 @@ export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult 
           ...(node.mesh.material ?? {}),
           coplanarDepthLayer: layer,
           polygonOffset: true,
-          polygonOffsetFactor: 0,
+          polygonOffsetFactor: -layer,
           polygonOffsetUnits: -layer
         }
       }

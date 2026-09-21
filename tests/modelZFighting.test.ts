@@ -68,7 +68,7 @@ describe('coplanar z-fighting resolution', () => {
     expect(nodes[1].mesh.material).toMatchObject({
       coplanarDepthLayer: 1,
       polygonOffset: true,
-      polygonOffsetFactor: 0,
+      polygonOffsetFactor: -1,
       polygonOffsetUnits: -1
     });
     expect(result.stats).toMatchObject({
@@ -130,7 +130,7 @@ describe('coplanar z-fighting resolution', () => {
     const small = group.getObjectByName('small') as THREE.Mesh;
     expect(small.position.y).toBeCloseTo(0.5, 10);
     expect((small.material as THREE.Material).polygonOffset).toBe(true);
-    expect((small.material as THREE.Material).polygonOffsetFactor).toBe(0);
+    expect((small.material as THREE.Material).polygonOffsetFactor).toBe(-1);
     expect((small.material as THREE.Material).polygonOffsetUnits).toBe(-1);
     expect(group.userData.zFightingStats).toMatchObject({ resolvedPairs: 1, adjustedNodes: 1 });
     group.traverse((object) => {
