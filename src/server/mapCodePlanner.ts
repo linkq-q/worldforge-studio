@@ -3847,6 +3847,7 @@ Use finite numbers and bounded loops. Map bounds are x=${bounds.minX}..${bounds.
 Compose the requested terrain, circulation, focal forms, repeated structure and natural detail directly. Preserve intentional open space and vary density, height and rhythm instead of filling a uniform grid.
 
 The sandbox exposes exactly these 10 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
+Region objects use kind, never type, and must be exactly {kind:'circle',center:[x,z],radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}. Enum fields are closed choices. For concrete or asphalt ground, use surface:'paving', material:'concrete' or material:'asphalt'.
 1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,direction?,variation?,layers?,layout?,access?,seed?}).
 3. api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?,clearNatural?}).
@@ -4132,7 +4133,7 @@ function shouldAutoRepairCodeIssue(issue: CodeExecutionIssue): boolean {
   return Boolean(issue.repairHint) && issue.key !== 'authored_scene_missing_structure';
 }
 
-const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
+const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Every old string must occur exactly once; when a property value repeats, include enough of its containing call and id to make the anchor unique. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
 const LOCAL_SUBSTRATE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_substrate_conflict:<groupId>, edit only that group in api.design and the directly responsible local shoreline, terrain or placement calls. Preserve its focus, route topology, assembly topology, other groups and all unrelated placements. Declare dry, water, amphibious or underwater from the intended experience; do not translate the whole group to a distant valid point. If intent is ambiguous, keep the current composition and return {"edits":[]}.';
 
 function retainCodePlan(
@@ -4322,45 +4323,48 @@ async function discoverMapCodeWithRepairs(
       const executionError = mapCodeExecutionErrorDetail(error, code);
       recordGenerationTrace('code.repair.required', { error: executionError, code, executionRepairAttempts, repairAttempts });
       if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
-      executionRepairAttempts += 1;
-      repairAttempts += 1;
       const timeoutRepairGuidance = /script execution timed out/i.test(executionError)
         ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, api.sampleProbabilityField, api.grassField, api.optimizeLayout, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_MAP_CODE_PLACEMENTS}.`
         : '';
       const lockedObjectRepairGuidance = /locked_map_code_object:([^\s]+)/i.exec(executionError)
         ? `\n\nThe referenced object is locked and not refinable. Leave it unchanged. Do not replace api.move with api.removeObject for the same ID; instead adjust only objects whose catalog entry has refinable:true, or add unlocked supporting content elsewhere.`
         : '';
-      options.onProgress?.({
-        phase: 'replanning',
-        label: `检测到规划参数或边界错误，AI 正在自动修复 ${executionRepairAttempts}/2`,
-        detail: executionError
-      });
-      const repairResponse = await llmChat([
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-        { role: 'assistant', content: code },
-        {
-          role: 'user',
-          content: map.sceneMode === 'indoor'
-            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\n${LOCAL_REPAIR_INSTRUCTION} Correct only the failing room call or expression; use roomPoint, wallFrame, ceilingPoint or opening as appropriate. Keep every other call unchanged. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}`
-            : `The outdoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\n${LOCAL_REPAIR_INSTRUCTION} Correct only the failing call or expression. Check array indices, point components and API argument shapes; keep every other placement and declaration unchanged. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
+      while (executionRepairAttempts < 2) {
+        executionRepairAttempts += 1;
+        repairAttempts += 1;
+        options.onProgress?.({
+          phase: 'replanning',
+          label: `检测到规划参数或边界错误，AI 正在自动修复 ${executionRepairAttempts}/2`,
+          detail: executionError
+        });
+        const repairResponse = await llmChat([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+          { role: 'assistant', content: code },
+          {
+            role: 'user',
+            content: map.sceneMode === 'indoor'
+              ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\n${LOCAL_REPAIR_INSTRUCTION} Correct only the failing room call or expression; use roomPoint, wallFrame, ceilingPoint or opening as appropriate. Keep every other call unchanged. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}`
+              : `The outdoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\n${LOCAL_REPAIR_INSTRUCTION} Correct only the failing call or expression. Check array indices, point components and API argument shapes; keep every other placement and declaration unchanged. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
+          }
+        ], {
+          apiBase: options.apiBase,
+          provider: options.provider ?? 'gpt',
+          temperature: 0.1,
+          maxTokens: EXECUTION_REPAIR_MAX_TOKENS,
+          thinking: false,
+          traceStage: 'map.execution-repair',
+          fetchImpl: options.fetchImpl,
+          signal: options.signal,
+          onProgress: options.onProgress
+        });
+        try {
+          code = applyLocalCodeRepair(code, repairResponse);
+          break;
+        } catch (repairError) {
+          recordGenerationTrace('code.repair.rejected', { reason: repairError, retainedCode: code });
+          if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
         }
-      ], {
-        apiBase: options.apiBase,
-        provider: options.provider ?? 'gpt',
-        temperature: 0.1,
-        maxTokens: EXECUTION_REPAIR_MAX_TOKENS,
-        thinking: false,
-        traceStage: 'map.execution-repair',
-        fetchImpl: options.fetchImpl,
-        signal: options.signal,
-        onProgress: options.onProgress
-      });
-      try {
-        code = applyLocalCodeRepair(code, repairResponse);
-      } catch (repairError) {
-        recordGenerationTrace('code.repair.rejected', { reason: repairError, retainedCode: code });
-        throw new Error(`map_code_execution_failed:${executionError}`);
       }
     }
   }
@@ -5078,7 +5082,7 @@ function normalizeCodeTerrainSurface(value: string): TerrainSurfaceKind | undefi
   const exact = TERRAIN_SURFACES.find((item) => item === normalized);
   if (exact) return exact;
   const aliases: Array<[RegExp, TerrainSurfaceKind]> = [
-    [/\b(?:paving|paved|pavement|cobble|brick)\b|铺地|铺装|石板路|砖地/, 'paving'],
+    [/\b(?:paving|paved|pavement|concrete|asphalt|cobble|brick)\b|铺地|铺装|石板路|砖地/, 'paving'],
     [/\b(?:packed earth|earth|dirt|loam|mud)\b|夯土|泥土|土地/, 'soil'],
     [/\b(?:grass|lawn|turf)\b|草地|草坪/, 'grass'],
     [/\bsand\b|沙地|砂地/, 'sand'],

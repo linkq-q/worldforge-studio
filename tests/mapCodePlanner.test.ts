@@ -88,6 +88,8 @@ describe('map code planner', () => {
       expect(prompt).toContain(`api.${name}`);
     }
     expect(prompt).toContain("'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'");
+    expect(prompt).toContain("Region objects use kind, never type");
+    expect(prompt).toContain("surface:'paving', material:'concrete'");
     expect(prompt).toContain('Return only one complete synchronous JavaScript function: function plan(api) { ... }.');
     expect(prompt).not.toContain("'mountainous'");
     expect(prompt).not.toContain("'dunes'");
@@ -1118,11 +1120,18 @@ describe('map code planner', () => {
         region: { kind: 'polygon', points: [[-42,-42],[42,-42],[42,40],[-42,40]] },
         intensity: 0.65
       });
+      api.surface({
+        id: 'concrete-ground',
+        surface: 'concrete',
+        material: 'concrete',
+        region: { kind: 'circle', center: [0,0], radius: 6 }
+      });
     }`, createEmptyMap());
 
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'terrain.modify', modifier: 'basin' }),
-      expect.objectContaining({ type: 'terrain.surface', surface: 'soil', intensity: 0.65 })
+      expect.objectContaining({ type: 'terrain.surface', surface: 'soil', intensity: 0.65 }),
+      expect.objectContaining({ type: 'terrain.surface', surface: 'paving', material: 'concrete' })
     ]));
 
     const legacySuggestion = executeMapCodePlan(`function plan(api) {
@@ -1738,6 +1747,30 @@ describe('map code planner', () => {
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'object.add' })
     ]));
+  });
+
+  it('uses the second execution-repair attempt when the first edit anchor is not unique', async () => {
+    const invalid = `function plan(api) {
+      api.surface({id:'yard',surface:'cement',region:{kind:'circle',center:[0,0],radius:6}});
+      api.place({name:'cement marker',position:[0,0],role:'environment'});
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(JSON.stringify({ edits: [{ old: 'cement', new: 'paving' }] })))
+      .mockResolvedValueOnce(response(JSON.stringify({ edits: [{ old: "surface:'cement'", new: "surface:'paving'" }] })));
+
+    const suggestion = await generateMapCodeSuggestion('生成水泥院子', createEmptyMap(), [], {
+      approvedCode: invalid,
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.codePlan?.repairAttempts).toBe(2);
+    expect(suggestion.codePlan?.code).toContain("surface:'paving'");
   });
 
   it('explains valid bridge crossing geometry when repairing an off-water bridge', async () => {
@@ -3695,8 +3728,8 @@ describe('map code planner', () => {
       onPlanPreview: (plan) => plans.push(plan)
     })).rejects.toThrow('map_code_execution_failed');
 
-    // Invalid whole-program repair responses are rejected without rerunning the same program.
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    // Both invalid repair responses are rejected without rerunning the same program.
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
     expect(plans).toHaveLength(1);
     for (const plan of plans) {
       expect(plan.summary).toContain('执行中断');
