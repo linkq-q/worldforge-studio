@@ -68,4 +68,26 @@ describe('Triplanar projection shader', () => {
     expect(shader.fragmentShader).toContain('knotMask = smoothstep(0.3, 0.0, f1k) * hasKnot;');
     material.dispose();
   });
+
+  it('band-limits marble veins while the camera is moving', () => {
+    const material = new THREE.MeshStandardMaterial();
+    createEffectRuntime().runtime.applyToMaterial(material, {
+      schemaVersion: '1.0',
+      materialLayers: ['Triplanar'],
+      layerParams: { Triplanar: { pattern: 3, scale: 2 } }
+    });
+    const shader = {
+      uniforms: {},
+      vertexShader: THREE.ShaderLib.standard.vertexShader,
+      fragmentShader: THREE.ShaderLib.standard.fragmentShader
+    };
+
+    material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+
+    expect(shader.fragmentShader).toContain('float marbleAa1 = max(fwidth(triMarbleData.x), 1e-4);');
+    expect(shader.fragmentShader).toContain('float marbleAa2 = max(fwidth(triMarbleData.y), 1e-4);');
+    expect(shader.fragmentShader).toContain('min(1.0, marbleLineW / marbleAa1)');
+    expect(shader.vertexShader).not.toContain('fwidth(');
+    material.dispose();
+  });
 });
