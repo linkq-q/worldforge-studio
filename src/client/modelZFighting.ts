@@ -4,7 +4,6 @@ import type { EditableMap } from '../shared/map';
 const COPLANAR_NORMAL_DOT = 0.9999;
 const COPLANAR_DISTANCE_EPSILON = 0.0001;
 const COPLANAR_OVERLAP_EPSILON = 0.0001;
-export const MODEL_Z_FIGHTING_OFFSET = 0.01;
 
 interface ModelNode {
   id: string;
@@ -17,6 +16,7 @@ interface ModelNode {
   mesh?: {
     type?: string;
     params?: Record<string, unknown>;
+    material?: Record<string, unknown>;
   };
   [key: string]: unknown;
 }
@@ -29,9 +29,7 @@ interface ModelJson {
 interface PrimitiveBase {
   node: ModelNode;
   matrixWorld: THREE.Matrix4;
-  parentMatrixWorld: THREE.Matrix4;
   volume: number;
-  color: number | null;
 }
 
 interface BoxPrimitive extends PrimitiveBase {
@@ -84,6 +82,7 @@ export interface ModelZFightingStats {
   pairChecks: number;
   resolvedPairs: number;
   adjustedNodes: number;
+  maxDepthLayer: number;
 }
 
 export interface ModelZFightingResult {
@@ -97,25 +96,23 @@ export interface MapZFightingResult {
 }
 
 /**
- * Ports 3d-generate's coplanar-face micro-offset pass to model JSON so the
- * correction survives WorldForge's InstancedMesh/BatchedMesh compilation.
+ * Assigns deterministic render-only depth layers to overlapping coplanar
+ * primitives so the correction survives InstancedMesh/BatchedMesh compilation.
  * The source model is never mutated; an unchanged model is returned by
  * reference when no overlapping coplanar faces are found.
  *
  * Only faces whose normals point the SAME direction can visibly z-fight:
  * opposite-facing contacts (decal bottom against base top) are backface-culled
- * or occluded, and nudging them buries authored layered details (e.g. the room
- * carpet's motif boxes sinking under its base slabs). Pairs whose meshes share
- * one resolved color flicker invisibly and are likewise left alone, since
- * separating a same-color stack by MODEL_Z_FIGHTING_OFFSET can submerge thin
- * overlays sitting on top of it.
+ * or occluded. Same-color faces still need distinct depth layers because later
+ * material tags and render effects can make them visually different.
  */
 export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult {
   const emptyStats = (): ModelZFightingStats => ({
     entries: 0,
     pairChecks: 0,
     resolvedPairs: 0,
-    adjustedNodes: 0
+    adjustedNodes: 0,
+    maxDepthLayer: 0
   });
   if (!isRecord(modelJson)) return { modelJson, stats: emptyStats() };
   const data = modelJson as ModelJson;
@@ -127,54 +124,61 @@ export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult 
     entries: entries.length,
     pairChecks: 0,
     resolvedPairs: 0,
-    adjustedNodes: 0
+    adjustedNodes: 0,
+    maxDepthLayer: 0
   };
   if (entries.length < 2) return { modelJson, stats };
 
-  const worldOffsets = new Map<ModelNode, THREE.Vector3>();
+  const conflicts = new Map<PrimitiveEntry, Set<PrimitiveEntry>>();
   for (let index = 0; index < entries.length; index += 1) {
     for (let otherIndex = index + 1; otherIndex < entries.length; otherIndex += 1) {
       const first = entries[index];
       const second = entries[otherIndex];
       stats.pairChecks += 1;
-      // 同色共面闪烁不可见;移动它们只会把叠在上面的薄装饰层埋掉(房间地毯案例)。
-      if (first.color !== null && first.color === second.color) continue;
-      const overlap = detectCoplanarOverlap(first, second);
-      if (!overlap) continue;
-
-      const smaller = first.volume <= second.volume ? first : second;
-      const normal = smaller === first ? overlap.normalA : overlap.normalB;
-      const offset = worldOffsets.get(smaller.node) ?? new THREE.Vector3();
-      offset.addScaledVector(normal, MODEL_Z_FIGHTING_OFFSET);
-      worldOffsets.set(smaller.node, offset);
+      if (!hasCoplanarOverlap(first, second)) continue;
+      if (!conflicts.has(first)) conflicts.set(first, new Set());
+      if (!conflicts.has(second)) conflicts.set(second, new Set());
+      conflicts.get(first)!.add(second);
+      conflicts.get(second)!.add(first);
       stats.resolvedPairs += 1;
     }
   }
-  if (worldOffsets.size === 0) return { modelJson, stats };
+  if (conflicts.size === 0) return { modelJson, stats };
 
-  const entryByNode = new Map(entries.map((entry) => [entry.node, entry]));
+  const ordered = [...entries].sort((first, second) => (
+    second.volume - first.volume
+    || (first.node.id < second.node.id ? -1 : first.node.id > second.node.id ? 1 : 0)
+  ));
+  const priority = new Map(ordered.map((entry, index) => [entry, index]));
+  const depthLayers = new Map<ModelNode, number>();
+  for (const entry of ordered) {
+    let layer = 0;
+    for (const conflict of conflicts.get(entry) ?? []) {
+      if ((priority.get(conflict) ?? Number.MAX_SAFE_INTEGER) >= (priority.get(entry) ?? 0)) continue;
+      layer = Math.max(layer, (depthLayers.get(conflict.node) ?? 0) + 1);
+    }
+    if (layer > 0) depthLayers.set(entry.node, layer);
+  }
+
   const adjustedNodes = data.nodes.map((node) => {
-    const worldOffset = worldOffsets.get(node);
-    const entry = entryByNode.get(node);
-    if (!worldOffset || !entry) return node;
-    const inverseParentBasis = new THREE.Matrix3()
-      .setFromMatrix4(entry.parentMatrixWorld)
-      .invert();
-    const localOffset = worldOffset.clone().applyMatrix3(inverseParentBasis);
-    const position = readPosition(node.transform?.pos);
+    const layer = depthLayers.get(node);
+    if (!layer || !node.mesh) return node;
     return {
       ...node,
-      transform: {
-        ...(node.transform ?? {}),
-        pos: [
-          position[0] + localOffset.x,
-          position[1] + localOffset.y,
-          position[2] + localOffset.z
-        ] as [number, number, number]
+      mesh: {
+        ...node.mesh,
+        material: {
+          ...(node.mesh.material ?? {}),
+          coplanarDepthLayer: layer,
+          polygonOffset: true,
+          polygonOffsetFactor: 0,
+          polygonOffsetUnits: -layer
+        }
       }
     };
   });
-  stats.adjustedNodes = worldOffsets.size;
+  stats.adjustedNodes = depthLayers.size;
+  stats.maxDepthLayer = Math.max(...depthLayers.values());
   return { modelJson: { ...data, nodes: adjustedNodes }, stats };
 }
 
@@ -184,6 +188,7 @@ export function resolveMapModelZFighting(map: EditableMap): MapZFightingResult {
   let pairChecks = 0;
   let resolvedPairs = 0;
   let adjustedNodes = 0;
+  let maxDepthLayer = 0;
   let adjustedAssets = 0;
   let changed = false;
   const assets = map.assets?.map((asset) => {
@@ -192,6 +197,7 @@ export function resolveMapModelZFighting(map: EditableMap): MapZFightingResult {
     pairChecks += result.stats.pairChecks;
     resolvedPairs += result.stats.resolvedPairs;
     adjustedNodes += result.stats.adjustedNodes;
+    maxDepthLayer = Math.max(maxDepthLayer, result.stats.maxDepthLayer);
     if (result.modelJson === asset.modelJson) return asset;
     changed = true;
     adjustedAssets += 1;
@@ -199,14 +205,13 @@ export function resolveMapModelZFighting(map: EditableMap): MapZFightingResult {
   });
   return {
     map: changed ? { ...map, assets } : map,
-    stats: { entries, pairChecks, resolvedPairs, adjustedNodes, adjustedAssets }
+    stats: { entries, pairChecks, resolvedPairs, adjustedNodes, maxDepthLayer, adjustedAssets }
   };
 }
 
 function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const worldMatrices = new Map<ModelNode, THREE.Matrix4>();
-  const parentMatrices = new Map<ModelNode, THREE.Matrix4>();
   const visiting = new Set<ModelNode>();
 
   const worldMatrixFor = (node: ModelNode): THREE.Matrix4 => {
@@ -215,14 +220,12 @@ function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
     const local = localMatrixFor(node);
     const parent = node.parent ? nodesById.get(node.parent) : undefined;
     if (!parent || visiting.has(node)) {
-      parentMatrices.set(node, new THREE.Matrix4());
       worldMatrices.set(node, local);
       return local;
     }
     visiting.add(node);
     const parentWorld = worldMatrixFor(parent);
     visiting.delete(node);
-    parentMatrices.set(node, parentWorld);
     const world = parentWorld.clone().multiply(local);
     worldMatrices.set(node, world);
     return world;
@@ -234,8 +237,6 @@ function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
     if (!mesh) continue;
     const params = mesh.params ?? {};
     const matrixWorld = worldMatrixFor(node);
-    const parentMatrixWorld = parentMatrices.get(node) ?? new THREE.Matrix4();
-    const color = resolveNodeColor(node);
     if (mesh.type === 'box') {
       const width = dimension(params.width);
       const height = dimension(params.height);
@@ -247,9 +248,7 @@ function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
         height,
         depth,
         volume: width * height * depth,
-        matrixWorld,
-        parentMatrixWorld,
-        color
+        matrixWorld
       });
     } else if (mesh.type === 'cylinder') {
       const radius = numberOr(params.radiusTop ?? params.radius, 1);
@@ -261,9 +260,7 @@ function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
         radiusBottom: radius,
         height,
         volume: Math.PI * radius * radius * height,
-        matrixWorld,
-        parentMatrixWorld,
-        color
+        matrixWorld
       });
     } else if (mesh.type === 'cone') {
       const radius = dimension(params.radius);
@@ -274,9 +271,7 @@ function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
         radius,
         height,
         volume: Math.PI * radius * radius * height / 3,
-        matrixWorld,
-        parentMatrixWorld,
-        color
+        matrixWorld
       });
     } else if (mesh.type === 'wedge') {
       const width = dimension(params.width);
@@ -289,19 +284,14 @@ function collectPrimitiveEntries(nodes: ModelNode[]): PrimitiveEntry[] {
         height,
         depth,
         volume: width * height * depth / 2,
-        matrixWorld,
-        parentMatrixWorld,
-        color
+        matrixWorld
       });
     }
   }
   return entries;
 }
 
-function detectCoplanarOverlap(
-  first: PrimitiveEntry,
-  second: PrimitiveEntry
-): { normalA: THREE.Vector3; normalB: THREE.Vector3 } | null {
+function hasCoplanarOverlap(first: PrimitiveEntry, second: PrimitiveEntry): boolean {
   const facesA = worldFaces(first);
   const facesB = worldFaces(second);
   for (const faceA of facesA) {
@@ -313,12 +303,10 @@ function detectCoplanarOverlap(
         new THREE.Vector3().subVectors(faceA.center, faceB.center)
       ));
       if (distance > COPLANAR_DISTANCE_EPSILON) continue;
-      if (facesOverlap2D(faceA, faceB)) {
-        return { normalA: faceA.normal.clone(), normalB: faceB.normal.clone() };
-      }
+      if (facesOverlap2D(faceA, faceB)) return true;
     }
   }
-  return null;
+  return false;
 }
 
 function worldFaces(entry: PrimitiveEntry): PrimitiveFace[] {
@@ -473,13 +461,6 @@ function edgeBetween(
   second: { u: number; v: number }
 ): { u: number; v: number } {
   return { u: second.u - first.u, v: second.v - first.v };
-}
-
-/** Best-effort display color for the same-color z-fight skip; mirrors the batcher's material color fallback. */
-function resolveNodeColor(node: ModelNode): number | null {
-  const mesh = node.mesh as { material?: { color?: unknown }; color?: unknown } | undefined;
-  const value = mesh?.material?.color ?? mesh?.color;
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function localMatrixFor(node: ModelNode): THREE.Matrix4 {

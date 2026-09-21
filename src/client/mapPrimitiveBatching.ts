@@ -131,7 +131,8 @@ export async function buildMapPrimitiveBatches(
     runtimeIndex,
     celBatchable: true,
     batchedMeshable: true,
-    onBatchMaterialReady: (material, _source, baseRecipe, mesh) => {
+    onBatchMaterialReady: (material, source, baseRecipe, mesh) => {
+      applyCoplanarDepthLayer(material, source);
       applyBaseRecipe(material, baseRecipe, mesh, effectRuntime, surfaceBindings);
     }
   });
@@ -281,6 +282,13 @@ async function prepareTemplate(asset: MapAsset, materialTagPolicy: MapMaterialTa
     if (requiresRuntimeStandaloneMaterialTag(entry)) part.materialTagRequiresRuntimeStandalone = true;
     else delete part.materialTagRequiresRuntimeStandalone;
   }
+  for (const part of parts) {
+    const layer = part.mesh?.material.coplanarDepthLayer;
+    if (typeof layer !== 'number' || layer <= 0) continue;
+    const recipe = part.materialTagBaseRecipe ?? {};
+    const key = typeof recipe.key === 'string' ? recipe.key : 'default';
+    part.materialTagBaseRecipe = { ...recipe, key: `${key}:coplanar-depth=${layer}` };
+  }
 
   const rootOffset = new THREE.Matrix4().makeTranslation(group.position.x, group.position.y, group.position.z);
   const byId = new Map(parts.map((part) => [part.id, part]));
@@ -409,6 +417,17 @@ function applyBaseRecipe(
     surfaceBindings?.push({ material, binding: bindings.surface });
   }
   if (bindings?.matcap) applyMaterialMatcapBinding(material, bindings.matcap);
+}
+
+function applyCoplanarDepthLayer(material: THREE.Material, source: unknown): void {
+  if (!source || typeof source !== 'object') return;
+  const values = source as Record<string, unknown>;
+  const layer = values.coplanarDepthLayer;
+  if (typeof layer !== 'number' || layer <= 0) return;
+  material.polygonOffset = true;
+  material.polygonOffsetFactor = typeof values.polygonOffsetFactor === 'number' ? values.polygonOffsetFactor : 0;
+  material.polygonOffsetUnits = typeof values.polygonOffsetUnits === 'number' ? values.polygonOffsetUnits : -layer;
+  material.userData.coplanarDepthLayer = layer;
 }
 
 function hasAuthoredWater(modelJson: unknown): boolean {

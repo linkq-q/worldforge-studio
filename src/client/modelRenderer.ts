@@ -67,6 +67,10 @@ interface ModelNode {
       opacity?: number;
       transparent?: boolean;
       flatShading?: boolean;
+      coplanarDepthLayer?: number;
+      polygonOffset?: boolean;
+      polygonOffsetFactor?: number;
+      polygonOffsetUnits?: number;
     };
   };
 }
@@ -371,15 +375,20 @@ function makeMaterial(mesh: NonNullable<ModelNode['mesh']>): THREE.MeshStandardM
   const mat = mesh.material ?? {};
   const color = mat.color ?? mesh.color ?? 0x8b8f8d;
   const zeroThickness = (mesh.type === 'tri' || mesh.type === 'patch') && Number(mesh.params?.d ?? 0) <= 0;
-  return new THREE.MeshStandardMaterial({
+  const material = new THREE.MeshStandardMaterial({
     color,
     roughness: mat.roughness ?? 0.72,
     metalness: mat.metalness ?? 0.04,
     opacity: mat.opacity ?? 1,
     transparent: mat.transparent === true || (mat.opacity ?? 1) < 1,
     flatShading: mat.flatShading !== false,
+    polygonOffset: mat.polygonOffset === true,
+    polygonOffsetFactor: mat.polygonOffsetFactor ?? 0,
+    polygonOffsetUnits: mat.polygonOffsetUnits ?? 0,
     side: zeroThickness ? THREE.DoubleSide : THREE.FrontSide
   });
+  if (mat.coplanarDepthLayer !== undefined) material.userData.coplanarDepthLayer = mat.coplanarDepthLayer;
+  return material;
 }
 
 function buildFallbackGeometry(type: string, params: Record<string, unknown>): THREE.BufferGeometry {
