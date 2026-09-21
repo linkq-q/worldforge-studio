@@ -271,7 +271,7 @@ function buildSystemPrompt(
     'runtime.grass-style 的 rootColor/tipColor 为显式颜色，覆盖预设。colorStops 是2–4个草叶高度色标数组的JSON字符串，首尾0和1；gradientBias和rootDarken可调。启用用户色卡时在该色卡允许的颜色内选色。',
     '新生成渲染方案时，按用户场景与 renderHints 主动协调草、地面、建筑和天空的色相及明度；草的 preset 是形态语义，不要求保留绿色。区域渐变用 runtime.color-field，草叶高度渐变用 runtime.grass-style，避免两层着色互相冲突。Refine 时只有用户要求涉及这些色彩才调整，保留已选方案的其他参数。',
     'runtime.local-light 最多8条，覆盖真实灯具对象而不改地图：{objectId,kind:"point"|"spot",color:"#RRGGBB",intensity:0.5到12,range:1到20,offset:[局部x,y,z],targetId?:照向的对象ID,enabled:true}。共享原有点光与聚光预算；发光材质不会自动照亮地面。',
-    'runtime.surface-detail 最多8条：{objectId,partId?:具体材质部件ID,color?:"#RRGGBB",roughness?:0到1,metalness?:0到1,transmission?:0到1,colorExpression?:表达式,emissionExpression?:表达式}。transmission只用于已有物理玻璃部件；表达式只用于普通受支持表面，不用于water或特殊ShaderMaterial。',
+    'runtime.surface-detail 最多16条：{objectId,partId?:具体材质部件ID,color?:"#RRGGBB",roughness?:0到1,metalness?:0到1,transmission?:0到1,colorExpression?:表达式,emissionExpression?:表达式}。transmission只用于已有物理玻璃部件；表达式只用于普通受支持表面，不用于water或特殊ShaderMaterial。',
     '简单Shader只允许vec3结果表达式：变量color/position/normal/uv/time，运算+ - *，函数vec2 vec3 sin cos abs fract min max clamp mix smoothstep。smoothstep的前两个参数必须是递增的数字常量。例：color * (0.85 + 0.15 * sin(position.x * 2.0 + time))。最长1024字符，禁止语句、循环、除法、采样纹理、宏、自定义函数和完整GLSL；保留原来的光照与阴影模板，禁止用颜色表达式假装实现几何或投影。',
     'runtime.wet-surface 最多1条：{zoneId:平坦铺装区域ID,strength:0到0.65,distortion:0到0.01}。仅平坦区域可用，额外进行一次512像素倒影捕获，不要用于斜坡、全地图或室内非地形地板。',
     '水面需要有明显变化时，不要只改颜色：按描述组合 waveStrength、waveSpeed、waveScale、waveDirection、waveSharpness、foamStrength、shoreFoamWidth、shoreWaveRange、shoreWaveFrequency、shoreWaveWidth、shoreWaveBreakup 与反射参数。卡通水面使用 runtime.water-style=stylized，不代表全场景使用 Cel。',

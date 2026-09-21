@@ -109,7 +109,7 @@ export function compileSceneArt(plan?: RenderPlan): SceneArtPlan {
     if (module.id === 'runtime.surface-detail') result.surfaces.push(config as SurfaceDetail);
     if (module.id === 'runtime.wet-surface') result.wet.push(config as WetSurface);
   }
-  if (result.colors.length > 4 || result.lights.length > 8 || result.surfaces.length > 8 || result.wet.length > 1) throw new Error('scene_art_budget_exceeded');
+  if (result.colors.length > 4 || result.lights.length > 8 || result.surfaces.length > 16 || result.wet.length > 1) throw new Error('scene_art_budget_exceeded');
   return result;
 }
 

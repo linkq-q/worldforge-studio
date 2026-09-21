@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeColorStops, normalizeSceneArtConfig, sampleColorRamp } from '../src/shared/sceneArt';
+import { compileSceneArt, normalizeColorStops, normalizeSceneArtConfig, sampleColorRamp } from '../src/shared/sceneArt';
 import { createDefaultRenderAccessPolicy, normalizeRenderPlan } from '../src/shared/renderPlan';
 
 describe('bounded scene art', () => {
@@ -32,5 +32,20 @@ describe('bounded scene art', () => {
     expect(() => normalizeSceneArtConfig('runtime.color-field', { stops: [[0, '#000000'], [1, '#ffffff']], start: 2, end: 2 })).toThrow();
     expect(() => normalizeSceneArtConfig('runtime.local-light', { objectId: 'lamp', surprise: 1 })).toThrow();
     expect(() => normalizeSceneArtConfig('runtime.surface-detail', { roughness: 0.1 })).toThrow();
+  });
+
+  it('allows sixteen independently tuned glass surfaces without removing the budget', () => {
+    const modules = Array.from({ length: 16 }, (_, index) => ({
+      id: 'runtime.surface-detail' as const,
+      key: `glass-${index}`,
+      params: { config: JSON.stringify({ objectId: `window-${index}`, transmission: 0.9 }) }
+    }));
+
+    expect(compileSceneArt({ version: 2, baseSchemeId: 'test', modules }).surfaces).toHaveLength(16);
+    expect(() => compileSceneArt({
+      version: 2,
+      baseSchemeId: 'test',
+      modules: [...modules, { ...modules[0], key: 'glass-16' }]
+    })).toThrow('scene_art_budget_exceeded');
   });
 });

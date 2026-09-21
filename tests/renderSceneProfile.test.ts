@@ -96,6 +96,29 @@ describe('render scene profile', () => {
     expect(normalizeRenderSceneProfile({ sceneMode: 'space' })).toBeUndefined();
   });
 
+  it('exposes up to thirty-two tagged glass parts to the render planner', () => {
+    const map = createEmptyMap('glass hall');
+    const asset: MapAsset = {
+      id: 'glass-wall', name: 'glass wall', prompt: 'glass wall', tags: [],
+      modelJson: {
+        nodes: Array.from({ length: 40 }, (_, index) => ({
+          id: `pane-${index}`,
+          tags: [{ tag: 'base', value: 'glass' }],
+          mesh: { type: 'box' }
+        }))
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 40, candidateCount: 0, fallbackUsed: false },
+      mode: 'voxel', createdAt: 1, updatedAt: 1
+    };
+    map.assets = [asset];
+    map.objects = [createMapObject('glass wall', asset.id)];
+
+    const profile = normalizeRenderSceneProfile(createRenderSceneProfile(map));
+
+    expect(profile?.targets?.objects[0].parts).toHaveLength(32);
+    expect(profile?.targets?.objects[0].parts.at(-1)).toEqual({ id: 'pane-31', tags: ['base:glass'] });
+  });
+
   it('carries bounded map composition meaning into the render context without authoring style', () => {
     const map = createEmptyMap('garden');
     const pavilion = createMapObject('主亭');
