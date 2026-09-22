@@ -3581,6 +3581,301 @@ You have total creative freedom: theme, landform, architecture, vegetation and d
 
 Composition style — picture algebra. Think like SICP's picture language: define a few meaningful layout fragments (an entrance sequence, a courtyard cluster, a street front, a landmark group) as reusable fragment functions, then build the whole scene by combining fragments with combinators you author yourself — beside, across, ring, mirror, quarter, echo. Fragments should close under composition: each returns coordinates that other fragments and combinators can consume. Reuse the same motif at two or three scales so the scene reads as one composed family rather than a pile of parts.
 
+
+Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
+
+```js
+const TAU = Math.PI * 2;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const circle = (x, z, radius) => ({ kind: "circle", center: [x, z], radius });
+const polygon = points => ({ kind: "polygon", points });
+const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+
+api.terrain("plain", { seed: 2850445657 });
+api.surface({
+  id: "park-meadow",
+  surface: "grass",
+  region: polygon([[-48, -48], [48, -48], [48, 48], [-48, 48]])
+});
+api.modifyTerrain({
+  modifier: "ridge",
+  region: { kind: "path", points: [[-43, -35], [-30, -43], [-5, -44], [22, -43], [43, -34]], width: 8 },
+  amplitude: 2.4,
+  softness: 0.85
+});
+
+const families = [
+  ["coaster", "星轨过山车", "One complete compact amusement park roller coaster ride, sweeping continuous turquoise steel track with a tall camelback and banked turns, coral support columns, small cream boarding station at the front, one yellow train on the track, open airy structure, cheerful retro space age design, all supports end at a common ground plane, no surrounding scenery", [29, 21, 23], "structure"],
+  ["wheel", "糖果摩天轮", "One complete small vintage Ferris wheel ride, cream A frame supports, coral circular rim, twelve enclosed pastel yellow and teal gondolas, star hub, integrated small boarding platform at front, elegant open silhouette, no surrounding scenery", [12, 15, 7], "structure"],
+  ["carousel", "旋转木马", "One complete ornate carousel ride with a coral and cream striped conical canopy, golden finial, pastel carved horses on brass poles, circular raised wooden platform and entrance step, charming vintage amusement park style, no surrounding scenery", [11, 9, 11], "structure"],
+  ["teacups", "旋转茶杯", "One complete outdoor spinning teacup amusement ride, circular low mint platform carrying five oversized coral yellow and turquoise teacups, central cream teapot sculpture, accessible entrance at front, no roof and no surrounding scenery", [10, 3.8, 10], "structure"],
+  ["gate", "星光大门", "One freestanding amusement park entrance arch, two cream masonry piers with teal trim supporting a coral arched sign crowned by one large gold five point star, small warm bulbs, wide unobstructed walk through opening, no text and no surrounding scenery", [12, 7, 2.5], "structure"],
+  ["kiosk", "糖果售货亭", "One small amusement park refreshment kiosk, cream body with teal trim, coral and cream striped awning, front open serving counter, tiny ice cream cone rooftop ornament, closed back, no people and no surrounding scenery", [4.4, 4.4, 3.6], "structure"],
+  ["game", "嘉年华摊位", "One freestanding carnival ring toss game booth, butter yellow wooden body, scalloped turquoise canopy with coral trim, front open counter, colorful bottle targets against the rear wall, no text, no people and no surrounding scenery", [5.4, 4.5, 3.5], "structure"],
+  ["fountain", "星星喷泉", "One circular shallow ornamental fountain, cream stone basin with teal tile lining, central gold five point star on a short coral pedestal, delicate inward water jets and visible water surface contained inside the basin, whimsical retro amusement park style", [6, 3.5, 6], "environment"],
+  ["tree", "圆冠绿树", "One mature ornamental deciduous tree with a gently curved brown trunk and a broad rounded lush green crown, natural irregular branching, no pot, no scenery", [5.5, 8, 5.5], "environment"],
+  ["bench", "彩色长椅", "One freestanding park bench with teal painted wooden slats, curved cream metal arms and legs, seat and back facing front, no surrounding objects", [2.4, 1.1, 0.85], "environment"],
+  ["lamp", "星球路灯", "One retro amusement park lamppost, slender dark teal pole on a small cream foot, curved upper arm holding one warm ivory globe with a small coral cap, no surrounding scenery", [0.9, 4.7, 0.9], "environment"],
+  ["planter", "鲜花花盆", "One low round cream stone planter with a teal rim, overflowing yellow daisies and coral flowers with green foliage, cheerful amusement park furnishing, no surrounding scenery", [1.7, 1.1, 1.7], "environment"],
+  ["fence", "彩色围栏", "One straight low amusement park fence panel, teal vertical metal pickets, cream end posts with coral ball finials, horizontal length along local X axis, no surrounding scenery", [3.5, 1.3, 0.25], "environment"]
+];
+for (const [key, name, prompt, dimensions, role] of families) {
+  api.requireAsset({ key, name, prompt: prompt + contract, dimensions, role, variants: 1 });
+}
+const ids = {};
+for (const [key] of families) ids[key] = api.asset(key, 0);
+
+function frame(x, z, angle = 0, scale = 1) {
+  return { x, z, angle, scale };
+}
+function point(f, x, z) {
+  return [
+    f.x + f.scale * (x * Math.cos(f.angle) + z * Math.sin(f.angle)),
+    f.z + f.scale * (-x * Math.sin(f.angle) + z * Math.cos(f.angle))
+  ];
+}
+function child(f, x, z, angle = 0, scale = 1) {
+  const p = point(f, x, z);
+  return frame(p[0], p[1], f.angle + angle, f.scale * scale);
+}
+function put(key, f, x = 0, z = 0, angle = 0, scale = 1, name) {
+  const p = point(f, x, z);
+  api.place({
+    assetId: ids[key],
+    name: name || families.find(v => v[0] === key)[1],
+    position: p,
+    rotationY: f.angle + angle,
+    scale: f.scale * scale
+  });
+  return p;
+}
+function combine(...fragments) {
+  return f => fragments.flatMap(fragment => fragment(f));
+}
+function across(fragment, placements) {
+  return f => placements.flatMap(v => fragment(child(f, v[0], v[1], v[2] || 0, v[3] || 1)));
+}
+function echo(fragment, placements) {
+  return across(fragment, placements);
+}
+function paintDisk(id, f, radius, surface = "paving") {
+  api.surface({ id, surface, region: circle(f.x, f.z, radius * f.scale) });
+}
+let serial = 0;
+
+// The same flower-and-seat phrase repeats at the entrance, rides, and quiet garden.
+function restPocket(f) {
+  const n = serial++;
+  paintDisk("rest-" + n, f, 2.8);
+  return [
+    put("bench", f, 0, -0.6),
+    put("planter", f, -1.95, -0.45, 0, 0.8),
+    put("lamp", f, 1.8, -1.1, 0, 0.9)
+  ];
+}
+function rideCourt(key, radius, label) {
+  return f => {
+    const n = serial++;
+    paintDisk("ride-court-" + n, f, radius);
+    const center = put(key, f, 0, -1, 0, 1, label);
+    const front = point(f, 0, radius - 0.5);
+    const accents = across(restPocket, [
+      [-radius + 2.2, 3.4, Math.PI / 3, 0.76],
+      [radius - 2.1, 2.1, -Math.PI / 3, 0.88]
+    ])(f);
+    return [center, front, ...accents];
+  };
+}
+
+api.surface({
+  id: "arrival-fan",
+  surface: "paving",
+  region: polygon([[-12, 47], [12, 47], [10, 36], [6, 30], [-7, 29], [-12, 37]])
+});
+api.route({
+  id: "grand-promenade",
+  name: "星光迎宾大道",
+  points: [[0, 47], [0, 37], [-1, 27], [2, 16], [1, 8], [0, 0], [2, -9], [6, -15]],
+  width: 6,
+  curve: "catmull-rom",
+  surface: "paving"
+});
+api.route({
+  id: "discovery-loop",
+  name: "欢乐环游步道",
+  points: [[-1, 26], [-16, 24], [-28, 13], [-30, -3], [-23, -18], [-8, -22], [9, -18], [25, -14], [34, -2], [31, 16], [18, 25]],
+  width: 4.3,
+  curve: "catmull-rom",
+  surface: "paving"
+});
+api.route({
+  id: "east-return",
+  points: [[31, 16], [25, 25], [12, 29], [-1, 26]],
+  width: 3.6,
+  curve: "catmull-rom",
+  surface: "paving"
+});
+api.route({
+  id: "carousel-link",
+  points: [[-26, 13], [-17, 10], [-7, 9], [1, 8]],
+  width: 3.7,
+  curve: "catmull-rom",
+  surface: "paving"
+});
+api.route({
+  id: "teacup-link",
+  points: [[2, 16], [12, 14], [22, 10], [32, 8]],
+  width: 3.3,
+  curve: "catmull-rom",
+  surface: "paving"
+});
+
+const entrance = combine(
+  f => [put("gate", f)],
+  across(restPocket, [[-8, 2, 0.45, 0.85], [8.5, -1, -0.5, 0.85]]),
+  f => [put("kiosk", f, -12, -6, 0.55, 0.95, "游客服务亭")]
+);
+entrance(frame(0, 37));
+
+api.surface({
+  id: "coaster-plaza",
+  surface: "paving",
+  region: polygon([[-11, -37], [23, -37], [24, -15], [16, -10], [-6, -10], [-12, -18]])
+});
+put("coaster", frame(6, -26), 0, 0, 0, 1, "星轨过山车");
+across(restPocket, [[-7, -12, 0.4, 1], [21, -14, -0.5, 1]])(frame(0, 0));
+put("planter", frame(2, -12), 0, 0, 0, 1.2);
+put("planter", frame(11, -12), 0, 0, 0, 1.2);
+
+rideCourt("wheel", 9.2, "糖果摩天轮")(frame(-30, -24, 0.2));
+api.route({
+  id: "wheel-approach",
+  points: [[-23, -18], [-27, -15], [-30, -17]],
+  width: 3.3,
+  curve: "catmull-rom",
+  surface: "paving"
+});
+rideCourt("carousel", 8.6, "旋转木马")(frame(-18, 3, 0.2));
+rideCourt("teacups", 8, "旋转茶杯")(frame(23, 5, -0.35));
+
+paintDisk("star-square", frame(0, 19), 7.4);
+put("fountain", frame(0, 19), 0, 0, 0, 1, "许愿星喷泉");
+echo(restPocket, [[-7.1, 17, 1.3, 0.8], [7.8, 20.5, -1.2, 0.9]])(frame(0, 0));
+
+function carnivalFront(f) {
+  const n = serial++;
+  api.surface({
+    id: "carnival-apron-" + n,
+    surface: "paving",
+    region: polygon([point(f, -7, -3), point(f, 7, -3), point(f, 7, 5), point(f, -7, 5)])
+  });
+  return [
+    put("game", f, -3.3, -0.7, 0.04),
+    put("kiosk", f, 3.2, 0.5, -0.09),
+    put("planter", f, -6.2, 2.8, 0, 0.8),
+    put("lamp", f, 6, 2.7)
+  ];
+}
+across(carnivalFront, [[-22, 29, 2.85, 1], [37, 23, -1.5, 0.86]])(frame(0, 0));
+
+// A broad lawn provides a quiet interval beside the busy midway.
+api.surface({ id: "picnic-lawn", surface: "grass", region: circle(15, 36, 7) });
+api.grass("picnic-short-grass", circle(15, 36, 6.7), {
+  preset: "meadow", density: 0.32, height: 0.17,
+  mix: { short: 0.96, tall: 0.02, flowers: 0.02 }
+});
+echo(restPocket, [[24, 36, -1.2, 0.95], [13, 44, Math.PI, 0.72]])(frame(0, 0));
+put("tree", frame(24, 41), 0, 0, 0, 0.9);
+put("tree", frame(8, 43), 0, 0, 0.5, 0.8);
+
+api.modifyTerrain({
+  modifier: "basin",
+  region: circle(35, -28, 8),
+  amplitude: -1.5,
+  softness: 0.65
+});
+const pond = [[28, -31], [30, -35], [36, -36], [41, -32], [41, -27], [37, -22], [31, -24]];
+api.surface({ id: "pond-shore", surface: "sand", region: circle(35, -29, 8) });
+api.water("quiet-pond", { type: "lake", points: pond, level: -0.55, depth: 1 });
+api.route({
+  id: "garden-spur",
+  points: [[33, -4], [39, -12], [42, -20], [43, -30], [40, -39]],
+  width: 2.2,
+  curve: "catmull-rom",
+  surface: "sand"
+});
+echo(restPocket, [[43, -17, -1.25, 0.75], [35, -39, 0, 0.85]])(frame(0, 0));
+api.grass("pond-flowers", circle(27, -36, 2.3), {
+  preset: "wetland", density: 0.8, height: 0.6
+});
+
+const planted = [];
+function grove(cx, cz, count, radius, baseScale) {
+  const anchors = [];
+  for (let attempt = 0; attempt < count * 24 && anchors.length < count; attempt++) {
+    const a = rnd(0, TAU);
+    const r = Math.sqrt(Math.random()) * radius;
+    const x = cx + Math.cos(a) * r;
+    const z = cz + Math.sin(a) * r;
+    if (Math.abs(x) > 44 || Math.abs(z) > 44) continue;
+    if (planted.some(p => Math.hypot(p[0] - x, p[1] - z) < 3.8)) continue;
+    const p = put("tree", frame(x, z), 0, 0, rnd(0, TAU), baseScale * rnd(0.78, 1.15));
+    anchors.push(p);
+    planted.push(p);
+  }
+  return anchors;
+}
+grove(-40, 29, 8, 7.5, 0.95);
+grove(-39, 1, 7, 7, 1.1);
+grove(-26, -41, 6, 6, 0.95);
+grove(3, -43, 7, 14, 0.83);
+grove(39, 38, 6, 6.5, 0.87);
+grove(42, -6, 4, 5, 0.82);
+grove(-14, 43, 4, 5, 0.83);
+
+for (const [x, z, r] of [[-39, 30, 6], [-40, -2, 5], [-28, -41, 4], [39, 38, 5], [-11, -9, 3], [13, -1, 3.5]]) {
+  api.grass("flower-bed-" + serial++, circle(x, z, r), {
+    preset: "meadow",
+    density: 0.65,
+    height: 0.35,
+    mix: { short: 0.4, tall: 0.15, flowers: 0.45 }
+  });
+}
+for (const [x, z, angle] of [
+  [-4.5, 32, 0], [4.8, 28, 0], [-8, 23, 0.4],
+  [-29, 18, 0.8], [-33, 6, 1.5], [-28, -10, 1.1],
+  [-13, -19, 0], [16, -18, 0], [31, -10, -0.5],
+  [35, 14, -1.4], [18, 27, Math.PI]
+]) put("lamp", frame(x, z, angle));
+
+function fenceRun(points) {
+  const anchors = [];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const length = Math.hypot(dx, dz);
+    const count = Math.max(1, Math.ceil(length / 3.5));
+    for (let j = 0; j < count; j++) {
+      const t = (j + 0.5) / count;
+      anchors.push(put("fence", frame(a[0] + dx * t, a[1] + dz * t, Math.atan2(-dz, dx)), 0, 0, 0, length / count / 3.5));
+    }
+  }
+  return anchors;
+}
+fenceRun([[-45, 45], [-8, 45]]);
+fenceRun([[8, 45], [45, 45], [45, 31]]);
+fenceRun([[-45, 43], [-45, 12], [-45, -15], [-43, -36]]);
+fenceRun([[-12, -35], [-12, -23], [-10, -16]]);
+fenceRun([[24, -34], [24, -25], [23, -19]]);
+return {
+  entrance: [0, 37],
+  focus: [6, -26],
+  plaza: [0, 19],
+  quietLawn: [15, 36],
+  pond: [35, -29]
+};
+```
+
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
 The sandbox exposes exactly these 10 APIs. Everything else is yours to build: plain JavaScript is fully available — \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, local helper functions, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`). Write your own helpers freely: curve sampling, grid or Poisson point sets, value noise, path subdivision, jitter, orientation math — all of it is just JS you author yourself. For example:
