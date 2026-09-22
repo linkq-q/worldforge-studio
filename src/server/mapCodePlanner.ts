@@ -3581,6 +3581,224 @@ You have total creative freedom: theme, landform, architecture, vegetation and d
 
 Composition style — generate and select. Treat the plan as a parametric model plus your own fitness functions. Define what a good arrangement means for this scene as small scoring functions — rhythm score, contrast score, connectivity or focal-hierarchy score — then generate several candidate layouts with different seeds or parameters, evaluate each with your scores, and emit only the winner. The visible scene must be the one your scoring loop chose, not your first idea; keep the search bounded so it finishes in seconds.
 
+
+Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
+
+```js
+const SEED = 3220968234;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+function rng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+function segmentDistance(p, a, b) {
+  const dx = b[0] - a[0], dz = b[1] - a[1];
+  const t = clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / Math.max(0.001, dx * dx + dz * dz), 0, 1);
+  return dist(p, [a[0] + dx * t, a[1] + dz * t]);
+}
+function roadDistance(p, points) {
+  let d = Infinity;
+  for (let i = 1; i < points.length; i++) d = Math.min(d, segmentDistance(p, points[i - 1], points[i]));
+  return d;
+}
+const circle = (x, z, radius) => ({kind: "circle", center: [x, z], radius});
+const poly = points => ({kind: "polygon", points});
+function rhythmScore(c) {
+  const gaps = [];
+  const ordered = c.buildings.slice().sort((a, b) => a.p[1] - b.p[1]);
+  for (let i = 1; i < ordered.length; i++) gaps.push(dist(ordered[i].p, ordered[i - 1].p));
+  const mean = gaps.reduce((s, x) => s + x, 0) / gaps.length;
+  const variance = gaps.reduce((s, x) => s + (x - mean) ** 2, 0) / gaps.length;
+  return Math.min(variance, 35) * 0.4;
+}
+function hierarchyScore(c) {
+  let score = 0;
+  for (const b of c.buildings) {
+    const d = dist(b.p, c.gate);
+    score += Math.min(d, 27) * 0.07;
+    if (d < 12) score -= 40;
+    if (segmentDistance(b.p, [c.gate[0], 34], c.gate) < b.r + 5) score -= 60;
+  }
+  return score;
+}
+function connectivityScore(c) {
+  let score = 0;
+  for (let i = 0; i < c.buildings.length; i++) {
+    const b = c.buildings[i];
+    const d = roadDistance(b.p, c.road);
+    if (d < b.r + 5.5) score -= 100;
+    score -= Math.abs(d - 16) * 0.25;
+    for (let j = 0; j < i; j++) {
+      const clearance = dist(b.p, c.buildings[j].p) - b.r - c.buildings[j].r;
+      score += clearance < 2 ? -80 - 12 * Math.abs(clearance) : Math.min(clearance, 5) * 0.1;
+    }
+  }
+  return score;
+}
+function contrastScore(c) {
+  let score = 0;
+  for (const b of c.buildings) {
+    if (b.p[0] < -13) score += 2;
+    if (dist(b.p, [-18, 6]) < b.r + 6) score -= 25;
+    if (b.p[0] > 18) score -= 20;
+  }
+  return score;
+}
+let winner = null, best = -Infinity;
+for (let n = 0; n < 72; n++) {
+  const r = rng((SEED + Math.imul(n + 1, 7919)) >>> 0);
+  const gx = 3 + r() * 4, gz = -4 + r() * 5;
+  const c = {
+    gate: [gx, gz],
+    road: [[gx - 1, 45], [gx - 1, 27], [gx, 12], [gx, gz], [gx + 1, -13], [17 + r() * 5, -26], [30 + r() * 6, -44]],
+    buildings: [],
+    seed: (SEED + n * 137) >>> 0
+  };
+  const anchors = [
+    [-32, 29, "house", 5.0], [-19, 29, "house", 4.8],
+    [-34, 15, "house", 4.8], [-34, -1, "house", 4.8],
+    [-30, -17, "house", 5.0], [-16, -22, "garage", 6.0],
+    [-17, -7, "cafe", 5.2], [-34, -32, "tower", 3.6]
+  ];
+  for (const a of anchors) c.buildings.push({
+    p: [a[0] + (r() - 0.5) * 6, a[1] + (r() - 0.5) * 6],
+    key: a[2], r: a[3], variant: Math.floor(r() * 2)
+  });
+  const score = rhythmScore(c) + hierarchyScore(c) + connectivityScore(c) + contrastScore(c);
+  if (score > best) {best = score; winner = c;}
+}
+const c = winner, rand = rng(c.seed);
+const rr = (a, b) => a + (b - a) * rand();
+const gx = c.gate[0], gz = c.gate[1];
+
+api.terrain("plain", {seed: SEED});
+api.surface({id: "desert-base", surface: "sand", region: poly([[-48,-48],[48,-48],[48,48],[-48,48]]), intensity: 1});
+api.modifyTerrain({modifier: "ridge", region: {kind: "path", points: [[-45,-43],[-36,-42],[-20,-43],[-9,-39]], width: 11}, amplitude: 8, softness: 0.75});
+api.modifyTerrain({modifier: "dune", region: circle(36, 17, 11), amplitude: 4.2, softness: 0.95});
+api.modifyTerrain({modifier: "dune", region: circle(35, -12, 9), amplitude: 3.4, softness: 0.9});
+api.modifyTerrain({modifier: "dune", region: circle(-41, 41, 6), amplitude: 2, softness: 0.9});
+api.surface({id: "town-packed-earth", surface: "soil", material: "sun-baked ochre earth", region: poly([[-41,-34],[-9,-31],[0,-17],[-1,32],[-23,39],[-42,26]]), intensity: 0.7});
+api.surface({id: "start-apron", surface: "soil", region: poly([[gx-9,gz-8],[gx+10,gz-8],[gx+11,37],[gx-10,37]]), intensity: 0.9});
+api.surface({id: "quiet-square", surface: "sand", region: circle(-18, 6, 7), intensity: 1});
+api.surface({id: "service-yard", surface: "soil", region: poly([[16,18],[29,18],[29,37],[16,37]]), intensity: 0.9});
+api.route({id: "rally-stage", name: "沙海第一赛段", points: c.road, width: 8, curve: "catmull-rom", surface: "soil"});
+api.route({id: "village-lane", name: "旧镇巷道", points: [[-27,36],[-26,23],[-25,12],[-25,4],[-25,-9],[-20,-15],[gx,-14]], width: 3.2, curve: "catmull-rom", surface: "sand"});
+api.route({id: "square-link", points: [[-25,6],[-18,6],[-8,8],[gx-5,10]], width: 2.4, curve: "catmull-rom", surface: "sand"});
+api.route({id: "service-link", points: [[gx+3,32],[15,34],[23,32]], width: 4, curve: "catmull-rom", surface: "soil"});
+
+const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+const families = [
+  ["gate","拉力起点门",[15,9,2.5],"structure","One freestanding desert rally starting gantry, two thick dark steel lattice legs at the outer edges, clear central opening 11 meters wide and 7 meters tall, weathered burnt-orange top fascia with bold START lettering and a small black and white checker motif, realistic industrial construction."],
+  ["house","沙土民居",[8,5.5,7],"structure","One small Saharan adobe house, flat accessible roof with parapet, eroded ochre plaster, recessed dark doorway, tiny blue shutters, asymmetric silhouette, no base or surrounding scenery."],
+  ["garage","修车铺",[10,5,8],"structure","One desert village rally repair garage, sun-faded turquoise sliding door open onto a dark workshop bay, corrugated metal awning, ochre masonry, weathered oil-stained threshold, no vehicles."],
+  ["cafe","路边茶馆",[8,4.8,7],"structure","One modest desert tea house, sand-colored adobe walls, flat roof, shaded front porch beneath a faded red fabric awning, simple blue wooden entrance, no surrounding furniture."],
+  ["tower","旧水塔",[5,12,5],"structure","One old cylindrical riveted water tank on four rusty steel legs, narrow ladder and tiny maintenance platform, faded cream paint, arid village utility architecture."],
+  ["tent","维修帐篷",[8,4.5,7],"structure","One open-sided desert motorsport service canopy, taut off-white fabric roof with muted orange edge stripe, four dark metal poles, no walls or vehicles."],
+  ["car","越野赛车",[2.3,1.9,4.8],"environment","One realistic desert rally racing SUV, raised suspension, chunky sand tires, roof air scoop, spare wheels, dusty white and orange livery, readable black racing number 27, no driver or ground base."],
+  ["truck","后勤卡车",[3,3.8,7],"environment","One parked rugged rally support truck, dusty muted blue cab, sand-colored box body, roof spare tires, realistic desert expedition equipment, no scenery."],
+  ["bike","拉力摩托",[0.9,1.6,2.3],"environment","One desert rally motorcycle standing on its kickstand, tall navigation tower, orange fairing, knobby tires, sand dust, no rider."],
+  ["barrier","赛道护栏",[3,1.1,0.5],"environment","One freestanding portable steel crowd barrier, galvanized tubing with a faded orange rectangular center advertising panel, sturdy feet."],
+  ["flag","赛事旗帜",[1.2,6,0.6],"environment","One tall flexible feather event flag with an orange and cream fabric sail on a black pole and a small weighted foot, motorsport checker graphics."],
+  ["timing","计时台",[3.5,3.2,3],"structure","One compact raised desert rally timing booth, steel frame, cream corrugated roof, shaded glass front, orange fascia and digital timer panel, freestanding legs."],
+  ["tires","备用轮胎",[1.4,1.3,1.4],"environment","One stack of three dusty heavy off-road rally tires with detailed tread and dark rubber, slightly uneven stack."],
+  ["crates","工具箱",[1.8,1,1.1],"environment","One closed rugged rectangular mechanics tool chest, scratched red metal, drawers and handles, small caster wheels, desert dust."],
+  ["drum","燃油桶",[0.7,1.1,0.7],"environment","One sealed weathered steel fuel drum, faded blue paint, rusty ribs, small cream safety label."],
+  ["palm","沙漠棕榈",[5,10,5],"environment","One mature date palm with a slender irregular trunk and sparse dusty green arching fronds, natural desert silhouette, no terrain base."],
+  ["scrub","耐旱灌木",[1.6,0.8,1.4],"environment","One sparse low desert saltbush with dusty sage leaves and dry fine branches, irregular natural shape, no base."],
+  ["rock","风蚀岩石",[3.5,2.4,2.8],"environment","One rounded angular sandstone boulder with wind-eroded layered warm rust and pale ochre rock, no terrain base."],
+  ["well","古老水井",[2.8,2.6,2.8],"environment","One old circular sandstone village well, waist-high stone rim, simple wooden crossbeam with pulley and rope, dry desert weathering, no surrounding scenery."],
+  ["bench","木长凳",[2.2,0.9,0.7],"environment","One rustic low wooden bench with worn blue paint and simple legs, sun bleached desert village furniture."],
+  ["sign","赛段指路牌",[1.8,2.7,0.4],"environment","One freestanding orange desert rally direction arrow sign attached to a weathered steel post, bold black arrow, small checker mark, weighted foot."],
+  ["awning","集市棚",[5,3,4],"structure","One small open desert market shade stall, four rough wooden posts supporting faded striped tan cloth, a single empty low wooden counter beneath, no ground base."]
+];
+for (const f of families) api.requireAsset({
+  key: f[0], name: f[1], dimensions: f[2], role: f[3],
+  prompt: f[4] + contract,
+  variants: f[0] === "house" || f[0] === "rock" || f[0] === "scrub" ? 2 : 1
+});
+const ids = {};
+for (const f of families) {
+  const count = f[0] === "house" || f[0] === "rock" || f[0] === "scrub" ? 2 : 1;
+  ids[f[0]] = [];
+  for (let i = 0; i < count; i++) ids[f[0]].push(api.asset(f[0], i));
+}
+function put(key, x, z, rotation = 0, scale = 1, variant = 0) {
+  api.place({assetId: ids[key][variant % ids[key].length], position: [clamp(x,-46,46),clamp(z,-46,46)], rotationY: rotation, scale});
+}
+put("gate",gx,gz);
+put("timing",gx-11,gz+1,Math.PI/2);
+let houseIndex = 0;
+for (const b of c.buildings) {
+  const rot = Math.atan2(-24 - b.p[0], 7 - b.p[1]);
+  put(b.key,b.p[0],b.p[1],rot,1,b.key === "house" ? houseIndex++ % 2 : 0);
+}
+put("car",gx,gz+7,Math.PI);
+put("car",gx-1,22,Math.PI,1);
+put("car",gx-1,33,Math.PI,0.96);
+put("tent",23,23,Math.PI/2);
+put("car",23,23,Math.PI/2,0.95);
+put("truck",25,34,Math.PI);
+put("bike",18,28,Math.PI-0.25);
+put("bike",20,30,Math.PI+0.12);
+put("tires",27,20,0.2);
+put("tires",27,25,0.7,0.85);
+put("crates",19.5,20,0.15);
+put("drum",28,29);
+put("drum",27,30.3,0.3);
+const garage = c.buildings.find(b => b.key === "garage");
+put("tires",garage.p[0]+6,garage.p[1]+1,0.4);
+put("crates",garage.p[0]+5.8,garage.p[1]+3.3,-0.1,0.85);
+put("well",-18,6,0,0.9);
+put("bench",-20,10,-0.45);
+put("palm",-23,2,0.3,1.1);
+put("palm",-28,8,1.9,0.82);
+put("awning",-12,18,0.3);
+put("bench",-12,21,Math.PI,0.9);
+put("drum",-15,19);
+put("sign",gx+7,-14,Math.PI);
+put("sign",28,-34,Math.PI-0.6);
+
+for (const side of [-1,1]) {
+  for (const z of [gz+2.5,gz+7,gz+12.5,20,27]) {
+    if (side === 1 && z > 21) continue;
+    put("barrier",gx+side*6.2,z,Math.PI/2,1);
+  }
+  put("flag",gx+side*8.1,gz-2,0.15*side);
+  put("flag",gx+side*8.5,gz+11,0.24*side,0.88);
+}
+put("flag",18,17,0.4,0.8);
+put("palm",-39,23,2,0.85);
+put("palm",-11,31,0.4,0.75);
+
+const rockCenters = [[-42,-33],[-26,-41],[-12,-40],[39,-26],[42,4],[34,30]];
+for (let i = 0; i < rockCenters.length; i++) {
+  const p = rockCenters[i];
+  put("rock",p[0],p[1],rr(0,6.28),rr(0.7,1.45),i%2);
+  if (i % 2 === 0) put("rock",p[0]+rr(-2,2),p[1]+4,rr(0,6.28),0.45,(i+1)%2);
+}
+let shrubs = 0;
+for (let i = 0; i < 150; i++) {
+  const x = rr(-44,44), z = rr(-44,44), p = [x,z];
+  if (roadDistance(p,c.road) < 7 || dist(p,[-18,6]) < 9) continue;
+  if (x > 13 && x < 32 && z > 14 && z < 39) continue;
+  if (c.buildings.some(b => dist(p,b.p) < b.r+2)) continue;
+  const patch = Math.sin(x*0.19+z*0.09) + Math.cos(z*0.23-x*0.07);
+  if (patch < 0.65 || (x > 10 && z > -9 && z < 14)) continue;
+  put("scrub",x,z,rr(0,6.28),rr(0.45,1.1),shrubs++%2);
+}
+put("scrub",40,32,0.5,0.8,0);
+put("scrub",41,34,1.4,0.65,1);
+api.grass("dry-edge-west",circle(-40,7,4),{preset:"sand",density:0.12,height:0.22,mix:{short:0.85,tall:0.15,flowers:0}});
+api.grass("dry-edge-east",circle(39,-28,5),{preset:"sand",density:0.1,height:0.18,mix:{short:0.9,tall:0.1,flowers:0}});
+api.route({id:"left-tire-rut",points:c.road.map(p=>[p[0]-1.1,p[1]]),width:0.24,curve:"catmull-rom",surface:"sand"});
+api.route({id:"right-tire-rut",points:c.road.map(p=>[p[0]+1.1,p[1]]),width:0.24,curve:"catmull-rom",surface:"sand"});
+api.surface({id:"starting-line",surface:"paving",material:"chalk white",region:poly([[gx-4,gz+1.3],[gx+4,gz+1.3],[gx+4,gz+1.7],[gx-4,gz+1.7]]),intensity:1});
+```
+
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
 The sandbox exposes exactly these 10 APIs. Everything else is yours to build: plain JavaScript is fully available — \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, local helper functions, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`). Write your own helpers freely: curve sampling, grid or Poisson point sets, value noise, path subdivision, jitter, orientation math — all of it is just JS you author yourself. For example:
