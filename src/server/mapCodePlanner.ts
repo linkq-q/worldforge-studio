@@ -3581,6 +3581,213 @@ You have total creative freedom: theme, landform, architecture, vegetation and d
 
 Composition style — continuous fields. Think like an SDF shader: describe the scene as smooth scalar fields over (x, z) before placing anything. Write small field functions — distance falloffs, ridged or value noise, gradients, smoothstep blends — that return density, height preference, openness or wetness at any point. Orchestrate the whole map with at least one master field, then sample it: place dense where the field is high, leave empty where it is low, and let edges and transitions emerge from field thresholds rather than hand-drawn polygons.
 
+
+Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
+
+```js
+const seed = 2621555788;
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, v) => {
+  const t = clamp((v - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+const gauss = (x, z, cx, cz, rx, rz) =>
+  Math.exp(-(((x - cx) / rx) ** 2 + ((z - cz) / rz) ** 2));
+const circle = (x, z, radius) => ({kind: "circle", center: [x, z], radius});
+const hash = (x, z) => {
+  const n = Math.sin(x * 127.1 + z * 311.7 + seed * 0.00001) * 43758.5453;
+  return n - Math.floor(n);
+};
+function noise(x, z) {
+  const ix = Math.floor(x), iz = Math.floor(z);
+  const u = smooth(0, 1, x - ix), v = smooth(0, 1, z - iz);
+  return (hash(ix, iz) * (1 - u) + hash(ix + 1, iz) * u) * (1 - v)
+    + (hash(ix, iz + 1) * (1 - u) + hash(ix + 1, iz + 1) * u) * v;
+}
+function segmentDistance(x, z, a, b) {
+  const dx = b[0] - a[0], dz = b[1] - a[1];
+  const t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / Math.max(0.001, dx * dx + dz * dz), 0, 1);
+  return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz);
+}
+function pathDistance(x, z, points) {
+  let d = Infinity;
+  for (let i = 1; i < points.length; i++) d = Math.min(d, segmentDistance(x, z, points[i - 1], points[i]));
+  return d;
+}
+function pondRadius(t) {
+  return 1 + 0.075 * Math.sin(3 * t + 0.5) + 0.055 * Math.cos(5 * t - 0.8) + 0.035 * Math.sin(2 * t);
+}
+function shore(x, z) {
+  const nx = (x + 2) / 16.6, nz = (z - 1) / 13.2;
+  return (Math.hypot(nx, nz) - pondRadius(Math.atan2(nz, nx))) * 14;
+}
+const loop = [
+  [0, 29], [-11, 27], [-21, 20], [-24, 10], [-24, -1],
+  [-20, -12], [-11, -20], [-2, -23], [8, -22],
+  [18, -17], [23, -8], [24, 4], [23, 15], [17, 23], [7, 28], [0, 29]
+];
+const entranceWest = [[0, 43], [0, 36], [-7, 34], [-8, 30], [-11, 27]];
+const entranceEast = [[0, 36], [7, 34], [8, 30], [7, 28]];
+const corridor = [[17, -18], [22, -15], [22, -9], [26, -5], [26, 2], [22, 7], [22, 13]];
+const pavilionPath = [[-2, -23], [-2, -19], [-2, -15.5]];
+const westSpur = [[-24, 10], [-32, 13], [-35, 20]];
+const routes = [loop, entranceWest, entranceEast, pavilionPath, westSpur];
+function routeDistance(x, z) {
+  let d = pathDistance(x, z, corridor) - 0.8;
+  for (const points of routes) d = Math.min(d, pathDistance(x, z, points));
+  return d;
+}
+function openness(x, z) {
+  return Math.max(
+    gauss(x, z, -6, 20, 15, 7),
+    gauss(x, z, -30, -8, 9, 10),
+    gauss(x, z, 4, -19, 12, 7),
+    gauss(x, z, 0, 34, 12, 9)
+  );
+}
+function master(x, z) {
+  const pockets = Math.max(
+    gauss(x, z, -33, 28, 11, 12),
+    gauss(x, z, -33, -24, 13, 12),
+    gauss(x, z, 22, -32, 16, 10),
+    gauss(x, z, 35, 14, 9, 15)
+  );
+  const edge = smooth(25, 43, Math.max(Math.abs(x), Math.abs(z)));
+  return clamp((0.16 + 0.66 * pockets + 0.28 * edge + 0.28 * (noise(x / 8, z / 8) - 0.5))
+    * (1 - 0.92 * openness(x, z))
+    * smooth(1, 6, shore(x, z))
+    * smooth(2.2, 5.5, routeDistance(x, z)), 0, 1);
+}
+
+api.terrain("plain", {seed});
+api.surface({id: "garden-ground", surface: "grass", region: circle(0, 0, 47), intensity: 0.75});
+api.modifyTerrain({modifier: "mountain", region: circle(-33, -25, 14), amplitude: 2.6, softness: 0.9});
+api.modifyTerrain({modifier: "ridge", region: {kind: "path", points: [[29, -36], [36, -24], [39, -10]], width: 11}, amplitude: 1.8, softness: 0.9});
+
+const pond = [];
+const basin = [];
+for (let i = 0; i < 72; i++) {
+  const t = i / 72 * Math.PI * 2;
+  const r = pondRadius(t);
+  pond.push([-2 + 16.6 * r * Math.cos(t), 1 + 13.2 * r * Math.sin(t)]);
+  basin.push([-2 + 17.3 * r * Math.cos(t), 1 + 13.9 * r * Math.sin(t)]);
+}
+api.modifyTerrain({modifier: "basin", region: {kind: "polygon", points: basin}, amplitude: -2.1, softness: 0.18});
+api.surface({id: "pond-bed", surface: "soil", region: {kind: "polygon", points: basin}, intensity: 1});
+api.water("central-pond", {type: "lake", points: pond, level: -0.48, depth: 1.5});
+api.route({id: "pond-edge", points: pond, closed: true, width: 0.75, curve: "catmull-rom", surface: "rock"});
+api.route({id: "circuit", name: "环池回游路", points: loop, width: 2.05, curve: "catmull-rom", closed: true, surface: "paving"});
+api.route({id: "entrance-west", points: entranceWest, width: 2.7, curve: "catmull-rom", surface: "paving"});
+api.route({id: "entrance-east", points: entranceEast, width: 2.1, curve: "catmull-rom", surface: "paving"});
+api.route({id: "pavilion-approach", points: pavilionPath, width: 3, surface: "paving"});
+api.route({id: "quiet-path", points: westSpur, width: 1.35, curve: "catmull-rom", surface: "soil"});
+api.route({id: "covered-gallery-floor", points: corridor, width: 3.3, surface: "paving"});
+api.route({id: "waterside-link", points: [[22, 13], [22, 15], [18, 15], [17, 12]], width: 2.3, surface: "paving"});
+api.surface({id: "entry-court", surface: "paving", region: circle(0, 34.8, 6.7), intensity: 1});
+api.surface({id: "main-pavilion-court", surface: "paving", region: circle(-2, -20, 5.8), intensity: 1});
+
+const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+const families = [
+  ["moon-gate", "月洞门", "One freestanding Jiangnan garden entrance wall with a large walk-through circular moon gate, white lime plaster, dark gray curved tile coping, subtle weathering, short integrated side wings, finely crafted traditional Chinese architecture.", [12, 5.1, 1.1], "structure"],
+  ["screen", "砖雕影壁", "One freestanding traditional Jiangnan spirit screen wall, opaque white plaster with a central restrained gray brick relief of plum blossom, black tiled coping and a dark stone plinth, elegant garden craftsmanship.", [8, 3.7, 0.8], "structure"],
+  ["pavilion", "临池主亭", "One open-sided elegant Jiangnan hexagonal garden pavilion, dominant double-tier dark gray tiled roof with delicate upswept eaves, muted dark red timber columns, exposed rafters, stone platform and shallow integrated steps, no surrounding landscape.", [10, 9, 9], "structure"],
+  ["gallery", "曲廊单元", "One straight open-sided Jiangnan covered garden corridor bay, continuous dark gray tiled gable roof along local Z axis, white low wall on local X positive side with one decorative lattice opening, slender dark timber posts, raised gray stone floor, open walk-through ends without end rails; roof projects slightly beyond both ends for adjoining bays.", [3.5, 4.1, 6], "structure"],
+  ["water-hall", "临水水榭", "One compact traditional Jiangnan waterside garden hall on a low solid gray masonry platform, single dark gray tiled roof, white plaster side walls, dark timber lattice doors, an open viewing veranda facing local Z positive, delicate wood balustrades, integrated entrance steps at the rear.", [8, 5.8, 6], "structure"],
+  ["scholar-rock", "太湖石", "One sculptural upright Taihu limestone scholar rock, naturally eroded perforations and flowing cavities, pale warm gray weathered stone, asymmetrical silhouette and stable broad natural foot, no pedestal.", [2.8, 4.1, 2.2], "environment"],
+  ["lantern", "石灯笼", "One modest traditional Chinese garden stone lantern, weathered pale gray granite, squat square lantern chamber with open carved windows, small curved stone roof and sturdy pedestal, unlit.", [0.9, 1.6, 0.9], "environment"],
+  ["willow", "垂柳", "One mature Chinese weeping willow tree, gracefully leaning textured trunk, airy light green canopy with long hanging branches and fine individual leaves, naturally irregular silhouette, no planter.", [10, 11, 9], "environment"],
+  ["bamboo", "翠竹丛", "One natural cluster of slender Chinese bamboo, uneven green culms, delicate sprays of narrow leaves, airy upper foliage, several stalks of different heights, natural root base without planter.", [4, 7, 3.5], "environment"],
+  ["flower-tree", "海棠花木", "One small elegant Chinese crabapple garden tree, crooked branching dark trunk, airy crown with pale pink blossoms mixed with fresh green leaves, asymmetrical natural shape, no planter.", [5.5, 5.5, 5], "environment"]
+];
+const ids = {};
+for (const [key, name, prompt, dimensions, role] of families) {
+  api.requireAsset({key, name, prompt: prompt + contract, dimensions, role});
+  ids[key] = api.asset(key);
+}
+function place(key, x, z, rotation = 0, scale = 1, name) {
+  api.place({assetId: ids[key], name, position: [x, z], rotationY: rotation, scale});
+}
+place("moon-gate", 0, 40, 0, 1, "南入口·月洞门");
+place("screen", 0, 32.7, 0, 1, "入园障景·影壁");
+place("pavilion", -2, -19.5, 0, 1, "池北主景·听雨亭");
+place("water-hall", 18.5, 10.5, -Math.PI / 2, 1, "东岸·涵碧水榭");
+for (let i = 1; i < corridor.length; i++) {
+  const a = corridor[i - 1], b = corridor[i];
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  place("gallery", (a[0] + b[0]) / 2, (a[1] + b[1]) / 2,
+    Math.atan2(b[0] - a[0], b[1] - a[1]), len / 6, "曲廊·第" + i + "折");
+}
+const occupied = [
+  [0, 40, 7], [0, 32.7, 5.2], [-2, -19.5, 6.7], [18.5, 10.5, 5.2]
+];
+function free(x, z, radius) {
+  if (shore(x, z) < 1.3 || routeDistance(x, z) < radius + 1.1) return false;
+  for (const p of occupied) if (Math.hypot(x - p[0], z - p[1]) < radius + p[2]) return false;
+  return true;
+}
+const willows = [[-19, 7], [-13, 16.8], [8, 15.6], [-17, -10], [12.5, -9.5]];
+for (let i = 0; i < willows.length; i++) {
+  const [x, z] = willows[i];
+  place("willow", x, z, rand(-Math.PI, Math.PI), [0.96, 0.8, 0.83, 0.9, 0.72][i]);
+  occupied.push([x, z, 3.2]);
+}
+for (const [x, z, s, a] of [[-9, 30, 1.05, 0.6], [-20, -15, 0.84, 2.2], [11, -15.5, 0.72, 1.5], [-33, 14, 0.88, -0.6], [15, 20, 0.52, 2.5]]) {
+  place("scholar-rock", x, z, a, s);
+  occupied.push([x, z, 1.6 * s]);
+}
+for (const [x, z, a] of [[-13, 25, 0.4], [-27, 5, 1.4], [-14, -20, 0], [9, -24, 0], [25, 18, -1.5], [10, 29, -0.4]]) {
+  place("lantern", x, z, a, rand(0.82, 1.05));
+  occupied.push([x, z, 0.8]);
+}
+place("bamboo", -30, 28, 0.7, 1.1);
+occupied.push([-30, 28, 2.3]);
+place("flower-tree", -30, -5, 0.4, 0.95);
+occupied.push([-30, -5, 3]);
+let bambooCount = 1, flowerCount = 1;
+for (let i = 0; i < 950; i++) {
+  const x = rand(-43, 43), z = rand(-41, 40);
+  const density = master(x, z);
+  if (Math.random() > density * 0.75) continue;
+  const bambooPreference = 0.25 + 0.6 * Math.max(
+    gauss(x, z, -32, 28, 13, 15),
+    gauss(x, z, 31, -25, 17, 12),
+    gauss(x, z, 36, 14, 10, 15)
+  );
+  const isBamboo = Math.random() < bambooPreference;
+  const radius = isBamboo ? 1.65 : 2.7;
+  if (!free(x, z, radius)) continue;
+  if (isBamboo && bambooCount < 65) {
+    place("bamboo", x, z, rand(-Math.PI, Math.PI), rand(0.67, 1.18));
+    bambooCount++;
+  } else if (!isBamboo && flowerCount < 23) {
+    place("flower-tree", x, z, rand(-Math.PI, Math.PI), rand(0.67, 1.08));
+    flowerCount++;
+  } else continue;
+  occupied.push([x, z, radius]);
+}
+for (let i = 0; i < 350; i++) {
+  const x = rand(-43, 43), z = rand(-41, 39);
+  const d = master(x, z);
+  if (shore(x, z) < 2.8 || routeDistance(x, z) < 3 || Math.random() > d * 0.85) continue;
+  if (occupied.slice(0, 4).some(p => Math.hypot(x - p[0], z - p[1]) < p[2] + 2)) continue;
+  const radius = rand(1.1, 2.6);
+  api.surface({id: "moss-soil-" + i, surface: "soil", region: circle(x, z, radius), intensity: 0.2 + d * 0.3});
+  api.grass("garden-understory-" + i, circle(x, z, radius), {
+    preset: "alpine-moss", density: 0.3 + d * 0.5, height: 0.12,
+    mix: {short: 0.92, tall: 0.06, flowers: 0.02}
+  });
+}
+api.grass("quiet-west-lawn", circle(-30, -6, 5.3), {
+  preset: "meadow", density: 0.35, height: 0.16,
+  mix: {short: 0.97, tall: 0.02, flowers: 0.01}
+});
+api.grass("south-open-lawn", circle(-4, 21, 4.2), {
+  preset: "meadow", density: 0.28, height: 0.12,
+  mix: {short: 0.98, tall: 0.01, flowers: 0.01}
+});
+```
+
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
 The sandbox exposes exactly these 10 APIs. Everything else is yours to build: plain JavaScript is fully available — \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, local helper functions, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`). Write your own helpers freely: curve sampling, grid or Poisson point sets, value noise, path subdivision, jitter, orientation math — all of it is just JS you author yourself. For example:
