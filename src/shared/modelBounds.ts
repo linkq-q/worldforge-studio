@@ -105,8 +105,20 @@ export function calculateModelHitBounds(modelJson: unknown): Aabb {
 
 /** Matches the renderer's centered X/Z and floor-aligned Y model group exactly. */
 export function calculateModelVisualBounds(modelJson: unknown): Aabb {
-  const { rawBounds } = collectModelMeshBounds(modelJson);
-  return cloneBounds(normalizeLikeClient(rawBounds ?? FALLBACK_BOUNDS));
+  return calculateModelVisualFrame(modelJson).bounds;
+}
+
+/** Bounds plus the root translation used by the client to center and floor-align a model. */
+export function calculateModelVisualFrame(modelJson: unknown): { bounds: Aabb; rootOffset: Vec3 } {
+  const rawBounds = collectModelMeshBounds(modelJson).rawBounds ?? FALLBACK_BOUNDS;
+  return {
+    bounds: cloneBounds(normalizeLikeClient(rawBounds)),
+    rootOffset: [
+      -(rawBounds.min[0] + rawBounds.max[0]) * 0.5,
+      -rawBounds.min[1],
+      -(rawBounds.min[2] + rawBounds.max[2]) * 0.5
+    ]
+  };
 }
 
 /** Measured in the renderer's centered/floor-aligned asset frame, not raw node coordinates. */

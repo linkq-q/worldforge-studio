@@ -911,8 +911,17 @@ class MapEditor {
       const select = event.currentTarget as HTMLSelectElement;
       const menu = select.closest('details');
       const id = select.value;
-      if (!await this.loadMap(id)) this.renderMapSelector();
-      else menu?.removeAttribute('open');
+      let switched = false;
+      this.setBusy(true, '正在切换地图…');
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      try {
+        switched = await this.loadMap(id);
+        if (!switched) this.renderMapSelector();
+        else menu?.removeAttribute('open');
+      } finally {
+        this.state.message = switched ? '地图切换完成' : '';
+        this.setBusy(false);
+      }
     });
     this.app.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -6653,6 +6662,8 @@ class MapEditor {
   private updateToolbarState(): void {
     const mapStage = this.state.stage === 'map';
     this.app.dataset.stage = this.state.stage;
+    const mapSelect = this.app.querySelector<HTMLSelectElement>('#editor-map-select');
+    if (mapSelect) mapSelect.disabled = this.state.busy;
     this.app.querySelectorAll<HTMLElement>('[data-map-only]').forEach((element) => {
       element.hidden = !mapStage;
     });

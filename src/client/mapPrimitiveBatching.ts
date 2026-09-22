@@ -10,6 +10,7 @@ import {
 } from '@voxel-studio/render-runtime/effects';
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { MapAsset } from '../shared/map';
+import { calculateModelVisualFrame, type Aabb } from '../shared/modelBounds';
 import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 import { filterMaterialTags, type MapMaterialTagPolicy } from '../shared/materialTagPolicy';
 import { buildModelGroup, safeModelScale } from './modelRenderer';
@@ -30,6 +31,8 @@ export interface MapPrimitiveBatchOptions {
   renderer?: THREE.WebGLRenderer;
   modelsRoot: THREE.Group;
   materialTagPolicy: MapMaterialTagPolicy;
+  workSliceMs?: number;
+  yieldTask?: () => Promise<void>;
 }
 
 export interface MapPrimitiveBatchResult {
@@ -57,6 +60,8 @@ export interface MapPrimitiveBatchStats {
   batchedMeshParts: number;
   fallbackMeshParts: number;
   fallbackVisualClones: number;
+  buildYieldCount: number;
+  maxBuildSliceMs: number;
   batchCount: number;
   effectBatchCount: number;
   effectBatchParts: number;
@@ -103,7 +108,9 @@ interface BatchPart {
 }
 
 interface PreparedTemplate {
-  group: THREE.Group;
+  group: THREE.Group | null;
+  modelJson: unknown;
+  bounds: Aabb;
   parts: BatchPart[];
   parentChains: Map<string, THREE.Matrix4>;
   usedByFallback: boolean;
@@ -144,14 +151,31 @@ export async function buildMapPrimitiveBatches(
   const handledObjectIds = new Set<string>();
   const objectGroups = new Map<string, THREE.Group>();
   let fallbackVisualClones = 0;
+  const workSliceMs = Math.max(0, options.workSliceMs ?? 12);
+  const yieldTask = options.yieldTask ?? yieldMainThread;
+  let sliceStartedAt = performance.now();
+  let buildYieldCount = 0;
+  let maxBuildSliceMs = 0;
+  const yieldIfNeeded = async (): Promise<void> => {
+    const elapsed = performance.now() - sliceStartedAt;
+    maxBuildSliceMs = Math.max(maxBuildSliceMs, elapsed);
+    if (!Number.isFinite(workSliceMs) || elapsed < workSliceMs) return;
+    await yieldTask();
+    buildYieldCount += 1;
+    sliceStartedAt = performance.now();
+  };
 
   for (const input of inputs) {
     objectGroups.set(input.objectId, input.objectGroup);
-    const template = await takeTemplate(input.asset, templates, options.materialTagPolicy);
+    const template = await takeTemplate(input.asset, templates, options.materialTagPolicy, yieldIfNeeded);
+    await yieldIfNeeded();
     preparedTemplates.add(template);
     const batchableNodeIds = new Set<string>();
     batcher.reset();
+    let checkedParts = 0;
     for (const part of template.parts) {
+      checkedParts += 1;
+      if (checkedParts % 32 === 0) await yieldIfNeeded();
       const assessment = batcher.canBatch(part, { modelId: input.objectId });
       if (!assessment.eligible) continue;
       if (batcher.stagePart(part, assessment, input.objectId, template.parentChains.get(part.id))) {
@@ -160,10 +184,13 @@ export async function buildMapPrimitiveBatches(
     }
     input.objectGroup.updateWorldMatrix(true, false);
     batcher.compile(input.objectId, input.objectGroup);
-    const fallback = addFallbackVisual(input, template.group, batchableNodeIds, runtimeIndex);
+    const needsFallback = template.parts.some((part) => part.mesh && !batchableNodeIds.has(part.id));
+    const templateGroup = needsFallback ? await ensureTemplateGroup(template, yieldIfNeeded) : null;
+    const fallback = addFallbackVisual(input, templateGroup, template.bounds, batchableNodeIds, runtimeIndex);
     fallbackVisualClones += fallback.cloned ? 1 : 0;
     template.usedByFallback = fallback.usedByFallback || template.usedByFallback;
     handledObjectIds.add(input.objectId);
+    await yieldIfNeeded();
   }
 
   const materialTagRuntime = new WorldForgeMaterialTagRuntime({
@@ -176,6 +203,8 @@ export async function buildMapPrimitiveBatches(
     effectBatchMinGroupSize: 8
   });
   materialTagRuntime.apply(options.modelsRoot);
+  await yieldIfNeeded();
+  maxBuildSliceMs = Math.max(maxBuildSliceMs, performance.now() - sliceStartedAt);
   const getBatchMeshes = (): THREE.Object3D[] => [
     ...batcher.getInstancedMeshes(),
     ...batcher.getBatchedMeshes(),
@@ -241,6 +270,8 @@ export async function buildMapPrimitiveBatches(
         batchedMeshParts,
         fallbackMeshParts: Math.max(0, totalParts - instancedParts - batchedMeshParts),
         fallbackVisualClones,
+        buildYieldCount,
+        maxBuildSliceMs,
         batchCount: (audit.batchCount ?? 0) + materialStats.effectBatchCount,
         ...materialStats,
         runtimeIndexPartRefs: runtimeAudit.partToRenderCount,
@@ -260,24 +291,40 @@ export async function buildMapPrimitiveBatches(
   };
 }
 
+function yieldMainThread(): Promise<void> {
+  const scheduler = (globalThis as typeof globalThis & {
+    scheduler?: { yield?: () => Promise<void> };
+  }).scheduler;
+  if (scheduler?.yield) return scheduler.yield();
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 async function takeTemplate(
   asset: MapAsset,
   templates: Map<string, Promise<PreparedTemplate>>,
-  materialTagPolicy: MapMaterialTagPolicy
+  materialTagPolicy: MapMaterialTagPolicy,
+  yieldIfNeeded: () => Promise<void>
 ): Promise<PreparedTemplate> {
   let template = templates.get(asset.id);
   if (!template) {
-    template = prepareTemplate(asset, materialTagPolicy);
+    template = prepareTemplate(asset, materialTagPolicy, yieldIfNeeded);
     templates.set(asset.id, template);
   }
   return template;
 }
 
-async function prepareTemplate(asset: MapAsset, materialTagPolicy: MapMaterialTagPolicy): Promise<PreparedTemplate> {
+async function prepareTemplate(
+  asset: MapAsset,
+  materialTagPolicy: MapMaterialTagPolicy,
+  yieldIfNeeded: () => Promise<void>
+): Promise<PreparedTemplate> {
   const modelJson = enforceReadableFoliageColors(asset.modelJson);
-  const group = await buildModelGroup(modelJson);
   const nodes = readNodes(modelJson);
-  const parts = nodes.map((node) => toBatchPart(node, materialTagPolicy));
+  const parts: BatchPart[] = [];
+  for (let index = 0; index < nodes.length; index += 1) {
+    parts.push(toBatchPart(nodes[index], materialTagPolicy));
+    if ((index + 1) % 32 === 0) await yieldIfNeeded();
+  }
   const compilerModel = { name: asset.name, parts };
   const compiled = compileModelMaterialTags(compilerModel, materialTagVocabulary);
   for (const entry of compiled.byPartId.values()) {
@@ -295,7 +342,12 @@ async function prepareTemplate(asset: MapAsset, materialTagPolicy: MapMaterialTa
     part.materialTagBaseRecipe = { ...recipe, key: `${key}:coplanar-depth=${layer}` };
   }
 
-  const rootOffset = new THREE.Matrix4().makeTranslation(group.position.x, group.position.y, group.position.z);
+  const { bounds, rootOffset: [rootX, rootY, rootZ] } = calculateModelVisualFrame(modelJson);
+  const rootOffset = new THREE.Matrix4().makeTranslation(
+    rootX,
+    rootY,
+    rootZ
+  );
   const byId = new Map(parts.map((part) => [part.id, part]));
   const parentChains = new Map<string, THREE.Matrix4>();
   const chainFor = (part: BatchPart, visited = new Set<string>()): THREE.Matrix4 => {
@@ -310,8 +362,22 @@ async function prepareTemplate(asset: MapAsset, materialTagPolicy: MapMaterialTa
     parentChains.set(part.id, chain);
     return chain;
   };
-  for (const part of parts) chainFor(part);
-  return { group, parts, parentChains, usedByFallback: false };
+  for (let index = 0; index < parts.length; index += 1) {
+    chainFor(parts[index]);
+    if ((index + 1) % 32 === 0) await yieldIfNeeded();
+  }
+  return { group: null, modelJson, bounds, parts, parentChains, usedByFallback: false };
+}
+
+async function ensureTemplateGroup(
+  template: PreparedTemplate,
+  yieldIfNeeded: () => Promise<void>
+): Promise<THREE.Group> {
+  if (!template.group) {
+    template.group = await buildModelGroup(template.modelJson);
+    await yieldIfNeeded();
+  }
+  return template.group;
 }
 
 function readNodes(modelJson: unknown): ModelNode[] {
@@ -348,12 +414,13 @@ function matrixForPart(part: BatchPart): THREE.Matrix4 {
 
 function addFallbackVisual(
   input: MapPrimitiveBatchInput,
-  template: THREE.Group,
+  template: THREE.Group | null,
+  bounds: Aabb,
   batchableNodeIds: Set<string>,
   runtimeIndex: RuntimeIndex
 ): { usedByFallback: boolean; cloned: boolean } {
-  if (!hasUnbatchedMesh(template, batchableNodeIds)) {
-    addSelectionProxy(input.objectGroup, template);
+  if (!template) {
+    addSelectionProxyFromAabb(input.objectGroup, bounds);
     return { usedByFallback: false, cloned: false };
   }
   const visual = cloneAssetVisual(template);
@@ -402,14 +469,6 @@ function addFallbackVisual(
   });
   input.objectGroup.add(visual);
   return { usedByFallback: true, cloned: true };
-}
-
-function hasUnbatchedMesh(template: THREE.Object3D, batchableNodeIds: Set<string>): boolean {
-  let found = false;
-  template.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh && !batchableNodeIds.has(String(child.userData.nodeId ?? ''))) found = true;
-  });
-  return found;
 }
 
 function applyBaseRecipe(
@@ -510,6 +569,22 @@ function addSelectionProxy(objectGroup: THREE.Group, template: THREE.Object3D): 
   objectGroup.add(proxy);
 }
 
+function addSelectionProxyFromAabb(objectGroup: THREE.Group, bounds: Aabb): void {
+  const size = new THREE.Vector3(
+    Math.max(0.001, bounds.max[0] - bounds.min[0]),
+    Math.max(0.001, bounds.max[1] - bounds.min[1]),
+    Math.max(0.001, bounds.max[2] - bounds.min[2])
+  );
+  const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+  geometry.translate(0, size.y * 0.5, 0);
+  const proxy = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+  proxy.name = 'selectionBounds';
+  proxy.visible = false;
+  proxy.userData.editorHelper = true;
+  proxy.userData.skipShaderApply = true;
+  objectGroup.add(proxy);
+}
+
 function isDescendantOf(object: THREE.Object3D, ancestor: THREE.Object3D): boolean {
   let current = object.parent;
   while (current) {
@@ -520,7 +595,7 @@ function isDescendantOf(object: THREE.Object3D, ancestor: THREE.Object3D): boole
 }
 
 function disposeUnusedTemplateResources(template: PreparedTemplate): void {
-  template.group.traverse((child) => {
+  template.group?.traverse((child) => {
     const mesh = child as THREE.Mesh;
     if (!mesh.isMesh) return;
     if (!template.usedByFallback) mesh.geometry.dispose();

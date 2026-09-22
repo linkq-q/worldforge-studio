@@ -279,6 +279,51 @@ describe('WorldForge material tag runtime', () => {
 
     result.dispose();
   });
+
+  it('yields between primitive batch work slices without losing runtime references', async () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const objectGroup = new THREE.Group();
+    modelsRoot.add(objectGroup);
+    scene.add(modelsRoot);
+    const yieldTask = vi.fn(async () => {});
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'sliced-asset',
+      name: 'sliced asset',
+      prompt: 'two cubes',
+      tags: [],
+      modelJson: {
+        nodes: [
+          { id: 'left', mesh: { type: 'box' } },
+          { id: 'right', mesh: { type: 'box' }, transform: { pos: [2, 0, 0] } }
+        ]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 2, candidateCount: 2, fallbackUsed: false },
+      mode: 'voxel',
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const result = await buildMapPrimitiveBatches(
+      [{ objectId: 'sliced-object', objectGroup, asset, assetTags: [] }],
+      {
+        scene,
+        modelsRoot,
+        materialTagPolicy: { disabled: [] },
+        workSliceMs: 0,
+        yieldTask
+      }
+    );
+    const stats = result.getStats();
+
+    expect(yieldTask).toHaveBeenCalled();
+    expect(stats.buildYieldCount).toBeGreaterThan(0);
+    expect(stats.maxBuildSliceMs).toBeGreaterThanOrEqual(0);
+    expect(stats.runtimeIndexPartRefs).toBe(2);
+
+    result.dispose();
+  });
 });
 
 function createRuntime(

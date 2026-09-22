@@ -596,6 +596,38 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
+  it('keeps centered and floor-aligned transforms when a fully batched template is built lazily', async () => {
+    const map = createEmptyMap('offset batch', 'map-offset-batch');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-offset-box',
+      name: 'offset box',
+      prompt: 'offset box',
+      modelJson: {
+        nodes: [{
+          id: 'box',
+          transform: { pos: [10, 5, -4] },
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0x777777 }
+        }]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel',
+      createdAt: now,
+      updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('offset-box', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    const batch = rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true) as THREE.InstancedMesh;
+    const matrix = new THREE.Matrix4();
+    batch.getMatrixAt(0, matrix);
+    const position = new THREE.Vector3().setFromMatrixPosition(matrix);
+
+    expect(position.toArray()).toEqual([0, 0.5, 0]);
+    rendered.dispose();
+  });
+
   it('batches material-tagged copies when their tag only needs a shared base recipe', async () => {
     const map = createEmptyMap('tagged', 'map-tagged-assets');
     const now = Date.now();
