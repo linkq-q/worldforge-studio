@@ -1001,6 +1001,34 @@ class MapEditor {
     };
     this.orbit.target.set(0, 1.5, 0);
 
+    // Documentation hook: lets external tooling load a map and fly the camera
+    // to a coordinate for screenshots (window.__wf).
+    (window as unknown as Record<string, unknown>).__wf = {
+      loadMap: (id: string) => void this.loadMap(id),
+      map: () => this.state.map ? { id: this.state.map.id, name: this.state.map.name } : null,
+      focus: (x: number, z: number, dist = 34, yaw = Math.PI * 0.25) => {
+        if (!this.camera || !this.orbit) return null;
+        const y = this.state.map ? sampleTerrainHeight(this.state.map, x, z) : 0;
+        this.orbit.target.set(x, y + 2, z);
+        this.camera.position.set(
+          x + Math.sin(yaw) * dist,
+          y + 2 + dist * 0.75,
+          z + Math.cos(yaw) * dist
+        );
+        this.camera.lookAt(this.orbit.target);
+        this.orbit.update();
+        return { x, y, z, dist };
+      },
+      top: (x: number, z: number, dist = 48) => {
+        if (!this.camera || !this.orbit) return null;
+        this.orbit.target.set(x, 0, z);
+        this.camera.position.set(x + 0.01, dist, z + 0.01);
+        this.camera.lookAt(this.orbit.target);
+        this.orbit.update();
+        return { x, z, dist };
+      }
+    };
+
     void this.reloadHdriTextures();
     this.brushPreview = new THREE.Mesh(
       new THREE.RingGeometry(0.86, 1, 64),
