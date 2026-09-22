@@ -3584,7 +3584,6 @@ Composition style — continuous fields. Think like an SDF shader: describe the 
 
 Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
 
-```js
 const seed = 2621555788;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -3786,7 +3785,6 @@ api.grass("south-open-lawn", circle(-4, 21, 4.2), {
   preset: "meadow", density: 0.28, height: 0.12,
   mix: {short: 0.98, tall: 0.01, flowers: 0.01}
 });
-```
 
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
