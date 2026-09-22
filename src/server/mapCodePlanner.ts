@@ -3584,7 +3584,6 @@ Composition style — generate and select. Treat the plan as a parametric model 
 
 Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
 
-```js
 const SEED = 3220968234;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -3797,7 +3796,6 @@ api.grass("dry-edge-east",circle(39,-28,5),{preset:"sand",density:0.1,height:0.1
 api.route({id:"left-tire-rut",points:c.road.map(p=>[p[0]-1.1,p[1]]),width:0.24,curve:"catmull-rom",surface:"sand"});
 api.route({id:"right-tire-rut",points:c.road.map(p=>[p[0]+1.1,p[1]]),width:0.24,curve:"catmull-rom",surface:"sand"});
 api.surface({id:"starting-line",surface:"paving",material:"chalk white",region:poly([[gx-4,gz+1.3],[gx+4,gz+1.3],[gx+4,gz+1.7],[gx-4,gz+1.7]]),intensity:1});
-```
 
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
