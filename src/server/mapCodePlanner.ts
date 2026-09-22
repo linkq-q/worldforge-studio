@@ -3584,7 +3584,6 @@ Composition style — picture algebra. Think like SICP's picture language: defin
 
 Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
 
-```js
 const TAU = Math.PI * 2;
 const rnd = (a, b) => a + Math.random() * (b - a);
 const circle = (x, z, radius) => ({ kind: "circle", center: [x, z], radius });
@@ -3874,7 +3873,6 @@ return {
   quietLawn: [15, 36],
   pond: [35, -29]
 };
-```
 
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
