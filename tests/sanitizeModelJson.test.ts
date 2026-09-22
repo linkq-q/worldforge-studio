@@ -12,7 +12,7 @@ describe('sanitizeModelJson', () => {
     const out = sanitizeModelJson(modelJson) as typeof modelJson;
     expect(out.nodes[0].transform.pos).toEqual([0, 1.35, 0]);
     expect(out.nodes[0].transform.quat).toEqual([0, 0, 0, 1]);
-    expect(out.nodes[1].transform.scale).toEqual([1, 2, 1]);
+    expect(out.nodes[1].transform.scale).toEqual([1, 2, 3]);
   });
 
   it('sanitizes mesh params including numeric arrays', () => {
