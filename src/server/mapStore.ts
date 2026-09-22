@@ -94,6 +94,41 @@ export interface GenerateAssetInput {
   libraryMetadata?: Partial<AssetLibraryMetadata>;
 }
 
+/**
+ * Upstream model services occasionally emit NaN/Infinity transforms or mesh
+ * params; JSON turns those into null and the renderer crashes on load. This
+ * storage-level guard replaces non-finite numbers with neutral values
+ * (positions/params → 0, quaternion → identity, scale → 1) before persisting.
+ */
+export function sanitizeModelJson<T>(modelJson: T): T {
+  if (!modelJson || typeof modelJson !== 'object') return modelJson;
+  const nodes = (modelJson as { nodes?: unknown }).nodes;
+  if (!Array.isArray(nodes)) return modelJson;
+  const finiteOr = (value: unknown, fallback: number): number =>
+    typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  for (const node of nodes) {
+    if (!node || typeof node !== 'object') continue;
+    const record = node as {
+      transform?: { pos?: unknown; quat?: unknown; scale?: unknown };
+      mesh?: { params?: Record<string, unknown> };
+    };
+    const transform = record.transform;
+    if (transform) {
+      if (Array.isArray(transform.pos)) transform.pos = transform.pos.map((v) => finiteOr(v, 0));
+      if (Array.isArray(transform.quat)) transform.quat = transform.quat.map((v, i) => finiteOr(v, i === 3 ? 1 : 0));
+      if (Array.isArray(transform.scale)) transform.scale = transform.scale.map((v) => finiteOr(v, 1));
+    }
+    const params = record.mesh?.params;
+    if (params && typeof params === 'object') {
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof value === 'number' && !Number.isFinite(value)) params[key] = 0;
+        else if (Array.isArray(value)) params[key] = value.map((v) => finiteOr(v, 0));
+      }
+    }
+  }
+  return modelJson;
+}
+
 interface UndoTransaction {
   summary: MapTransactionSummary;
   map: EditableMap;
@@ -569,7 +604,7 @@ export class MapStore {
       prompt: input.prompt,
       tags: input.tags,
       light: input.light,
-      modelJson: input.modelJson,
+      modelJson: sanitizeModelJson(input.modelJson),
       colliderPlan: input.colliderPlan,
       mode: input.mode ?? 'voxel',
       provider: input.provider,
