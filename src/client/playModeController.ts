@@ -1,18 +1,17 @@
 import * as THREE from 'three';
 import {
   getMapPlayerMetrics,
-  getMapCollisionBake,
   getPlayerSpawnYaw,
   getSpawnPoints,
   movePlayerPositionForMap,
-  resolvePlayerPositionForMap,
-  stepPlayerVerticalMotionForMap,
+  sampleTerrainHeight,
   type EditableMap,
   type MapWaterBody
 } from '../shared/map';
 import { movementDelta } from '../shared/math';
 import { isPointInsideWaterBody } from '../shared/mapWater';
-import type { InputState, Vec3 } from '../shared/protocol';
+import { PLAYER_GRAVITY, type InputState, type Vec3 } from '../shared/protocol';
+import { getMapMeshCollisionWorld, type MeshCollisionWorld } from './mapMeshCollision';
 
 const WATER_SPEED_SCALE = 0.62;
 
@@ -40,6 +39,7 @@ export class PlayModeController {
   private yaw = 0;
   private pitch = 0;
   private state: PlayMotionState | null = null;
+  private collisionWorld: MeshCollisionWorld | null = null;
   private savedCamera: { position: THREE.Vector3; quaternion: THREE.Quaternion; up: THREE.Vector3 } | null = null;
 
   constructor(private readonly options: PlayModeControllerOptions) {
@@ -58,9 +58,15 @@ export class PlayModeController {
     const map = this.options.getMap();
     if (!map || this.active) return false;
     const spawn = getSpawnPoints(map)[0];
-    const obstacles = getMapCollisionBake(map);
+    const { radius, height } = getMapPlayerMetrics(map);
+    this.collisionWorld = getMapMeshCollisionWorld(map);
+    const resolved = this.collisionWorld.resolveCapsule(
+      new THREE.Vector3(...spawn),
+      radius,
+      height
+    ).position;
     this.state = {
-      position: resolvePlayerPositionForMap(spawn, map, obstacles),
+      position: [resolved.x, resolved.y, resolved.z],
       velocityY: 0,
       grounded: true,
       wading: false,
@@ -95,6 +101,7 @@ export class PlayModeController {
     }
     this.savedCamera = null;
     this.state = null;
+    this.collisionWorld = null;
     this.options.onActiveChange(false);
   }
 
@@ -103,7 +110,14 @@ export class PlayModeController {
     if (!this.active || !this.state || !map || document.pointerLockElement !== this.options.canvas) return;
     const input = this.inputState();
     const before = this.state.position;
-    this.state = stepPlayMotion(this.state, input, deltaTime, this.jumpRequested, map);
+    this.state = stepPlayMotion(
+      this.state,
+      input,
+      deltaTime,
+      this.jumpRequested,
+      map,
+      this.collisionWorld ?? getMapMeshCollisionWorld(map)
+    );
     this.jumpRequested = false;
     this.syncCamera();
     const speed = deltaTime > 0
@@ -187,32 +201,60 @@ export function stepPlayMotion(
   input: InputState,
   deltaTime: number,
   jumpRequested: boolean,
-  map: EditableMap
+  map: EditableMap,
+  collisionWorld = getMapMeshCollisionWorld(map)
 ): PlayMotionState {
   const dt = Math.min(0.05, Math.max(0, Number(deltaTime) || 0));
-  const obstacles = getMapCollisionBake(map);
+  const world = collisionWorld;
+  const { radius, height, jumpSpeed } = getMapPlayerMetrics(map);
   let delta = movementDelta(input, dt);
   if (current.wading) delta = [delta[0] * WATER_SPEED_SCALE, delta[1], delta[2] * WATER_SPEED_SCALE];
-  const moved = movePlayerPositionForMap(current.position, delta, map, obstacles, {
-    velocity: current.velocityY,
-    jumpRequested,
-    duration: dt
-  });
-  const vertical = stepPlayerVerticalMotionForMap(
-    [moved[0], current.position[1], moved[2]],
-    current.velocityY,
-    dt,
-    jumpRequested,
-    map,
-    obstacles
+  const groundProbe = world.moveCapsule(
+    current.position,
+    [0, -0.07, 0],
+    radius,
+    height,
+    { groundProbe: 0 }
   );
-  const position: Vec3 = [moved[0], vertical.y, moved[2]];
+  const wasGrounded = groundProbe.grounded && current.velocityY <= 0.01;
+  let velocityY = Number.isFinite(current.velocityY) ? current.velocityY : 0;
+  if (wasGrounded) velocityY = jumpRequested ? jumpSpeed : 0;
+  const verticalDelta = velocityY * dt - 0.5 * PLAYER_GRAVITY * dt * dt;
+  velocityY -= PLAYER_GRAVITY * dt;
+  // Keep map-core's cheap height-field slope/layout constraint, but pass no
+  // object AABBs: visible scene geometry is resolved by the BVH below.
+  const terrainConstrained = movePlayerPositionForMap(
+    current.position,
+    delta,
+    map,
+    [],
+    { velocity: current.velocityY, jumpRequested, duration: dt }
+  );
+  delta = [
+    terrainConstrained[0] - current.position[0],
+    0,
+    terrainConstrained[2] - current.position[2]
+  ];
+  const moved = world.moveCapsule(
+    current.position,
+    [delta[0], verticalDelta, delta[2]],
+    radius,
+    height,
+    {
+      maxStep: radius * 0.25,
+      groundProbe: velocityY <= 0 ? 0.07 : 0
+    }
+  );
+  if ((moved.grounded && velocityY <= 0) || (moved.hitCeiling && velocityY > 0)) velocityY = 0;
+  const position: Vec3 = [...moved.position];
+  const terrainY = sampleTerrainHeight(map, position[0], position[2]);
+  if (moved.grounded && Math.abs(position[1] - terrainY) <= 0.0001) position[1] = terrainY;
   const water = waterAt(map, position[0], position[2]);
   const wading = Boolean(water && water.level > position[1] + 0.08);
   return {
     position,
-    velocityY: vertical.velocity,
-    grounded: vertical.grounded,
+    velocityY,
+    grounded: moved.grounded,
     wading,
     waterBodyId: wading ? water!.id : null
   };

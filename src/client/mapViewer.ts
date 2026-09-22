@@ -7,6 +7,19 @@ import { adaptiveQualityScale, type AdaptiveQualityLevel } from './adaptiveRende
 
 export type { RenderSceneRuntime } from './renderSceneRuntime';
 export type { AdaptiveQualityLevel } from './adaptiveRenderQuality';
+export {
+  MeshCollisionWorld,
+  buildMapMeshCollisionWorld,
+  createCollisionMeshInstance,
+  createModelCollisionInstance,
+  getMapMeshCollisionWorld,
+  getModelCollisionGeometry,
+  type CapsuleContact,
+  type CapsuleMoveResult,
+  type CollisionMeshInstance,
+  type CollisionMeshKind,
+  type CollisionRayHit
+} from './mapMeshCollision';
 
 export interface MapViewerOptions {
   /** Canvas to draw into. Leave unset to let three.js create one. */

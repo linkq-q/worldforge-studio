@@ -26,7 +26,8 @@
   "dependencies": {
     "@voxel-studio/render-runtime": "file:vendor/voxel-render-runtime",
     "fflate": "^0.8.2",
-    "three": "^0.160.0"
+    "three": "^0.160.0",
+    "three-mesh-bvh": "^0.9.14"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
