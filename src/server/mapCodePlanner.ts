@@ -3590,7 +3590,7 @@ The sandbox exposes exactly these 10 APIs. Everything else is yours to build: pl
   }
 
 The 10 APIs:
-1. api.terrain(preset, {amplitude?, roughness?, seed?}) — preset: 'plain'|'rolling'|'hilly'|'mountainous'|'dunes'|'islands'|'mesa'|'canyon'; 'plain' stays flat.
+1. api.terrain(preset, {amplitude?, roughness?, seed?}) — preset: 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; 'plain' stays flat.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island', region:{kind:'circle',center:[x,z],radius}|{kind:'path',points, width}|{kind:'polygon',points}, amplitude, softness?}) — local landform.
 3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving', material?, region, intensity?}) — paints existing terrain; cannot create height.
 4. api.water(id, {type:'lake'|'river'|'ocean', points:[[x,z],...], level, depth}).
