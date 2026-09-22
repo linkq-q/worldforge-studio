@@ -1093,7 +1093,7 @@ function executeMapCodePlanInternal(
   assets: readonly MapAsset[],
   options: CodeExecutionOptions
 ): CodeExecutionResult {
-  const cleanCode = normalizeUnsafeExponentSyntax(extractCode(code));
+  const cleanCode = normalizeTerrainModifierAliases(normalizeUnsafeExponentSyntax(extractCode(code)));
   if (!cleanCode || cleanCode.length > MAX_CODE_LENGTH) throw new Error('invalid_map_code_plan');
 
   const placements: PlacementIntent[] = [];
@@ -4031,6 +4031,17 @@ Refine: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objec
 
 Reusable asset catalog:
 ${assetCatalog}`;
+}
+
+/**
+ * `canyon` is a terrain *preset* (api.terrain), not a modifyTerrain modifier,
+ * yet planners reaching for a carved gorge keep writing modifier:'canyon' and
+ * the whole plan dies on validation. The authored intent — a steep-sided
+ * carved valley — maps exactly to the 'valley' modifier; rewrite the alias
+ * before the sandbox sees it. All other modifiers pass through untouched.
+ */
+function normalizeTerrainModifierAliases(code: string): string {
+  return code.replace(/(\bmodifier\s*:\s*['"])canyon(['"])/g, '$1valley$2');
 }
 
 function extractCode(raw: string): string {
