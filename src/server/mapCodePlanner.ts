@@ -3584,7 +3584,6 @@ Composition style — shape grammar. Think like CGA rule systems: build the scen
 
 Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
 
-```js
 const rand = (a, b) => a + Math.random() * (b - a);
 const circle = (x, z, radius) => ({kind: "circle", center: [x, z], radius});
 const polygon = points => ({kind: "polygon", points});
@@ -3821,7 +3820,6 @@ api.grass("东南留白",polygon([[10,29],[23,29],[27,39],[12,41],[7,35]]),{
   preset:"meadow",density:0.32,height:0.18,mix:{short:0.94,tall:0.04,flowers:0.02}
 });
 return;
-```
 
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
