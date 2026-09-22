@@ -3581,6 +3581,248 @@ You have total creative freedom: theme, landform, architecture, vegetation and d
 
 Composition style — shape grammar. Think like CGA rule systems: build the scene top-down with recursive subdivision. Write small split functions that take a region and return its parts (splits, margins, setbacks, hierarchy tiers), assign each part a role, and recurse until you reach placeable primitives. Express every repeated structure as a rewrite rule applied across many lots instead of placing objects by hand — one good rule can generate a whole street. Never enumerate coordinates when a rule expresses the intent.
 
+
+Reference example — one complete plan written in this style for an earlier request (a Jiangnan garden). Treat it as a calibration of idiom, structure and elegance only: match its discipline and craft, never its theme, content or asset names.
+
+```js
+const rand = (a, b) => a + Math.random() * (b - a);
+const circle = (x, z, radius) => ({kind: "circle", center: [x, z], radius});
+const polygon = points => ({kind: "polygon", points});
+const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+let serial = 0;
+const id = prefix => prefix + "_" + serial++;
+
+api.terrain("plain", {seed: 2435787201});
+api.surface({
+  id: "garden_ground",
+  surface: "grass",
+  region: polygon([[-48,-48],[48,-48],[48,48],[-48,48]])
+});
+
+const families = [
+  ["gate", "月洞门", [12,4.8,1.5], "structure",
+   "One Jiangnan garden entrance wall, white lime plaster with dark gray curved tile coping, a generous central circular moon gate opening, subtle weathering, restrained traditional Chinese detailing. No attached scenery."],
+  ["screen", "砖雕影壁", [8,3.6,1.1], "structure",
+   "One freestanding Jiangnan garden spirit screen wall, pale plaster framed by gray brick, elegant dark tile coping and a restrained central floral brick relief, solid opaque wall."],
+  ["pavilion", "临池主亭", [10,9,9], "structure",
+   "One exquisite open Jiangnan garden hexagonal pavilion, dominant double eaved dark gray tiled roof with graceful upturned corners, dark timber columns, restrained carved brackets, low stone plinth with integrated front steps, open views through the structure, no surrounding scenery."],
+  ["gallery", "回廊单元", [3.2,4.1,6], "structure",
+   "One straight six meter long open Jiangnan covered corridor bay, longitudinal direction along Z, dark timber posts, white low side balustrades, dark gray tiled roof, stone walkway at ground level, open ends allowing consecutive modules to join. No end walls, no surrounding scenery."],
+  ["waterside", "临水水榭", [9,5.8,7], "structure",
+   "One Jiangnan waterside open hall, single elegant gray tiled roof, dark wood pillars, delicate lattice panels at rear, wide open front veranda with low railings and stone foundation, restrained refined architecture, no surrounding water or scenery."],
+  ["rock", "太湖石", [2.8,4.2,2.2], "environment",
+   "One naturally weathered Taihu limestone scholar rock, upright irregular silhouette with intricate eroded holes, pale gray surface, slender waist and broad sculptural crown, stable natural base, no pedestal."],
+  ["lantern", "石灯笼", [0.9,1.7,0.9], "environment",
+   "One modest traditional Chinese garden stone lantern, aged pale gray granite, short pedestal, square hollow light chamber and small tiled stone cap, unlit."],
+  ["willow", "垂柳", [10,10,9], "environment",
+   "One mature Chinese weeping willow tree, elegantly leaning trunk, airy irregular crown with long cascading green foliage, visible branch structure, natural roots at ground level, no terrain."],
+  ["bamboo", "竹丛", [5,7,4], "environment",
+   "One natural cluster of slender green bamboo culms with airy leaves, varied stalk heights and gently arching tips, dense at base but transparent above, no planter or terrain."],
+  ["flower", "花木", [4.8,4.4,4.3], "environment",
+   "One elegant small Chinese flowering crabapple tree, irregular branching, sparse soft pink and white blossoms mixed with fresh green foliage, sculptural trunk, no planter or terrain."]
+];
+const assets = {};
+for (const [key, name, dimensions, role, prompt] of families) {
+  api.requireAsset({key, name, dimensions, role, prompt: prompt + contract});
+  assets[key] = api.asset(key);
+}
+function place(key, x, z, rotationY = 0, scale = 1) {
+  api.place({
+    assetId: assets[key], name: id(key), position: [x,z], rotationY, scale,
+    role: families.find(f => f[0] === key)[3]
+  });
+}
+function ellipse(cx, cz, rx, rz, count, irregularity = 0) {
+  const points = [];
+  for (let i = 0; i < count; i++) {
+    const t = i * Math.PI * 2 / count;
+    const r = 1 + irregularity * (0.62 * Math.sin(3*t + 0.4) + 0.38 * Math.cos(5*t - 0.7));
+    points.push([cx + rx * r * Math.cos(t), cz + rz * r * Math.sin(t)]);
+  }
+  return points;
+}
+function path(name, points, width, surface = "paving", closed = false) {
+  return api.route({id: id(name), name, points, width, surface, closed, curve: "catmull-rom"});
+}
+
+// The root splits into an entrance court, pond precinct, and a planted outer frame.
+function splitRegion(r, axis, fraction, gap) {
+  if (axis === "x") {
+    const cut = r.x0 + (r.x1-r.x0)*fraction;
+    return [
+      {...r, x1: cut-gap/2},
+      {...r, x0: cut+gap/2}
+    ];
+  }
+  const cut = r.z0 + (r.z1-r.z0)*fraction;
+  return [
+    {...r, z1: cut-gap/2},
+    {...r, z0: cut+gap/2}
+  ];
+}
+const root = {x0:-44, x1:44, z0:-44, z1:44};
+const [precinct, entrance] = splitRegion(root, "z", 0.79, 1);
+const [west, middleEast] = splitRegion(precinct, "x", 0.23, 1);
+const [middle, east] = splitRegion(middleEast, "x", 0.78, 1);
+const [north, pondRegion] = splitRegion(middle, "z", 0.20, 1);
+
+const pondCenter = [-3,-1];
+const shore = ellipse(pondCenter[0], pondCenter[1], 18.5, 14.7, 52, 0.115);
+api.modifyTerrain({
+  modifier:"basin", region:polygon(shore), amplitude:-2.3, softness:0.16
+});
+api.surface({
+  id:"pond_bank", surface:"soil",
+  region:polygon(ellipse(-3,-1,19.3,15.5,52,0.115)), intensity:0.8
+});
+api.water("central_pond", {
+  type:"lake", points:ellipse(-3,-1,17.9,14.1,52,0.115),
+  level:-0.48, depth:1.7
+});
+
+// White space in front of the focal pavilion is deliberately broad and empty.
+api.surface({
+  id:"pavilion_court", surface:"paving",
+  region:polygon([[-13,-28],[2,-28],[3,-19],[-12,-18]])
+});
+place("pavilion", -5, -24, 0);
+path("主亭引路", [[-5,-18],[-5,-16.8]], 3.1);
+
+const gateX = -5;
+place("gate", gateX, 40);
+place("screen", gateX, 32.7);
+api.surface({
+  id:"entrance_court", surface:"paving",
+  region:polygon([[-15,43],[6,43],[8,30],[2,26],[-15,29]])
+});
+path("入园障景左转", [[gateX,45],[gateX,37],[-12,35],[-13,30],[-10,25],[-7,22]], 2.7);
+path("影壁东侧支路", [[gateX,37],[2,36],[3,30],[8,25],[12,21]], 2.0);
+
+const loop = [];
+for (let i = 0; i < 20; i++) {
+  const t = i * Math.PI * 2 / 20;
+  const rx = 24.7 + 1.1*Math.sin(3*t+0.7);
+  const rz = 21.5 + 1.4*Math.cos(2*t-0.2);
+  loop.push([-3 + rx*Math.cos(t), -1 + rz*Math.sin(t)]);
+}
+path("环池回游", loop, 2.2, "paving", true);
+
+// A bent corridor is rewritten into joined bays, with a low waterside ending.
+const galleryLine = [[29,24],[29,12],[25,4],[25,-8],[20,-16]];
+function galleryRule(points) {
+  for (let i=0; i<points.length-1; i++) {
+    const a=points[i], b=points[i+1];
+    const dx=b[0]-a[0], dz=b[1]-a[1];
+    const length=Math.hypot(dx,dz);
+    const n=Math.max(1,Math.round(length/6));
+    const bayLength=length/n;
+    api.route({
+      id:id("廊下石径"), points:[a,b], width:3.1,
+      curve:"polyline", surface:"paving"
+    });
+    for (let j=0;j<n;j++) {
+      const t=(j+0.5)/n;
+      place("gallery",a[0]+dx*t,a[1]+dz*t,Math.atan2(dx,dz),[1,1,bayLength/6]);
+    }
+  }
+}
+galleryRule(galleryLine);
+place("waterside", 17, -17.3, Math.atan2(-13,13));
+path("水榭接主亭", [[20,-16],[13,-22],[5,-24],[0,-24]], 2.1);
+path("东廊入口", [[15,19],[23,23],[29,24]], 2.0);
+
+// Subdivision leaves alternate dense bamboo rooms, flowering pockets, and silence.
+function inset(r, margin) {
+  return {x0:r.x0+margin,x1:r.x1-margin,z0:r.z0+margin,z1:r.z1-margin};
+}
+function center(r) {
+  return [(r.x0+r.x1)/2,(r.z0+r.z1)/2];
+}
+function plantRule(region, depth, type, parity) {
+  const w=region.x1-region.x0, h=region.z1-region.z0;
+  if (depth>0 && Math.max(w,h)>12) {
+    const parts=splitRegion(region,w>h?"x":"z",rand(0.39,0.62),rand(1.2,2.8));
+    parts.forEach((part,i)=>plantRule(part,depth-1,type,parity+i+1));
+    return;
+  }
+  const r=inset(region,2.3);
+  if (r.x1<=r.x0 || r.z1<=r.z0) return;
+  const c=center(r);
+  if (parity%5===0) {
+    api.grass(id("留白草地"),polygon([
+      [r.x0,r.z0],[r.x1,r.z0],[r.x1,r.z1],[r.x0,r.z1]
+    ]),{preset:"meadow",density:0.28,height:0.18,mix:{short:0.95,tall:0.04,flowers:0.01}});
+    return;
+  }
+  const count=type==="bamboo" ? 3 : 1;
+  for(let j=0;j<count;j++) {
+    const x=count===1?c[0]:rand(r.x0,r.x1);
+    const z=count===1?c[1]:rand(r.z0,r.z1);
+    place(type,x,z,rand(-Math.PI,Math.PI),rand(0.78,1.13));
+  }
+  api.surface({id:id("种植土"),surface:"soil",region:circle(c[0],c[1],Math.min(w,h)*0.31),intensity:0.65});
+}
+plantRule(west,3,"bamboo",1);
+plantRule(east,3,"bamboo",2);
+plantRule(north,2,"flower",1);
+const entranceWings=splitRegion(entrance,"x",0.5,30);
+entranceWings.forEach((r,i)=>plantRule(r,2,i===0?"bamboo":"flower",i+1));
+
+// Unequal shore sectors create dense silhouettes separated by clear water views.
+function shoreRule(start,end,count,role) {
+  for(let i=0;i<count;i++) {
+    const t=start+(end-start)*(i+rand(0.18,0.75))/count;
+    const x=-3+21.2*Math.cos(t);
+    const z=-1+17.4*Math.sin(t);
+    if(role==="willow") {
+      place("willow",x,z,rand(-Math.PI,Math.PI),rand(0.78,0.98));
+      api.grass(id("柳岸草"),circle(x,z,2.4),{
+        preset:"meadow",density:0.48,height:0.3,mix:{short:0.8,tall:0.17,flowers:0.03}
+      });
+    } else {
+      place("rock",x,z,rand(-Math.PI,Math.PI),rand(0.55,0.92));
+    }
+  }
+}
+shoreRule(0.40,1.10,2,"willow");
+shoreRule(2.55,3.20,2,"willow");
+shoreRule(3.70,4.05,1,"willow");
+shoreRule(1.9,2.32,2,"rock");
+shoreRule(5.5,5.78,1,"rock");
+
+// Path furnishings use sparse, unequal recursive intervals rather than a ring of dots.
+function furnishingRule(a,b,depth) {
+  if(depth>0) {
+    const m=a+(b-a)*rand(0.36,0.62);
+    furnishingRule(a,m,depth-1);
+    furnishingRule(m,b,depth-1);
+    return;
+  }
+  const t=rand(a+0.1*(b-a),b-0.1*(b-a));
+  const x=-3+28*Math.cos(t), z=-1+24.8*Math.sin(t);
+  if (x>20 || z<-20 || (z>21 && x>-16 && x<9)) return;
+  place("lantern",x,z,Math.atan2(-3-x,-1-z),rand(0.87,1.03));
+}
+furnishingRule(0.75,4.12,3);
+
+// An intimate western flower pocket is the secondary reveal after the entrance turn.
+const pocket=[-30,13];
+path("花坞支径", [[-23,15],[-29,18],[-33,12],[-28,5],[-26,0]], 1.4,"soil");
+api.surface({id:"花坞小坪",surface:"sand",region:circle(pocket[0],pocket[1],3.5)});
+place("rock",pocket[0],pocket[1],0.65,0.9);
+for(let i=0;i<3;i++) {
+  const t=2.0+i*1.16+rand(-0.22,0.22);
+  place("flower",pocket[0]+6*Math.cos(t),pocket[1]+6*Math.sin(t),rand(0,6.28),rand(0.75,0.98));
+}
+place("lantern",-13,28,0.6,0.9);
+
+// Low meadow at the southeast keeps the approach legible and gives the pond room to breathe.
+api.grass("东南留白",polygon([[10,29],[23,29],[27,39],[12,41],[7,35]]),{
+  preset:"meadow",density:0.32,height:0.18,mix:{short:0.94,tall:0.04,flowers:0.02}
+});
+return;
+```
+
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
 The sandbox exposes exactly these 10 APIs. Everything else is yours to build: plain JavaScript is fully available — \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, local helper functions, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`). Write your own helpers freely: curve sampling, grid or Poisson point sets, value noise, path subdivision, jitter, orientation math — all of it is just JS you author yourself. For example:
