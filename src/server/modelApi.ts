@@ -48,6 +48,7 @@ export type ChatMessageContentPart =
 export interface ChatApiOptions {
   apiBase?: string;
   provider?: ChatProvider;
+  model?: string;
   temperature?: number;
   maxTokens?: number;
   thinking?: boolean;
@@ -290,6 +291,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       temperature: options.temperature ?? 0.2,
       maxTokens: options.maxTokens ?? 1000,
       provider: options.provider ?? 'gpt',
+      model: options.model ?? (options.provider === 'deepseek' ? 'deepseek-flash' : undefined),
       stream: true,
       thinking: options.thinking ?? true
     }),
