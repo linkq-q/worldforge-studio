@@ -1093,7 +1093,7 @@ function executeMapCodePlanInternal(
   assets: readonly MapAsset[],
   options: CodeExecutionOptions
 ): CodeExecutionResult {
-  const cleanCode = extractCode(code);
+  const cleanCode = normalizeUnsafeExponentSyntax(extractCode(code));
   if (!cleanCode || cleanCode.length > MAX_CODE_LENGTH) throw new Error('invalid_map_code_plan');
 
   const placements: PlacementIntent[] = [];
@@ -3795,6 +3795,120 @@ function extractCode(raw: string): string {
   const answer = raw.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '');
   const fenced = answer.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
   return (fenced?.[1] ?? answer).trim();
+}
+
+/**
+ * `-base ** exp` is a SyntaxError in JavaScript whenever the base carries a
+ * unary minus — `-x**2`, `-(a+b)**2` and `-((x-cx)/rx)**2` all throw — yet
+ * that is the natural way to author gaussian falloffs and field decay. The
+ * author's intent is always the negative square, so rewrite to
+ * `-(base ** exp)`; `(-base) ** exp` would silently flip the sign of every
+ * falloff. Binary minus never matches (its right side is not a unary
+ * context), strings are skipped, and valid code passes through unchanged.
+ */
+function normalizeUnsafeExponentSyntax(code: string): string {
+  const UNARY_KEYWORDS = new Set(['return', 'typeof', 'new', 'delete', 'void', 'case', 'in', 'of', 'instanceof', 'do', 'else', 'yield', 'await', 'throw']);
+  const skipSpaces = (input: string, index: number): number => {
+    while (index < input.length && /\s/.test(input[index])) index += 1;
+    return index;
+  };
+  const skipSpacesBack = (input: string, index: number): number => {
+    while (index >= 0 && /\s/.test(input[index])) index -= 1;
+    return index;
+  };
+  const skipString = (input: string, index: number): number => {
+    const quote = input[index];
+    index += 1;
+    while (index < input.length) {
+      if (input[index] === '\\') { index += 2; continue; }
+      if (input[index] === quote) return index + 1;
+      index += 1;
+    }
+    return input.length;
+  };
+  const matchParenForward = (input: string, index: number): number => {
+    let depth = 0;
+    while (index < input.length) {
+      const character = input[index];
+      if (character === '"' || character === "'" || character === '`') { index = skipString(input, index); continue; }
+      if (character === '(') depth += 1;
+      else if (character === ')') { depth -= 1; if (depth === 0) return index + 1; }
+      index += 1;
+    }
+    return -1;
+  };
+  const isUnaryContext = (input: string, index: number): boolean => {
+    const j = skipSpacesBack(input, index - 1);
+    if (j < 0) return true;
+    if (!/[\w$]/.test(input[j])) return '(+*,;{[&|!?<>%*:~^=/-'.includes(input[j]);
+    let k = j;
+    while (k >= 0 && /[\w$]/.test(input[k])) k -= 1;
+    return UNARY_KEYWORDS.has(input.slice(k + 1, j + 1));
+  };
+  const readOperand = (input: string, index: number): { start: number; end: number } => {
+    const start = skipSpaces(input, index);
+    let j = start;
+    if (input[j] === '(') {
+      const end = matchParenForward(input, j);
+      return end < 0 ? { start, end: start } : { start, end };
+    }
+    let match = /^[A-Za-z_$][\w$]*/.exec(input.slice(j)) ?? /^\d+(?:\.\d+)?/.exec(input.slice(j));
+    if (!match) return { start, end: start };
+    j += match[0].length;
+    for (;;) {
+      if (input[j] === '.' && /[A-Za-z_$]/.test(input[j + 1] ?? '')) {
+        const member = /^[A-Za-z_$][\w$]*/.exec(input.slice(j + 1));
+        if (!member) break;
+        j += 1 + member[0].length;
+        continue;
+      }
+      if (input[j] === '(') {
+        const end = matchParenForward(input, j);
+        if (end < 0) break;
+        j = end;
+        continue;
+      }
+      break;
+    }
+    return { start, end: j };
+  };
+  let out = '';
+  let i = 0;
+  const n = code.length;
+  while (i < n) {
+    const character = code[i];
+    if (character === '"' || character === "'" || character === '`') {
+      const end = skipString(code, i);
+      out += code.slice(i, end);
+      i = end;
+      continue;
+    }
+    if (character === '-' && isUnaryContext(code, i)) {
+      const { start: baseStart, end: baseEnd } = readOperand(code, i + 1);
+      if (baseEnd > baseStart) {
+        const k = skipSpaces(code, baseEnd);
+        if (code[k] === '*' && code[k + 1] === '*') {
+          let expEnd = readOperand(code, k + 2).end;
+          for (;;) {
+            const m = skipSpaces(code, expEnd);
+            if (code[m] === '*' && code[m + 1] === '*') {
+              const next = readOperand(code, m + 2).end;
+              if (next > m + 2) { expEnd = next; continue; }
+            }
+            break;
+          }
+          if (expEnd > k + 2) {
+            out += '-(' + code.slice(baseStart, expEnd) + ')';
+            i = expEnd;
+            continue;
+          }
+        }
+      }
+    }
+    out += character;
+    i += 1;
+  }
+  return out;
 }
 
 function applyLocalCodeRepair(code: string, response: string, allowUnchanged = false): string {
