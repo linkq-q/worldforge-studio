@@ -25,7 +25,7 @@ export const CHAT_PROVIDER_OPTIONS = [
   { key: 'gpt', label: 'GPT', disabled: false },
   { key: 'glm', label: 'GLM 5', disabled: true },
   { key: 'fireworks', label: 'GLM 5.1', disabled: true },
-  { key: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', disabled: true }
+  { key: 'deepseek', label: 'DeepSeek Flash', disabled: false }
 ] as const;
 export type ChatProvider = typeof CHAT_PROVIDER_OPTIONS[number]['key'];
 
