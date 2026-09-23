@@ -727,9 +727,9 @@ describe('map code planner', () => {
     );
 
     expect(prompt).toContain("spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape'");
-    expect(prompt).toContain('api.streetGrid({id,region');
+    expect(prompt).not.toContain('api.streetGrid');
     expect(prompt).toContain('api.placeAlongRoute({routeId');
-    expect(prompt).toContain('api.placeStreetFrontage({routeId');
+    expect(prompt).not.toContain('api.placeStreetFrontage');
     expect(prompt).toContain('api.sightline({from:[x,y,z]');
     expect(prompt).toContain('api.passage({points:[[x,z]|[x,y,z],...]');
     expect(prompt).toContain('api.connectionGap({a:placementReferenceOrExistingObjectId');
@@ -742,11 +742,11 @@ describe('map code planner', () => {
   });
 
   it.each(['日式街道', '日本城市街景', 'Japanese urban street'])(
-    'gives %s street-frontage guidance without keyword routing or a forced town grid', (task) => {
+    'keeps specialized APIs out of default guidance for %s without keyword routing', (task) => {
       const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 24, 'scene', 'generate', task);
-      expect(prompt).toContain('api.placeStreetFrontage');
+      expect(prompt).not.toMatch(/api\.(streetGrid|placeStreetFrontage|grassField)\b/);
       expect(prompt).not.toContain('## Active scene profile:');
-      expect(prompt).toContain('use it only when the chosen design needs blocks');
+      expect(prompt).toContain('api.placeAlongRoute');
     }
   );
 
@@ -773,7 +773,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('api.design({experienceMode');
     expect(prompt).toContain('does not move, add, prune, or fill objects');
     expect(prompt).toContain('api.sampleProbabilityField');
-    expect(prompt).toContain('api.grassField');
+    expect(prompt).not.toContain('api.grassField');
     expect(prompt).toContain('api.environmentSample');
     expect(prompt).toContain('guideDistance and signed regionDistance');
     expect(prompt).toContain('marks?:[{id,minDistance?,maxPoints?,cluster?}]');
@@ -3918,6 +3918,7 @@ describe('map code planner', () => {
 
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(repairRequest.messages.at(-1).content).toContain('Do not scale loop counts from map width, map area, or fine coordinate steps');
+    expect(repairRequest.messages.at(-1).content).not.toMatch(/api\.(streetGrid|placeStreetFrontage|grassField)\b/);
     expect(repairRequest).toMatchObject({ maxTokens: 8_000, thinking: false });
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(16);
   });
