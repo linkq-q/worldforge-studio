@@ -1,0 +1,171 @@
+// 室内 A-D 心智方案横向对比分析器
+// 运行：node wf-indoor-abcd-analyze.mjs
+// 产出：wf-indoor-abcd-metrics.json + wf-indoor-abcd.html
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const results = JSON.parse(readFileSync(new URL('./wf-indoor-abcd-results.json', import.meta.url), 'utf8'));
+
+const count = (text, re) => (text.match(re) ?? []).length;
+const CODE_WORDS = /program|slot|adjacen|partition|subdivide|bubble/i;
+const RELATE_WORDS = /anchor|facing|facing|beside|near|far|against|reach|pair|focal|relate/i;
+const FIELD_WORDS = /field|falloff|noise|smoothstep|threshold|daylight|circulation|keepout|distance/i;
+const SEARCH_WORDS = /score|fitness|candidate|anneal|evaluate|best|repair|snap|push|overlap|relax/i;
+
+function analyze(run) {
+  if (!run.ok) return { key: run.key, ok: false, error: (run.error ?? '').slice(0, 220) };
+  const s = run.suggestion ?? {};
+  const code = s.codePlan?.code ?? '';
+  const lines = code.split('\n');
+  const helpers = [...code.matchAll(/^(?:const|let|function)\s+([A-Za-z_$][\w$]*)\s*=?\s*(?:\(|function|\()/gm)].map((m) => m[1]);
+  const api = {};
+  for (const m of code.matchAll(/api\.([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)) api[m[1]] = (api[m[1]] ?? 0) + 1;
+  const opsByType = {};
+  for (const op of s.operations ?? []) opsByType[op.type] = (opsByType[op.type] ?? 0) + 1;
+  const roleCounts = {};
+  for (const op of s.operations ?? []) {
+    const role = op.role ?? op.object?.role ?? op.placement?.role;
+    if (role) roleCounts[role] = (roleCounts[role] ?? 0) + 1;
+  }
+  const diagCodes = {};
+  for (const d of s.diagnostics ?? []) {
+    const k = d.code ?? d.message?.slice(0, 40) ?? 'unknown';
+    diagCodes[k] = (diagCodes[k] ?? 0) + 1;
+  }
+  const names = (s.generatedAssets ?? []).map((a) => a.name ?? '').join(' | ');
+  const codeText = code + '\n' + names;
+  return {
+    key: run.key,
+    ok: true,
+    recovered: Boolean(run.recoveredFromTrace),
+    seconds: Math.round((run.durationMs ?? 0) / 1000),
+    placements: s.codePlan?.placementCount ?? (s.operations ?? []).length,
+    ops: (s.operations ?? []).length,
+    assets: (s.generatedAssets ?? []).length,
+    codeLines: lines.length,
+    helpers: helpers.length,
+    dataTables: count(code, /\[\s*\n(?:\s*\{[^\n]*\},?\n){3,}|\[\s*\n(?:\s*\[[^\n]*\],?\n){3,}/g),
+    forLoops: count(code, /\bfor\s*\(/g),
+    whileLoops: count(code, /\bwhile\s*\(/g),
+    comments: count(code, /\/\/[^\n]*/g),
+    nestedFns: count(code, /=>\s*(?:\([^)]*\)|\w+)\s*=>/g),
+    api,
+    mathCalls: count(code, /Math\.\w+/g),
+    vocab: {
+      program: count(code, CODE_WORDS),
+      relate: count(code, RELATE_WORDS),
+      field: count(code, FIELD_WORDS),
+      search: count(code, SEARCH_WORDS)
+    },
+    wallAnchored: api.wallFrame ?? 0,
+    ceiling: api.ceilingPoint ?? 0,
+    attach: api.attach ?? 0,
+    openings: api.opening ?? 0,
+    lights: count(codeText, /灯|lamp|light|pendant|chandelier|sconce/gi),
+    rugs: count(codeText, /地毯|rug|carpet(?! )/gi),
+    opsByType,
+    roleCounts,
+    diagTotal: (s.diagnostics ?? []).length,
+    diagCodes,
+    summary: s.summary ?? ''
+  };
+}
+
+// 同 key 重复时保留后采的一条（断点重跑会追加）
+const seen = new Map();
+for (const run of results.runs) seen.set(run.key, run);
+const metrics = [...seen.values()].map(analyze);
+writeFileSync(new URL('./wf-indoor-abcd-metrics.json', import.meta.url), JSON.stringify({
+  branch: results.branch, commit: results.commit, generatedAt: new Date().toISOString(),
+  runs: metrics
+}, null, 2));
+console.log('metrics written: wf-indoor-abcd-metrics.json');
+for (const m of metrics) {
+  if (!m.ok) { console.log(`${m.key.padEnd(14)} FAILED  ${m.error?.slice(0, 90)}`); continue; }
+  console.log(
+    `${m.key.padEnd(14)} ok ${String(m.seconds).padStart(3)}s  placements ${String(m.placements).padStart(3)}` +
+    `  code ${String(m.codeLines).padStart(3)}L  helpers ${String(m.helpers).padStart(2)}` +
+    `  wall ${String(m.wallAnchored).padStart(2)} ceil ${String(m.ceiling).padStart(2)} attach ${String(m.attach).padStart(2)} open ${m.openings}` +
+    `  lights ${String(m.lights).padStart(2)} rugs ${m.rugs}  diag ${m.diagTotal}`
+  );
+}
+
+// ---------- gallery HTML ----------
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const MODE_META = {
+  grammar: { id: 'A', name: '功能规划 Program', lineage: 'Merrell 2010 · bubble diagram' },
+  algebra: { id: 'B', name: '锚点关系 Relate', lineage: 'Yu 2011 Make It Home · Holodeck' },
+  fields: { id: 'C', name: '场与动线 Fields', lineage: 'SDF · carve-then-fill' },
+  search: { id: 'D', name: '生成-选择 Anneal', lineage: 'Cagan 1998 · Infinigen Indoors' }
+};
+const SCENARIO_META = {
+  loft: { name: 'LOFT 开放工作室', room: '16×12 m' },
+  suite: { name: '主卧套房', room: '14×12 m' },
+  cafe: { name: '街角咖啡馆', room: '16×12 m' }
+};
+const byKey = Object.fromEntries(metrics.map((m) => [m.key, m]));
+const scenarios = ['loft', 'suite', 'cafe'];
+const modes = ['grammar', 'algebra', 'fields', 'search'];
+
+const cell = (m) => {
+  if (!m) return '<td class="empty">—</td>';
+  if (!m.ok) return `<td class="fail"><b>✗ 失败</b><div class="err">${esc(m.error)}</div></td>`;
+  return `<td><b>${m.placements}</b> 摆放 · ${m.seconds}s<br>
+    <span class="sub">代码 ${m.codeLines}L · helpers ${m.helpers} · ${m.ops} 操作</span><br>
+    <span class="sub">墙锚 ${m.wallAnchored} · 顶 ${m.ceiling} · attach ${m.attach} · 门窗 ${m.openings}</span><br>
+    <span class="sub">灯 ${m.lights} · 地毯 ${m.rugs} · 诊断 ${m.diagTotal}</span><br>
+    <span class="vocab">program ${m.vocab.program} · relate ${m.vocab.relate} · field ${m.vocab.field} · search ${m.vocab.search}</span></td>`;
+};
+
+const runCards = results.runs.map((run) => {
+  const m = analyze(run);
+  const sc = SCENARIO_META[run.scenario]?.name ?? run.scenario;
+  const md = MODE_META[run.mode] ? `${MODE_META[run.mode].id} · ${MODE_META[run.mode].name}` : run.mode;
+  const code = esc(run.suggestion?.codePlan?.code ?? '(无代码：' + esc(run.error ?? '') + ')');
+  const diag = (run.suggestion?.diagnostics ?? []).slice(0, 8).map((d) => `<li>${esc(d.code ?? '')} — ${esc(d.message ?? '')}</li>`).join('');
+  const summary = esc(run.suggestion?.summary ?? '');
+  return `<details class="run"><summary>${run.ok ? '✓' : '✗'} ${sc} · ${md}${m.ok ? ` — ${m.placements} 摆放 / ${m.codeLines}L 代码 / ${m.seconds}s${run.recoveredFromTrace ? ' · <i>trace 恢复</i>' : ''}` : ' — 失败'}</summary>
+    <p class="summary">${summary}</p>
+    ${diag ? `<div class="diag"><b>诊断（前 8 条）</b><ul>${diag}</ul></div>` : ''}
+    <pre class="code">${code}</pre></details>`;
+}).join('\n');
+
+const modeNotes = Object.entries(MODE_META).map(([k, v]) => {
+  const para = results.runs.find((r) => r.mode === k)?.systemPrompt?.match(/Composition style — [^\\n]+/)?.[0] ?? '';
+  return `<details><summary>${v.id} · ${v.name} <span class="sub">（${esc(v.lineage)}）</span></summary><p>${esc(para.slice(0, 1200))}…</p></details>`;
+}).join('\n');
+
+const html = `<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>WorldForge 室内 A-D 心智方案横向对比</title>
+<style>
+body{font-family:system-ui,'Segoe UI','Microsoft YaHei',sans-serif;margin:24px;max-width:1400px;color:#1c1c22;background:#fafafa}
+h1{font-size:22px} h2{font-size:17px;margin-top:28px}
+table{border-collapse:collapse;width:100%;background:#fff}
+th,td{border:1px solid #ddd;padding:10px 12px;vertical-align:top;font-size:13px;text-align:left}
+th{background:#f0ede6}
+td.empty{color:#bbb;text-align:center}
+td.fail{background:#fdf0ef;color:#8c2f28}
+.err{font-size:11px;word-break:break-all;margin-top:4px}
+.sub{color:#777;font-size:11px}
+.vocab{color:#3a6ea5;font-size:11px}
+details.run{background:#fff;border:1px solid #e2ded4;border-radius:8px;margin:10px 0;padding:8px 14px}
+details{margin:6px 0}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+pre.code{background:#14161a;color:#d6e2f0;padding:12px;border-radius:8px;overflow:auto;max-height:420px;font-size:12px;line-height:1.5}
+.diag ul{margin:4px 0;font-size:12px;color:#7a5c00}
+p.summary{font-size:13px;color:#444}
+.meta{color:#666;font-size:12px}
+</style></head><body>
+<h1>WorldForge 室内 A-D 心智方案横向对比</h1>
+<p class="meta">branch ${esc(results.branch)} @ ${esc(results.commit)} · 采集 ${esc(results.generatedAt)} · 每场景同图同种子，4 模式同题 · prompt 只给主题 · planOnly（无资产生成）· min/max 资产族 15/25 · 10 键 API</p>
+<h2>四个心智方案（只给心智指引，代码由模型自由发挥）</h2>
+${modeNotes}
+<h2>结果矩阵（3 场景 × 4 模式）</h2>
+<table><tr><th></th>${scenarios.map((s) => `<th>${SCENARIO_META[s].name}<div class="sub">${SCENARIO_META[s].room} · ${esc(results.runs.find((r) => r.scenario === s)?.suggestion ? '' : '')}prompt：${esc(results.runs.find((r) => r.scenario === s).key ? '' : '')}</div></th>`).join('')}</tr>
+${modes.map((mode) => `<tr><th>${MODE_META[mode].id} · ${MODE_META[mode].name}<div class="sub">${esc(MODE_META[mode].lineage)}</div></th>${scenarios.map((s) => cell(byKey[`${s}:${mode}`])).join('')}</tr>`).join('')}
+</table>
+<h2>逐轮明细（含生成代码）</h2>
+${runCards}
+</body></html>`;
+
+writeFileSync(new URL('./wf-indoor-abcd.html', import.meta.url), html, 'utf8');
+console.log('gallery written: wf-indoor-abcd.html');
