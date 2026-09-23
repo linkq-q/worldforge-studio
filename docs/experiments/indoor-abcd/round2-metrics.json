@@ -1,0 +1,489 @@
+{
+  "branch": "unknown",
+  "commit": "unknown",
+  "generatedAt": "2026-09-23T15:33:08.253Z",
+  "runs": [
+    {
+      "key": "hotel:minimal",
+      "ok": true,
+      "recovered": false,
+      "seconds": 61,
+      "placements": 36,
+      "ops": 37,
+      "assets": 0,
+      "codeLines": 104,
+      "helpers": 1,
+      "dataTables": 0,
+      "forLoops": 2,
+      "whileLoops": 0,
+      "comments": 0,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "place": 6,
+        "asset": 6,
+        "roomPoint": 1,
+        "wallFrame": 1,
+        "opening": 3,
+        "ceilingPoint": 2
+      },
+      "mathCalls": 16,
+      "vocab": {
+        "program": 0,
+        "relate": 1,
+        "field": 0,
+        "search": 0
+      },
+      "wallAnchored": 1,
+      "ceiling": 2,
+      "attach": 0,
+      "openings": 3,
+      "lights": 10,
+      "rugs": 4,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 36
+      },
+      "roleCounts": {},
+      "diagTotal": 12,
+      "diagCodes": {
+        "object.out-of-bounds": 4,
+        "object.off-ground": 4,
+        "object.overlap": 2,
+        "interior.operational-clearance": 1,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 36 个摆放意图与 9 个门窗预留"
+    },
+    {
+      "key": "hotel:grammar",
+      "ok": true,
+      "recovered": false,
+      "seconds": 136,
+      "placements": 42,
+      "ops": 43,
+      "assets": 0,
+      "codeLines": 77,
+      "helpers": 1,
+      "dataTables": 1,
+      "forLoops": 5,
+      "whileLoops": 0,
+      "comments": 0,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "opening": 2,
+        "place": 30,
+        "asset": 30,
+        "roomPoint": 20,
+        "wallFrame": 8,
+        "ceilingPoint": 4
+      },
+      "mathCalls": 8,
+      "vocab": {
+        "program": 0,
+        "relate": 1,
+        "field": 0,
+        "search": 0
+      },
+      "wallAnchored": 8,
+      "ceiling": 4,
+      "attach": 0,
+      "openings": 2,
+      "lights": 12,
+      "rugs": 4,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 42
+      },
+      "roleCounts": {},
+      "diagTotal": 26,
+      "diagCodes": {
+        "object.out-of-bounds": 12,
+        "object.off-ground": 8,
+        "object.overlap": 3,
+        "interior.operational-clearance": 1,
+        "spawn.unsafe": 1,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 42 个摆放意图与 8 个门窗预留"
+    },
+    {
+      "key": "hotel:algebra",
+      "ok": true,
+      "recovered": false,
+      "seconds": 110,
+      "placements": 73,
+      "ops": 74,
+      "assets": 0,
+      "codeLines": 164,
+      "helpers": 5,
+      "dataTables": 1,
+      "forLoops": 7,
+      "whileLoops": 0,
+      "comments": 9,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "place": 6,
+        "asset": 8,
+        "roomPoint": 1,
+        "wallFrame": 1,
+        "attach": 2,
+        "ceilingPoint": 1,
+        "opening": 3
+      },
+      "mathCalls": 3,
+      "vocab": {
+        "program": 0,
+        "relate": 1,
+        "field": 1,
+        "search": 0
+      },
+      "wallAnchored": 1,
+      "ceiling": 1,
+      "attach": 2,
+      "openings": 3,
+      "lights": 22,
+      "rugs": 5,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 73
+      },
+      "roleCounts": {},
+      "diagTotal": 52,
+      "diagCodes": {
+        "object.out-of-bounds": 13,
+        "object.off-ground": 15,
+        "object.overlap": 20,
+        "room.path-blocked": 1,
+        "interior.operational-clearance": 2,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 73 个摆放意图与 6 个门窗预留"
+    },
+    {
+      "key": "hotel:fields",
+      "ok": true,
+      "recovered": false,
+      "seconds": 133,
+      "placements": 77,
+      "ops": 78,
+      "assets": 0,
+      "codeLines": 183,
+      "helpers": 1,
+      "dataTables": 1,
+      "forLoops": 14,
+      "whileLoops": 0,
+      "comments": 0,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "opening": 3,
+        "wallFrame": 1,
+        "place": 2,
+        "asset": 3,
+        "roomPoint": 1,
+        "attach": 1,
+        "ceilingPoint": 1
+      },
+      "mathCalls": 22,
+      "vocab": {
+        "program": 0,
+        "relate": 0,
+        "field": 1,
+        "search": 1
+      },
+      "wallAnchored": 1,
+      "ceiling": 1,
+      "attach": 1,
+      "openings": 3,
+      "lights": 21,
+      "rugs": 4,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 77
+      },
+      "roleCounts": {},
+      "diagTotal": 50,
+      "diagCodes": {
+        "object.duplicate": 12,
+        "object.off-ground": 8,
+        "object.overlap": 25,
+        "room.path-blocked": 2,
+        "interior.operational-clearance": 2,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 77 个摆放意图与 8 个门窗预留"
+    },
+    {
+      "key": "hotel:search",
+      "ok": true,
+      "recovered": false,
+      "seconds": 176,
+      "placements": 67,
+      "ops": 68,
+      "assets": 0,
+      "codeLines": 276,
+      "helpers": 1,
+      "dataTables": 1,
+      "forLoops": 20,
+      "whileLoops": 0,
+      "comments": 5,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "opening": 4,
+        "place": 10,
+        "asset": 11,
+        "roomPoint": 1,
+        "attach": 1,
+        "ceilingPoint": 2,
+        "wallFrame": 1
+      },
+      "mathCalls": 30,
+      "vocab": {
+        "program": 0,
+        "relate": 1,
+        "field": 1,
+        "search": 1
+      },
+      "wallAnchored": 1,
+      "ceiling": 2,
+      "attach": 1,
+      "openings": 4,
+      "lights": 17,
+      "rugs": 6,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 67
+      },
+      "roleCounts": {},
+      "diagTotal": 41,
+      "diagCodes": {
+        "object.out-of-bounds": 8,
+        "object.off-ground": 13,
+        "object.overlap": 17,
+        "room.path-blocked": 1,
+        "interior.operational-clearance": 1,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 67 个摆放意图与 6 个门窗预留"
+    },
+    {
+      "key": "cowork:minimal",
+      "ok": true,
+      "recovered": false,
+      "seconds": 75,
+      "placements": 42,
+      "ops": 43,
+      "assets": 0,
+      "codeLines": 192,
+      "helpers": 1,
+      "dataTables": 0,
+      "forLoops": 0,
+      "whileLoops": 0,
+      "comments": 0,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "place": 6,
+        "asset": 8,
+        "roomPoint": 4,
+        "wallFrame": 1,
+        "opening": 4,
+        "attach": 2,
+        "ceilingPoint": 1
+      },
+      "mathCalls": 21,
+      "vocab": {
+        "program": 0,
+        "relate": 1,
+        "field": 0,
+        "search": 0
+      },
+      "wallAnchored": 1,
+      "ceiling": 1,
+      "attach": 2,
+      "openings": 4,
+      "lights": 8,
+      "rugs": 4,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 42
+      },
+      "roleCounts": {},
+      "diagTotal": 18,
+      "diagCodes": {
+        "object.out-of-bounds": 7,
+        "object.off-ground": 5,
+        "object.overlap": 5,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 42 个摆放意图与 4 个门窗预留"
+    },
+    {
+      "key": "cowork:grammar",
+      "ok": true,
+      "recovered": false,
+      "seconds": 174,
+      "placements": 110,
+      "ops": 111,
+      "assets": 0,
+      "codeLines": 262,
+      "helpers": 1,
+      "dataTables": 1,
+      "forLoops": 9,
+      "whileLoops": 0,
+      "comments": 12,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "opening": 2,
+        "place": 9,
+        "asset": 10,
+        "roomPoint": 3,
+        "attach": 1,
+        "wallFrame": 1,
+        "ceilingPoint": 1
+      },
+      "mathCalls": 26,
+      "vocab": {
+        "program": 1,
+        "relate": 1,
+        "field": 1,
+        "search": 1
+      },
+      "wallAnchored": 1,
+      "ceiling": 1,
+      "attach": 1,
+      "openings": 2,
+      "lights": 19,
+      "rugs": 5,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 110
+      },
+      "roleCounts": {},
+      "diagTotal": 79,
+      "diagCodes": {
+        "object.out-of-bounds": 5,
+        "object.off-ground": 45,
+        "object.overlap": 25,
+        "room.path-blocked": 1,
+        "interior.operational-clearance": 1,
+        "spawn.unsafe": 1,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 110 个摆放意图与 4 个门窗预留"
+    },
+    {
+      "key": "cowork:algebra",
+      "ok": false,
+      "error": "fetch failed"
+    },
+    {
+      "key": "cowork:fields",
+      "ok": true,
+      "recovered": false,
+      "seconds": 108,
+      "placements": 50,
+      "ops": 51,
+      "assets": 0,
+      "codeLines": 137,
+      "helpers": 1,
+      "dataTables": 0,
+      "forLoops": 2,
+      "whileLoops": 0,
+      "comments": 0,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "place": 3,
+        "asset": 6,
+        "roomPoint": 2,
+        "wallFrame": 1,
+        "opening": 3,
+        "attach": 3
+      },
+      "mathCalls": 11,
+      "vocab": {
+        "program": 0,
+        "relate": 1,
+        "field": 0,
+        "search": 0
+      },
+      "wallAnchored": 1,
+      "ceiling": 0,
+      "attach": 3,
+      "openings": 3,
+      "lights": 12,
+      "rugs": 0,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 50
+      },
+      "roleCounts": {},
+      "diagTotal": 21,
+      "diagCodes": {
+        "object.out-of-bounds": 4,
+        "object.off-ground": 3,
+        "object.overlap": 13,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 50 个摆放意图与 3 个门窗预留"
+    },
+    {
+      "key": "cowork:search",
+      "ok": true,
+      "recovered": false,
+      "seconds": 191,
+      "placements": 77,
+      "ops": 78,
+      "assets": 0,
+      "codeLines": 273,
+      "helpers": 1,
+      "dataTables": 3,
+      "forLoops": 25,
+      "whileLoops": 0,
+      "comments": 7,
+      "nestedFns": 0,
+      "api": {
+        "requireAsset": 1,
+        "place": 4,
+        "asset": 5,
+        "roomPoint": 1,
+        "attach": 1,
+        "ceilingPoint": 2,
+        "wallFrame": 1
+      },
+      "mathCalls": 39,
+      "vocab": {
+        "program": 1,
+        "relate": 1,
+        "field": 0,
+        "search": 1
+      },
+      "wallAnchored": 1,
+      "ceiling": 2,
+      "attach": 1,
+      "openings": 0,
+      "lights": 21,
+      "rugs": 4,
+      "opsByType": {
+        "room.set": 1,
+        "object.add": 77
+      },
+      "roleCounts": {},
+      "diagTotal": 33,
+      "diagCodes": {
+        "object.off-ground": 9,
+        "object.out-of-bounds": 1,
+        "object.overlap": 21,
+        "spawn.unsafe": 1,
+        "interior.light-coverage": 1
+      },
+      "summary": "室内功能规划生成了 77 个摆放意图与 0 个门窗预留"
+    }
+  ]
+}

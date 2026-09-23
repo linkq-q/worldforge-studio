@@ -1,9 +1,12 @@
 // 室内 A-D 心智方案横向对比分析器
-// 运行：node wf-indoor-abcd-analyze.mjs
-// 产出：wf-indoor-abcd-metrics.json + wf-indoor-abcd.html
+// 运行：node wf-indoor-abcd-analyze.mjs [resultsFile] [outPrefix] [title]
+//   默认：wf-indoor-abcd-results.json → wf-indoor-abcd-metrics.json + wf-indoor-abcd.html
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const results = JSON.parse(readFileSync(new URL('./wf-indoor-abcd-results.json', import.meta.url), 'utf8'));
+const inArg = process.argv[2] ?? 'wf-indoor-abcd-results.json';
+const prefix = process.argv[3] ?? inArg.replace(/-results\.json$/, '');
+const title = process.argv[4] ?? 'WorldForge 室内 A-D 心智方案横向对比';
+const results = JSON.parse(readFileSync(new URL(`./${inArg}`, import.meta.url), 'utf8'));
 
 const count = (text, re) => (text.match(re) ?? []).length;
 const CODE_WORDS = /program|slot|adjacen|partition|subdivide|bubble/i;
@@ -74,7 +77,7 @@ function analyze(run) {
 const seen = new Map();
 for (const run of results.runs) seen.set(run.key, run);
 const metrics = [...seen.values()].map(analyze);
-writeFileSync(new URL('./wf-indoor-abcd-metrics.json', import.meta.url), JSON.stringify({
+writeFileSync(new URL(`./${prefix}-metrics.json`, import.meta.url), JSON.stringify({
   branch: results.branch, commit: results.commit, generatedAt: new Date().toISOString(),
   runs: metrics
 }, null, 2));
@@ -92,19 +95,24 @@ for (const m of metrics) {
 // ---------- gallery HTML ----------
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const MODE_META = {
+  minimal: { id: '基线', name: '极简基线', lineage: '无词汇表 · 仅两条常设使命' },
   grammar: { id: 'A', name: '功能规划 Program', lineage: 'Merrell 2010 · bubble diagram' },
   algebra: { id: 'B', name: '锚点关系 Relate', lineage: 'Yu 2011 Make It Home · Holodeck' },
   fields: { id: 'C', name: '场与动线 Fields', lineage: 'SDF · carve-then-fill' },
   search: { id: 'D', name: '生成-选择 Anneal', lineage: 'Cagan 1998 · Infinigen Indoors' }
 };
 const SCENARIO_META = {
+  hotel: { name: '精品酒店大堂', room: '24×16 m' },
+  cowork: { name: '联合办公', room: '22×15 m' },
   loft: { name: 'LOFT 开放工作室', room: '16×12 m' },
   suite: { name: '主卧套房', room: '14×12 m' },
   cafe: { name: '街角咖啡馆', room: '16×12 m' }
 };
 const byKey = Object.fromEntries(metrics.map((m) => [m.key, m]));
-const scenarios = ['loft', 'suite', 'cafe'];
-const modes = ['grammar', 'algebra', 'fields', 'search'];
+const MODE_ORDER = ['minimal', 'grammar', 'algebra', 'fields', 'search'];
+const SCENARIO_ORDER = ['loft', 'suite', 'cafe', 'hotel', 'cowork'];
+const modes = MODE_ORDER.filter((m) => metrics.some((x) => x.key.endsWith(':' + m)));
+const scenarios = SCENARIO_ORDER.filter((s) => metrics.some((x) => x.key.startsWith(s + ':')));
 
 const cell = (m) => {
   if (!m) return '<td class="empty">—</td>';
@@ -155,7 +163,7 @@ pre.code{background:#14161a;color:#d6e2f0;padding:12px;border-radius:8px;overflo
 p.summary{font-size:13px;color:#444}
 .meta{color:#666;font-size:12px}
 </style></head><body>
-<h1>WorldForge 室内 A-D 心智方案横向对比</h1>
+<h1>${esc(title)}</h1>
 <p class="meta">branch ${esc(results.branch)} @ ${esc(results.commit)} · 采集 ${esc(results.generatedAt)} · 每场景同图同种子，4 模式同题 · prompt 只给主题 · planOnly（无资产生成）· min/max 资产族 15/25 · 10 键 API</p>
 <h2>四个心智方案（只给心智指引，代码由模型自由发挥）</h2>
 ${modeNotes}
@@ -167,5 +175,5 @@ ${modes.map((mode) => `<tr><th>${MODE_META[mode].id} · ${MODE_META[mode].name}<
 ${runCards}
 </body></html>`;
 
-writeFileSync(new URL('./wf-indoor-abcd.html', import.meta.url), html, 'utf8');
+writeFileSync(new URL(`./${prefix}.html`, import.meta.url), html, 'utf8');
 console.log('gallery written: wf-indoor-abcd.html');

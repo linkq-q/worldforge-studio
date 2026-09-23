@@ -1,0 +1,210 @@
+/**
+ * WorldForge 室内 A-D 第二轮：复杂场景 + 极简基线对比
+ * 2 个复杂室内（酒店大堂 24x16 / 联合办公 22x15）x 5 条件（minimal + A/B/C/D）= 10 轮。
+ * 阶段 1：planOnly 串行采集（gpt 规划）；阶段 2：approvedCode 并行落地（deepseek 资产，并发 5）。
+ * 运行（在 worldforge-studio 目录下）：npx tsx ../wf-indoor-abcd2.mts
+ * 产出：wf-indoor-abcd2-results.json / wf-indoor-abcd2-apply-result.json，均可断点续跑。
+ */
+import { writeFile, readFile } from 'node:fs/promises';
+import { buildRawIndoorSceneCodeSystemPrompt } from './worldforge-studio/src/server/mapCodePlanner';
+import type { EditableMap } from './worldforge-studio/src/shared/map';
+import type { CodePlanMode } from './worldforge-studio/src/shared/codePlanModes';
+
+const API = 'http://127.0.0.1:8797';
+const RESULTS = './wf-indoor-abcd2-results.json';
+const APPLY = './wf-indoor-abcd2-apply-result.json';
+
+const SCENARIOS: Array<{
+  id: string; label: string; prompt: string; seed: number;
+  size: [number, number, number]; roomSize: [number, number, number];
+}> = [
+  {
+    id: 'hotel', label: '酒店大堂',
+    prompt: '一间 24×16 米的精品酒店一层大堂，融合接待前台、客人休憩区、酒吧水吧与全日餐厅，主入口与宴会厅通道人流交织，南向整排高窗采光',
+    seed: 910274631, size: [38, 4, 30], roomSize: [24, 4, 16]
+  },
+  {
+    id: 'cowork', label: '联合办公',
+    prompt: '一间 22×15 米的联合办公空间：接待前台、开放工位区、围合会议区、电话亭、咖啡水吧、图书阅读角与储物打印站，一条主动线贯穿全屋',
+    seed: 553819042, size: [36, 4, 28], roomSize: [22, 4, 15]
+  }
+];
+
+const MODES: Array<{ key: CodePlanMode; label: string }> = [
+  { key: 'minimal', label: '极简基线' },
+  { key: 'grammar', label: 'A 功能规划' },
+  { key: 'algebra', label: 'B 锚点关系' },
+  { key: 'fields', label: 'C 场与动线' },
+  { key: 'search', label: 'D 退火' }
+];
+
+async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(API + path, init);
+  const text = await res.text();
+  let body: unknown = null;
+  try { body = JSON.parse(text); } catch { body = text; }
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${path}: ${text.slice(0, 400)}`);
+  return body as T;
+}
+
+interface RunRecord {
+  key: string; mode: CodePlanMode; scenario: string; ok: boolean;
+  durationMs?: number; startedAt?: string; error?: string; mapId?: string;
+  suggestion?: any; systemPrompt?: string;
+}
+async function load(file: string, field: string): Promise<any[]> {
+  try {
+    const parsed = JSON.parse(await readFile(new URL(file, import.meta.url), 'utf8'));
+    return parsed[field] ?? [];
+  } catch { return []; }
+}
+async function save(file: string, doc: any) {
+  await writeFile(new URL(file, import.meta.url), JSON.stringify(doc, null, 2), 'utf8');
+}
+
+let BRANCH = 'unknown', COMMIT = 'unknown';
+try {
+  const { execFileSync } = await import('node:child_process');
+  const git = (args: string[]) => execFileSync('git', args, { cwd: './worldforge-studio' }).toString().trim();
+  BRANCH = git(['rev-parse', '--abbrev-ref', 'HEAD']);
+  COMMIT = git(['rev-parse', '--short', 'HEAD']);
+} catch { /* ignore */ }
+
+// ---------- 阶段 1：planOnly 串行采集 ----------
+const runs = await load(RESULTS, 'runs');
+const doneRuns = new Set(runs.filter((r) => runOk(r)).map((r: RunRecord) => r.key));
+function runOk(r: RunRecord) { return r.ok; }
+
+const scenarioMaps: Record<string, { map: EditableMap }> = {};
+for (const sc of SCENARIOS) {
+  const made = await api<{ map: EditableMap }>('/api/editor/maps', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: `abcd2-plan-${sc.id}`, seed: sc.seed, size: sc.size,
+      sceneMode: 'indoor', roomSize: sc.roomSize, assetGenerationMode: 'voxel'
+    })
+  });
+  scenarioMaps[sc.id] = { map: made.map };
+  console.log(`plan map: ${sc.id} -> ${made.map.id} (seed ${sc.seed})`);
+}
+
+async function collectOne(sc: (typeof SCENARIOS)[number], mode: { key: CodePlanMode; label: string }) {
+  const key = `${sc.id}:${mode.key}`;
+  if (doneRuns.has(key)) { console.log(`skip ${key}`); return; }
+  const startedAt = new Date().toISOString();
+  const started = Date.now();
+  process.stdout.write(`[${startedAt}] ${key} ... `);
+  try {
+    const response = await api<{ suggestion: any }>(
+      `/api/editor/maps/${encodeURIComponent(scenarioMaps[sc.id]!.map.id)}/generate`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: sc.prompt, provider: 'gpt', planOnly: true, planMode: mode.key,
+          reuseExistingAssets: false, minNewAssets: 20, maxNewAssets: 30
+        }),
+        signal: AbortSignal.timeout(600_000)
+      }
+    );
+    const durationMs = Date.now() - started;
+    const suggestion = response.suggestion;
+    let systemPrompt: string | undefined;
+    try { systemPrompt = buildRawIndoorSceneCodeSystemPrompt(scenarioMaps[sc.id]!.map, 20, 30, mode.key); }
+    catch (e) { console.log(`  (systemPrompt build failed, kept: ${e instanceof Error ? e.message : e})`); }
+    const record: RunRecord = {
+      key, mode: mode.key, scenario: sc.id, ok: true, durationMs, startedAt,
+      mapId: scenarioMaps[sc.id]!.map.id, suggestion, systemPrompt
+    };
+    const idx = runs.findIndex((r) => r.key === key);
+    if (idx >= 0) runs[idx] = record; else runs.push(record);
+    console.log(`OK ${(durationMs / 1000).toFixed(1)}s | placements ${suggestion?.codePlan?.placementCount ?? '?'}`);
+  } catch (error) {
+    const durationMs = Date.now() - started;
+    const message = error instanceof Error ? error.message : String(error);
+    const record: RunRecord = { key, mode: mode.key, scenario: sc.id, ok: false, durationMs, startedAt, error: message };
+    const idx = runs.findIndex((r) => r.key === key);
+    if (idx >= 0) runs[idx] = record; else runs.push(record);
+    console.log(`FAILED ${(durationMs / 1000).toFixed(1)}s | ${message.slice(0, 200)}`);
+  }
+  await save(RESULTS, { branch: BRANCH, commit: COMMIT, api: API, generatedAt: new Date().toISOString(), runs });
+}
+
+for (const sc of SCENARIOS) {
+  for (const mode of MODES) await collectOne(sc, mode);
+}
+
+// ---------- 阶段 2：approvedCode 并行落地（deepseek 资产，并发 5） ----------
+interface ApplyResult { key: string; mapId?: string; mapName?: string; ok: boolean; assetCount?: number; objectCount?: number; durationMs?: number; error?: string }
+const applyResults: ApplyResult[] = await load(APPLY, 'results');
+const doneApply = new Set(applyResults.filter((r) => r.ok).map((r) => r.key));
+const pending = runs.filter(runOk).filter((r) => !doneApply.has(r.key));
+console.log(`apply pending: ${pending.length} (concurrency 5)`);
+
+async function applyOne(run: RunRecord) {
+  const sc = SCENARIOS.find((s) => s.id === run.scenario)!;
+  const modeLabel = MODES.find((m) => m.key === run.mode)!.label;
+  const mapName = `室内ABCD2 · ${sc.label} · ${modeLabel}`;
+  const started = Date.now();
+  process.stdout.write(`[apply] ${mapName} ... `);
+  try {
+    const made = await api<{ map: EditableMap }>('/api/editor/maps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: mapName, seed: sc.seed, size: sc.size, sceneMode: 'indoor',
+        roomSize: sc.roomSize, assetGenerationMode: 'voxel'
+      })
+    });
+    const generate = await api<{ suggestion: any }>(
+      `/api/editor/maps/${encodeURIComponent(made.map.id)}/generate`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: sc.prompt, provider: 'gpt', planMode: run.mode,
+          approvedCode: run.suggestion!.codePlan.code,
+          reuseExistingAssets: false, minNewAssets: 20, maxNewAssets: 30
+        }),
+        signal: AbortSignal.timeout(900_000)
+      }
+    );
+    const suggestion = generate.suggestion;
+    const committed = await api<{ map: EditableMap }>(
+      `/api/editor/maps/${encodeURIComponent(made.map.id)}/transactions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'agent', label: suggestion.summary, operations: suggestion.operations,
+          ai: {
+            prompt: sc.prompt, generationTraceId: suggestion.generationTraceId,
+            agent: suggestion.agent, codePlan: suggestion.codePlan,
+            generatedAssets: suggestion.generatedAssets
+          }
+        }),
+        signal: AbortSignal.timeout(120_000)
+      }
+    );
+    const objectCount = (committed.map.objects as unknown[] | undefined)?.length ?? 0;
+    const result: ApplyResult = {
+      key: run.key, mapId: made.map.id, mapName, ok: true,
+      assetCount: suggestion.generatedAssets?.length ?? 0,
+      objectCount, durationMs: Date.now() - started
+    };
+    applyResults.push(result);
+    console.log(`OK | objects ${objectCount} | assets ${result.assetCount}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    applyResults.push({ key: run.key, mapName, ok: false, error: message.slice(0, 300), durationMs: Date.now() - started });
+    console.log(`FAILED | ${message.slice(0, 200)}`);
+  }
+  await save(APPLY, { generatedAt: new Date().toISOString(), results: applyResults });
+}
+
+const CONCURRENCY = 5;
+for (let i = 0; i < pending.length; i += CONCURRENCY) {
+  await Promise.all(pending.slice(i, i + CONCURRENCY).map(applyOne));
+}
+console.log(`done: ${runs.filter(runOk).length}/${SCENARIOS.length * MODES.length} collected, ${applyResults.filter((r) => r.ok).length} applied`);
