@@ -1617,7 +1617,7 @@ class MapEditor {
               ${visualZones.map((zone) => `<option value="${escapeHtml(zone.id)}" ${zone.id === this.mapAiTargetVisualZoneId ? 'selected' : ''}>${escapeHtml(zone.id)} · ${escapeHtml(zone.tags.join(', ') || '未标记')}</option>`).join('')}
             </select>
           </label>` : ''}
-          ${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? `<label class="field compact">
+          ${map.sceneMode === 'indoor' || (map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent) ? `<label class="field compact">
             <span>构图模式</span>
             <select id="map-ai-plan-mode" ${this.state.busy ? 'disabled' : ''}>
               ${CODE_PLAN_MODE_OPTIONS.map((option) => `<option value="${option.key}" ${option.key === this.mapAiPlanMode ? 'selected' : ''}>${option.label}</option>`).join('')}

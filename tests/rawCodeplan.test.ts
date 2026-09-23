@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 // Raw codeplan experiment must be enabled before the planner module is imported.
 process.env.WORLDFORGE_RAW_CODEPLAN = '1';
 
-const { buildRawSceneCodeSystemPrompt, executeMapCodePlan } = await import('../src/server/mapCodePlanner');
+const { buildRawSceneCodeSystemPrompt, buildRawIndoorSceneCodeSystemPrompt, executeMapCodePlan } = await import('../src/server/mapCodePlanner');
 const { createEmptyMap } = await import('../src/shared/map');
 const { CODE_PLAN_MODE_OPTIONS, normalizeCodePlanMode } = await import('../src/shared/codePlanModes');
 
@@ -44,6 +44,60 @@ describe('raw codeplan mode', () => {
     const prompt = buildRawSceneCodeSystemPrompt(createEmptyMap(), 2, 8);
     expect(prompt).toContain("'dune-desert'");
     expect(prompt).not.toContain("'rolling'");
+  });
+
+  it('gives indoor raw mode a room-native minimal prompt without outdoor APIs', () => {
+    const room = createEmptyMap('教室', 'indoor-raw-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const prompt = buildRawIndoorSceneCodeSystemPrompt(room, 2, 8);
+    for (const name of ['roomPoint', 'wallFrame', 'ceilingPoint', 'opening', 'attach', 'placeBetween', 'requireAsset', 'asset', 'place', 'random']) {
+      expect(prompt).toContain(`api.${name}`);
+    }
+    expect(prompt).toContain('CIRCULATION');
+    expect(prompt).toContain('wallThickness');
+    expect(prompt).not.toContain('api.terrain');
+    expect(prompt).not.toContain('SPATIAL RHYTHM');
+    expect(prompt).not.toContain('Composition style —');
+  });
+
+  it('injects the indoor variant of the selected composition style', async () => {
+    const { CODE_PLAN_INDOOR_STYLE_PARAGRAPHS, CODE_PLAN_STYLE_PARAGRAPHS } = await import('../src/shared/codePlanModes');
+    const room = createEmptyMap('教室', 'indoor-raw-style', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    for (const option of CODE_PLAN_MODE_OPTIONS) {
+      if (option.key === 'minimal') continue;
+      const prompt = buildRawIndoorSceneCodeSystemPrompt(room, 2, 8, option.key);
+      expect((prompt.match(/Composition style —/g) ?? []).length).toBe(1);
+      expect(prompt).toContain(CODE_PLAN_INDOOR_STYLE_PARAGRAPHS[option.key]);
+      expect(prompt).not.toContain(CODE_PLAN_STYLE_PARAGRAPHS[option.key]);
+    }
+  });
+
+  it('runs indoor raw code against the room-native sandbox whitelist', () => {
+    const room = createEmptyMap('教室', 'indoor-raw-run', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const code = `function plan(api) {
+      const sofa = api.requireAsset({ key:'sofa', name:'沙发', prompt:'compact fabric sofa. Coordinate contract: Y+ is up, Z+ is the front direction, X+ is right.', dimensions:[2.2,0.9,0.95], role:'functional' });
+      const sofaId = api.asset(sofa);
+      const north = api.wallFrame('north', 0, 0);
+      api.place({ assetId: sofaId, name:'沙发', position: api.roomPoint(-2, -3), facing:{direction:north.inward}, role:'functional' });
+      const lamp = api.requireAsset({ key:'lamp', name:'吊灯', prompt:'simple pendant lamp. Coordinate contract: Y+ is up, Z+ is the front direction, X+ is right.', dimensions:[0.4,0.3,0.4], role:'decor' });
+      api.place({ assetId: api.asset(lamp), name:'吊灯', position: api.ceilingPoint(0, 0, 0.3), role:'decor' });
+    }`;
+    const suggestion = executeMapCodePlan(code, room, [], {
+      mode: 'discovery', requestMode: 'generate', scope: 'scene'
+    });
+    expect(suggestion.operations.filter((op) => op.type === 'object.add').length).toBe(2);
+  });
+
+  it('accepts an indoor bare top-level script and rejects non-whitelisted APIs', () => {
+    const room = createEmptyMap('教室', 'indoor-raw-wrap', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const bare = `const desk = api.requireAsset({ key:'desk', name:'书桌', prompt:'wooden desk. Coordinate contract: Y+ is up, Z+ is the front direction, X+ is right.', dimensions:[1.4,0.75,0.7], role:'functional' });
+      api.place({ assetId: api.asset(desk), name:'书桌', position: api.roomPoint(2, 2), role:'functional' });`;
+    const suggestion = executeMapCodePlan(bare, room, [], {
+      mode: 'discovery', requestMode: 'generate', scope: 'scene'
+    });
+    expect(suggestion.operations.filter((op) => op.type === 'object.add')).toHaveLength(1);
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.terrain('plain', {});
+    }`, room, [], { mode: 'discovery', requestMode: 'generate', scope: 'scene' })).toThrow();
   });
 
   it('lets the model define its own variables, helpers, loops and noise', () => {

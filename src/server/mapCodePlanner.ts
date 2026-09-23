@@ -27,7 +27,7 @@ import {
   resolveMapDesignFocusObjects
 } from '../shared/mapDesignRelations';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
-import { CODE_PLAN_STYLE_PARAGRAPHS, type CodePlanMode } from '../shared/codePlanModes';
+import { CODE_PLAN_INDOOR_STYLE_PARAGRAPHS, CODE_PLAN_STYLE_PARAGRAPHS, type CodePlanMode } from '../shared/codePlanModes';
 import {
   applyMapOperations,
   isCodePlanPlaceholderAssetId,
@@ -86,7 +86,8 @@ import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from 
  * second-pass asset adaptation, no local relocation/pruning/lint repairs.
  * Engine caps (placements, scene operations, code length, route points,
  * sandbox timeouts) are lifted so the AI's output lands verbatim.
- * The sandbox exposes only RAW_CODEPLAN_API_KEYS; everything else is left to
+ * The sandbox exposes only the scene's raw whitelist (RAW_CODEPLAN_API_KEYS
+ * outdoors, RAW_INDOOR_CODEPLAN_API_KEYS indoors); everything else is left to
  * plain JavaScript written by the model.
  * Set WORLDFORGE_RAW_CODEPLAN=0 to restore the standard managed pipeline.
  */
@@ -94,6 +95,19 @@ const RAW_CODEPLAN_MODE = process.env.WORLDFORGE_RAW_CODEPLAN !== '0';
 const RAW_CODEPLAN_API_KEYS = [
   'terrain', 'modifyTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
+] as const;
+
+/**
+ * Indoor raw-mode whitelist: the room-native placement and coordinate APIs the
+ * minimal indoor prompt documents, plus the same seeded math helpers. Terrain
+ * and water keys stay out — an indoor plan has no landform to author.
+ */
+const RAW_INDOOR_CODEPLAN_API_KEYS = [
+  'place', 'attach', 'placeBetween', 'requireAsset', 'asset', 'random',
+  'room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening',
+  'TAU', 'PHI', 'seed', 'bounds',
+  'clamp', 'lerp', 'remap', 'smoothstep', 'rotate2D', 'distance2D',
+  'faceYaw', 'tangentYaw', 'gridPoints', 'circlePoint', 'linePoint'
 ] as const;
 
 const MAX_CODE_LENGTH = RAW_CODEPLAN_MODE ? 400_000 : 40_000;
@@ -644,7 +658,8 @@ export async function generateMapCodeSuggestion(
         onProgress: options.onProgress
       }));
   const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
-  const rawMode = RAW_CODEPLAN_MODE && options.scope === 'scene' && requestMode === 'generate' && map.sceneMode === 'outdoor';
+  const rawMode = RAW_CODEPLAN_MODE && options.scope === 'scene' && requestMode === 'generate'
+    && (map.sceneMode === 'outdoor' || map.sceneMode === 'indoor');
   const execution = rawMode
     ? runRawMapCodeDiscovery(code, map, executionAssets, maxNewAssets, options)
     : await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
@@ -1131,7 +1146,7 @@ function executeMapCodePlanInternal(
   const mode = options.mode ?? 'final';
   const requestMode = options.requestMode ?? 'generate';
   const scope = options.scope ?? 'general';
-  const rawMode = RAW_CODEPLAN_MODE && map.sceneMode === 'outdoor'
+  const rawMode = RAW_CODEPLAN_MODE && map.sceneMode !== 'mixed'
     && requestMode === 'generate' && scope === 'scene';
   const maxNewAssets = options.maxNewAssets ?? normalizeMapAiMaxNewAssets(undefined);
   const random = mulberry32(map.seed);
@@ -2771,8 +2786,11 @@ function executeMapCodePlanInternal(
     }
   });
 
+  const rawApiKeys: readonly string[] = map.sceneMode === 'indoor'
+    ? RAW_INDOOR_CODEPLAN_API_KEYS
+    : RAW_CODEPLAN_API_KEYS;
   const sandboxApi = rawMode
-    ? Object.freeze(Object.fromEntries(RAW_CODEPLAN_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
+    ? Object.freeze(Object.fromEntries(rawApiKeys.map((key) => [key, (api as Record<string, unknown>)[key]])))
     : api;
   // Raw mode accepts a bare top-level script: wrap it as plan(api) so the
   // model may ignore the wrapper convention without failing the whole run.
@@ -3625,6 +3643,9 @@ export function buildMapCodePlannerSystemPrompt(
   planMode: CodePlanMode = 'minimal'
 ): string {
   if (map.sceneMode === 'indoor') {
+    if (RAW_CODEPLAN_MODE && requestMode === 'generate' && scope === 'scene') {
+      return buildRawIndoorSceneCodeSystemPrompt(map, minNewAssets, maxNewAssets, planMode);
+    }
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
   }
   if (RAW_CODEPLAN_MODE && requestMode === 'generate' && scope === 'scene') {
@@ -3797,6 +3818,48 @@ Refine: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objec
 
 Reusable asset catalog:
 ${assetCatalog}`;
+}
+
+/**
+ * Minimal raw-mode indoor system prompt: the room-native APIs, the circulation
+ * mandate and — when a non-minimal plan mode is selected — one composition-style
+ * paragraph. Mirrors the outdoor raw prompt: structure (room shell, openings,
+ * bounds) is enforced by the sandbox, technique is left to the model.
+ */
+export function buildRawIndoorSceneCodeSystemPrompt(
+  map: EditableMap,
+  minNewAssets: number,
+  maxNewAssets: number,
+  planMode: CodePlanMode = 'minimal'
+): string {
+  const room = requireIndoorRoom(map.room);
+  const styleParagraph = CODE_PLAN_INDOOR_STYLE_PARAGRAPHS[planMode];
+  return `You are a room composer. Write ONE JavaScript function \`function plan(api) { ... }\` that furnishes the complete standalone room. This first version is final — nobody will iterate on it.
+
+Room floor-center=${JSON.stringify(room.position)}, size=[width=${room.size[0]},height=${room.size[1]},depth=${room.size[2]}], wallThickness=${room.wallThickness}, seed=${map.seed}. \`Math\` is available and \`Math.random\` is seeded, so it is deterministic. The room shell, walls, floor and ceiling are owned by the map — never generate them.
+
+You have total creative freedom: style, furniture families, density and atmosphere are yours to derive from the user's request. Your two standing duties: CIRCULATION — keep a continuous route at least 0.8 world units wide from every door into the primary activity area, keep door swings clear, and leave honest empty space; RELATIONSHIPS — build functional pairings (desk with chair, table with seats, screen with facing seats) rather than scattering props, and give the room one dominant focal relationship with a few subordinate ones.
+${styleParagraph ? `\n${styleParagraph}\n` : ''}
+Define as many of your own variables, constants and helper functions inside plan as you like — layout helpers, samplers, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
+
+The sandbox exposes exactly these APIs. Everything else is yours to build:
+1. api.room — the room data {position, size, wallThickness, openings}; also api.seed, api.bounds, api.TAU, api.PHI.
+2. api.roomPoint(localX, localZ, height?) — a floor point, offset from the room center; height 0 for floor furniture.
+3. api.wallFrame(wall, offset?, bottom?, inset?) — wall is 'north'|'south'|'east'|'west'; returns {point, inward, outward, tangent}. Place wall-mounted assets at frame.point with facing:{direction:frame.inward}.
+4. api.ceilingPoint(localX, localZ, objectHeight?, drop?) — a point with the object below the ceiling; pass its declared height.
+5. api.opening({id, kind:'door'|'window', wall, offset?, bottom?, width?, height?}) — declares a parameterized opening and returns its ID; then api.place({assetId, roomOpeningId:id, dimensions:[w,h,d]}) binds a door/window model to it.
+6. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'functional'|'decor', variants?, optional?}) — declares an asset family; returns the key.
+7. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
+8. api.place({assetId, name?, position, rotationY?, facing?, dimensions?, roomOpeningId?, role:'functional'|'decor'}) — dimensions is the intended world [width,height,depth]; rotationY in radians, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
+9. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side north|south|east|west with local [horizontal, vertical] offset.
+10. api.placeBetween({...}) — connected runs of counters, shelves or benches.
+11. api.random(min?, max?) — seeded. Math helpers: api.clamp, api.lerp, api.remap, api.smoothstep, api.rotate2D, api.distance2D, api.faceYaw, api.tangentYaw, api.gridPoints, api.circlePoint, api.linePoint.
+
+Rules:
+- Declare ${minNewAssets}..${maxNewAssets} requireAsset families; place every declared variant at least once.
+- Return only the function body: no markdown, imports, async, eval, timers, network, or global state. Synchronous code, finite numbers only.
+- There are no hard caps in this mode — your output is applied verbatim — so keep loops sane on your own: seconds of computation, not minutes.
+- Keep every object inside the room; wall-mounted objects use api.wallFrame, ceiling objects use api.ceilingPoint, floor furniture uses api.roomPoint with height 0; never use terrain-following placement.`;
 }
 
 /**
