@@ -4780,7 +4780,8 @@ function normalizeCodeAssetRequirement(
   if (!input || typeof input !== 'object') throw new Error('invalid_map_code_asset_requirement');
   const key = normalizeCodeAssetKey(input.key);
   const name = cleanText(input.name, 42);
-  const prompt = cleanText(input.prompt, 500);
+  const prompt = String(input.prompt ?? '').trim();
+  if (prompt.length > 1_200) throw new Error('map_code_asset_prompt_too_long');
   if (!name || !prompt) throw new Error('invalid_map_code_asset_requirement');
   if (sceneMode === 'indoor' && INDOOR_FORBIDDEN_CONTENT.test(`${name} ${prompt} ${(input.tags ?? []).join(' ')}`)) {
     throw new Error('indoor_map_code_forbidden_content');

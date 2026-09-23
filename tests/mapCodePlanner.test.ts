@@ -3461,6 +3461,19 @@ describe('map code planner', () => {
       .toThrow('map_code_asset_requirement_limit');
   });
 
+  it('keeps joining details at the end of an asset prompt and rejects overlong descriptions', () => {
+    const prompt = `${'Stone nave with structural bays. '.repeat(18)}Front at Z+ is a flat joining face for the west facade.`;
+    const code = (description: string) => `function plan(api) {
+      const nave = api.requireAsset({key:'nave',name:'Nave',prompt:${JSON.stringify(description)},role:'structure'});
+      api.place({assetId:api.asset(nave),position:[0,0],role:'structure'});
+    }`;
+
+    expect(prompt.length).toBeGreaterThan(500);
+    expect(discoverMapCodeAssets(code(prompt), createEmptyMap())[0]?.prompt).toBe(prompt);
+    expect(() => discoverMapCodeAssets(code('x'.repeat(1201)), createEmptyMap()))
+      .toThrow('map_code_asset_prompt_too_long');
+  });
+
   it('prunes unused trailing variants instead of requesting a full code rewrite', () => {
     expect(discoverMapCodeAssets(`
       function plan(api) {
