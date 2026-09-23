@@ -32,7 +32,7 @@ export interface MapLintIssue {
     | 'outdoor.clearance-repaired'
     | 'bridge.unresolved-crossing' | 'scene.design-missing' | 'scene.program-incomplete'
     | 'code.route-unresolved' | 'code.geometry-unresolved' | 'code.declaration-normalized'
-    | 'terrain.surface-material-repaired'
+    | 'terrain.surface-material-repaired' | 'terrain.bounds-limited' | 'water.bounds-limited'
     | 'scene.group-relations-unclear' | 'scene.primary-focus-missing' | 'scene.focus-underdominant'
     | 'scene.group-massing-flat'
     | 'scene.group-route-unbound' | 'scene.group-route-disconnected' | 'scene.vegetation-uniform'

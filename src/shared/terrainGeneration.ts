@@ -284,14 +284,11 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
   return params;
 }
 
-export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): TerrainModifierParams {
-  const params = normalizeTerrainModifierParams(value, map);
+export function terrainModifierExecutionLimits(
+  map: EditableMap,
+  params: TerrainModifierParams
+): { effectiveAmplitude: number; effectiveModifier: TerrainModifier } {
   const terrain = map.terrain;
-  const maxHeight = map.box.size[1] - 0.05;
-  const angle = params.direction * Math.PI / 180;
-  const directionX = Math.cos(angle);
-  const directionZ = Math.sin(angle);
-  const scale = regionScale(params.region);
   const thickness = regionThickness(params.region);
   const cellSize = Math.min(
     map.box.size[0] / Math.max(1, terrain.resolutionX - 1),
@@ -311,6 +308,18 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
   const effectiveModifier = params.modifier === 'ridge' && !ridgeFitsRegion
     ? 'mountain'
     : params.modifier;
+  return { effectiveAmplitude, effectiveModifier };
+}
+
+export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): TerrainModifierParams {
+  const params = normalizeTerrainModifierParams(value, map);
+  const terrain = map.terrain;
+  const maxHeight = map.box.size[1] - 0.05;
+  const angle = params.direction * Math.PI / 180;
+  const directionX = Math.cos(angle);
+  const directionZ = Math.sin(angle);
+  const scale = regionScale(params.region);
+  const { effectiveAmplitude, effectiveModifier } = terrainModifierExecutionLimits(map, params);
   const jumpApex = PLAYER_JUMP_SPEED ** 2 / (2 * PLAYER_GRAVITY);
   const terraceStep = Math.min(effectiveAmplitude / params.layers, jumpApex * 0.68);
 

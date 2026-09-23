@@ -6,6 +6,7 @@ import {
   getMapObjectAabbs,
   getMapObjectVisualAabbs,
   getMapPlayerMetrics,
+  MAX_WATER_DEPTH,
   normalizeMapRoom,
   sampleTerrainHeight,
   type EditableMap,
@@ -81,6 +82,7 @@ import {
   normalizeTerrainModifierParams,
   normalizeTerrainRefinementParams,
   normalizeTerrainSurfaceParams,
+  terrainModifierExecutionLimits,
   terrainSurfaceForRecipe,
   type TerrainAccessMode,
   type TerrainCliffLayout,
@@ -1609,6 +1611,15 @@ function executeMapCodePlanInternal(
         amplitude: codeTerrainMagnitude(options.amplitude),
         direction: codeTerrainDirection(options.direction)
       }, map);
+      const requestedAmplitude = codeTerrainMagnitude(options.amplitude);
+      if (requestedAmplitude !== undefined && requestedAmplitude > params.amplitude + 0.01) {
+        reportIssue({
+          key: 'terrain:base-limit',
+          code: 'terrain.bounds-limited',
+          message: `基础地形请求振幅 ${requestedAmplitude.toFixed(2)}m，地图高度限制后使用 ${params.amplitude.toFixed(2)}m。`,
+          repaired: false
+        });
+      }
       emitSceneOperation({
         type: 'terrain.generate',
         ...params
@@ -1642,6 +1653,17 @@ function executeMapCodePlanInternal(
         layout: codeTerrainLayout(options.layout, modifier),
         access: codeTerrainAccess(options.access)
       }, map);
+      const requestedAmplitude = codeTerrainMagnitude(options.amplitude);
+      const limits = terrainModifierExecutionLimits(map, params);
+      if ((requestedAmplitude !== undefined && requestedAmplitude > limits.effectiveAmplitude + 0.01)
+        || limits.effectiveModifier !== params.modifier) {
+        reportIssue({
+          key: `terrain:modifier-limit:${sceneOperations.length}`,
+          code: 'terrain.bounds-limited',
+          message: `${params.modifier} 请求振幅 ${requestedAmplitude?.toFixed(2) ?? params.amplitude.toFixed(2)}m，实际使用 ${limits.effectiveAmplitude.toFixed(2)}m${limits.effectiveModifier !== params.modifier ? `；区域宽度不足，按 ${limits.effectiveModifier} 生成` : ''}。`,
+          repaired: false
+        });
+      }
       emitSceneOperation({
         type: 'terrain.modify',
         ...params
@@ -1946,6 +1968,21 @@ function executeMapCodePlanInternal(
       const points = codePointArray(options.points, 'invalid_map_code_water_points').slice(0, 64);
       if (points.length < (type === 'river' ? 2 : 3)) throw new Error('invalid_map_code_water_points');
       const id = cleanId(idValue, 'water');
+      const requestedLevel = optionalFinite(options.level);
+      const requestedDepth = optionalFinite(options.depth);
+      const actualLevel = requestedLevel === undefined ? undefined : clampFinite(
+        requestedLevel, type === 'ocean' ? 0 : 0.02, Math.max(0.05, map.box.size[1] - 0.05)
+      );
+      const actualDepth = requestedDepth === undefined ? undefined : clampFinite(requestedDepth, 0.1, MAX_WATER_DEPTH);
+      if ((actualLevel !== undefined && Math.abs(actualLevel - requestedLevel!) > 0.01)
+        || (actualDepth !== undefined && Math.abs(actualDepth - requestedDepth!) > 0.01)) {
+        reportIssue({
+          key: `water:limit:${id}`,
+          code: 'water.bounds-limited',
+          message: `水体 ${id} 请求水位 ${requestedLevel?.toFixed(2) ?? '默认'}m、深度 ${requestedDepth?.toFixed(2) ?? '默认'}m；实际使用 ${actualLevel?.toFixed(2) ?? '默认'}m、${actualDepth?.toFixed(2) ?? '默认'}m。`,
+          repaired: false
+        });
+      }
       emitSceneOperation({
         type: 'water.add',
         water: {
@@ -1954,8 +1991,8 @@ function executeMapCodePlanInternal(
           type,
           points,
           width: optionalFinite(options.width),
-          level: optionalFinite(options.level),
-          depth: optionalFinite(options.depth),
+          level: requestedLevel,
+          depth: requestedDepth,
           shorelineSmoothness: optionalFinite(options.shorelineSmoothness),
           shorelineIrregularity: optionalFinite(options.shorelineIrregularity),
           seed: optionalFinite(options.seed) ?? map.seed + sceneOperations.length
@@ -3850,6 +3887,7 @@ function buildMinimalMapCodePlannerSystemPrompt(
 Return only one complete synchronous JavaScript function: function plan(api) { ... }.
 Do not return a function body by itself, Markdown, explanations, JSON, imports, async code, eval, timers, network access or global state.
 Use finite numbers and bounded loops. Map bounds are x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}.
+Map height is ${map.box.size[1]}m: terrain and water levels cap at ${map.box.size[1] - 0.05}m, water depth caps at ${MAX_WATER_DEPTH}m. Mountain, ridge and terrace relief shrinks in narrow regions; a narrow ridge becomes a mountain. Elevated lakes need surrounding terrain or a retaining structure.
 Compose the requested terrain, circulation, focal forms, repeated structure and natural detail directly. Preserve intentional open space and vary density, height and rhythm instead of filling a uniform grid.
 
 The sandbox exposes exactly these 10 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
@@ -3911,6 +3949,7 @@ Allowed JavaScript: const/let, numbers, strings, arrays, plain objects, local he
 ## World and coordinate contract
 This is a Y-up 3D placement API with horizontal planning in x/z. Positions may include y, but asset orientation remains yaw-only through rotationY/facing.
 Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}.
+Map height is ${map.box.size[1]}m: terrain and water levels cap at ${map.box.size[1] - 0.05}m, water depth caps at ${MAX_WATER_DEPTH}m. Mountain, ridge and terrace relief shrinks in narrow regions; a narrow ridge becomes a mountain. Elevated lakes need surrounding terrain or a retaining structure.
 place({position:[x,z]}) samples terrain automatically; place({position:[x,y,z]}) uses fixed height unless terrain:true. With terrain:true, y is an offset above the final terrain, so ordinary ground objects should use [x,z] or [x,0,z] with terrain:true instead of fixed zero height.
 Every generated point supports both point[0]/point[1] and point.x/point.z.
 Never add or subtract arrays directly. Use [a[0] - b[0], a[1] - b[1]]. Never read points[index + 1] without checking index < points.length - 1. Guard divisions and only pass finite numbers.

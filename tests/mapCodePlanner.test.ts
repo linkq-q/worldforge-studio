@@ -345,6 +345,22 @@ describe('map code planner', () => {
     expect(hall?.transform.position[1]).toBeCloseTo(foundation?.transform.position[1] ?? -1);
   });
 
+  it('reports the effective terrain and water limits for a high dam plan', () => {
+    const map = createEmptyMap('High dam', 'high-dam', [96, 16, 96]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.terrain('plain');
+      api.modifyTerrain({modifier:'ridge',region:{kind:'path',points:[[-35,0],[35,0]],width:27},amplitude:49,access:'scenic'});
+      api.water('reservoir',{type:'lake',points:[[-20,4],[20,4],[20,28],[-20,28]],level:22,depth:23});
+    }`, map, [], { spatialPolicy: 'diagnose' });
+    const applied = applyMapOperations(map, suggestion.operations);
+
+    expect(applied.waterBodies[0]).toMatchObject({ level: 15.95, depth: 12 });
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'terrain.bounds-limited', message: expect.stringContaining('7.71'), repaired: false }),
+      expect.objectContaining({ code: 'water.bounds-limited', message: expect.stringContaining('12'), repaired: false })
+    ]));
+  });
+
   it('lets explicit terrain placement ground a three-component outdoor position', () => {
     const map = createEmptyMap('Grounded', 'grounded-three-component', [24, 8, 24]);
     map.terrain.heights.fill(2.5);
