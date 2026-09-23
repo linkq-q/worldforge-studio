@@ -658,6 +658,9 @@ export async function generateMapCodeSuggestion(
         onProgress: options.onProgress
       }));
   const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
+  // Keep the model's raw program in the trace so a failed one-shot raw run can
+  // be recovered and fixed by hand instead of re-rolled.
+  recordGenerationTrace('code.raw', { code });
   const rawMode = RAW_CODEPLAN_MODE && options.scope === 'scene' && requestMode === 'generate'
     && (map.sceneMode === 'outdoor' || map.sceneMode === 'indoor');
   const execution = rawMode
