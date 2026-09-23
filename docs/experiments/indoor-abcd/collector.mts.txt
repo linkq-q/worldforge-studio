@@ -1,0 +1,176 @@
+/**
+ * WorldForge 室内 A-D 心智方案横向对比采集脚本
+ * 运行（在 worldforge-studio 目录下）：npx tsx ../wf-indoor-abcd.mts
+ * 前置：PORT=8798 起一个新代码的实验服务器（独立 WORLDFORGE_DATA_DIR）。
+ * 产出：wf-indoor-abcd-results.json（sketchbook 根目录），每个 run 落盘一次，可断点续跑。
+ */
+import { writeFile, readFile } from 'node:fs/promises';
+import { buildRawIndoorSceneCodeSystemPrompt } from './worldforge-studio/src/server/mapCodePlanner';
+import type { EditableMap } from './worldforge-studio/src/shared/map';
+import type { CodePlanMode } from './worldforge-studio/src/shared/codePlanModes';
+
+const API = 'http://127.0.0.1:8798';
+const OUT = '../wf-indoor-abcd-results.json';
+let BRANCH = 'unknown';
+let COMMIT = 'unknown';
+try {
+  const { execFileSync } = await import('node:child_process');
+  const git = (args: string[]) => execFileSync('git', args, { cwd: './worldforge-studio' }).toString().trim();
+  BRANCH = git(['rev-parse', '--abbrev-ref', 'HEAD']);
+  COMMIT = git(['rev-parse', '--short', 'HEAD']);
+} catch { /* git unavailable */ }
+
+async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(API + path, init);
+  const text = await res.text();
+  let body: unknown = null;
+  try { body = JSON.parse(text); } catch { body = text; }
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${path}: ${text.slice(0, 300)}`);
+  return body as T;
+}
+
+interface Scenario { id: string; label: string; prompt: string; mapSize: [number, number, number]; roomSize: [number, number, number] }
+
+// 稍大于旧基线的 12×9 教室；prompt 只给主题（心智方案的泛化测试），同一场景固定一张地图（同一 seed）供四个模式共用。
+const SCENARIOS: Scenario[] = [
+  {
+    id: 'loft', label: 'LOFT 开放工作室',
+    prompt: '一间现代 LOFT 开放工作室',
+    mapSize: [28, 4, 22], roomSize: [16, 4, 12]
+  },
+  {
+    id: 'suite', label: '主卧套房',
+    prompt: '一间温馨的主卧套房',
+    mapSize: [26, 4, 22], roomSize: [14, 4, 12]
+  },
+  {
+    id: 'cafe', label: '街角咖啡馆',
+    prompt: '一家街角咖啡馆',
+    mapSize: [28, 4, 22], roomSize: [16, 4, 12]
+  }
+];
+
+const MODES: Array<{ key: CodePlanMode; label: string }> = [
+  { key: 'grammar', label: 'A · Program' },
+  { key: 'algebra', label: 'B · Relate' },
+  { key: 'fields', label: 'C · Fields' },
+  { key: 'search', label: 'D · Anneal' }
+];
+
+interface RunRecord {
+  key: string;
+  mode: CodePlanMode;
+  scenario: string;
+  ok: boolean;
+  durationMs: number;
+  startedAt: string;
+  error?: string;
+  mapId?: string;
+  minNewAssets?: number;
+  maxNewAssets?: number;
+  suggestion?: any;
+  systemPrompt?: string;
+}
+
+async function loadExisting(): Promise<RunRecord[]> {
+  try {
+    const parsed = JSON.parse(await readFile(new URL(OUT, import.meta.url), 'utf8'));
+    return Array.isArray(parsed.runs) ? parsed.runs : [];
+  } catch { return []; }
+}
+
+const results = await loadExisting();
+const done = new Set(results.filter((r) => r.ok).map((r) => r.key));
+
+async function persist() {
+  await writeFile(new URL(OUT, import.meta.url), JSON.stringify({
+    branch: BRANCH, commit: COMMIT, api: API,
+    generatedAt: new Date().toISOString(),
+    runs: results
+  }, null, 2), 'utf8');
+}
+
+const mapIds: Record<string, string> = {};
+const scenarioMaps: Record<string, EditableMap> = {};
+const existingMaps = await api<{ maps: Array<{ id: string; name: string }> }>('/api/editor/maps');
+for (const scenario of SCENARIOS) {
+  const wanted = `indoor-abcd-${scenario.id}`;
+  const found = existingMaps.maps?.find((m) => m.name === wanted);
+  if (found) {
+    mapIds[scenario.id] = found.id;
+    const got = await api<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(found.id)}`);
+    scenarioMaps[scenario.id] = got.map;
+    console.log(`map reused: ${scenario.id} -> ${found.id}`);
+    continue;
+  }
+  const made = await api<{ map: { id: string } }>('/api/editor/maps', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: wanted,
+      size: scenario.mapSize,
+      sceneMode: 'indoor',
+      roomSize: scenario.roomSize,
+      assetGenerationMode: 'voxel'
+    })
+  });
+  mapIds[scenario.id] = made.map.id;
+  const got = await api<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(made.map.id)}`);
+  scenarioMaps[scenario.id] = got.map;
+  console.log(`map created: ${scenario.id} -> ${made.map.id}`);
+}
+
+for (const scenario of SCENARIOS) {
+  for (const mode of MODES) {
+    const key = `${scenario.id}:${mode.key}`;
+    if (done.has(key)) { console.log(`skip ${key} (already ok)`); continue; }
+    const startedAt = new Date().toISOString();
+    const started = Date.now();
+    process.stdout.write(`[${startedAt}] ${key} ... `);
+    try {
+      const response = await api<{ suggestion: any }>(
+        `/api/editor/maps/${encodeURIComponent(mapIds[scenario.id]!)}/generate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: scenario.prompt,
+            provider: 'gpt',
+            planOnly: true,
+            planMode: mode.key,
+            reuseExistingAssets: false,
+            minNewAssets: 15,
+            maxNewAssets: 25
+          }),
+          signal: AbortSignal.timeout(600_000)
+        }
+      );
+      const durationMs = Date.now() - started;
+      const suggestion = response.suggestion;
+      let systemPrompt: string | undefined;
+      try {
+        systemPrompt = buildRawIndoorSceneCodeSystemPrompt(scenarioMaps[scenario.id]!, 15, 25, mode.key);
+      } catch (promptError) {
+        console.log(`  (systemPrompt build failed, run kept: ${promptError instanceof Error ? promptError.message : promptError})`);
+      }
+      const record = {
+        key, mode: mode.key, scenario: scenario.id, ok: true, durationMs, startedAt,
+        mapId: mapIds[scenario.id], minNewAssets: 15, maxNewAssets: 25,
+        suggestion,
+        systemPrompt
+      };
+      const idx = results.findIndex((r) => r.key === key);
+      if (idx >= 0) results[idx] = record; else results.push(record);
+      console.log(`OK ${(durationMs / 1000).toFixed(1)}s | placements ${suggestion?.codePlan?.placementCount ?? '?'}`);
+    } catch (error) {
+      const durationMs = Date.now() - started;
+      const message = error instanceof Error ? error.message : String(error);
+      results.push({ key, mode: mode.key, scenario: scenario.id, ok: false, durationMs, startedAt, error: message });
+      console.log(`FAILED ${(durationMs / 1000).toFixed(1)}s | ${message.slice(0, 200)}`);
+    }
+    await persist();
+  }
+}
+
+const okCount = results.filter((r) => r.ok).length;
+console.log(`done: ${okCount}/${SCENARIOS.length * MODES.length} ok -> wf-indoor-abcd-results.json`);

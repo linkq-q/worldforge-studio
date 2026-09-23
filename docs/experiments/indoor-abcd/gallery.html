@@ -1,0 +1,2351 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>WorldForge 室内 A-D 心智方案横向对比</title>
+<style>
+body{font-family:system-ui,'Segoe UI','Microsoft YaHei',sans-serif;margin:24px;max-width:1400px;color:#1c1c22;background:#fafafa}
+h1{font-size:22px} h2{font-size:17px;margin-top:28px}
+table{border-collapse:collapse;width:100%;background:#fff}
+th,td{border:1px solid #ddd;padding:10px 12px;vertical-align:top;font-size:13px;text-align:left}
+th{background:#f0ede6}
+td.empty{color:#bbb;text-align:center}
+td.fail{background:#fdf0ef;color:#8c2f28}
+.err{font-size:11px;word-break:break-all;margin-top:4px}
+.sub{color:#777;font-size:11px}
+.vocab{color:#3a6ea5;font-size:11px}
+details.run{background:#fff;border:1px solid #e2ded4;border-radius:8px;margin:10px 0;padding:8px 14px}
+details{margin:6px 0}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+pre.code{background:#14161a;color:#d6e2f0;padding:12px;border-radius:8px;overflow:auto;max-height:420px;font-size:12px;line-height:1.5}
+.diag ul{margin:4px 0;font-size:12px;color:#7a5c00}
+p.summary{font-size:13px;color:#444}
+.meta{color:#666;font-size:12px}
+</style></head><body>
+<h1>WorldForge 室内 A-D 心智方案横向对比</h1>
+<p class="meta">branch unknown @ unknown · 采集 2026-09-23T14:14:07.270Z · 每场景同图同种子，4 模式同题 · prompt 只给主题 · planOnly（无资产生成）· min/max 资产族 15/25 · 10 键 API</p>
+<h2>四个心智方案（只给心智指引，代码由模型自由发挥）</h2>
+<details><summary>A · 功能规划 Program <span class="sub">（Merrell 2010 · bubble diagram）</span></summary><p>…</p></details>
+<details><summary>B · 锚点关系 Relate <span class="sub">（Yu 2011 Make It Home · Holodeck）</span></summary><p>…</p></details>
+<details><summary>C · 场与动线 Fields <span class="sub">（SDF · carve-then-fill）</span></summary><p>Composition style — fields a…</p></details>
+<details><summary>D · 生成-选择 Anneal <span class="sub">（Cagan 1998 · Infinigen Indoors）</span></summary><p>Composition style — ge…</p></details>
+<h2>结果矩阵（3 场景 × 4 模式）</h2>
+<table><tr><th></th><th>LOFT 开放工作室<div class="sub">16×12 m · prompt：</div></th><th>主卧套房<div class="sub">14×12 m · prompt：</div></th><th>街角咖啡馆<div class="sub">16×12 m · prompt：</div></th></tr>
+<tr><th>A · 功能规划 Program<div class="sub">Merrell 2010 · bubble diagram</div></th><td><b>20</b> 摆放 · 85s<br>
+    <span class="sub">代码 93L · helpers 1 · 21 操作</span><br>
+    <span class="sub">墙锚 0 · 顶 2 · attach 0 · 门窗 2</span><br>
+    <span class="sub">灯 12 · 地毯 4 · 诊断 8</span><br>
+    <span class="vocab">program 1 · relate 1 · field 0 · search 0</span></td><td><b>31</b> 摆放 · 117s<br>
+    <span class="sub">代码 169L · helpers 1 · 32 操作</span><br>
+    <span class="sub">墙锚 1 · 顶 1 · attach 1 · 门窗 3</span><br>
+    <span class="sub">灯 19 · 地毯 7 · 诊断 18</span><br>
+    <span class="vocab">program 1 · relate 1 · field 1 · search 0</span></td><td><b>52</b> 摆放 · 99s<br>
+    <span class="sub">代码 148L · helpers 4 · 53 操作</span><br>
+    <span class="sub">墙锚 0 · 顶 1 · attach 1 · 门窗 2</span><br>
+    <span class="sub">灯 15 · 地毯 4 · 诊断 35</span><br>
+    <span class="vocab">program 1 · relate 1 · field 1 · search 0</span></td></tr><tr><th>B · 锚点关系 Relate<div class="sub">Yu 2011 Make It Home · Holodeck</div></th><td><b>33</b> 摆放 · 86s<br>
+    <span class="sub">代码 155L · helpers 4 · 34 操作</span><br>
+    <span class="sub">墙锚 0 · 顶 2 · attach 1 · 门窗 1</span><br>
+    <span class="sub">灯 17 · 地毯 4 · 诊断 17</span><br>
+    <span class="vocab">program 0 · relate 1 · field 1 · search 0</span></td><td><b>25</b> 摆放 · 87s<br>
+    <span class="sub">代码 143L · helpers 1 · 26 操作</span><br>
+    <span class="sub">墙锚 1 · 顶 1 · attach 1 · 门窗 1</span><br>
+    <span class="sub">灯 23 · 地毯 8 · 诊断 16</span><br>
+    <span class="vocab">program 0 · relate 1 · field 0 · search 0</span></td><td><b>59</b> 摆放 · 99s<br>
+    <span class="sub">代码 148L · helpers 1 · 60 操作</span><br>
+    <span class="sub">墙锚 0 · 顶 1 · attach 1 · 门窗 2</span><br>
+    <span class="sub">灯 15 · 地毯 0 · 诊断 46</span><br>
+    <span class="vocab">program 0 · relate 1 · field 1 · search 0</span></td></tr><tr><th>C · 场与动线 Fields<div class="sub">SDF · carve-then-fill</div></th><td><b>40</b> 摆放 · 129s<br>
+    <span class="sub">代码 217L · helpers 12 · 41 操作</span><br>
+    <span class="sub">墙锚 0 · 顶 2 · attach 1 · 门窗 0</span><br>
+    <span class="sub">灯 23 · 地毯 5 · 诊断 19</span><br>
+    <span class="vocab">program 0 · relate 1 · field 1 · search 1</span></td><td><b>24</b> 摆放 · 48s<br>
+    <span class="sub">代码 189L · helpers 1 · 25 操作</span><br>
+    <span class="sub">墙锚 2 · 顶 1 · attach 6 · 门窗 3</span><br>
+    <span class="sub">灯 18 · 地毯 6 · 诊断 15</span><br>
+    <span class="vocab">program 0 · relate 1 · field 0 · search 0</span></td><td><b>63</b> 摆放 · 115s<br>
+    <span class="sub">代码 155L · helpers 8 · 64 操作</span><br>
+    <span class="sub">墙锚 1 · 顶 2 · attach 1 · 门窗 3</span><br>
+    <span class="sub">灯 13 · 地毯 0 · 诊断 36</span><br>
+    <span class="vocab">program 0 · relate 1 · field 1 · search 1</span></td></tr><tr><th>D · 生成-选择 Anneal<div class="sub">Cagan 1998 · Infinigen Indoors</div></th><td><b>37</b> 摆放 · 191s<br>
+    <span class="sub">代码 301L · helpers 1 · 38 操作</span><br>
+    <span class="sub">墙锚 1 · 顶 1 · attach 2 · 门窗 1</span><br>
+    <span class="sub">灯 21 · 地毯 5 · 诊断 22</span><br>
+    <span class="vocab">program 0 · relate 1 · field 1 · search 1</span></td><td><b>22</b> 摆放 · 135s<br>
+    <span class="sub">代码 227L · helpers 1 · 23 操作</span><br>
+    <span class="sub">墙锚 1 · 顶 1 · attach 2 · 门窗 0</span><br>
+    <span class="sub">灯 23 · 地毯 5 · 诊断 12</span><br>
+    <span class="vocab">program 0 · relate 1 · field 0 · search 1</span></td><td><b>65</b> 摆放 · 162s<br>
+    <span class="sub">代码 276L · helpers 1 · 66 操作</span><br>
+    <span class="sub">墙锚 2 · 顶 1 · attach 1 · 门窗 2</span><br>
+    <span class="sub">灯 13 · 地毯 0 · 诊断 47</span><br>
+    <span class="vocab">program 0 · relate 1 · field 1 · search 1</span></td></tr>
+</table>
+<h2>逐轮明细（含生成代码）</h2>
+<details class="run"><summary>✗ LOFT 开放工作室 · A · 功能规划 Program — 失败</summary>
+    <p class="summary"></p>
+    
+    <pre class="code">(无代码：HTTP 500 /api/editor/maps/map-fa2abfc2-2816-48d8/generate: {"error":"map_code_execution_failed:non_finite_map_code_value:array(length=1) at at req (worldforge-map-plan.js:6:9) at source: api.requireAsset({"})</pre></details>
+<details class="run"><summary>✗ LOFT 开放工作室 · B · 锚点关系 Relate — 失败</summary>
+    <p class="summary"></p>
+    
+    <pre class="code">(无代码：HTTP 500 /api/editor/maps/map-fa2abfc2-2816-48d8/generate: {"error":"map_code_execution_failed:unknown_map_code_asset_requirement:door at at asset (worldforge-map-plan.js:4:33) at source: const asset = (key, i) =&amp;gt; api.asset(key, i);"})</pre></details>
+<details class="run"><summary>✓ LOFT 开放工作室 · C · 场与动线 Fields — 40 摆放 / 217L 代码 / 129s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 40 个摆放意图与 0 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">const C = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+const families = [
+  ["worktable", "共享工作台", "One modern loft communal worktable, pale oak slab top, blackened steel trestle legs, refined industrial detailing, clear empty tabletop", [3.8,0.76,1.45], "functional"],
+  ["workchair", "工作椅", "One contemporary ergonomic work chair, graphite upholstered seat and back, slender black metal swivel base, no desk", [0.62,0.88,0.64], "functional"],
+  ["sofa", "皮革沙发", "One contemporary low three-seat sofa, warm cognac leather, clean generous cushions, slim black steel legs, finished back", [2.7,0.82,0.94], "functional"],
+  ["armchair", "休闲单椅", "One sculptural modern lounge chair, oatmeal boucle upholstery, dark walnut arms, finished back", [0.86,0.86,0.9], "functional"],
+  ["coffee", "椭圆茶几", "One low oval coffee table, charcoal stained oak, thick softly rounded top and two sculptural pedestal legs", [1.65,0.35,0.75], "functional"],
+  ["rug", "编织地毯", "One flat rectangular woven wool rug, warm gray with subtle charcoal linear pattern, no tassels", [3.7,0.018,3.35], "decor"],
+  ["shelf", "开放书架", "One freestanding open industrial shelving unit, black steel frame and warm oak shelves, restrained built-in arrangement of architecture books and ceramic samples, finished on both sides", [2.4,2.25,0.42], "functional"],
+  ["desk", "独立书桌", "One minimalist writing desk, warm oak top, dark steel frame, shallow integrated drawer, empty tabletop", [1.8,0.75,0.72], "functional"],
+  ["tasklamp", "台灯", "One compact architect desk lamp, matte black articulated arm and small warm illuminated shade, weighted circular base", [0.35,0.52,0.3], "functional"],
+  ["cabinet", "材料矮柜", "One low modern loft storage cabinet, charcoal powder coated steel sliding doors and pale oak top, slim legs, no objects on top", [2.4,0.85,0.48], "functional"],
+  ["floorlamp", "落地灯", "One modern slender floor lamp, black metal stem, small parchment cylindrical shade with warm illumination, compact weighted base", [0.44,1.68,0.44], "functional"],
+  ["pendant", "线性吊灯", "One suspended linear LED pendant fixture, thin black aluminum horizontal bar with warm opal downlight, short integral ceiling suspension cables, complete fixture", [2.8,0.55,0.12], "functional"],
+  ["plant", "绿植", "One indoor ficus tree with airy natural green foliage in a cylindrical warm gray concrete planter, complete standalone potted plant", [0.75,1.75,0.75], "decor"],
+  ["smallplant", "桌面绿植", "One small sculptural jade plant in a muted terracotta ceramic pot, complete standalone potted plant", [0.27,0.38,0.27], "decor"],
+  ["books", "设计书籍", "One neat horizontal stack of three large design books with cream, black and muted rust cloth covers, no readable text", [0.36,0.12,0.27], "decor"],
+  ["laptop", "笔记本电脑", "One open slim graphite laptop, understated dark screen with abstract neutral design layout, no logos, screen facing local front", [0.35,0.24,0.26], "functional"],
+  ["tray", "咖啡托盘", "One low oval black serving tray with two small ceramic coffee cups nested securely within it, one complete tabletop accessory", [0.43,0.13,0.28], "decor"],
+  ["board", "移动白板", "One freestanding double-sided mobile studio whiteboard, slim charcoal metal frame on locking casters, subtle sparse architectural sketch lines and small muted paper notes, no legible writing", [1.45,1.82,0.5], "functional"],
+  ["stool", "圆凳", "One small round modern studio stool, solid oak seat and black steel three-legged base", [0.43,0.46,0.43], "functional"],
+  ["sculpture", "陶瓷雕塑", "One abstract sculptural ceramic loop, warm chalk white matte glaze, broad stable integrated base", [0.38,0.5,0.22], "decor"]
+];
+const dims = {};
+for (const [key,name,prompt,dimensions,role] of families) {
+  api.requireAsset({key,name,prompt:prompt+C,dimensions,role});
+  dims[key] = dimensions;
+}
+
+const openings = Array.isArray(api.room.openings) ? api.room.openings : [];
+const doors = openings.filter(o =&gt; o.kind === "door");
+const windows = openings.filter(o =&gt; o.kind === "window");
+
+function openingPoint(o) {
+  const t = Number.isFinite(o.offset) ? o.offset : 0;
+  if (o.wall === "north") return [t,-6];
+  if (o.wall === "south") return [t,6];
+  if (o.wall === "west") return [-8,t];
+  if (o.wall === "east") return [8,t];
+  return [0,6];
+}
+function segmentDistance(x,z,a,b) {
+  const vx=b[0]-a[0], vz=b[1]-a[1];
+  const t=Math.max(0,Math.min(1,((x-a[0])*vx+(z-a[1])*vz)/(vx*vx+vz*vz || 1)));
+  return Math.hypot(x-a[0]-t*vx,z-a[1]-t*vz);
+}
+
+// The perimeter promenade and central aisle are reserved before furniture.
+const routes = [
+  [[-6.85,-4.85],[6.85,-4.85]],
+  [[6.85,-4.85],[6.85,4.85]],
+  [[6.85,4.85],[-6.85,4.85]],
+  [[-6.85,4.85],[-6.85,-4.85]],
+  [[1.05,-4.85],[1.05,4.85]],
+  [[-6.85,1.15],[1.05,1.15]]
+];
+for (const door of doors) {
+  const p=openingPoint(door);
+  const q=[Math.max(-6.85,Math.min(6.85,p[0])),Math.max(-4.85,Math.min(4.85,p[1]))];
+  routes.push([p,q]);
+}
+if (doors.length === 0) routes.push([[0,6],[0,4.85]]);
+
+function circulation(x,z) {
+  let d=100;
+  for (const [a,b] of routes) d=Math.min(d,segmentDistance(x,z,a,b)-0.55);
+  for (const door of doors) {
+    const p=openingPoint(door);
+    d=Math.min(d,Math.hypot(x-p[0],z-p[1])-(Math.max(0.9,door.width || 0.95)+0.35));
+  }
+  return d;
+}
+function daylight(x,z) {
+  if (!windows.length) return Math.exp(-((x+5.5)*(x+5.5)+(z-2.7)*(z-2.7))/20);
+  let f=0;
+  for (const w of windows) {
+    const p=openingPoint(w);
+    f+=Math.exp(-((x-p[0])*(x-p[0])+(z-p[1])*(z-p[1]))/24);
+  }
+  return f;
+}
+function social(x,z) {
+  return Math.exp(-((x+2.8)*(x+2.8)/15+(z+1.6)*(z+1.6)/8));
+}
+function quiet(x,z) {
+  return 0.6*daylight(x,z)+Math.exp(-((x+3.8)*(x+3.8)+(z-2.9)*(z-2.9))/10);
+}
+function cozy(x,z) {
+  return Math.exp(-((x-4.15)*(x-4.15)/6+(z-0.2)*(z-0.2)/9));
+}
+const occupied=[];
+function footprint(key,x,z,angle=0,pad=0) {
+  const d=dims[key], c=Math.abs(Math.cos(angle)), s=Math.abs(Math.sin(angle));
+  return {x,z,w:d[0]*c+d[2]*s+pad*2,d:d[0]*s+d[2]*c+pad*2};
+}
+function valid(b,ignoreOccupied=false) {
+  if (Math.abs(b.x)+b.w/2&gt;7.78 || Math.abs(b.z)+b.d/2&gt;5.78) return false;
+  const nx=Math.max(2,Math.ceil(b.w/0.25)), nz=Math.max(2,Math.ceil(b.d/0.25));
+  for(let i=0;i&lt;=nx;i++) for(let j=0;j&lt;=nz;j++) {
+    if(circulation(b.x-b.w/2+b.w*i/nx,b.z-b.d/2+b.d*j/nz)&lt;0) return false;
+  }
+  if (!ignoreOccupied) for (const other of occupied) {
+    if(Math.abs(b.x-other.x)&lt;(b.w+other.w)/2+0.06 &amp;&amp;
+       Math.abs(b.z-other.z)&lt;(b.d+other.d)/2+0.06) return false;
+  }
+  return true;
+}
+function put(key,x,z,angle=0,name,record=true) {
+  const id=api.place({
+    assetId:api.asset(key),
+    name:name || families.find(f=&gt;f[0]===key)[1],
+    position:api.roomPoint(x,z,0),
+    rotationY:angle,
+    dimensions:dims[key],
+    role:families.find(f=&gt;f[0]===key)[4]
+  });
+  if(record) occupied.push(footprint(key,x,z,angle));
+  return id;
+}
+function on(key,parent,x=0,z=0) {
+  return api.attach({
+    assetId:api.asset(key),parentId:parent,kind:"supported",
+    offset:[x,z],dimensions:dims[key],
+    role:families.find(f=&gt;f[0]===key)[4]
+  });
+}
+function chooseGroup(items,anchor,field,rx=0.3,rz=0.25) {
+  let best=null,score=-Infinity;
+  for(let ix=-3;ix&lt;=3;ix++) for(let iz=-3;iz&lt;=3;iz++) {
+    const dx=ix*rx/3, dz=iz*rz/3;
+    const ok=items.every(it=&gt;valid(footprint(it[0],anchor[0]+it[1]+dx,anchor[1]+it[2]+dz,it[3]||0)));
+    if(!ok) continue;
+    const v=field(anchor[0]+dx,anchor[1]+dz)-0.2*(dx*dx+dz*dz);
+    if(v&gt;score){score=v;best=[anchor[0]+dx,anchor[1]+dz];}
+  }
+  return best || anchor;
+}
+
+// Main relationship: a shared design table, six facing seats and a presentation board.
+const workItems=[
+  ["worktable",0,0,0],
+  ["workchair",-1.25,-1.27,0],["workchair",0,-1.27,0],["workchair",1.25,-1.27,0],
+  ["workchair",-1.25,1.27,Math.PI],["workchair",0,1.27,Math.PI],["workchair",1.25,1.27,Math.PI]
+];
+const work=chooseGroup(workItems,[-2.9,-1.65],social,0.35,0.15);
+const table=put("worktable",work[0],work[1]);
+for(const item of workItems.slice(1)) put(item[0],work[0]+item[1],work[1]+item[2],item[3]);
+on("laptop",table,-1.15,0.33);
+on("books",table,0.1,-0.2);
+on("smallplant",table,1.4,0);
+on("tray",table,0.7,0.32);
+put("board",-5.55,-1.7,Math.PI/2,"共享工作区演示白板");
+api.place({
+  assetId:api.asset("pendant"),name:"共享工作台线性照明",
+  position:api.ceilingPoint(work[0],work[1],dims.pendant[1],0.65),
+  dimensions:dims.pendant,role:"functional"
+});
+
+// A softer social field collects the lounge, with a clear west-side approach.
+const lounge=chooseGroup([
+  ["sofa",0,1.25,Math.PI],
+  ["coffee",0,-0.05,0],
+  ["armchair",-0.94,-1.4,0.16],
+  ["armchair",0.94,-1.4,-0.16]
+],[4.1,0.35],cozy,0.1,0.15);
+put("rug",lounge[0],lounge[1],0,"会客区灰色编织地毯",false);
+put("sofa",lounge[0],lounge[1]+1.25,Math.PI);
+const coffee=put("coffee",lounge[0],lounge[1]-0.05);
+put("armchair",lounge[0]-0.94,lounge[1]-1.4,0.16);
+put("armchair",lounge[0]+0.94,lounge[1]-1.4,-0.16);
+on("books",coffee,-0.4,0);
+on("tray",coffee,0.38,0);
+put("floorlamp",5.85,1.85);
+put("plant",5.7,3.35);
+
+// Independent daylight desks face into the room, away from the passage.
+const deskCandidates=[[-4.8,3.45],[-2.55,3.45]];
+deskCandidates.sort((a,b)=&gt;quiet(b[0],b[1])-quiet(a[0],a[1]));
+for(let i=0;i&lt;deskCandidates.length;i++) {
+  const p=deskCandidates[i];
+  const desk=put("desk",p[0],p[1],Math.PI);
+  put("workchair",p[0],p[1]-0.93,0,"独立书桌配套座椅");
+  on("laptop",desk,0.05,0.12);
+  on("tasklamp",desk,-0.62,-0.08);
+  if(i===0) on("smallplant",desk,0.65,-0.08);
+}
+api.place({
+  assetId:api.asset("pendant"),name:"独立工作区线性照明",
+  position:api.ceilingPoint(-3.7,3.35,dims.pendant[1],0.4),
+  dimensions:dims.pendant,role:"functional"
+});
+
+// Storage sits inside the promenade so all sides remain approachable.
+put("shelf",-3.35,-3.82,0,"设计资料开放书架");
+const cabinet=put("cabinet",4.25,-3.68,0,"样本与咖啡矮柜");
+on("sculpture",cabinet,-0.78,0);
+on("books",cabinet,0.12,0);
+on("smallplant",cabinet,0.83,0);
+put("stool",2.5,3.42,0,"临时讨论圆凳");
+put("stool",3.18,3.6,0,"临时讨论圆凳");
+
+// Sparse foliage is sampled only where the daylight/coziness fields cross a threshold.
+const greenCandidates=[];
+for(let i=0;i&lt;90;i++) {
+  const x=api.random(-5.8,5.8),z=api.random(-3.75,3.75);
+  const f=0.65*daylight(x,z)+0.35*cozy(x,z);
+  if(f&gt;0.37 &amp;&amp; valid(footprint("plant",x,z,0,0.16))) greenCandidates.push({x,z,f});
+}
+greenCandidates.sort((a,b)=&gt;b.f-a.f);
+let planted=0;
+for(const p of greenCandidates) {
+  if(planted&gt;=2) break;
+  if(valid(footprint("plant",p.x,p.z,0,0.2))) {
+    put("plant",p.x,p.z);
+    planted++;
+  }
+}</pre></details>
+<details class="run"><summary>✓ LOFT 开放工作室 · D · 生成-选择 Anneal — 37 摆放 / 301L 代码 / 191s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 37 个摆放意图与 1 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const families = {};
+  function family(key, name, prompt, dimensions, role) {
+    families[key] = { dimensions, role: role || "functional" };
+    api.requireAsset({ key, name, prompt: prompt + contract, dimensions, role: role || "functional" });
+  }
+
+  // 黑钢、烟熏橡木、奶油织物与少量陶土色，构成开放式工作室。
+  family("sofa", "模块沙发", "One modern low three-seat modular sofa, warm ivory boucle upholstery, generous block cushions, slim charcoal recessed base, beautifully finished back, no pillows or surrounding objects.", [3.2, 0.8, 1.05]);
+  family("loungeChair", "皮革休闲椅", "One modern cognac saddle leather lounge armchair with black tubular steel frame and low relaxed seat, industrial loft aesthetic.", [0.85, 0.84, 0.9]);
+  family("coffeeTable", "矮茶几", "One sculptural rectangular coffee table, smoked oak top with rounded corners, two chunky dark timber slab legs, matte finish.", [1.55, 0.37, 0.75]);
+  family("rug", "羊毛地毯", "One flat rectangular woven wool rug, warm oatmeal with a restrained charcoal linear border, subtle textile texture, no furniture.", [4.6, 0.025, 3.65], "decor");
+  family("media", "展示矮柜", "One long low smoked oak media credenza, black steel legs, closed fluted doors, clean flat top, modern industrial design, no objects on top.", [3.2, 0.65, 0.5]);
+  family("screen", "展示屏", "One large thin black presentation monitor with a minimal tabletop pedestal stand, front screen displaying an abstract muted terracotta and cream architectural composition, no lettering.", [1.95, 1.18, 0.24]);
+  family("desk", "工作桌", "One professional minimalist work desk with warm oak rectangular top and charcoal steel trestle legs, discreet rear cable channel, clear tabletop, no chair.", [1.9, 0.75, 0.8]);
+  family("taskChair", "办公椅", "One charcoal ergonomic swivel office chair, upholstered seat, breathable mesh back, adjustable arms, five-spoke caster base, refined realistic design.", [0.67, 1.12, 0.7]);
+  family("laptop", "笔记本电脑", "One open slim graphite laptop, screen showing a subdued architectural drawing without readable text, keyboard and touchpad, standalone object.", [0.36, 0.25, 0.25], "decor");
+  family("deskLamp", "工作台灯", "One articulated black task lamp with slender adjustable arm, weighted circular base and small warm luminous shade, contemporary industrial design.", [0.32, 0.53, 0.25], "decor");
+  family("meetingTable", "共创长桌", "One modern communal meeting table, rounded rectangular pale oak top and two charcoal steel pedestal legs, clear tabletop.", [2.65, 0.75, 1.12]);
+  family("meetingChair", "会议椅", "One contemporary oak plywood chair with curved backrest, warm gray upholstered seat and slender black metal legs, elegant compact proportions.", [0.52, 0.8, 0.56]);
+  family("bar", "咖啡边柜", "One modern coffee station sideboard in smoked oak and matte charcoal steel, three closed cabinet doors, warm pale stone counter, no sink and no accessories.", [2.8, 0.93, 0.6]);
+  family("coffeeMachine", "咖啡机", "One compact premium espresso machine in brushed stainless steel with black details, integrated drip tray, no loose cups or separate accessories.", [0.43, 0.43, 0.38], "decor");
+  family("tray", "茶杯托盘", "One dark round serving tray holding two small cream ceramic cups, composed as one standalone tabletop accessory.", [0.42, 0.14, 0.32], "decor");
+  family("books", "设计书", "One neat small stack of three large architecture and design books with linen covers in cream, charcoal and terracotta, no readable branding.", [0.38, 0.12, 0.28], "decor");
+  family("vase", "陶艺花瓶", "One sculptural matte terracotta ceramic vase with a narrow asymmetrical neck and a few restrained dried branches, standalone decorative arrangement.", [0.3, 0.65, 0.3], "decor");
+  family("plant", "室内绿植", "One upright indoor rubber plant with sculptural dark green leaves in a cylindrical matte charcoal planter, restrained architectural silhouette.", [0.68, 1.65, 0.68], "decor");
+  family("floorLamp", "落地灯", "One slender black steel floor lamp with a small warm glowing linen cylinder shade and a compact weighted circular base, understated contemporary design.", [0.42, 1.65, 0.42], "decor");
+  family("pendant", "线性吊灯", "One suspended linear architectural pendant light, slim matte black horizontal body with warm luminous underside, two short integrated suspension cables, total stated height includes cables.", [2.4, 0.6, 0.12], "decor");
+  family("art", "抽象画", "One large framed abstract architectural artwork, bold quiet geometric planes in chalk white, charcoal and rust, slim black frame, no text.", [2.35, 1.22, 0.06], "decor");
+  family("pinboard", "灵感板", "One freestanding studio moodboard on a slim black steel easel base, warm gray felt panel holding a curated arrangement of small architectural sketches and neutral material swatches, finished back, no readable words.", [1.12, 1.65, 0.4]);
+
+  const openings = Array.isArray(api.room.openings) ? api.room.openings : [];
+  const doors = openings.filter(o =&gt; o.kind === "door" || o.type === "door");
+  if (!doors.length) {
+    family("door", "玻璃钢门", "One contemporary single glazed entry door in a slender matte black steel frame, clear glass and long vertical black pull handle.", [1.5, 2.65, 0.16]);
+    const id = api.opening({ id: "loft-entry", kind: "door", wall: "south", offset: 0, bottom: 0, width: 1.5, height: 2.65 });
+    api.place({ assetId: api.asset("door"), roomOpeningId: id, dimensions: [1.5, 2.65, 0.16], role: "functional" });
+    doors.push({ wall: "south", offset: 0, width: 1.5 });
+  }
+
+  const clamp = (v, lo, hi) =&gt; Math.max(lo, Math.min(hi, v));
+  const copy = list =&gt; list.map(g =&gt; ({ ...g }));
+  const rect = g =&gt; ({ x: g.x, z: g.z, w: g.w, d: g.d });
+  function overlap(a, b, margin) {
+    const dx = (a.w + b.w) / 2 + margin - Math.abs(a.x - b.x);
+    const dz = (a.d + b.d) / 2 + margin - Math.abs(a.z - b.z);
+    return dx &gt; 0 &amp;&amp; dz &gt; 0 ? dx * dz : 0;
+  }
+
+  // The perimeter is a continuous 1.5 m circulation loop. The central
+  // 1.6 m aisle connects it to both work areas and the presentation lounge.
+  const doorKeepouts = doors.map(o =&gt; {
+    const offset = Number.isFinite(o.offset) ? o.offset : 0;
+    const width = Number.isFinite(o.width) ? o.width : 1.3;
+    const depth = Math.max(1.6, Math.min(2.6, width + 0.3));
+    if (o.wall === "north") return { x: offset, z: -6 + depth / 2, w: width + 0.5, d: depth };
+    if (o.wall === "south") return { x: offset, z: 6 - depth / 2, w: width + 0.5, d: depth };
+    if (o.wall === "west") return { x: -8 + depth / 2, z: offset, w: depth, d: width + 0.5 };
+    if (o.wall === "east") return { x: 8 - depth / 2, z: offset, w: depth, d: width + 0.5 };
+    return { x: 0, z: 5.3, w: 1.8, d: 1.4 };
+  });
+
+  const initial = [
+    { id: "lounge", x: -3.55, z: -1.05, w: 5.0, d: 5.1, xmin: -3.95, xmax: -3.3, zmin: -1.7, zmax: -0.65 },
+    { id: "work", x: 3.6, z: -2.45, w: 4.3, d: 2.45, xmin: 3.0, xmax: 4.15, zmin: -3.0, zmax: -1.9 },
+    { id: "meeting", x: 3.65, z: 2.15, w: 4.15, d: 3.0, xmin: 2.95, xmax: 4.2, zmin: 1.5, zmax: 2.8 },
+    { id: "bar", x: -3.65, z: 3.65, w: 4.05, d: 1.15, xmin: -4.3, xmax: -2.9, zmin: 3.4, zmax: 3.9 }
+  ];
+
+  function clearanceFitness(layout) {
+    let p = 0;
+    for (const g of layout) {
+      p += Math.pow(Math.max(0, Math.abs(g.x) + g.w / 2 - 6.5), 2);
+      p += Math.pow(Math.max(0, Math.abs(g.z) + g.d / 2 - 4.5), 2);
+      p += overlap(g, { x: 0, z: 0, w: 1.6, d: 12 }, 0);
+      for (const door of doorKeepouts) p += overlap(g, door, 0.12);
+    }
+    return p;
+  }
+  function collisionFitness(layout) {
+    let p = 0;
+    for (let i = 0; i &lt; layout.length; i++) {
+      for (let j = i + 1; j &lt; layout.length; j++) {
+        p += overlap(layout[i], layout[j], 0.85);
+      }
+    }
+    return p;
+  }
+  function pairFitness(layout) {
+    let p = 0;
+    for (const g of layout) {
+      const target = initial.find(t =&gt; t.id === g.id);
+      p += 0.2 * Math.pow(g.x - target.x, 2) + 0.35 * Math.pow(g.z - target.z, 2);
+    }
+    const work = layout.find(g =&gt; g.id === "work");
+    const meeting = layout.find(g =&gt; g.id === "meeting");
+    if (work &amp;&amp; meeting) p += 0.15 * Math.pow(work.x - meeting.x, 2);
+    return p;
+  }
+  function focalFitness(layout) {
+    const lounge = layout.find(g =&gt; g.id === "lounge");
+    if (!lounge) return 0;
+    // Fixed local relationships keep sofa and screen exactly opposed.
+    // Favor the prominent western presentation bay and an open entry view.
+    return Math.pow(lounge.x + 3.55, 2) + 0.6 * Math.pow(lounge.z + 1.05, 2);
+  }
+  function score(layout) {
+    return 5000 * clearanceFitness(layout) + 5000 * collisionFitness(layout)
+      + pairFitness(layout) + 2.5 * focalFitness(layout);
+  }
+  function repair(layout) {
+    for (let pass = 0; pass &lt; 5; pass++) {
+      for (const g of layout) {
+        g.x = clamp(g.x, g.xmin, g.xmax);
+        g.z = clamp(g.z, g.zmin, g.zmax);
+        for (const d of doorKeepouts) {
+          if (!overlap(g, d, 0.12)) continue;
+          if (d.w &gt; d.d) g.z += Math.sign(g.z - d.z || 1) * 0.14;
+          else g.x += Math.sign(g.x - d.x || 1) * 0.14;
+        }
+      }
+      for (let i = 0; i &lt; layout.length; i++) {
+        for (let j = i + 1; j &lt; layout.length; j++) {
+          const a = layout[i], b = layout[j];
+          if (!overlap(a, b, 0.85)) continue;
+          const dx = (a.w + b.w) / 2 + 0.85 - Math.abs(a.x - b.x);
+          const dz = (a.d + b.d) / 2 + 0.85 - Math.abs(a.z - b.z);
+          if (dx &lt; dz) {
+            const s = Math.sign(a.x - b.x || 1);
+            a.x += s * dx * 0.51;
+            b.x -= s * dx * 0.51;
+          } else {
+            const s = Math.sign(a.z - b.z || 1);
+            a.z += s * dz * 0.51;
+            b.z -= s * dz * 0.51;
+          }
+        }
+      }
+    }
+    for (const g of layout) {
+      g.x = clamp(g.x, g.xmin, g.xmax);
+      g.z = clamp(g.z, g.zmin, g.zmax);
+    }
+    return layout;
+  }
+  function anneal(seed, steps) {
+    let current = repair(copy(seed)), currentScore = score(current);
+    let best = copy(current), bestScore = currentScore;
+    for (let i = 0; i &lt; steps; i++) {
+      const next = copy(current);
+      let index = Math.floor(Math.random() * next.length);
+      if (i % 47 === 46) {
+        // Drop and replace the piece with the worst local constraint cost.
+        let worst = -1;
+        for (let j = 0; j &lt; next.length; j++) {
+          let cost = clearanceFitness([next[j]]);
+          for (let k = 0; k &lt; next.length; k++) if (j !== k) cost += overlap(next[j], next[k], 0.85);
+          if (cost &gt; worst) { worst = cost; index = j; }
+        }
+        const g = next[index];
+        g.x = g.xmin + Math.random() * (g.xmax - g.xmin);
+        g.z = g.zmin + Math.random() * (g.zmax - g.zmin);
+      } else {
+        const step = 0.35 * (1 - i / steps) + 0.025;
+        next[index].x += (Math.random() * 2 - 1) * step;
+        next[index].z += (Math.random() * 2 - 1) * step;
+      }
+      repair(next);
+      const nextScore = score(next);
+      const temperature = 0.16 * Math.pow(1 - i / steps, 2) + 0.001;
+      if (nextScore &lt; currentScore || Math.random() &lt; Math.exp((currentScore - nextScore) / temperature)) {
+        current = next;
+        currentScore = nextScore;
+      }
+      if (nextScore &lt; bestScore - 1e-8 ||
+          (Math.abs(nextScore - bestScore) &lt; 1e-8 &amp;&amp; focalFitness(next) &lt; focalFitness(best))) {
+        best = copy(next);
+        bestScore = nextScore;
+      }
+    }
+    return best;
+  }
+
+  // Stage one settles the dominant lounge and the paired workstations.
+  let kept = anneal(initial.slice(0, 2), 200);
+  // Stage two introduces the collaboration table and the coffee station.
+  kept = anneal(kept.concat(copy(initial.slice(2))), 320);
+  for (let restart = 0; restart &lt; 3; restart++) {
+    const candidate = anneal(copy(initial), 180);
+    if (score(candidate) &lt; score(kept)) kept = candidate;
+  }
+  const groups = {};
+  for (const g of kept) groups[g.id] = g;
+
+  function floor(key, x, z, rotationY, name) {
+    const f = families[key];
+    return api.place({
+      assetId: api.asset(key), name: name || key,
+      position: api.roomPoint(x, z, 0), rotationY: rotationY || 0,
+      dimensions: f.dimensions, role: f.role
+    });
+  }
+  function local(key, group, x, z, angle, name) {
+    return floor(key, group.x + x, group.z + z, angle, name);
+  }
+  function supported(key, parentId, x, z, name) {
+    const f = families[key];
+    return api.attach({
+      assetId: api.asset(key), parentId, name: name || key,
+      kind: "supported", offset: [x, z], anchorY: "bottom",
+      dimensions: f.dimensions, role: f.role
+    });
+  }
+  function ceiling(key, x, z) {
+    const f = families[key];
+    return api.place({
+      assetId: api.asset(key), position: api.ceilingPoint(x, z, f.dimensions[1], 0.2),
+      dimensions: f.dimensions, role: f.role
+    });
+  }
+
+  const lounge = groups.lounge;
+  local("rug", lounge, 0, 0.5, 0, "会客区羊毛地毯");
+  local("sofa", lounge, 0, 1.65, Math.PI, "面向展示屏的主沙发");
+  local("loungeChair", lounge, -1.83, -0.05, Math.PI / 2, "侧向交流休闲椅");
+  const coffee = local("coffeeTable", lounge, 0, 0, 0, "中央茶几");
+  const media = local("media", lounge, 0, -2.25, 0, "展示区橡木矮柜");
+  supported("screen", media, 0, 0, "主视觉展示屏");
+  supported("books", coffee, -0.4, 0.02);
+  supported("tray", coffee, 0.36, 0.02);
+  local("floorLamp", lounge, 1.98, 1.65, 0, "沙发阅读灯");
+  local("plant", lounge, 2.05, -2.1, 0, "展示区绿植");
+
+  const work = groups.work;
+  for (const dx of [-1.08, 1.08]) {
+    const desk = local("desk", work, dx, -0.42, 0, "橡木独立工作位");
+    local("taskChair", work, dx, 0.68, Math.PI, "面向工作桌的办公椅");
+    supported("laptop", desk, -0.13, 0.01);
+    supported("deskLamp", desk, 0.67, -0.18);
+  }
+
+  const meeting = groups.meeting;
+  const table = local("meetingTable", meeting, 0, 0, 0, "六人共创桌");
+  for (const dx of [-0.72, 0.72]) {
+    local("meetingChair", meeting, dx, 1.08, Math.PI, "南侧会议椅");
+    local("meetingChair", meeting, dx, -1.08, 0, "北侧会议椅");
+  }
+  local("meetingChair", meeting, -1.76, 0, Math.PI / 2, "西侧会议椅");
+  local("meetingChair", meeting, 1.76, 0, -Math.PI / 2, "东侧会议椅");
+  supported("books", table, -0.65, 0);
+  supported("vase", table, 0.58, 0);
+  ceiling("pendant", meeting.x, meeting.z);
+  ceiling("pendant", work.x, work.z - 0.3);
+  ceiling("pendant", lounge.x, lounge.z + 0.05);
+
+  const barGroup = groups.bar;
+  const bar = local("bar", barGroup, -0.5, 0.12, Math.PI, "入口咖啡边柜");
+  supported("coffeeMachine", bar, -0.78, 0);
+  supported("tray", bar, 0.04, 0);
+  supported("vase", bar, 1.05, 0);
+  local("pinboard", barGroup, 1.4, 0.12, Math.PI, "可移动设计灵感板");
+
+  // Stage three adds the wall art only after checking all existing openings.
+  const artCandidates = [
+    { wall: "west", offset: -1.0 },
+    { wall: "north", offset: 3.6 },
+    { wall: "east", offset: 2.3 },
+    { wall: "south", offset: -3.7 }
+  ];
+  function artPenalty(c) {
+    let penalty = 0;
+    for (const o of openings) {
+      if (o.wall !== c.wall) continue;
+      const offset = Number.isFinite(o.offset) ? o.offset : 0;
+      const width = Number.isFinite(o.width) ? o.width : 1.5;
+      const bottom = Number.isFinite(o.bottom) ? o.bottom : 0;
+      const height = Number.isFinite(o.height) ? o.height : 2.7;
+      if (bottom &lt; 3.7 &amp;&amp; bottom + height &gt; 2.45) {
+        penalty += Math.max(0, (width + 2.35) / 2 + 0.2 - Math.abs(offset - c.offset));
+      }
+    }
+    return penalty;
+  }
+  artCandidates.sort((a, b) =&gt; artPenalty(a) - artPenalty(b));
+  const artWall = artCandidates[0];
+  if (artPenalty(artWall) === 0) {
+    const frame = api.wallFrame(artWall.wall, artWall.offset, 2.45, 0.045);
+    api.place({
+      assetId: api.asset("art"), name: "工作室抽象建筑画",
+      position: frame.point, facing: { direction: frame.inward },
+      dimensions: families.art.dimensions, role: "decor"
+    });
+  } else {
+    api.attach({
+      assetId: api.asset("art"), name: "咖啡柜背面艺术面板", parentId: bar,
+      kind: "mounted", side: "north", offset: [0, 0.47], anchorY: "center",
+      dimensions: [1.45, 0.72, 0.06], role: "decor"
+    });
+  }
+}</pre></details>
+<details class="run"><summary>✓ 主卧套房 · A · 功能规划 Program — 31 摆放 / 169L 代码 / 117s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 31 个摆放意图与 3 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li></ul></div>
+    <pre class="code">function plan(api) {
+  // 主卧套房程序：卧眠为中心，窗边休憩为辅，入口连接更衣与洗浴。
+  const program = [
+    { role: "卧眠", count: 1, minFootprint: [6.8, 5.5], beside: ["休憩", "过厅", "洗浴"] },
+    { role: "休憩", count: 1, minFootprint: [4.8, 3.8], beside: ["卧眠", "过厅"] },
+    { role: "过厅", count: 1, minFootprint: [2.2, 3.8], beside: ["卧眠", "休憩", "更衣"] },
+    { role: "洗浴", count: 1, minFootprint: [3.7, 5.5], beside: ["卧眠", "更衣"] },
+    { role: "更衣", count: 1, minFootprint: [3.7, 4.2], beside: ["洗浴", "过厅"] }
+  ];
+  const zones = {};
+  function divide(rect, axis, cut, first, second) {
+    const a = { ...rect }, b = { ...rect };
+    if (axis === "x") { a.x1 = cut; b.x0 = cut; }
+    else { a.z1 = cut; b.z0 = cut; }
+    function descend(r, node) {
+      if (typeof node === "string") zones[node] = r;
+      else divide(r, node.axis, node.cut, node.first, node.second);
+    }
+    descend(a, first);
+    descend(b, second);
+  }
+  divide(
+    { x0: -6.8, x1: 6.8, z0: -5.8, z1: 5.8 },
+    "x", 2.7,
+    {
+      axis: "z", cut: 0.5, first: "卧眠",
+      second: { axis: "x", cut: -0.5, first: "休憩", second: "过厅" }
+    },
+    { axis: "z", cut: 0.5, first: "洗浴", second: "更衣" }
+  );
+  for (const slot of program) {
+    zones[slot.role].program = slot;
+  }
+
+  const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const specs = [
+    ["bed", "软包双人床", [2.45, 1.35, 2.65], "A luxurious warm contemporary king bed, low walnut frame, broad oatmeal linen upholstered headboard at the back, ivory duvet with natural folds, two large pillows and a muted terracotta throw across the foot. One complete bed."],
+    ["nightstand", "胡桃木床头柜", [0.65, 0.56, 0.48], "One rounded walnut bedside cabinet with two drawers, recessed brass pulls and a pale stone top."],
+    ["lamp", "陶瓷床头灯", [0.37, 0.49, 0.37], "One bedside table lamp with a warm ivory pleated linen shade and rounded ochre ceramic base, soft warm light."],
+    ["rug", "羊毛地毯", [5.4, 0.025, 4.7], "One rectangular warm ivory wool area rug with a subtle woven sand border, soft textured pile, flat edges."],
+    ["bench", "床尾长凳", [1.75, 0.45, 0.48], "One elegant upholstered bedroom bench, caramel boucle cushion and rounded dark walnut legs."],
+    ["chair", "休闲扶手椅", [0.94, 0.91, 0.94], "One inviting cream boucle lounge armchair with rounded arms and walnut feet, comfortable deep seat."],
+    ["ottoman", "休闲脚凳", [0.65, 0.4, 0.55], "One small oval oatmeal upholstered footstool with a walnut plinth."],
+    ["side", "圆形茶几", [0.58, 0.52, 0.58], "One small circular travertine side table with a thick round top and pedestal base."],
+    ["floorlamp", "落地阅读灯", [0.48, 1.65, 0.48], "One slender aged brass floor reading lamp with a cream linen shade, compact weighted circular base, warm glow."],
+    ["desk", "梳妆台", [1.6, 0.77, 0.55], "One refined walnut dressing table with two shallow drawers, slender legs and a cream stone top. No mirror and no accessories."],
+    ["stool", "梳妆凳", [0.55, 0.46, 0.48], "One compact padded ivory dressing stool on four walnut legs."],
+    ["mirror", "圆角壁镜", [1.0, 1.25, 0.055], "One vertical rounded rectangular wall mirror with a slim brushed bronze frame."],
+    ["wardrobe", "衣柜", [1.65, 2.65, 0.64], "One freestanding full height walnut wardrobe, two closed doors, subtle vertical wood grain and long slim bronze handles, finished wood back."],
+    ["screen", "木格栅屏风", [0.12, 2.7, 3.0], "One freestanding privacy screen aligned along its depth, closely spaced vertical walnut slats with translucent reeded glass infill, slim bronze feet. No surrounding room."],
+    ["tub", "独立浴缸", [1.05, 0.66, 1.85], "One freestanding sculptural ivory oval soaking bathtub with integrated slender bronze filler at one end, clean empty basin."],
+    ["vanity", "浴室台盆柜", [1.5, 0.87, 0.58], "One freestanding walnut bathroom vanity with ivory stone countertop, integrated oval basin and a brushed bronze faucet, closed storage below."],
+    ["towel", "毛巾架", [0.65, 0.95, 0.35], "One freestanding brushed bronze towel stand holding two neatly folded cream towels."],
+    ["plant", "室内绿植", [0.72, 1.55, 0.72], "One airy indoor olive tree with delicate muted green leaves in a warm sand ceramic planter."],
+    ["art", "暖色装饰画", [1.6, 0.95, 0.055], "One framed abstract landscape artwork with soft terracotta, cream and muted olive shapes, natural linen mat and slender walnut frame. No lettering."],
+    ["pendant", "纸艺吊灯", [1.05, 0.65, 1.05], "One large softly glowing ivory paper pendant lantern with an organic rounded shape and a short bronze ceiling stem."],
+    ["tray", "茶具托盘", [0.4, 0.13, 0.3], "One small walnut tea tray holding a single cream ceramic teacup and matching tiny teapot, arranged as one tabletop object."],
+    ["books", "床头书籍", [0.28, 0.09, 0.21], "One small stack of two hardcover books with linen covers in muted clay and ivory, no readable text."],
+    ["basket", "织物收纳篮", [0.48, 0.55, 0.48], "One handwoven natural wicker laundry basket with an ivory fabric liner and closed lid."]
+  ];
+  const dims = {};
+  for (const [key, name, dimensions, prompt] of specs) {
+    dims[key] = dimensions;
+    api.requireAsset({
+      key, name, dimensions,
+      prompt: prompt + contract,
+      role: ["rug", "art", "plant", "tray", "books"].includes(key) ? "decor" : "functional"
+    });
+  }
+
+  const raw = api.room.openings || [];
+  const openings = Array.isArray(raw) ? raw.slice() : Object.values(raw);
+  let doors = openings.filter(o =&gt; o.kind === "door");
+  if (!doors.length) {
+    api.opening({ id: "suite-entry", kind: "door", wall: "south", offset: 0.9, bottom: 0, width: 1.25, height: 2.5 });
+    doors = [{ wall: "south", offset: 0.9, width: 1.25 }];
+  }
+  if (!openings.some(o =&gt; o.kind === "window")) {
+    api.opening({ id: "reading-daylight", kind: "window", wall: "west", offset: 2.7, bottom: 0.8, width: 2.7, height: 2.35 });
+    api.opening({ id: "bath-daylight", kind: "window", wall: "north", offset: 4.7, bottom: 1.45, width: 1.9, height: 1.8 });
+  }
+
+  // 门前保留 1.5 米进深；各区之间不建墙，中央过厅保持连续通行。
+  function blocksDoor(x, z, w, d) {
+    return doors.some(o =&gt; {
+      const offset = Number.isFinite(o.offset) ? o.offset : 0;
+      const half = (Number.isFinite(o.width) ? o.width : 1.1) / 2 + 0.5;
+      if (o.wall === "south") return z + d / 2 &gt; 4.15 &amp;&amp; Math.abs(x - offset) &lt; half + w / 2;
+      if (o.wall === "north") return z - d / 2 &lt; -4.15 &amp;&amp; Math.abs(x - offset) &lt; half + w / 2;
+      if (o.wall === "east") return x + w / 2 &gt; 5.15 &amp;&amp; Math.abs(z - offset) &lt; half + d / 2;
+      if (o.wall === "west") return x - w / 2 &lt; -5.15 &amp;&amp; Math.abs(z - offset) &lt; half + d / 2;
+      return false;
+    });
+  }
+  function floor(key, x, z, angle = 0, name, fallback) {
+    const d = dims[key];
+    const w = Math.abs(Math.cos(angle)) * d[0] + Math.abs(Math.sin(angle)) * d[2];
+    const dep = Math.abs(Math.sin(angle)) * d[0] + Math.abs(Math.cos(angle)) * d[2];
+    if (blocksDoor(x, z, w, dep) &amp;&amp; fallback) {
+      x = fallback[0]; z = fallback[1];
+    }
+    return api.place({
+      assetId: api.asset(key), name,
+      position: api.roomPoint(x, z, 0), rotationY: angle, dimensions: d,
+      role: ["rug", "plant"].includes(key) ? "decor" : "functional"
+    });
+  }
+  function on(key, parentId, offset = [0, 0]) {
+    return api.attach({
+      assetId: api.asset(key), parentId, kind: "supported",
+      offset, dimensions: dims[key],
+      role: ["books", "tray"].includes(key) ? "decor" : "functional"
+    });
+  }
+  function wall(key, side, offset, bottom) {
+    const frame = api.wallFrame(side, offset, bottom, 0.035);
+    return api.place({
+      assetId: api.asset(key), position: frame.point,
+      facing: { direction: frame.inward }, dimensions: dims[key],
+      role: key === "art" ? "decor" : "functional"
+    });
+  }
+
+  const northBedDoor = doors.some(o =&gt; o.wall === "north" &amp;&amp; Math.abs((o.offset || 0) + 2.0) &lt; 2.8);
+  const bedZ = northBedDoor ? -2.65 : -4.0;
+  floor("rug", -2.0, -2.55, 0, "卧眠区羊毛地毯");
+  floor("bed", -2.0, bedZ, 0, "主卧视觉中心");
+  const left = floor("nightstand", -3.65, bedZ - 0.75, 0, "左床头柜", [-3.65, -3.3]);
+  const right = floor("nightstand", -0.35, bedZ - 0.75, 0, "右床头柜", [-0.35, -3.3]);
+  on("lamp", left);
+  on("lamp", right);
+  on("books", right, [0, 0.12]);
+  floor("bench", -2.0, bedZ + 1.95);
+  if (!northBedDoor) wall("art", "north", -2.0, 2.05);
+  else wall("art", "west", -2.2, 2.15);
+
+  // 西南窗边的阅读角与梳妆台共享日光，中间留出步行距离。
+  floor("chair", -4.8, 1.55, 0.48, "窗边阅读椅", [-4.5, 1.55]);
+  floor("ottoman", -4.15, 2.65, 0.48);
+  const teaTable = floor("side", -3.5, 1.55);
+  on("tray", teaTable);
+  floor("floorlamp", -5.65, 1.4, 0, "阅读落地灯", [-5.4, 0.6]);
+  floor("plant", -5.95, 3.55, 0, "窗边绿植", [-3.0, 3.4]);
+  floor("desk", -3.7, 5.25, Math.PI, "梳妆台", [-3.7, 4.0]);
+  floor("stool", -3.7, 4.3, Math.PI, "梳妆座位", [-3.7, 3.05]);
+  wall("mirror", "south", -3.7, 1.15);
+
+  // 东侧以家具屏风界定洗浴，屏风南端留下 1.3 米以上的绕行入口。
+  floor("screen", 2.86, -3.0, 0, "洗浴隐私屏风");
+  floor("tub", 4.65, -3.7, 0, "窗下浴缸", [4.65, -2.8]);
+  floor("vanity", 6.35, -0.9, -Math.PI / 2, "浴室台盆", [5.15, -0.9]);
+  wall("mirror", "east", -0.9, 1.22);
+  floor("towel", 3.55, -1.0);
+  floor("basket", 3.45, 0.05);
+
+  // 更衣柜面向过厅，柜前保留宽阔的取衣和转身空间。
+  floor("wardrobe", 6.32, 2.0, -Math.PI / 2, "更衣柜一", [4.75, 4.95]);
+  floor("wardrobe", 6.32, 3.8, -Math.PI / 2, "更衣柜二", [3.0, 4.95]);
+  floor("bench", 4.1, 2.75, Math.PI / 2, "更衣换鞋凳");
+  floor("plant", 6.05, 5.25, 0, "更衣区绿植", [2.2, 1.7]);
+
+  for (const [x, z, drop] of [[-2.0, -2.3, 0.2], [-3.6, 2.8, 0.12], [4.5, 2.6, 0.08]]) {
+    api.place({
+      assetId: api.asset("pendant"),
+      position: api.ceilingPoint(x, z, dims.pendant[1], drop),
+      dimensions: dims.pendant, role: "functional"
+    });
+  }
+}</pre></details>
+<details class="run"><summary>✓ 主卧套房 · B · 锚点关系 Relate — 25 摆放 / 143L 代码 / 87s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 25 个摆放意图与 1 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const families = {};
+  function family(key, name, dimensions, prompt, role = "functional") {
+    families[key] = { dimensions, role };
+    api.requireAsset({ key, name, dimensions, role, prompt: prompt + contract });
+  }
+
+  // 暖橡木、燕麦色织物、陶土色点缀：以床与床尾休憩区为主关系。
+  family("bed", "软包双人床", [2.5, 1.35, 2.65],
+    "One luxurious king bed with a tall gently rounded oatmeal linen upholstered headboard, warm oak plinth, ivory duvet, layered cream pillows and a muted terracotta throw neatly draped across the foot, quiet contemporary residential design.");
+  family("nightstand", "橡木床头柜", [0.65, 0.58, 0.48],
+    "One warm natural oak bedside cabinet, rounded corners, two drawers, discreet bronze pulls, refined joinery.");
+  family("bedlamp", "暖光床头灯", [0.34, 0.49, 0.34],
+    "One small bedside table lamp with a warm ivory pleated linen shade and a rounded sand ceramic base, softly glowing warm light.", "decor");
+  family("rug", "羊毛地毯", [4.5, 0.025, 4.25],
+    "One rectangular thick ivory wool area rug with a subtle oatmeal woven border and a soft tactile surface.", "decor");
+  family("bench", "床尾长凳", [1.9, 0.46, 0.52],
+    "One upholstered bedroom bench in caramel woven fabric with rounded cushion ends and low solid oak legs.");
+  family("wardrobe", "橡木衣柜", [2.35, 2.65, 0.62],
+    "One freestanding full height natural oak wardrobe with four closed doors, subtle vertical grain, slim recessed bronze pulls and a clean plinth.");
+  family("dresser", "宽抽屉柜", [1.85, 0.83, 0.52],
+    "One low warm oak bedroom dresser with six drawers, softly rounded corners and restrained bronze handles.");
+  family("mirror", "拱形镜", [0.88, 1.3, 0.07],
+    "One wall mounted arched mirror with a very slim brushed bronze frame.", "decor");
+  family("vanity", "梳妆书桌", [1.55, 0.76, 0.62],
+    "One elegant warm oak writing vanity desk with two shallow drawers, rounded front corners, slender legs and ample open knee space.");
+  family("chair", "软包梳妆椅", [0.58, 0.82, 0.6],
+    "One comfortable compact upholstered vanity chair with an oatmeal curved backrest, padded seat and oak legs, front is the open seat side.");
+  family("deskLamp", "黄铜台灯", [0.32, 0.46, 0.32],
+    "One compact brushed brass desk lamp with a curved stem and a small cream metal shade casting warm downward light.", "decor");
+  family("sofa", "双人休闲沙发", [2.1, 0.85, 0.94],
+    "One compact two seat sofa upholstered in warm cream boucle, rounded arms, deep comfortable cushions, low oak feet and two muted clay accent cushions.");
+  family("coffee", "圆形茶几", [0.85, 0.38, 0.85],
+    "One round oak coffee table with a pale honed travertine top and a sculptural solid wood pedestal.");
+  family("loungeRug", "休憩圆毯", [3.15, 0.02, 3.15],
+    "One circular flatwoven oatmeal wool rug with a subtle concentric weave.", "decor");
+  family("floorLamp", "阅读落地灯", [0.46, 1.62, 0.46],
+    "One slender bronze floor reading lamp with a warm ivory linen shade and a compact heavy circular base.", "decor");
+  family("plant", "室内绿植", [0.75, 1.5, 0.75],
+    "One graceful indoor olive tree with delicate green foliage in a matte sand ceramic planter, compact natural silhouette.", "decor");
+  family("art", "温暖抽象画", [1.75, 0.85, 0.05],
+    "One horizontal framed abstract landscape artwork in muted ochre, blush, warm white and clay, textured paper and a slender oak frame.", "decor");
+  family("vase", "陶瓷花瓶", [0.26, 0.43, 0.26],
+    "One small handmade cream ceramic vase holding a few delicate dried flowering branches.", "decor");
+  family("books", "床边书册", [0.3, 0.12, 0.23],
+    "One neat stack of two clothbound books in muted cream and cinnamon with no readable lettering.", "decor");
+  family("tray", "茶具托盘", [0.42, 0.14, 0.32],
+    "One small oval oak tea tray holding two ivory ceramic teacups, neatly arranged as a single tabletop accessory.", "decor");
+  family("pendant", "柔光吊灯", [0.95, 0.42, 0.95],
+    "One broad shallow softly glowing ivory linen pendant light with an understated bronze ceiling fitting, calm residential design.", "decor");
+
+  const openings = Array.isArray(api.room.openings) ? api.room.openings : [];
+  const doors = openings.filter(o =&gt; o.kind === "door");
+  const northDoors = doors.filter(o =&gt; o.wall === "north").length;
+  const southDoors = doors.filter(o =&gt; o.wall === "south").length;
+  // 如北墙有入口，将整个布局旋转半周，使床避开主要入口墙。
+  const flip = northDoors &gt; southDoors;
+  const angle = flip ? Math.PI : 0;
+  const wallMap = flip
+    ? { north: "south", south: "north", east: "west", west: "east" }
+    : { north: "north", south: "south", east: "east", west: "west" };
+
+  function floor(key, name, x, z, rotation = 0) {
+    const f = families[key];
+    return api.place({
+      assetId: api.asset(key), name,
+      position: api.roomPoint(flip ? -x : x, flip ? -z : z, 0),
+      rotationY: rotation + angle,
+      dimensions: f.dimensions, role: f.role
+    });
+  }
+  function supported(key, parentId, offset) {
+    const f = families[key];
+    return api.attach({
+      assetId: api.asset(key), parentId, kind: "supported",
+      offset, anchorY: "bottom", dimensions: f.dimensions, role: f.role
+    });
+  }
+  function wall(key, name, side, offset, bottom) {
+    const f = families[key];
+    const frame = api.wallFrame(wallMap[side], flip ? -offset : offset, bottom, 0.1);
+    return api.place({
+      assetId: api.asset(key), name, position: frame.point,
+      facing: { direction: frame.inward }, dimensions: f.dimensions, role: f.role
+    });
+  }
+
+  if (doors.length === 0) {
+    family("door", "主卧木门", [1.1, 2.35, 0.16],
+      "One simple warm oak interior entrance door with matching slim frame and a brushed bronze lever handle.");
+    const id = api.opening({
+      id: "suite-entry", kind: "door", wall: wallMap.south,
+      offset: 0, bottom: 0, width: 1.1, height: 2.35
+    });
+    api.place({
+      assetId: api.asset("door"), roomOpeningId: id,
+      dimensions: [1.1, 2.35, 0.16], role: "functional"
+    });
+  }
+
+  // 床距背景墙约1米，保留墙后通路；床两侧净宽远大于0.8米。
+  const bed = { x: 0, z: -3.52 };
+  floor("rug", "包围床与床尾凳的羊毛毯", bed.x, bed.z + 0.65);
+  floor("bed", "主卧视觉中心", bed.x, bed.z);
+  // 床头柜与床侧间距0.18米，灯在各自台面上。
+  for (const side of [-1, 1]) {
+    const night = floor("nightstand", "成对床头柜", bed.x + side * 1.755, bed.z - 0.77);
+    supported("bedlamp", night, [0, -0.015]);
+  }
+  floor("bench", "床尾换衣长凳", bed.x, bed.z + 1.91);
+  wall("art", "床头背景画", "north", 0, 2.02);
+
+  // 次级关系：成对衣柜与梳妆桌；外围保留连续通行带。
+  const wardrobe = { x: 4.87, z: -3.75 };
+  floor("wardrobe", "独立衣柜", wardrobe.x, wardrobe.z, -Math.PI / 2);
+  const vanity = { x: 4.72, z: 0.05 };
+  const desk = floor("vanity", "靠衣柜的梳妆书桌", vanity.x, vanity.z, -Math.PI / 2);
+  floor("chair", "面向梳妆桌的软椅", vanity.x - 0.98, vanity.z, Math.PI / 2);
+  supported("deskLamp", desk, [-0.48, -0.02]);
+  supported("books", desk, [0.43, 0.03]);
+  wall("mirror", "梳妆区拱形镜", "east", flip ? -vanity.z : vanity.z, 1.13);
+
+  const chest = floor("dresser", "西侧收纳斗柜", -4.85, -3.65, Math.PI / 2);
+  supported("vase", chest, [-0.55, 0]);
+  supported("books", chest, [0.45, 0]);
+
+  // 沙发面向床与茶几，坐席至茶几边缘约0.5米；中央入口轴线留空。
+  const lounge = { x: -3.55, z: 2.65 };
+  floor("loungeRug", "休憩区圆形地毯", lounge.x, lounge.z - 0.4);
+  floor("sofa", "面向卧室的双人沙发", lounge.x, lounge.z + 0.3, Math.PI);
+  const table = floor("coffee", "沙发前茶几", lounge.x, lounge.z - 1.05);
+  supported("tray", table, [0, 0]);
+  floor("floorLamp", "沙发侧阅读灯", lounge.x - 1.4, lounge.z + 0.15);
+  floor("plant", "休憩区绿植", lounge.x - 1.35, lounge.z - 1.45);
+
+  const f = families.pendant;
+  api.place({
+    assetId: api.asset("pendant"), name: "卧室中央柔光吊灯",
+    position: api.ceilingPoint(0, flip ? 0.35 : -0.35, f.dimensions[1], 0.12),
+    dimensions: f.dimensions, role: f.role
+  });
+}</pre></details>
+<details class="run"><summary>✓ 主卧套房 · C · 场与动线 Fields — 24 摆放 / 189L 代码 / 48s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 24 个摆放意图与 3 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.above-ceiling — 物体已等比缩放并重新贴地，最高点不会超过天花板。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const req = (key, name, prompt, dimensions, role = "functional") =&gt;
+    api.requireAsset({
+      key,
+      name,
+      prompt: prompt + " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.",
+      dimensions,
+      role
+    });
+
+  const bed = req("bed", "软包大床", "A warm upholstered king bed with a padded headboard and neatly made cream bedding", [2.2, 1.15, 2.25]);
+  const nightstand = req("nightstand", "床头柜", "A compact oak bedside table with one drawer and a warm wood finish", [0.55, 0.58, 0.48]);
+  const lamp = req("lamp", "床头灯", "A small ceramic bedside lamp with a linen shade and soft warm light", [0.24, 0.42, 0.24]);
+  const bench = req("bench", "床尾凳", "A softly upholstered bedroom bench with rounded corners and walnut legs", [1.65, 0.46, 0.46]);
+  const rug = req("rug", "羊毛地毯", "A large low pile cream wool area rug with a subtle woven pattern", [3.5, 0.035, 3.0], "decor");
+  const dresser = req("dresser", "抽屉柜", "A wide six drawer walnut bedroom dresser with understated brass pulls", [1.8, 0.85, 0.52]);
+  const mirror = req("mirror", "落地镜", "A tall rounded rectangular full length mirror in a slim oak frame", [0.08, 1.75, 0.72], "decor");
+  const chair = req("chair", "阅读椅", "A cozy boucle lounge chair with rounded arms and a deep seat", [0.82, 0.82, 0.82]);
+  const ottoman = req("ottoman", "脚凳", "A small round upholstered footstool in warm beige fabric", [0.52, 0.38, 0.52]);
+  const table = req("table", "早餐桌", "A small round oak breakfast table with a simple pedestal base", [1.05, 0.74, 1.05]);
+  const diningChair = req("diningChair", "餐椅", "A comfortable upholstered dining chair with a curved wooden back", [0.52, 0.86, 0.54]);
+  const curtains = req("curtains", "窗帘", "Full height linen curtains in a warm ivory color with soft natural folds", [3.0, 2.7, 0.12], "decor");
+  const art = req("art", "装饰画", "A calm abstract landscape painting in muted terracotta, cream, and olive tones", [1.25, 0.85, 0.06], "decor");
+  const plant = req("plant", "绿植", "A tall leafy indoor plant in a textured ceramic planter", [0.62, 1.55, 0.62], "decor");
+  const pendant = req("pendant", "吊灯", "A softly glowing woven pendant light with a natural fiber shade", [0.75, 0.48, 0.75], "decor");
+  const books = req("books", "书籍", "A small tasteful stack of hardcover books with neutral colored covers", [0.28, 0.22, 0.22], "decor");
+  const tray = req("tray", "托盘", "A shallow walnut breakfast tray with two small handles", [0.62, 0.08, 0.38], "decor");
+  const cushions = req("cushions", "靠垫", "A pair of soft decorative cushions in cream and muted rust linen", [0.62, 0.16, 0.34], "decor");
+
+  const p = (asset, x, z, y = 0, rotationY = 0, role = "functional", name) =&gt;
+    api.place({
+      assetId: api.asset(asset),
+      name,
+      position: api.roomPoint(x, z, y),
+      rotationY,
+      dimensions: undefined,
+      role
+    });
+
+  const northWindow = api.opening({
+    id: "north-window",
+    kind: "window",
+    wall: "north",
+    offset: 0,
+    bottom: 1.1,
+    width: 4.0,
+    height: 1.75
+  });
+  api.place({
+    assetId: api.asset(curtains),
+    roomOpeningId: northWindow,
+    dimensions: [4.2, 2.8, 0.14],
+    role: "decor"
+  });
+
+  const eastWindow = api.opening({
+    id: "east-window",
+    kind: "window",
+    wall: "east",
+    offset: 1.1,
+    bottom: 1.1,
+    width: 2.2,
+    height: 1.75
+  });
+  api.place({
+    assetId: api.asset(curtains),
+    roomOpeningId: eastWindow,
+    dimensions: [2.4, 2.8, 0.14],
+    role: "decor"
+  });
+
+  const door = api.opening({
+    id: "entry-door",
+    kind: "door",
+    wall: "south",
+    offset: 0,
+    bottom: 0,
+    width: 0.95,
+    height: 2.2
+  });
+
+  const bedId = p(bed, 0, 1.45, 0, 0, "functional", "主卧大床");
+  api.attach({
+    parentId: bedId,
+    assetId: api.asset(cushions),
+    name: "床上靠垫",
+    kind: "supported",
+    side: "north",
+    offset: [0, 0.28],
+    anchorY: "top",
+    role: "decor"
+  });
+
+  const leftNightstand = p(nightstand, -1.45, 1.35, 0, 0, "functional", "左侧床头柜");
+  const rightNightstand = p(nightstand, 1.45, 1.35, 0, 0, "functional", "右侧床头柜");
+
+  api.attach({
+    parentId: leftNightstand,
+    assetId: api.asset(lamp),
+    name: "左侧床头灯",
+    kind: "supported",
+    offset: [0, 0],
+    anchorY: "top",
+    role: "decor"
+  });
+  api.attach({
+    parentId: rightNightstand,
+    assetId: api.asset(lamp),
+    name: "右侧床头灯",
+    kind: "supported",
+    offset: [0, 0],
+    anchorY: "top",
+    role: "decor"
+  });
+
+  const benchId = p(bench, 0, -0.15, 0, 0, "functional", "床尾凳");
+  api.attach({
+    parentId: benchId,
+    assetId: api.asset(books),
+    name: "床尾书籍",
+    kind: "supported",
+    offset: [0.3, 0],
+    anchorY: "top",
+    role: "decor"
+  });
+
+  p(rug, 0, 1.05, 0, 0, "decor", "床下地毯");
+
+  const dresserId = p(dresser, -4.45, 1.15, 0, Math.PI / 2, "functional", "收纳抽屉柜");
+  api.attach({
+    parentId: dresserId,
+    assetId: api.asset(tray),
+    name: "抽屉柜托盘",
+    kind: "supported",
+    offset: [0, 0],
+    anchorY: "top",
+    role: "decor"
+  });
+
+  p(mirror, -5.55, 1.15, 0, Math.PI / 2, "decor", "穿衣镜");
+
+  p(chair, 3.85, 2.35, 0, Math.PI * 0.72, "functional", "窗边阅读椅");
+  p(ottoman, 3.45, 1.65, 0, Math.PI * 0.72, "functional", "阅读脚凳");
+  p(books, 4.45, 2.0, 0, 0, "decor", "阅读角书籍");
+
+  const breakfastTable = p(table, 3.75, -3.1, 0, 0, "functional", "窗边早餐桌");
+  api.attach({
+    parentId: breakfastTable,
+    assetId: api.asset(tray),
+    name: "早餐托盘",
+    kind: "supported",
+    offset: [0, 0],
+    anchorY: "top",
+    role: "decor"
+  });
+  p(diningChair, 2.85, -3.1, 0, Math.PI / 2, "functional", "早餐桌座椅一");
+  p(diningChair, 4.65, -3.1, 0, -Math.PI / 2, "functional", "早餐桌座椅二");
+
+  const plantFrame = api.wallFrame("east", 2.8, 0.0, 0.08);
+  api.place({
+    assetId: api.asset(plant),
+    name: "窗边绿植",
+    position: api.roomPoint(5.3, 2.8, 0),
+    rotationY: Math.PI / 2,
+    role: "decor"
+  });
+
+  const artFrame = api.wallFrame("west", -0.4, 1.25, 0.04);
+  api.place({
+    assetId: api.asset(art),
+    name: "床侧装饰画",
+    position: artFrame.point,
+    facing: { direction: artFrame.inward },
+    role: "decor"
+  });
+
+  const pendantPoint = api.ceilingPoint(0, 0.6, 0.7, 0.12);
+  api.place({
+    assetId: api.asset(pendant),
+    name: "卧室吊灯",
+    position: pendantPoint,
+    role: "decor"
+  });
+
+  return {
+    zones: ["睡眠区", "阅读区", "早餐区", "衣物收纳区"],
+    entry: door
+  };
+}</pre></details>
+<details class="run"><summary>✓ 主卧套房 · D · 生成-选择 Anneal — 22 摆放 / 227L 代码 / 135s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 22 个摆放意图与 0 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const families = [
+    ["bed", "软包双人床", "One luxurious king bed with a tall softly rounded oatmeal linen headboard, walnut platform, ivory duvet, layered warm taupe bedding and muted terracotta cushions, welcoming contemporary bedroom style.", [2.35, 1.42, 2.65], "functional"],
+    ["nightstand", "胡桃木床头柜", "One rounded walnut bedside cabinet with two drawers, subtle brass pulls and a travertine top.", [0.68, 0.58, 0.52], "functional"],
+    ["lamp", "暖光台灯", "One warm glowing bedside lamp with a pleated ivory linen shade and a small caramel ceramic base.", [0.36, 0.49, 0.36], "decor"],
+    ["bench", "床尾长凳", "One upholstered bedroom bench with rounded cream boucle seat and dark walnut legs.", [1.75, 0.45, 0.48], "functional"],
+    ["rug", "羊毛地毯", "One large rectangular low pile wool rug, warm ivory with a very subtle sand border and tactile woven texture.", [4.6, 0.025, 4.3], "decor"],
+    ["wardrobe", "衣帽柜", "One freestanding elegant walnut wardrobe with closed full height doors, fine vertical wood grain, understated brass handles and integrated plinth.", [2.5, 2.65, 0.64], "functional"],
+    ["dresser", "抽屉斗柜", "One low rounded walnut bedroom dresser with six drawers and a light honed limestone top.", [1.8, 0.85, 0.52], "functional"],
+    ["vanity", "梳妆台", "One elegant compact walnut dressing desk with two shallow drawers, rounded corners and an ivory stone top, open knee space.", [1.35, 0.77, 0.6], "functional"],
+    ["stool", "梳妆椅", "One small upholstered vanity stool with a round oatmeal linen seat and walnut legs.", [0.5, 0.46, 0.5], "functional"],
+    ["mirror", "梳妆镜", "One freestanding oval tabletop dressing mirror in a slender aged brass frame with a stable brass pedestal base.", [0.58, 0.74, 0.2], "functional"],
+    ["chair", "休闲扶手椅", "One generous rounded reading armchair in caramel woven fabric, with comfortable arms and short walnut legs.", [0.91, 0.9, 0.92], "functional"],
+    ["ottoman", "休闲脚凳", "One small rounded caramel upholstered footstool on low walnut feet, matching a comfortable reading armchair.", [0.62, 0.4, 0.52], "functional"],
+    ["side", "圆形边几", "One small round travertine side table with a solid cylindrical pedestal and softly rounded edge.", [0.52, 0.52, 0.52], "functional"],
+    ["floorlamp", "落地阅读灯", "One slender aged brass reading floor lamp with a compact ivory fabric shade and a weighted round base, warm gentle illumination.", [0.42, 1.55, 0.42], "functional"],
+    ["plant", "室内绿植", "One graceful indoor olive tree with airy natural foliage in a rounded matte sand ceramic planter.", [0.85, 1.8, 0.85], "decor"],
+    ["art", "卧室装饰画", "One wide framed abstract landscape artwork in muted sand, cream and dusty terracotta, thin walnut frame, peaceful soft organic forms.", [1.85, 0.85, 0.045], "decor"],
+    ["pendant", "柔光吊灯", "One sculptural shallow pendant light with a pleated ivory fabric shade and warm diffused underside, short brass suspension included.", [1.0, 0.55, 1.0], "functional"],
+    ["vase", "陶瓷花瓶", "One small matte ivory ceramic vase containing a few delicate dried branches and muted natural stems.", [0.3, 0.48, 0.3], "decor"],
+    ["books", "床头书籍", "One neat stack of three clothbound books in warm neutral colors, no legible text.", [0.27, 0.12, 0.2], "decor"],
+    ["tray", "梳妆收纳盘", "One small shallow oval brass vanity tray holding two understated amber perfume bottles as a single still life.", [0.3, 0.19, 0.2], "decor"]
+  ];
+  const dims = {}, roles = {};
+  for (const [key, name, prompt, dimensions, role] of families) {
+    api.requireAsset({key, name, prompt: prompt + contract, dimensions, role});
+    dims[key] = dimensions;
+    roles[key] = role;
+  }
+
+  const clamp = (v, a, b) =&gt; Math.max(a, Math.min(b, v));
+  const openings = Array.isArray(api.room.openings) ? api.room.openings : [];
+  const doors = openings.filter(o =&gt; o.kind === "door");
+  const halfW = 7, halfD = 6;
+  function openingPoint(o) {
+    const t = Number.isFinite(o.offset) ? o.offset : 0;
+    if (o.wall === "north") return {x:t, z:-5.75};
+    if (o.wall === "south") return {x:t, z:5.75};
+    if (o.wall === "east") return {x:6.75, z:t};
+    return {x:-6.75, z:t};
+  }
+  const entrances = doors.map(openingPoint);
+  if (!entrances.length) entrances.push({x:0, z:5.75});
+
+  function item(id, key, x, z, a = 0) {
+    return {id, key, x, z, a};
+  }
+  function bounds(o, margin = 0) {
+    const d = dims[o.key], c = Math.abs(Math.cos(o.a)), s = Math.abs(Math.sin(o.a));
+    return {x:o.x, z:o.z, w:(d[0]*c+d[2]*s)/2+margin, d:(d[0]*s+d[2]*c)/2+margin};
+  }
+  function overlap(a, b) {
+    return Math.max(0, a.w+b.w-Math.abs(a.x-b.x)) * Math.max(0, a.d+b.d-Math.abs(a.z-b.z));
+  }
+  function candidate(flip) {
+    const list = [
+      item("bed", "bed", 0, -4.48),
+      item("left", "nightstand", -1.68, -4.85),
+      item("right", "nightstand", 1.68, -4.85),
+      item("bench", "bench", 0, -2.35),
+      item("wardrobe", "wardrobe", 5.48, 2.65, -Math.PI/2),
+      item("dresser", "dresser", 5.55, -0.3, -Math.PI/2),
+      item("vanity", "vanity", 4.7, -3.6, -Math.PI/2),
+      item("stool", "stool", 3.7, -3.6, Math.PI/2),
+      item("chair", "chair", -4.6, -0.5, 0.35),
+      item("ottoman", "ottoman", -4.22, 0.82, 0.35),
+      item("side", "side", -3.43, -0.5),
+      item("readinglight", "floorlamp", -5.48, -0.98),
+      item("plant", "plant", -4.9, 3.1)
+    ];
+    if (flip) for (const p of list) {p.x *= -1; p.z *= -1; p.a += Math.PI;}
+    return list;
+  }
+
+  function collisionFitness(list) {
+    let cost = 0;
+    for (let i=0; i&lt;list.length; i++) {
+      const a = bounds(list[i], 0.06);
+      cost += 3000 * (Math.max(0, Math.abs(a.x)+a.w-6.86) + Math.max(0, Math.abs(a.z)+a.d-5.86));
+      for (let j=0; j&lt;i; j++) cost += 3500*overlap(a, bounds(list[j], 0.06));
+      for (let k=0; k&lt;doors.length; k++) {
+        const p=entrances[k], o=doors[k], width=o.width || 1;
+        const box = o.wall==="north" || o.wall==="south"
+          ? {x:p.x,z:p.z+(o.wall==="north"?0.6:-0.6),w:width/2+0.25,d:0.95}
+          : {x:p.x+(o.wall==="west"?0.6:-0.6),z:p.z,w:0.95,d:width/2+0.25};
+        cost += 4500*overlap(a, box);
+      }
+    }
+    return cost;
+  }
+  function pairFitness(list) {
+    const by = Object.fromEntries(list.map(p=&gt;[p.id,p]));
+    const dist = (a,b)=&gt;Math.hypot(by[a].x-by[b].x,by[a].z-by[b].z);
+    return 30*Math.pow(dist("bed","bench")-2.13,2)
+      + 40*Math.pow(dist("bed","left")-1.72,2)
+      + 40*Math.pow(dist("bed","right")-1.72,2)
+      + 50*Math.pow(dist("vanity","stool")-1,2)
+      + 30*Math.pow(dist("chair","ottoman")-1.37,2)
+      + 15*Math.pow(dist("chair","side")-1.17,2);
+  }
+  function focalFitness(list) {
+    const bed=list[0];
+    let cost=20*bed.x*bed.x;
+    for (const p of list) {
+      if (["bed","left","right","bench"].includes(p.id)) continue;
+      if (Math.abs(p.x)&lt;2.8 &amp;&amp; Math.abs(p.z)&lt;1.65) cost+=80;
+    }
+    return cost;
+  }
+  // A 0.9 m inflated occupancy grid tests continuous access to the open central area.
+  function clearanceFitness(list) {
+    const step=0.35, nx=39, nz=33;
+    const boxes=list.map(p=&gt;bounds(p,0.46));
+    const free=new Uint8Array(nx*nz), seen=new Uint8Array(nx*nz);
+    for(let z=0;z&lt;nz;z++) for(let x=0;x&lt;nx;x++) {
+      const px=-6.65+x*step,pz=-5.6+z*step;
+      free[z*nx+x]=boxes.some(b=&gt;Math.abs(px-b.x)&lt;b.w &amp;&amp; Math.abs(pz-b.z)&lt;b.d)?0:1;
+    }
+    const cell=p=&gt;clamp(Math.round((p.z+5.6)/step),0,nz-1)*nx+clamp(Math.round((p.x+6.65)/step),0,nx-1);
+    const start=cell({x:0,z:0.8});
+    if(!free[start]) return 20000;
+    const queue=[start];seen[start]=1;
+    for(let n=0;n&lt;queue.length;n++) {
+      const q=queue[n], x=q%nx,z=Math.floor(q/nx);
+      for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const xx=x+dx,zz=z+dz;
+        if(xx&lt;0||xx&gt;=nx||zz&lt;0||zz&gt;=nz) continue;
+        const j=zz*nx+xx;
+        if(free[j]&amp;&amp;!seen[j]) {seen[j]=1;queue.push(j);}
+      }
+    }
+    let penalty=0;
+    for(const p of entrances) if(!seen[cell(p)]) penalty+=20000;
+    for(const p of list.filter(p=&gt;["bed","wardrobe","dresser","vanity","chair"].includes(p.id))) {
+      const d=dims[p.key][2]/2+0.72;
+      if(!seen[cell({x:p.x+Math.sin(p.a)*d,z:p.z+Math.cos(p.a)*d})]) penalty+=1500;
+    }
+    return penalty;
+  }
+  const score=list=&gt;collisionFitness(list)+pairFitness(list)+focalFitness(list)+clearanceFitness(list);
+  function repair(list) {
+    for(let pass=0;pass&lt;5;pass++) {
+      for(let i=0;i&lt;list.length;i++) {
+        const p=list[i], b=bounds(p);
+        p.x=clamp(p.x,-6.82+b.w,6.82-b.w);
+        p.z=clamp(p.z,-5.82+b.d,5.82-b.d);
+        for(let j=0;j&lt;i;j++) {
+          const a=bounds(p,0.08),c=bounds(list[j],0.08);
+          const ox=a.w+c.w-Math.abs(a.x-c.x),oz=a.d+c.d-Math.abs(a.z-c.z);
+          if(ox&gt;0&amp;&amp;oz&gt;0) {
+            if(ox&lt;oz) p.x+=(p.x&gt;=c.x?1:-1)*(ox+0.03);
+            else p.z+=(p.z&gt;=c.z?1:-1)*(oz+0.03);
+          }
+        }
+      }
+    }
+    const bed=list[0];
+    bed.z=(bed.z&lt;0?-1:1)*(5.82-dims.bed[2]/2);
+    bed.a=bed.z&lt;0?0:Math.PI;
+    const by=Object.fromEntries(list.map(p=&gt;[p.id,p]));
+    by.chair.a=Math.atan2(by.ottoman.x-by.chair.x,by.ottoman.z-by.chair.z);
+  }
+
+  let best=null, bestScore=Infinity;
+  for(const flip of [false,true]) {
+    let current=candidate(flip); repair(current);
+    let currentScore=score(current);
+    for(let stage=0;stage&lt;3;stage++) {
+      for(let iteration=0;iteration&lt;90;iteration++) {
+        const next=current.map(p=&gt;({...p}));
+        const indices=stage===0?[0,1,2,3,4,5]:stage===1?[6,7,8,9]:[10,11,12];
+        const idx=indices[Math.floor(Math.random()*indices.length)];
+        const p=next[idx], magnitude=iteration&lt;55?0.48:0.16;
+        p.x+=(Math.random()-0.5)*magnitude;
+        p.z+=(Math.random()-0.5)*magnitude;
+        // Periodically drop and replace the piece with the poorest local clearance.
+        if(iteration===40) {
+          let worst=indices[0], bad=-1;
+          for(const k of indices) {
+            const b=bounds(next[k],0.15);
+            let v=next.reduce((s,q,j)=&gt;s+(j===k?0:overlap(b,bounds(q,0.15))),0);
+            if(v&gt;bad){bad=v;worst=k;}
+          }
+          if(bad&gt;0) {
+            next[worst].x+=(Math.random()-0.5)*1.6;
+            next[worst].z+=(Math.random()-0.5)*1.2;
+          }
+        }
+        repair(next);
+        const value=score(next), temperature=2.5*(1-iteration/90)+0.02;
+        if(value&lt;currentScore || Math.random()&lt;Math.exp((currentScore-value)/temperature)) {
+          current=next;currentScore=value;
+        }
+        if(currentScore&lt;bestScore) {best=current.map(p=&gt;({...p}));bestScore=currentScore;}
+      }
+      repair(current);
+      currentScore=score(current);
+    }
+  }
+
+  const bed=best.find(p=&gt;p.id==="bed");
+  const sign=bed.z&lt;0?1:-1;
+  api.place({assetId:api.asset("rug"),position:api.roomPoint(bed.x,bed.z+sign*1.13,0),dimensions:dims.rug,role:"decor"});
+  const placed={};
+  for(const p of best) {
+    placed[p.id]=api.place({assetId:api.asset(p.key),name:families.find(f=&gt;f[0]===p.key)[1],position:api.roomPoint(p.x,p.z,0),rotationY:p.a,dimensions:dims[p.key],role:roles[p.key]});
+  }
+  function supported(key,parent,offset) {
+    return api.attach({assetId:api.asset(key),parentId:placed[parent],kind:"supported",offset,anchorY:"bottom",dimensions:dims[key],role:roles[key]});
+  }
+  supported("lamp","left",[0,0]);
+  supported("lamp","right",[0,0]);
+  supported("books","side",[0,0]);
+  supported("mirror","vanity",[0,-0.15]);
+  supported("tray","vanity",[0.43,0.09]);
+  supported("vase","dresser",[-0.55,0]);
+  const wall=bed.z&lt;0?"north":"south";
+  const blocked= openings.some(o=&gt;o.wall===wall &amp;&amp; Math.abs((o.offset||0)-bed.x)&lt;(o.width||1)/2+1);
+  if(!blocked) {
+    const frame=api.wallFrame(wall,bed.x,1.92,0.06);
+    api.place({assetId:api.asset("art"),position:frame.point,facing:{direction:frame.inward},dimensions:dims.art,role:"decor"});
+  } else {
+    api.attach({assetId:api.asset("art"),parentId:placed.bed,kind:"mounted",side:"south",offset:[0,0.91],anchorY:"bottom",dimensions:dims.art,role:"decor"});
+  }
+  api.place({assetId:api.asset("pendant"),position:api.ceilingPoint(0,0.2,dims.pendant[1],0.15),dimensions:dims.pendant,role:"functional"});
+}</pre></details>
+<details class="run"><summary>✓ 街角咖啡馆 · A · 功能规划 Program — 52 摆放 / 148L 代码 / 99s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 52 个摆放意图与 4 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.duplicate — 移除与 obj-code-da583de4-0573-4083 完全重叠的重复物体。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li></ul></div>
+    <pre class="code">const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+const program = [
+  {name:"入口与环形通道", role:"arrival", count:1, min:[1.4,1.4], beside:["点单等候","临窗散座"]},
+  {name:"咖啡制作", role:"service", count:1, min:[7.0,2.8], beside:["点单等候","备品收纳"]},
+  {name:"备品收纳", role:"storage", count:1, min:[1.3,2.8], beside:["咖啡制作"]},
+  {name:"点单等候", role:"queue", count:1, min:[7.0,1.1], beside:["咖啡制作","共享长桌"]},
+  {name:"共享长桌", role:"communal", count:6, min:[5.5,3.4], beside:["点单等候","入口与环形通道"]},
+  {name:"临窗散座", role:"daylight", count:6, min:[4.5,7.0], beside:["入口与环形通道"]}
+];
+const zones = {};
+function split(rect, axis, cut) {
+  return axis === "x"
+    ? [{...rect,x1:cut},{...rect,x0:cut}]
+    : [{...rect,z1:cut},{...rect,z0:cut}];
+}
+const floor = {x0:-8,x1:8,z0:-6,z1:6};
+zones["入口与环形通道"] = {
+  outer:floor, inner:{x0:-6.45,x1:6.45,z0:-4.35,z1:4.35},
+  spine:{x0:0.4,x1:1.65,z0:-4.35,z1:4.35}
+};
+const [west,east] = split(zones["入口与环形通道"].inner,"x",1.65);
+zones["临窗散座"] = east;
+const [serviceAndQueue,communal] = split({...west,x1:0.4},"z",0.35);
+zones["共享长桌"] = communal;
+const [back,queue] = split(serviceAndQueue,"z",-0.8);
+zones["点单等候"] = queue;
+const [service,storage] = split(back,"x",-1.25);
+zones["咖啡制作"] = service;
+zones["备品收纳"] = storage;
+for (const slot of program) {
+  if (!zones[slot.name]) throw new Error("Missing program zone");
+}
+
+// Warm oak, brick-red upholstery and a sage-green coffee bar.
+// A broad perimeter promenade connects all existing doors to the central aisle.
+const defs = [
+ ["counter","咖啡吧台",[4.8,1.05,0.85],"functional","One cafe service counter with muted sage green vertically fluted front, pale terrazzo worktop, oak end panels, open working rear, no equipment"],
+ ["backbar","后吧柜",[4.8,0.92,0.55],"functional","One low oak cafe backbar cabinet with pale stone worktop, integrated small stainless sink and brass faucet at its left end, closed storage"],
+ ["espresso","意式咖啡机",[1.05,0.52,0.55],"functional","One professional two group espresso machine, brushed steel body, dark green side panels, brass details"],
+ ["grinder","磨豆机",[0.28,0.58,0.36],"functional","One commercial coffee grinder, black base, clear bean hopper filled with brown coffee beans"],
+ ["pastry","糕点展柜",[0.95,0.48,0.5],"functional","One small countertop glass pastry display case with brass frame and three shelves holding croissants and small cakes"],
+ ["register","收银机",[0.32,0.4,0.28],"functional","One compact cafe point of sale terminal with a dark rectangular angled touchscreen and small pedestal"],
+ ["cupstack","咖啡杯架",[0.38,0.32,0.28],"decor","One compact oak cup organizer holding stacked ivory ceramic espresso cups"],
+ ["cabinet","备品高柜",[1.1,1.95,0.58],"functional","One tall freestanding oak cafe supply cabinet with solid lower doors and open upper shelves holding coffee bean bags"],
+ ["table","共享长桌",[3.65,0.76,1.0],"functional","One long rectangular communal cafe table in solid honey oak with softly rounded corners and sturdy trestle legs"],
+ ["chair","橡木餐椅",[0.49,0.81,0.52],"functional","One bentwood oak cafe chair with curved backrest and woven natural cane seat"],
+ ["round","圆咖啡桌",[0.92,0.74,0.92],"functional","One small circular cafe table with pale cream stone top and dark green pedestal base"],
+ ["armchair","休闲椅",[0.78,0.84,0.82],"functional","One comfortable compact cafe lounge armchair, brick red wool upholstery, rounded arms and exposed dark oak legs"],
+ ["lowtable","休闲茶几",[0.85,0.43,0.7],"functional","One small rounded rectangular walnut coffee table with thick softly bevelled top"],
+ ["rug","休闲地毯",[3.35,0.018,2.3],"decor","One flat woven rectangular oatmeal rug with a restrained terracotta geometric border"],
+ ["pendant","乳白吊灯",[0.62,0.48,0.62],"decor","One opal glass globe pendant lamp with short brass suspension stem, warm illuminated glass"],
+ ["plant","绿植",[0.65,1.5,0.65],"decor","One upright leafy ficus plant in a cylindrical terracotta pot"],
+ ["vase","花瓶",[0.15,0.27,0.15],"decor","One small cream ceramic bud vase with three delicate dried stems"],
+ ["tray","咖啡托盘",[0.39,0.16,0.28],"decor","One small wooden serving tray with a white cappuccino cup and saucer and a single biscuit"],
+ ["menu","菜单立牌",[0.31,0.43,0.13],"decor","One elegant freestanding cafe menu sign on a small brass foot, cream card printed with neatly arranged dark green coffee menu typography"],
+ ["bin","分类垃圾桶",[0.48,0.72,0.4],"functional","One compact matte forest green cafe waste sorting bin with two top openings and discreet brass labels"],
+ ["sideboard","自助水柜",[1.15,0.9,0.5],"functional","One freestanding oak cafe self service cabinet with pale stone top and closed lower doors"],
+ ["water","饮水器",[0.33,0.53,0.33],"functional","One clear glass drinking water dispenser with water and lemon slices, brass tap and short oak stand"]
+];
+const dim = {};
+for (const [key,name,dimensions,role,prompt] of defs) {
+  dim[key] = dimensions;
+  api.requireAsset({key,name,prompt:prompt+contract,dimensions,role});
+}
+function put(key,x,z,yaw=0,name) {
+  return api.place({
+    assetId:api.asset(key),name,
+    position:api.roomPoint(x,z,0),rotationY:yaw,
+    dimensions:dim[key],
+    role:defs.find(d=&gt;d[0]===key)[3]
+  });
+}
+function top(key,parent,x=0,z=0,yaw) {
+  return api.attach({
+    assetId:api.asset(key),parentId:parent,kind:"supported",
+    offset:[x,z],anchorY:"bottom",dimensions:dim[key],
+    role:defs.find(d=&gt;d[0]===key)[3]
+  });
+}
+function light(x,z,drop=0.5) {
+  api.place({
+    assetId:api.asset("pendant"),position:api.ceilingPoint(x,z,dim.pendant[1],drop),
+    dimensions:dim.pendant,role:"decor"
+  });
+}
+const existing = Array.isArray(api.room.openings) ? api.room.openings : [];
+if (!existing.some(o=&gt;o.kind==="door")) {
+  api.requireAsset({
+    key:"entry",name:"玻璃店门",dimensions:[1.4,2.6,0.16],role:"functional",
+    prompt:"One cafe entrance door assembly with dark green narrow metal frame, clear glass door leaf, brass pull handle and glazed transom."+contract
+  });
+  const id=api.opening({id:"cafe-entry",kind:"door",wall:"south",offset:0.9,bottom:0,width:1.4,height:2.6});
+  api.place({assetId:api.asset("entry"),roomOpeningId:id,dimensions:[1.4,2.6,0.16],role:"functional"});
+}
+if (!existing.some(o=&gt;o.kind==="window")) {
+  api.requireAsset({
+    key:"window",name:"街角橱窗",dimensions:[3.8,2.55,0.14],role:"functional",
+    prompt:"One large cafe storefront picture window with slender dark green metal frame and three clear glass panes."+contract
+  });
+  for (const [wall,offset] of [["east",-2.3],["east",2.3],["south",4.65]]) {
+    const id=api.opening({id:"storefront-"+wall+"-"+offset,kind:"window",wall,offset,bottom:0.7,width:3.8,height:2.55});
+    api.place({assetId:api.asset("window"),roomOpeningId:id,dimensions:[3.8,2.55,0.14],role:"functional"});
+  }
+}
+const bar = put("counter",-3.85,-1.55,0,"主吧台：面向点单区");
+const rear = put("backbar",-3.85,-4.0);
+top("espresso",rear,0.45,0);
+top("grinder",rear,-0.4,0);
+top("cupstack",rear,1.62,0);
+top("pastry",bar,-1.6,0);
+top("register",bar,1.77,0);
+top("menu",bar,0.75,0.1);
+put("cabinet",-0.5,-4.0);
+const water = put("sideboard",-0.5,-2.3);
+top("water",water,-0.25,0);
+top("cupstack",water,0.29,0);
+put("bin",-0.5,-1.48);
+
+const communalTable = put("table",-3.45,2.35,0,"六人共享长桌");
+for (const x of [-4.7,-3.45,-2.2]) {
+  put("chair",x,1.38,Math.PI);
+  put("chair",x,3.32,0);
+}
+top("vase",communalTable,0,0);
+top("tray",communalTable,-1.1,0.1);
+top("tray",communalTable,1.05,-0.1);
+put("plant",-5.92,0.85);
+
+for (const z of [-3.2,-0.25]) {
+  const t=put("round",4.2,z);
+  put("chair",3.23,z,Math.PI/2);
+  put("chair",5.17,z,-Math.PI/2);
+  top("vase",t,0.2,-0.12);
+  top("tray",t,-0.12,0.07);
+  light(4.2,z,0.7);
+}
+put("rug",4.15,2.95);
+put("armchair",2.95,2.95,Math.PI/2);
+put("armchair",5.4,2.95,-Math.PI/2);
+const lounge=put("lowtable",4.18,2.95);
+top("tray",lounge,0,0);
+put("plant",6.03,-4.0);
+put("plant",6.04,4.0);
+light(-4.9,-1.55,0.5);
+light(-2.75,-1.55,0.5);
+light(-4.55,2.35,0.65);
+light(-2.35,2.35,0.65);
+light(4.18,2.95,0.55);</pre></details>
+<details class="run"><summary>✓ 街角咖啡馆 · B · 锚点关系 Relate — 59 摆放 / 148L 代码 / 99s · <i>trace 恢复</i></summary>
+    <p class="summary">室内功能规划生成了 59 个摆放意图与 3 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.duplicate — 移除与 obj-code-c4fa132e-3823-4f6f 完全重叠的重复物体。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const defs = [
+    ["counter", "咖啡吧台", "One refined cafe service counter, warm walnut fluted front, ivory terrazzo countertop, subtle brass toe kick, clear continuous work surface, no appliances or stools.", [7.2, 1.05, 1.05], "functional"],
+    ["backbar", "备餐柜", "One low walnut cafe preparation cabinet, cream stone top, closed storage doors, restrained brass handles, no props.", [4.6, 0.92, 0.65], "functional"],
+    ["espresso", "咖啡机", "One professional two-group espresso machine, brushed stainless steel with dark forest green side panels, portafilters and steam wands.", [1.05, 0.52, 0.56], "functional"],
+    ["grinder", "磨豆机", "One professional cafe coffee grinder, dark green metal body and transparent bean hopper.", [0.25, 0.56, 0.34], "functional"],
+    ["pastry", "糕点柜", "One countertop glass pastry display case, brass frame, two shelves with a modest selection of croissants and small cakes.", [1.3, 0.65, 0.65], "functional"],
+    ["register", "收银机", "One compact cafe payment terminal on a short swiveling stand, dark charcoal finish.", [0.3, 0.32, 0.25], "functional"],
+    ["communal", "共享长桌", "One oval communal cafe table, honey oak thick top with softly rounded edges, two sculptural solid wood pedestal bases, no chairs or props.", [3.8, 0.76, 1.3], "functional"],
+    ["chair", "木餐椅", "One elegant cafe dining chair, bent walnut backrest, woven natural cane seat, slim wooden legs, understated mid-century silhouette.", [0.5, 0.8, 0.53], "functional"],
+    ["roundtable", "双人圆桌", "One small round cafe table, ivory terrazzo top and single dark green pedestal with circular base, no props.", [0.95, 0.74, 0.95], "functional"],
+    ["lounge", "休闲椅", "One comfortable compact cafe lounge armchair, olive green upholstery, curved back, walnut exposed legs.", [0.85, 0.85, 0.86], "functional"],
+    ["sidetable", "边几", "One small round walnut cafe side table with a low sculptural pedestal.", [0.65, 0.49, 0.65], "functional"],
+    ["pendant", "乳白吊灯", "One pendant lamp with a large opal glass globe, small aged brass cap and short integrated suspension stem, warm luminous glass.", [0.52, 0.72, 0.52], "decor"],
+    ["plant", "绿植", "One airy indoor ficus tree with a slender trunk and natural green canopy in a warm terracotta cylindrical pot.", [0.85, 1.85, 0.85], "decor"],
+    ["vase", "花瓶", "One small cream ceramic bud vase containing two delicate stems of yellow seasonal flowers.", [0.16, 0.3, 0.16], "decor"],
+    ["cups", "咖啡杯", "One ivory ceramic cappuccino cup with saucer and a small spoon, filled with latte art coffee.", [0.19, 0.09, 0.19], "decor"],
+    ["menu", "桌面菜单", "One small freestanding cafe menu card in a walnut holder, cream paper with elegant dark green typographic lines.", [0.18, 0.26, 0.08], "decor"],
+    ["board", "菜单立牌", "One tall freestanding cafe menu board, dark forest green rectangular panel in a slim oak frame with stable feet, tasteful cream lettering COFFEE and small drink list, no oversized logos.", [0.8, 1.55, 0.38], "functional"],
+    ["water", "饮水台", "One compact walnut self-service water station cabinet with integrated clear glass water dispenser and a neatly arranged row of glasses on its cream stone top.", [1.1, 1.35, 0.6], "functional"],
+    ["bin", "分类垃圾桶", "One compact enclosed cafe waste sorting bin, two openings, matte dark green finish, small discreet labels.", [0.65, 0.85, 0.45], "functional"],
+    ["tray", "备餐托盘", "One shallow rectangular walnut serving tray holding an orderly stack of white ceramic espresso cups.", [0.48, 0.22, 0.32], "decor"],
+    ["magazine", "杂志", "One small neat stack of three independent design and coffee magazines with cream and muted green covers.", [0.26, 0.06, 0.33], "decor"]
+  ];
+  const dimensions = {};
+  for (const [key, name, prompt, size, role] of defs) {
+    api.requireAsset({key, name, prompt: prompt + contract, dimensions: size, role});
+    dimensions[key] = size;
+  }
+  const floor = (key, x, z, angle = 0, name) =&gt; api.place({
+    assetId: api.asset(key),
+    name: name || key,
+    position: api.roomPoint(x, z, 0),
+    rotationY: angle,
+    dimensions: dimensions[key],
+    role: defs.find(d =&gt; d[0] === key)[4]
+  });
+  const supported = (key, parentId, x, z, name) =&gt; api.attach({
+    assetId: api.asset(key),
+    name: name || key,
+    parentId,
+    kind: "supported",
+    offset: [x, z],
+    dimensions: dimensions[key],
+    role: defs.find(d =&gt; d[0] === key)[4]
+  });
+  const pendant = (x, z, drop) =&gt; api.place({
+    assetId: api.asset("pendant"),
+    position: api.ceilingPoint(x, z, dimensions.pendant[1], drop),
+    dimensions: dimensions.pendant,
+    role: "decor"
+  });
+
+  // Keep a continuous perimeter aisle; doors connect to it without crossing furniture.
+  // North service anchor: counter is 2.35 m from the north wall.
+  const bar = {x: 0.9, z: -3.65};
+  const counter = floor("counter", bar.x, bar.z, 0, "主咖啡吧台");
+  // Preparation cabinet is 1.05 m west of the counter; its front faces the barista.
+  const prep = floor("backbar", bar.x - 1.05, -5.15, 0, "后场备餐柜");
+  supported("espresso", counter, -0.9, -0.06);
+  supported("grinder", counter, -1.68, -0.06);
+  supported("pastry", counter, 1.7, 0.03);
+  supported("register", counter, 2.8, 0.1);
+  supported("tray", prep, -1.6, 0);
+  supported("vase", prep, 1.7, 0);
+  floor("board", bar.x + 4.18, bar.z + 0.05, 0.05, "点单菜单");
+  pendant(bar.x - 2.3, bar.z, 0.5);
+  pendant(bar.x, bar.z, 0.5);
+  pendant(bar.x + 2.3, bar.z, 0.5);
+
+  // Dominant relation: shared table faces the service counter across a 2.0 m aisle.
+  const shared = {x: 0, z: 0.35};
+  const communal = floor("communal", shared.x, shared.z, 0, "中央共享长桌");
+  // Chairs sit 1.04 m from the table centerline, leaving a useful pull-out gap.
+  for (const x of [-1.25, 0, 1.25]) {
+    floor("chair", shared.x + x, shared.z - 1.04, 0);
+    floor("chair", shared.x + x, shared.z + 1.04, Math.PI);
+  }
+  supported("vase", communal, 0, 0);
+  supported("menu", communal, -1.25, 0);
+  supported("cups", communal, -1.2, 0.39);
+  supported("cups", communal, 1.15, -0.38);
+  pendant(-1.05, shared.z, 0.65);
+  pendant(1.05, shared.z, 0.65);
+
+  // Three quiet two-person satellites, seats 0.86 m from their table centers.
+  const smallTables = [
+    {x: -5.35, z: -2.1},
+    {x: -5.35, z: 1.3},
+    {x: 5.15, z: -0.25}
+  ];
+  for (let i = 0; i &lt; smallTables.length; i++) {
+    const t = smallTables[i];
+    const table = floor("roundtable", t.x, t.z, 0, "双人咖啡桌" + (i + 1));
+    floor("chair", t.x, t.z - 0.86, 0);
+    floor("chair", t.x, t.z + 0.86, Math.PI);
+    supported("vase", table, -0.18, 0);
+    supported("cups", table, 0.1, 0.24);
+    supported("menu", table, 0.16, -0.1);
+    pendant(t.x, t.z, 0.65);
+  }
+
+  // Reading pair: chairs aim toward the side table, at a center distance of 0.96 m.
+  const reading = {x: 4.7, z: 3.5};
+  const side = floor("sidetable", reading.x, reading.z, 0, "阅读区边几");
+  floor("lounge", reading.x - 0.96, reading.z, Math.PI / 2);
+  floor("lounge", reading.x + 0.96, reading.z, -Math.PI / 2);
+  supported("magazine", side, 0, -0.07);
+  supported("cups", side, 0, 0.19);
+  floor("plant", reading.x + 1.65, reading.z - 1.1);
+  pendant(reading.x, reading.z, 0.5);
+
+  // Water and return station stay near the service counter without narrowing its queue.
+  floor("water", -5.4, -4.55);
+  floor("bin", -6.35, -4.55);
+  floor("plant", -5.95, 3.9);
+
+  // The room shell owns existing openings. Add a glazed street-corner entrance
+  // and windows only when no openings were supplied.
+  if (!api.room.openings || api.room.openings.length === 0) {
+    const doorSize = [1.5, 2.7, 0.16];
+    const windowSize = [3.6, 2.25, 0.16];
+    api.requireAsset({
+      key: "entry",
+      name: "玻璃店门",
+      prompt: "One cafe glazed entrance door assembly, slim dark bronze frame, clear glass, simple brass pull handle, no surrounding wall." + contract,
+      dimensions: doorSize,
+      role: "functional"
+    });
+    api.requireAsset({
+      key: "streetwindow",
+      name: "临街橱窗",
+      prompt: "One broad cafe storefront window assembly, slim dark bronze frame with two panes of clear glass, no surrounding wall or sill furniture." + contract,
+      dimensions: windowSize,
+      role: "functional"
+    });
+    const door = api.opening({id: "cafe-entry", kind: "door", wall: "south", offset: -2.6, bottom: 0, width: 1.5, height: 2.7});
+    api.place({assetId: api.asset("entry"), roomOpeningId: door, dimensions: doorSize, role: "functional"});
+    for (const [id, wall, offset] of [
+      ["street-south", "south", 3.5],
+      ["street-west", "west", 1.1]
+    ]) {
+      const opening = api.opening({id, kind: "window", wall, offset, bottom: 0.65, width: 3.6, height: 2.25});
+      api.place({assetId: api.asset("streetwindow"), roomOpeningId: opening, dimensions: windowSize, role: "functional"});
+    }
+  }
+}</pre></details>
+<details class="run"><summary>✗ 街角咖啡馆 · C · 场与动线 Fields — 失败</summary>
+    <p class="summary"></p>
+    
+    <pre class="code">(无代码：HTTP 500 /api/editor/maps/map-47ee6b30-6a1d-410b/generate: {"error":"map_code_execution_failed:non_finite_map_code_value:array(length=2) at at req (worldforge-map-plan.js:4:9) at source: api.requireAsset({"})</pre></details>
+<details class="run"><summary>✓ LOFT 开放工作室 · A · 功能规划 Program — 20 摆放 / 93L 代码 / 85s</summary>
+    <p class="summary">室内功能规划生成了 20 个摆放意图与 2 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.above-ceiling — 物体已等比缩放并重新贴地，最高点不会超过天花板。</li><li>interior.light-coverage — 室内没有可用的实用灯光；生成规划应补充带光源元数据的顶灯或台灯。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const room = api.room;
+  const W = room.size[0], D = room.size[2];
+
+  const suffix = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const families = [
+    ["door", "黑框玻璃门", "A single modern black framed glass entry door, industrial loft style." + suffix, [1.2, 2.5, 0.12], "functional"],
+    ["window", "落地窗", "A single tall industrial loft window with black metal mullions." + suffix, [2.4, 2.8, 0.12], "functional"],
+    ["desk", "长工作台", "A single long reclaimed wood and black steel studio workbench." + suffix, [3.8, 0.78, 1.0], "functional"],
+    ["chair", "人体工学椅", "A single contemporary ergonomic task chair in charcoal fabric." + suffix, [0.68, 1.05, 0.68], "functional"],
+    ["sofa", "模块沙发", "A single low modular charcoal lounge sofa." + suffix, [2.8, 0.72, 0.95], "functional"],
+    ["coffee", "茶几", "A single low oval black metal and walnut coffee table." + suffix, [1.35, 0.38, 0.7], "functional"],
+    ["screen", "投影幕布", "A single large frameless presentation screen." + suffix, [3.0, 1.7, 0.08], "functional"],
+    ["projector", "投影仪", "A single compact ceiling mounted studio projector." + suffix, [0.42, 0.18, 0.42], "functional"],
+    ["bookshelf", "开放书架", "A single tall open black metal bookshelf with wood shelves." + suffix, [1.0, 2.25, 0.38], "functional"],
+    ["cabinet", "收纳柜", "A single low minimalist studio storage cabinet." + suffix, [1.8, 0.78, 0.48], "functional"],
+    ["meeting", "圆会议桌", "A single round light oak meeting table." + suffix, [1.55, 0.74, 1.55], "functional"],
+    ["stool", "会议椅", "A single simple black meeting chair." + suffix, [0.58, 0.82, 0.58], "functional"],
+    ["plant", "大型绿植", "A single tall architectural indoor plant in a concrete planter." + suffix, [0.65, 1.8, 0.65], "decor"],
+    ["rug", "几何地毯", "A single flat geometric area rug in muted gray and rust." + suffix, [3.8, 0.03, 2.5], "decor"],
+    ["pendant", "吊灯", "A single large warm industrial pendant light." + suffix, [0.65, 0.5, 0.65], "decor"],
+    ["floorlamp", "落地灯", "A single slim black arc floor lamp." + suffix, [0.45, 1.7, 0.45], "decor"],
+    ["whiteboard", "白板", "A single freestanding glass planning whiteboard." + suffix, [1.4, 1.8, 0.45], "functional"],
+    ["art", "抽象挂画", "A single large abstract geometric wall artwork." + suffix, [1.8, 1.2, 0.06], "decor"]
+  ];
+
+  const ids = {};
+  for (const f of families) {
+    ids[f[0]] = api.requireAsset({
+      key: f[0],
+      name: f[1],
+      prompt: f[2],
+      dimensions: f[3],
+      role: f[4]
+    });
+  }
+
+  const program = [
+    { role: "入口缓冲", count: 1, footprint: [2.4, 2.0], beside: ["cabinet", "whiteboard"] },
+    { role: "采光工作区", count: 1, footprint: [4.5, 3.2], beside: ["window", "chair", "bookshelf"] },
+    { role: "主交流区", count: 1, footprint: [4.2, 3.0], beside: ["screen", "sofa", "coffee"] },
+    { role: "协作区", count: 1, footprint: [3.0, 3.0], beside: ["meeting", "stool", "whiteboard"] },
+    { role: "服务储藏", count: 1, footprint: [2.0, 2.2], beside: ["door", "cabinet"] }
+  ];
+
+  const put = (key, x, z, rot, role) =&gt; api.place({
+    assetId: api.asset(ids[key]),
+    name: families.find(f =&gt; f[0] === key)[1],
+    position: api.roomPoint(x, z, 0),
+    rotationY: rot || 0,
+    role: role || "functional"
+  });
+
+  const doorId = api.opening({ id: "entry", kind: "door", wall: "south", offset: -4.8, bottom: 0, width: 1.2, height: 2.5 });
+  api.place({ assetId: api.asset(ids.door), roomOpeningId: doorId, dimensions: [1.2, 2.5, 0.12], role: "functional" });
+
+  const winId = api.opening({ id: "northLight", kind: "window", wall: "north", offset: 1.5, bottom: 0.65, width: 2.4, height: 2.8 });
+  api.place({ assetId: api.asset(ids.window), roomOpeningId: winId, dimensions: [2.4, 2.8, 0.12], role: "functional" });
+
+  put("rug", 1.0, 1.0, 0, "decor");
+  put("desk", -3.0, 2.5, 0, "functional");
+  put("chair", -3.0, 1.25, 0, "functional");
+  put("bookshelf", -6.8, 2.3, Math.PI / 2, "functional");
+  put("cabinet", -5.8, -3.8, 0, "functional");
+  put("sofa", 1.0, 2.6, Math.PI, "functional");
+  put("coffee", 1.0, 1.35, 0, "functional");
+  put("screen", 1.0, 5.65, Math.PI, "functional");
+  put("meeting", 5.1, 1.9, 0, "functional");
+  put("stool", 5.1, 0.65, 0, "functional");
+  put("stool", 6.15, 1.9, -Math.PI / 2, "functional");
+  put("stool", 4.05, 1.9, Math.PI / 2, "functional");
+  put("whiteboard", 6.7, -1.1, Math.PI / 2, "functional");
+  put("plant", -6.7, -1.0, 0, "decor");
+  put("floorlamp", 3.0, 4.7, 0, "decor");
+  put("art", -2.0, 5.82, 0, "decor");
+
+  const p = api.ceilingPoint(1.0, 2.0, 0.5, 0.35);
+  api.place({
+    assetId: api.asset(ids.pendant),
+    name: "吊灯",
+    position: p,
+    role: "decor"
+  });
+
+  const proj = api.ceilingPoint(1.0, 4.0, 0.18, 0.42);
+  api.place({
+    assetId: api.asset(ids.projector),
+    name: "投影仪",
+    position: proj,
+    facing: { direction: { x: 0, y: 0, z: 1 } },
+    role: "functional"
+  });
+}</pre></details>
+<details class="run"><summary>✓ LOFT 开放工作室 · B · 锚点关系 Relate — 33 摆放 / 155L 代码 / 86s</summary>
+    <p class="summary">室内功能规划生成了 33 个摆放意图与 1 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.duplicate — 移除与 obj-code-1bb2c5fd-32c1-4722 完全重叠的重复物体。</li><li>object.duplicate — 移除与 obj-code-42d7bbdf-3577-4eb8 完全重叠的重复物体。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+const families = [
+  ["sofa", "模块沙发", "One contemporary low modular three-seat sofa, warm ivory boucle upholstery, chunky clean silhouette, dark recessed feet, finished back, no accessories.", [3.5, 0.82, 1.05], "functional"],
+  ["rug", "几何地毯", "One flat rectangular contemporary wool rug, muted oatmeal with fine charcoal geometric lines, subtle woven texture.", [4.8, 0.025, 4.5], "decor"],
+  ["coffee", "低矮茶几", "One modern oval coffee table, smoked oak top and two substantial cylindrical legs, understated architectural design.", [1.65, 0.36, 0.8], "functional"],
+  ["chair", "皮革休闲椅", "One modern cognac leather lounge chair with black tubular steel frame, generously padded seat and back, front faces positive Z.", [0.85, 0.84, 0.92], "functional"],
+  ["side", "圆形边桌", "One small round blackened steel pedestal side table with a solid circular top.", [0.5, 0.52, 0.5], "functional"],
+  ["lamp", "落地灯", "One slim black steel floor lamp with a warm opal glass globe and weighted circular base, contemporary loft aesthetic.", [0.45, 1.75, 0.45], "functional"],
+  ["console", "影音矮柜", "One long low smoked oak media console, flat sliding doors, black steel base, clean empty top.", [3.5, 0.54, 0.48], "functional"],
+  ["screen", "桌面屏幕", "One large thin black flat-screen television on a central tabletop pedestal, screen front positive Z, screen dark with a faint neutral reflection.", [2.3, 1.34, 0.24], "functional"],
+  ["desk", "长工作台", "One architectural double-width creative work desk, pale oak rectangular top, charcoal steel trestle legs, empty unobstructed worktop.", [3.0, 0.76, 0.9], "functional"],
+  ["task", "办公椅", "One ergonomic contemporary office chair, graphite mesh back, black upholstered seat, five-star caster base, front positive Z.", [0.66, 1.12, 0.68], "functional"],
+  ["computer", "设计显示器", "One desktop computer display with slim aluminum body and stand, subdued abstract architectural drawing visible on screen, front positive Z.", [0.9, 0.58, 0.22], "functional"],
+  ["keyboard", "无线键盘", "One compact wireless keyboard in matte charcoal with low profile keys.", [0.43, 0.025, 0.15], "functional"],
+  ["tasklamp", "工作台灯", "One articulated black metal architect desk lamp with a small conical shade and round weighted base.", [0.38, 0.55, 0.3], "functional"],
+  ["shelf", "开放书架", "One freestanding open shelving unit, black steel uprights and smoked oak shelves, curated integrated books and ceramic objects, contemporary loft style, finished on both sides.", [1.65, 2.1, 0.38], "functional"],
+  ["table", "共用餐桌", "One modern rectangular communal dining table with pale oak slab top and black steel legs, empty top.", [2.2, 0.75, 1.0], "functional"],
+  ["diningchair", "餐椅", "One modern dining chair, natural oak curved back and seat, slim charcoal metal legs, front positive Z.", [0.5, 0.8, 0.54], "functional"],
+  ["pendant", "线性吊灯", "One suspended linear pendant luminaire, slim matte black beam with warm opal diffuser and two short integrated suspension cables, total object height includes cables.", [1.7, 0.65, 0.14], "functional"],
+  ["plant", "室内绿植", "One sculptural indoor olive tree with slender trunk and airy muted green foliage in a cylindrical textured warm gray concrete planter.", [0.85, 1.9, 0.85], "decor"],
+  ["books", "艺术书册", "One neat stack of three large art and architecture books with neutral cloth covers and one muted rust spine.", [0.38, 0.12, 0.28], "decor"],
+  ["vase", "陶瓷花器", "One handmade matte terracotta vase with a sculptural rounded body and narrow neck, empty.", [0.24, 0.33, 0.24], "decor"],
+  ["tray", "咖啡托盘", "One small oval black serving tray with two integrated ceramic espresso cups, contemporary minimal styling.", [0.42, 0.12, 0.28], "decor"]
+];
+const dims = {};
+const roles = {};
+for (const [key, name, prompt, dimensions, role] of families) {
+  api.requireAsset({ key, name, prompt: prompt + contract, dimensions, role });
+  dims[key] = dimensions;
+  roles[key] = role;
+}
+function floor(key, x, z, rotationY = 0, name) {
+  return api.place({
+    assetId: api.asset(key),
+    name,
+    position: api.roomPoint(x, z, 0),
+    dimensions: dims[key],
+    rotationY,
+    role: roles[key]
+  });
+}
+function supported(key, parentId, x = 0, z = 0) {
+  return api.attach({
+    assetId: api.asset(key),
+    parentId,
+    kind: "supported",
+    offset: [x, z],
+    anchorY: "bottom",
+    dimensions: dims[key],
+    role: roles[key]
+  });
+}
+function relative(anchor, dx, dz, range) {
+  const distance = Math.hypot(dx, dz);
+  if (distance &lt; range[0] || distance &gt; range[1]) {
+    throw new Error("Relation outside declared range");
+  }
+  return { x: anchor.x + dx, z: anchor.z + dz };
+}
+function related(key, anchor, dx, dz, range, rotationY = 0, name) {
+  const p = relative(anchor, dx, dz, range);
+  return floor(key, p.x, p.z, rotationY, name);
+}
+
+// A continuous empty perimeter, at least 1.2 m deep, joins all wall entrances.
+// The central north/south aisle remains clear between the lounge and work area.
+const existingOpenings = Array.isArray(api.room.openings)
+  ? api.room.openings
+  : Object.values(api.room.openings || {});
+if (!existingOpenings.some(o =&gt; o.kind === "door")) {
+  api.requireAsset({
+    key: "entry",
+    name: "玻璃入口门",
+    prompt: "One contemporary black steel framed clear glass single entrance door with a slim vertical handle, complete door assembly." + contract,
+    dimensions: [1.15, 2.5, 0.16],
+    role: "functional"
+  });
+  const door = api.opening({
+    id: "studio-entry",
+    kind: "door",
+    wall: "south",
+    offset: -6.2,
+    bottom: 0,
+    width: 1.15,
+    height: 2.5
+  });
+  api.place({
+    assetId: api.asset("entry"),
+    roomOpeningId: door,
+    dimensions: [1.15, 2.5, 0.16],
+    role: "functional"
+  });
+}
+
+// Primary relationship: sofa facing the low media focal point at 3.7 m.
+const media = { x: -3.3, z: -4.05 };
+const cabinet = floor("console", media.x, media.z, 0, "客厅视觉焦点");
+supported("screen", cabinet, 0, 0);
+const sofa = relative(media, 0, 3.7, [3.5, 4.0]);
+floor("rug", sofa.x, sofa.z - 1.2);
+floor("sofa", sofa.x, sofa.z, Math.PI, "面向影音柜的主沙发");
+const coffee = related("coffee", sofa, 0, -1.32, [1.25, 1.4]);
+supported("books", coffee, -0.4, 0.02);
+supported("tray", coffee, 0.4, 0.02);
+const lounge = relative(sofa, -2.15, -1.7, [2.6, 2.85]);
+floor(
+  "chair",
+  lounge.x,
+  lounge.z,
+  Math.atan2(sofa.x - lounge.x, sofa.z - 1.32 - lounge.z),
+  "朝向茶几的皮革休闲椅"
+);
+const side = related("side", sofa, -2.15, -0.12, [2.1, 2.2]);
+supported("vase", side);
+related("lamp", sofa, -2.8, 0.06, [2.7, 2.9]);
+related("plant", media, -2.55, 0.0, [2.5, 2.6]);
+
+// Secondary relationship: a generous desk and two forward-facing task chairs.
+// Desk front points south; task chair fronts point north toward the worktop.
+const work = { x: 3.55, z: -3.25 };
+const desk = floor("desk", work.x, work.z, 0, "双人创作工作台");
+for (const dx of [-0.75, 0.75]) {
+  related("task", work, dx, 1.04, [1.2, 1.35], Math.PI);
+  supported("computer", desk, dx, -0.2);
+  supported("keyboard", desk, dx, 0.23);
+}
+supported("tasklamp", desk, -1.27, -0.04);
+const storage = relative(work, 2.55, 0.1, [2.5, 2.65]);
+floor("shelf", storage.x, storage.z, -Math.PI / 2, "工作台侧边资料架");
+related("plant", work, -2.25, -0.7, [2.3, 2.4]);
+
+// Shared table doubles as a dining table and an informal project review table.
+// Seat centers are 0.9 m from the table axis, with circulation behind them.
+const dining = { x: 3.55, z: 2.35 };
+const table = floor("table", dining.x, dining.z, 0, "共享餐桌与讨论桌");
+for (const dx of [-0.65, 0.65]) {
+  related("diningchair", dining, dx, -0.9, [1.1, 1.15], 0);
+  related("diningchair", dining, dx, 0.9, [1.1, 1.15], Math.PI);
+}
+supported("vase", table, 0.48, 0);
+supported("tray", table, -0.45, 0);
+api.place({
+  assetId: api.asset("pendant"),
+  position: api.ceilingPoint(dining.x, dining.z, dims.pendant[1], 0.45),
+  dimensions: dims.pendant,
+  role: "functional"
+});
+api.place({
+  assetId: api.asset("pendant"),
+  position: api.ceilingPoint(work.x, work.z, dims.pendant[1], 0.2),
+  dimensions: dims.pendant,
+  role: "functional"
+});
+related("plant", dining, 2.5, 1.25, [2.75, 2.85]);
+return;</pre></details>
+<details class="run"><summary>✓ 街角咖啡馆 · C · 场与动线 Fields — 63 摆放 / 155L 代码 / 115s</summary>
+    <p class="summary">室内功能规划生成了 63 个摆放意图与 3 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li><li>object.overlap — 检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。</li></ul></div>
+    <pre class="code">const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+const catalog = [
+  ["counter", "咖啡吧台", "One freestanding corner cafe service counter, warm walnut fluted front, cream terrazzo worktop, rounded corners, recessed brass toe kick, rear storage, no appliances.", [4.2,1.05,0.9], "functional"],
+  ["espresso", "咖啡机", "One professional two-group espresso machine, brushed stainless steel and dark forest green enamel, portafilters facing front, refined realistic cafe equipment.", [1.05,0.52,0.58], "functional"],
+  ["grinder", "磨豆机", "One commercial coffee grinder with smoked transparent bean hopper, dark green body and brass details.", [0.3,0.58,0.38], "functional"],
+  ["case", "糕点柜", "One countertop pastry display case, clear curved glass, brass frame, two internal trays with a few croissants and small cakes, elegant compact cafe fixture.", [1.05,0.6,0.58], "functional"],
+  ["register", "收银机", "One compact cafe point of sale terminal, cream pedestal and tilted dark touchscreen, screen facing front.", [0.32,0.36,0.28], "functional"],
+  ["table", "圆咖啡桌", "One round cafe table, ivory terrazzo top, slim dark green pedestal and stable circular base, understated European neighborhood cafe style.", [0.85,0.74,0.85], "functional"],
+  ["chair", "藤编餐椅", "One cafe dining chair, bent walnut frame, natural cane back and seat, elegant curved backrest, front seating direction positive Z.", [0.48,0.83,0.52], "functional"],
+  ["lounge", "休闲扶手椅", "One low cafe armchair, cinnamon upholstery, rounded walnut arms and short walnut legs, comfortable sculptural silhouette, front positive Z.", [0.79,0.87,0.83], "functional"],
+  ["side", "边几", "One small round walnut cafe side table with a dark green ceramic pedestal.", [0.55,0.53,0.55], "functional"],
+  ["plant", "绿植", "One leafy indoor olive tree with a slim branching trunk in a matte terracotta cylindrical planter, airy foliage, standalone potted plant.", [0.8,1.9,0.8], "decor"],
+  ["pendant", "吊灯", "One opal glass globe pendant lamp with antique brass cap and short suspension stem, warm illuminated glass.", [0.42,0.65,0.42], "decor"],
+  ["menu", "咖啡菜单", "One freestanding small tabletop cafe menu sign, forest green framed cream card, neat typography reading COFFEE, ESPRESSO, LATTE, FILTER, brass weighted base.", [0.36,0.46,0.16], "decor"],
+  ["cup", "咖啡杯", "One ivory ceramic cappuccino cup on a matching saucer with coffee and simple latte art, standalone complete cup and saucer.", [0.17,0.09,0.17], "decor"],
+  ["vase", "花瓶", "One small amber glass bud vase holding two delicate white flowers and a leafy sprig.", [0.14,0.28,0.14], "decor"],
+  ["books", "阅读杂志", "One tidy stack of three independent cafe art and architecture magazines, muted cream and terracotta covers.", [0.28,0.055,0.21], "decor"],
+  ["water", "饮水台", "One slim walnut self-service cafe water station cabinet, cream stone top, integrated lower tray storage, no objects on top.", [1.0,0.94,0.48], "functional"],
+  ["carafe", "饮水壶", "One clear glass drinking water carafe with a few lemon slices and a simple cork lid.", [0.18,0.3,0.18], "decor"],
+  ["bin", "分类垃圾桶", "One compact enclosed cafe waste bin, matte dark green metal with a small front opening and brass label, flat top.", [0.4,0.68,0.4], "functional"],
+  ["shelf", "咖啡货架", "One freestanding narrow walnut cafe retail shelf, three open shelves displaying neatly arranged cream coffee bags and a few ceramic mugs, finished back.", [1.0,1.7,0.38], "functional"],
+  ["tray", "服务托盘", "One shallow oval walnut serving tray with raised edge, empty, fine wood grain.", [0.38,0.045,0.25], "decor"]
+];
+const dims = {};
+for (const [key,name,prompt,dimensions,role] of catalog) {
+  api.requireAsset({key,name,prompt:prompt+contract,dimensions,role});
+  dims[key] = dimensions;
+}
+
+const existing = Array.isArray(api.room.openings) ? api.room.openings : [];
+const openings = existing.slice();
+if (!openings.some(o =&gt; o.kind === "door")) {
+  api.opening({id:"cafe-entry",kind:"door",wall:"south",offset:-5.5,bottom:0,width:1.5,height:2.6});
+  openings.push({kind:"door",wall:"south",offset:-5.5,width:1.5});
+}
+if (!openings.some(o =&gt; o.kind === "window")) {
+  api.opening({id:"cafe-west-glazing",kind:"window",wall:"west",offset:0,bottom:0.65,width:5.8,height:2.65});
+  api.opening({id:"cafe-south-glazing",kind:"window",wall:"south",offset:2.2,bottom:0.65,width:6.4,height:2.65});
+  openings.push({kind:"window",wall:"west",offset:0,width:5.8},{kind:"window",wall:"south",offset:2.2,width:6.4});
+}
+function floorOpening(o) {
+  const f = api.wallFrame(o.wall,o.offset || 0,0,0);
+  const c = api.roomPoint(0,0,0);
+  const p = f.point;
+  return Array.isArray(p) ? [p[0]-c[0],p[2]-c[2]] : [p.x-c.x,p.z-c.z];
+}
+const doors = openings.filter(o=&gt;o.kind==="door").map(o=&gt;({p:floorOpening(o),w:o.width || 1.2}));
+const windows = openings.filter(o=&gt;o.kind==="window").map(o=&gt;({p:floorOpening(o),w:o.width || 2}));
+const hub = [0,0.65];
+const routes = doors.map(d=&gt;[d.p,hub]);
+function segmentDistance(x,z,a,b) {
+  const dx=b[0]-a[0], dz=b[1]-a[1];
+  const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz || 1)));
+  return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);
+}
+function circulation(x,z) {
+  let d=100;
+  for (const r of routes) d=Math.min(d,segmentDistance(x,z,r[0],r[1])-0.65);
+  for (const door of doors) d=Math.min(d,Math.hypot(x-door.p[0],z-door.p[1])-Math.max(1.55,door.w));
+  return d;
+}
+function daylight(x,z) {
+  let v=0;
+  for (const w of windows) v+=Math.exp(-Math.pow(Math.hypot(x-w.p[0],z-w.p[1])/(2.5+w.w*0.3),2));
+  return v;
+}
+const occupied=[];
+function clear(x,z,w,d,pad=0.12) {
+  if (Math.abs(x)+w/2&gt;7.75 || Math.abs(z)+d/2&gt;5.75) return false;
+  for (let ix=0;ix&lt;=6;ix++) for(let iz=0;iz&lt;=6;iz++) {
+    if(circulation(x-w/2+w*ix/6,z-d/2+d*iz/6)&lt;pad) return false;
+  }
+  return occupied.every(b=&gt;Math.abs(x-b.x)&gt; (w+b.w)/2+pad || Math.abs(z-b.z)&gt;(d+b.d)/2+pad);
+}
+function put(key,x,z,rotation=0,block=true) {
+  const d=dims[key];
+  const w=Math.abs(Math.cos(rotation))*d[0]+Math.abs(Math.sin(rotation))*d[2];
+  const depth=Math.abs(Math.sin(rotation))*d[0]+Math.abs(Math.cos(rotation))*d[2];
+  const id=api.place({assetId:api.asset(key),position:api.roomPoint(x,z,0),rotationY:rotation,dimensions:d,role:catalog.find(a=&gt;a[0]===key)[4]});
+  if(block) occupied.push({x,z,w,d:depth});
+  return id;
+}
+function on(key,parent,x=0,z=0) {
+  return api.attach({assetId:api.asset(key),parentId:parent,kind:"supported",offset:[x,z],anchorY:"bottom",dimensions:dims[key],role:catalog.find(a=&gt;a[0]===key)[4]});
+}
+function bestSpot(w,d,score) {
+  let best=null, value=-Infinity;
+  for(let x=-7.2;x&lt;=7.2;x+=0.3) for(let z=-5.2;z&lt;=5.2;z+=0.3) {
+    if(!clear(x,z,w,d)) continue;
+    const s=score(x,z);
+    if(s&gt;value){value=s;best=[x,z];}
+  }
+  return best;
+}
+
+// The service island anchors the room; its rear working aisle remains empty.
+let bar=bestSpot(4.5,2.35,(x,z)=&gt;-0.6*Math.abs(x-1.7)-1.6*Math.abs(z+4.25));
+if (!bar) bar=bestSpot(4.3,1.15,(x,z)=&gt;-Math.abs(z+4)-0.3*Math.abs(x));
+const bx=bar[0], bz=bar[1];
+routes.push([hub,[bx,bz+1.5]]);
+const counter=put("counter",bx,bz);
+occupied.push({x:bx,z:bz-0.8,w:4.5,d:1.0});
+on("espresso",counter,-0.55,-0.06);
+on("grinder",counter,-1.32,-0.08);
+on("case",counter,1.1,0);
+on("register",counter,1.83,0.1);
+on("menu",counter,-1.85,0.1);
+on("tray",counter,0.22,0.24);
+for(const dx of [-1.45,0,1.45]) {
+  api.place({assetId:api.asset("pendant"),position:api.ceilingPoint(bx+dx,bz,0.65,0.65),dimensions:dims.pendant,role:"decor"});
+}
+
+const waterPos=bestSpot(1.55,0.8,(x,z)=&gt;-Math.hypot(x-bx-3.1,z-bz)-0.2*Math.abs(z));
+const water=put("water",waterPos[0],waterPos[1]);
+on("carafe",water,-0.25,0);
+on("cup",water,0.22,0.04);
+put("bin",waterPos[0]+0.78,waterPos[1]);
+const retail=bestSpot(1.1,0.65,(x,z)=&gt;-Math.min(Math.abs(x-7),Math.abs(x+7))-0.12*Math.hypot(x-bx,z-bz));
+put("shelf",retail[0],retail[1]);
+
+// Tables are paired with chairs before the next field sample is taken.
+let tableCount=0;
+for(let n=0;n&lt;8;n++) {
+  const p=bestSpot(2.35,1.5,(x,z)=&gt;{
+    const social=Math.exp(-((x+0.8)*(x+0.8)+(z-1.3)*(z-1.3))/30);
+    const quiet= Math.min(2,Math.hypot(x-bx,z-bz)/5);
+    return 2.4*daylight(x,z)+social+0.35*quiet-0.025*(x*x+z*z);
+  });
+  if(!p) break;
+  const [x,z]=p;
+  const table=put("table",x,z,0,false);
+  put("chair",x-0.86,z,Math.PI/2,false);
+  put("chair",x+0.86,z,-Math.PI/2,false);
+  occupied.push({x,z,w:2.35,d:1.5});
+  on("vase",table,0,0.1);
+  if(n%2===0) on("cup",table,-0.23,-0.12);
+  if(n===1) on("books",table,0.16,-0.16);
+  tableCount++;
+}
+let loungePos=bestSpot(2.15,1.6,(x,z)=&gt;daylight(x,z)*2+0.12*Math.hypot(x-bx,z-bz)-0.08*Math.abs(z-3.8));
+if(!loungePos) loungePos=bestSpot(1.65,1.05,(x,z)=&gt;daylight(x,z));
+const lx=loungePos[0],lz=loungePos[1];
+put("lounge",lx-0.35,lz,0);
+const side=put("side",lx+0.54,lz+0.08);
+on("books",side,0,0);
+on("cup",side,0.08,0.12);
+
+for(let n=0;n&lt;4;n++) {
+  const p=bestSpot(0.95,0.95,(x,z)=&gt;1.8*daylight(x,z)+0.18*Math.abs(x)+0.12*Math.abs(z)-0.08*Math.hypot(x-lx,z-lz));
+  if(!p) break;
+  put("plant",p[0],p[1]);
+}
+for(const [x,z] of [[-4,1.5],[3.8,2.2],[-3,-2]]) {
+  api.place({assetId:api.asset("pendant"),position:api.ceilingPoint(x,z,0.65,0.4),dimensions:dims.pendant,role:"decor"});
+}</pre></details>
+<details class="run"><summary>✓ 街角咖啡馆 · D · 生成-选择 Anneal — 65 摆放 / 276L 代码 / 162s</summary>
+    <p class="summary">室内功能规划生成了 65 个摆放意图与 3 个门窗预留</p>
+    <div class="diag"><b>诊断（前 8 条）</b><ul><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li><li>object.out-of-bounds — 物体已移回地图边界内。</li><li>object.off-ground — 物体已重新贴合地形。</li></ul></div>
+    <pre class="code">function plan(api) {
+  const contract = " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.";
+  const specs = [
+    ["counter", "胡桃木吧台", "One elegant walnut cafe service counter with rounded corners, ribbed timber front, pale cream terrazzo worktop and a recessed brass kickplate.", [4.5, 1.05, 1.1], "functional"],
+    ["espresso", "意式咖啡机", "One professional two-group espresso machine, brushed stainless steel and dark forest green enamel, polished controls and integral drip tray.", [1.15, 0.55, 0.55], "functional"],
+    ["grinder", "咖啡磨豆机", "One compact commercial coffee grinder with dark green metal body and transparent bean hopper.", [0.27, 0.55, 0.34], "functional"],
+    ["display", "糕点展示柜", "One small countertop pastry display case with clear curved glass, brass trim, walnut base and two interior shelves.", [1.05, 0.55, 0.55], "functional"],
+    ["stool", "高脚凳", "One refined cafe bar stool with walnut legs, brass foot ring and a round caramel leather seat, no backrest.", [0.46, 0.73, 0.46], "functional"],
+    ["table", "圆形咖啡桌", "One round cafe table with ivory marble top, slim dark bronze pedestal and a stable circular base.", [0.85, 0.74, 0.85], "functional"],
+    ["chair", "曲木餐椅", "One classic bentwood cafe chair with dark walnut frame, curved backrest and woven natural cane seat.", [0.48, 0.82, 0.52], "functional"],
+    ["armchair", "休闲扶手椅", "One compact inviting lounge armchair upholstered in moss green wool, rounded arms and short walnut legs.", [0.85, 0.87, 0.9], "functional"],
+    ["side", "阅读边桌", "One small round walnut side table with a slender brass pedestal and circular base.", [0.55, 0.54, 0.55], "functional"],
+    ["plant", "室内绿植", "One lush indoor olive tree in a warm ivory ceramic cylindrical planter, airy natural foliage.", [0.8, 1.8, 0.8], "decor"],
+    ["pendant", "乳白吊灯", "One opal glass globe pendant lamp with a short brass ceiling stem, warm luminous glass and restrained vintage cafe character.", [0.48, 0.65, 0.48], "decor"],
+    ["sconce", "黄铜壁灯", "One compact brass wall sconce with an opal globe shade, warm light and a round wall mounting plate.", [0.25, 0.4, 0.3], "decor"],
+    ["menu", "咖啡菜单牌", "One framed dark green cafe menu board with elegant small cream lettering for espresso, cappuccino, filter coffee and pastries, clear prices and a slim walnut frame.", [2.35, 1.1, 0.07], "decor"],
+    ["art", "街角风景画", "One framed graphic art print depicting a quiet street corner cafe in ochre, cream and forest green, with a slender walnut frame.", [1.05, 1.3, 0.06], "decor"],
+    ["cup", "陶瓷咖啡杯", "One ivory ceramic cappuccino cup resting on its matching saucer, realistic coffee and simple latte art.", [0.16, 0.095, 0.16], "decor"],
+    ["vase", "花枝小瓶", "One tiny amber glass bud vase holding two delicate fresh white flowers.", [0.12, 0.25, 0.12], "decor"],
+    ["tray", "木质托盘", "One shallow rectangular walnut serving tray with a subtle raised rim.", [0.42, 0.045, 0.28], "decor"],
+    ["pastry", "可颂餐盘", "One small ivory ceramic plate holding a single golden flaky croissant.", [0.24, 0.12, 0.2], "decor"],
+    ["books", "阅读书册", "One neat small stack of three independent coffee and architecture magazines with muted cream, green and rust covers.", [0.28, 0.07, 0.21], "decor"],
+    ["bin", "分类垃圾桶", "One discreet compact cafe waste bin with a dark bronze body, rounded corners and a small top opening.", [0.42, 0.68, 0.42], "functional"]
+  ];
+  const assets = {};
+  for (const [key, name, prompt, dimensions, role] of specs) {
+    api.requireAsset({ key, name, prompt: prompt + contract, dimensions, role });
+    assets[key] = { dimensions, role, name };
+  }
+  const openings = Array.isArray(api.room.openings) ? api.room.openings.slice() : [];
+  if (!openings.some(o =&gt; o.kind === "door")) {
+    api.opening({ id: "cafe-entry", kind: "door", wall: "south", offset: 0, bottom: 0, width: 1.8, height: 2.65 });
+    openings.push({ kind: "door", wall: "south", offset: 0, width: 1.8 });
+  }
+  if (!openings.some(o =&gt; o.kind === "window")) {
+    for (const wall of ["west", "east"]) {
+      const offset = 0;
+      const blocked = openings.some(o =&gt; o.wall === wall &amp;&amp; Math.abs((o.offset || 0) - offset) &lt; 2.8);
+      if (!blocked) {
+        api.opening({ id: "cafe-window-" + wall, kind: "window", wall, offset, bottom: 1.05, width: 4.2, height: 2.25 });
+        openings.push({ kind: "window", wall, offset, width: 4.2, bottom: 1.05, height: 2.25 });
+      }
+    }
+  }
+  const xy = p =&gt; Array.isArray(p) ? [p[0], p[2]] : [p.x, p.z];
+  const doors = openings.filter(o =&gt; o.kind === "door").map(o =&gt; {
+    const f = api.wallFrame(o.wall, o.offset || 0, 0, 0.05);
+    const p = xy(f.point);
+    const center = api.room.position;
+    if (center) {
+      const c = xy(center);
+      p[0] -= c[0] || 0;
+      p[1] -= c[1] || 0;
+    }
+    return { x: p[0], z: p[1], width: o.width || 1.2 };
+  });
+  const routes = doors.map(d =&gt; ({ ax: d.x, az: d.z, bx: 0, bz: 0 }));
+  routes.push({ ax: 0, az: 0, bx: 0, bz: -1.6 });
+
+  function segmentHits(r, b, pad) {
+    let lo = 0, hi = 1;
+    for (const [a, v, min, max] of [
+      [r.ax, r.bx - r.ax, b.x - b.w / 2 - pad, b.x + b.w / 2 + pad],
+      [r.az, r.bz - r.az, b.z - b.d / 2 - pad, b.z + b.d / 2 + pad]
+    ]) {
+      if (Math.abs(v) &lt; 1e-8) {
+        if (a &lt; min || a &gt; max) return false;
+      } else {
+        let t0 = (min - a) / v, t1 = (max - a) / v;
+        if (t0 &gt; t1) { const t = t0; t0 = t1; t1 = t; }
+        lo = Math.max(lo, t0); hi = Math.min(hi, t1);
+        if (lo &gt; hi) return false;
+      }
+    }
+    return true;
+  }
+  function overlap(a, b, gap) {
+    return Math.max(0, (a.w + b.w) / 2 + gap - Math.abs(a.x - b.x)) *
+      Math.max(0, (a.d + b.d) / 2 + gap - Math.abs(a.z - b.z));
+  }
+  const item = (key, x, z, yaw = 0) =&gt; ({ key, x, z, yaw });
+  const groups = [
+    { name: "吧台主景", x: 0, z: -3.8, homeX: 0, homeZ: -3.8, items: [
+      item("counter", 0, 0), item("stool", -1.5, 1.18), item("stool", 1.5, 1.18)
+    ] }
+  ];
+  for (const x of [-4.55, 4.55]) {
+    for (const z of [-2, 0.8, 3.55]) {
+      groups.push({ name: "双人咖啡位", x, z, homeX: x, homeZ: z, items: [
+        item("table", 0, 0), item("chair", -0.9, 0, Math.PI / 2), item("chair", 0.9, 0, -Math.PI / 2)
+      ] });
+    }
+  }
+  groups.push({ name: "阅读角", x: -5.6, z: -4.65, homeX: -5.6, homeZ: -4.65, items: [
+    item("armchair", 0, 0, 0.25), item("side", 1.05, 0.22)
+  ] });
+  function boxes(g) {
+    return g.items.map(p =&gt; {
+      const d = assets[p.key].dimensions;
+      return {
+        x: g.x + p.x, z: g.z + p.z,
+        w: Math.abs(Math.cos(p.yaw)) * d[0] + Math.abs(Math.sin(p.yaw)) * d[2],
+        d: Math.abs(Math.sin(p.yaw)) * d[0] + Math.abs(Math.cos(p.yaw)) * d[2]
+      };
+    });
+  }
+  function clearanceKept(g) {
+    let penalty = 0;
+    for (const b of boxes(g)) {
+      penalty += Math.max(0, Math.abs(b.x) + b.w / 2 - 7.72) * 100;
+      penalty += Math.max(0, Math.abs(b.z) + b.d / 2 - 5.72) * 100;
+      for (const r of routes) if (segmentHits(r, b, 0.56)) penalty += 100;
+      for (const d of doors) {
+        penalty += overlap(b, { x: d.x, z: d.z, w: d.width + 1.5, d: d.width + 1.5 }, 0.15) * 100;
+      }
+    }
+    return penalty;
+  }
+  function pairDistancesHonored(g) {
+    if (g.items[0].key === "table") {
+      return g.items.slice(1).reduce((s, p) =&gt; s + Math.pow(Math.hypot(p.x, p.z) - 0.9, 2), 0);
+    }
+    return 0;
+  }
+  function dominantFocalView(gs) {
+    const b = gs[0];
+    return 1.8 * b.x * b.x + 4 * Math.pow(b.z + 3.8, 2);
+  }
+  function nothingColliding(gs) {
+    let result = 0;
+    for (let i = 0; i &lt; gs.length; i++) for (let j = i + 1; j &lt; gs.length; j++) {
+      for (const a of boxes(gs[i])) for (const b of boxes(gs[j])) result += overlap(a, b, 0.3) * 200;
+    }
+    return result;
+  }
+  function fitness(gs) {
+    return gs.reduce((s, g) =&gt; s + clearanceKept(g) + pairDistancesHonored(g) +
+      0.12 * (Math.pow(g.x - g.homeX, 2) + Math.pow(g.z - g.homeZ, 2)), 0) +
+      nothingColliding(gs) + dominantFocalView(gs);
+  }
+  const clone = gs =&gt; gs.map(g =&gt; ({ ...g }));
+  let current = clone(groups), energy = fitness(current), best = clone(current), bestEnergy = energy;
+  for (let step = 0; step &lt; 1800; step++) {
+    const next = clone(current);
+    const i = Math.floor(Math.random() * next.length);
+    const temperature = 6 * Math.pow(0.002, step / 1800);
+    const amplitude = step &lt; 700 ? 1.2 : 0.35;
+    next[i].x += (Math.random() - 0.5) * amplitude;
+    next[i].z += (Math.random() - 0.5) * amplitude;
+    if (i === 0) next[i].z = Math.max(-4.15, Math.min(-3.2, next[i].z));
+    const e = fitness(next);
+    if (e &lt; energy || Math.random() &lt; Math.exp((energy - e) / temperature)) {
+      current = next; energy = e;
+    }
+    if (e &lt; bestEnergy) { best = clone(next); bestEnergy = e; }
+  }
+
+  // Staged greedy repair preserves complete functional groups.
+  const kept = [];
+  function feasible(g, accepted) {
+    if (clearanceKept(g) &gt; 0.0001) return false;
+    for (const other of accepted) for (const a of boxes(g)) for (const b of boxes(other)) {
+      if (overlap(a, b, 0.3) &gt; 0.0001) return false;
+    }
+    return true;
+  }
+  for (const g of best) {
+    let chosen = feasible(g, kept) ? g : null;
+    let score = chosen ? Math.pow(g.x - g.homeX, 2) + Math.pow(g.z - g.homeZ, 2) : Infinity;
+    if (!chosen) {
+      for (let x = -6.3; x &lt;= 6.3; x += 0.45) for (let z = -4.7; z &lt;= 4.7; z += 0.45) {
+        const c = { ...g, x, z };
+        if (g.items[0].key === "counter" &amp;&amp; z &gt; -2.8) continue;
+        const s = Math.pow(x - g.homeX, 2) + Math.pow(z - g.homeZ, 2);
+        if (s &lt; score &amp;&amp; feasible(c, kept)) { chosen = c; score = s; }
+      }
+    }
+    if (chosen) kept.push(chosen);
+  }
+
+  function floor(key, x, z, yaw = 0) {
+    const a = assets[key];
+    return api.place({
+      assetId: api.asset(key), name: a.name, position: api.roomPoint(x, z, 0),
+      rotationY: yaw, dimensions: a.dimensions, role: a.role
+    });
+  }
+  function supported(key, parentId, x, z) {
+    const a = assets[key];
+    return api.attach({
+      assetId: api.asset(key), name: a.name, parentId, kind: "supported",
+      offset: [x, z], anchorY: "bottom", dimensions: a.dimensions, role: a.role
+    });
+  }
+  const tablePositions = [];
+  let barPosition = { x: 0, z: -3.8 };
+  for (const g of kept) {
+    for (const p of g.items) {
+      const id = floor(p.key, g.x + p.x, g.z + p.z, p.yaw);
+      if (p.key === "counter") {
+        barPosition = { x: g.x, z: g.z };
+        supported("espresso", id, -0.4, -0.15);
+        supported("grinder", id, -1.2, -0.15);
+        supported("display", id, 1.45, -0.1);
+        const tray = supported("tray", id, -1.7, 0.12);
+        supported("cup", tray, 0, 0);
+      }
+      if (p.key === "table") {
+        supported("vase", id, 0.04, 0.15);
+        supported("cup", id, -0.2, -0.08);
+        supported("pastry", id, 0.17, -0.12);
+        tablePositions.push({ x: g.x, z: g.z });
+      }
+      if (p.key === "side") {
+        supported("books", id, 0, 0);
+        supported("cup", id, 0.02, 0.16);
+      }
+    }
+  }
+  for (const [key, hx, hz] of [
+    ["plant", 6.9, -4.8], ["plant", -6.9, 4.8], ["bin", 3.05, -4.9]
+  ]) {
+    let chosen = null, score = Infinity;
+    for (let x = -7.1; x &lt;= 7.1; x += 0.5) for (let z = -5.1; z &lt;= 5.1; z += 0.5) {
+      const g = { x, z, items: [item(key, 0, 0)] };
+      const s = Math.pow(x - hx, 2) + Math.pow(z - hz, 2);
+      if (s &lt; score &amp;&amp; feasible(g, kept)) { chosen = g; score = s; }
+    }
+    if (chosen) {
+      kept.push(chosen);
+      floor(key, chosen.x, chosen.z);
+    }
+  }
+  const mounted = [];
+  function wallPlace(key, preferredWall, preferredOffset, bottom) {
+    const a = assets[key], w = a.dimensions[0], h = a.dimensions[1];
+    const walls = [preferredWall, ...["north", "south", "east", "west"].filter(v =&gt; v !== preferredWall)];
+    let choice = null, score = Infinity;
+    for (let wi = 0; wi &lt; walls.length; wi++) {
+      const wall = walls[wi], length = wall === "north" || wall === "south" ? 16 : 12;
+      for (let offset = -length / 2 + w / 2 + 0.3; offset &lt;= length / 2 - w / 2 - 0.3; offset += 0.2) {
+        const blocked = openings.some(o =&gt; o.wall === wall &amp;&amp;
+          Math.abs(offset - (o.offset || 0)) &lt; (w + (o.width || 1.2)) / 2 + 0.18 &amp;&amp;
+          bottom &lt; (o.bottom || 0) + (o.height || 2.7) + 0.1 &amp;&amp;
+          bottom + h &gt; (o.bottom || 0) - 0.1);
+        const collision = mounted.some(m =&gt; m.wall === wall &amp;&amp;
+          Math.abs(offset - m.offset) &lt; (w + m.w) / 2 + 0.15 &amp;&amp;
+          bottom &lt; m.bottom + m.h + 0.1 &amp;&amp; bottom + h &gt; m.bottom - 0.1);
+        const s = wi * 100 + Math.pow(offset - preferredOffset, 2);
+        if (!blocked &amp;&amp; !collision &amp;&amp; s &lt; score) { choice = { wall, offset, bottom, w, h }; score = s; }
+      }
+    }
+    if (choice) {
+      const f = api.wallFrame(choice.wall, choice.offset, bottom, 0.03);
+      api.place({ assetId: api.asset(key), name: a.name, position: f.point, facing: { direction: f.inward }, dimensions: a.dimensions, role: a.role });
+      mounted.push(choice);
+    }
+  }
+  wallPlace("menu", "north", barPosition.x, 2.1);
+  wallPlace("art", "south", -4.8, 1.75);
+  wallPlace("art", "south", 4.8, 1.75);
+  wallPlace("sconce", "north", -3.2, 2.65);
+  wallPlace("sconce", "north", 3.2, 2.65);
+  for (const p of [
+    { x: barPosition.x - 1.4, z: barPosition.z },
+    { x: barPosition.x, z: barPosition.z },
+    { x: barPosition.x + 1.4, z: barPosition.z },
+    ...tablePositions
+  ]) {
+    api.place({
+      assetId: api.asset("pendant"), name: "暖光吊灯",
+      position: api.ceilingPoint(p.x, p.z, 0.65, 0.38),
+      dimensions: assets.pendant.dimensions, role: "decor"
+    });
+  }
+}</pre></details>
+</body></html>
