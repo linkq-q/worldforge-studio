@@ -98,16 +98,15 @@ const RAW_CODEPLAN_API_KEYS = [
 ] as const;
 
 /**
- * Indoor raw-mode whitelist: the room-native placement and coordinate APIs the
- * minimal indoor prompt documents, plus the same seeded math helpers. Terrain
- * and water keys stay out — an indoor plan has no landform to author.
+ * Indoor raw-mode whitelist: ten room-native APIs, mirroring the outdoor
+ * ten-key surface. The deterministic shell facts (room bounds, walls,
+ * ceiling, openings) stay server-owned; every math/layout helper is
+ * deliberately absent — full `Math` sits in the sandbox and the model writes
+ * its own helpers, which is the generativity we want.
  */
 const RAW_INDOOR_CODEPLAN_API_KEYS = [
-  'place', 'attach', 'placeBetween', 'requireAsset', 'asset', 'random',
   'room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening',
-  'TAU', 'PHI', 'seed', 'bounds',
-  'clamp', 'lerp', 'remap', 'smoothstep', 'rotate2D', 'distance2D',
-  'faceYaw', 'tangentYaw', 'gridPoints', 'circlePoint', 'linePoint'
+  'requireAsset', 'asset', 'place', 'attach', 'random'
 ] as const;
 
 const MAX_CODE_LENGTH = RAW_CODEPLAN_MODE ? 400_000 : 40_000;
@@ -147,7 +146,10 @@ const ARENA_SEATING_ASSET = /\b(?:grandstand|bleacher|spectator stand|arena seat
 const DRY_LAND_ASSET = /\b(?:wall|gate|building|house|hall|tower|arcade|corridor|railing|fence|grandstand|bleacher|tree|pine|bamboo|lamp|lantern|bench|chair|table)\b|城墙|围墙|墙体|门楼|月洞门|建筑|楼阁|厅堂|塔|长廊|回廊|走廊|栏杆|围栏|看台|树|松|竹|灯笼|石灯|座椅|长凳|桌椅/i;
 const WATER_COMPATIBLE_ASSET = /\b(?:bridge|pier|dock|boat|ship|lotus|reed|water lily|aquatic|fish|fountain)\b|桥|桥台|码头|栈桥|船|舟|荷花|莲花|芦苇|水生|鱼|喷泉|湖心亭|水榭/i;
 const FLOATING_WATER_ASSET = /\b(?:boat|ship)\b|船|舟/i;
-const INDOOR_FORBIDDEN_CONTENT = /\b(?:whole|complete|entire)\s+(?:room|interior)\b|\broom\s+shell\b|\bfloor(?:ing)?\s+(?:finish|surface|plane|slab)\b|\bceiling\s+(?:finish|surface|plane|slab)\b|\bwall(?:paper|\s+(?:finish|surface|shell))\b|\b(?:carpet|rug)(?:\s+(?:finish|surface))?\b|\b(?:terrain|outdoor ground|building exterior)\b|整间房|整体房间|房间外壳|地板饰面|墙面饰面|天花饰面|墙纸|地毯|室外地形|建筑外立面/i;
+// Rugs and carpets are placeable decor objects (a seating group's boundary,
+// a bed-side runner) and must stay available to indoor plans; only the
+// finish-sense phrasings — baking carpet/rug as a floor surface — are forbidden.
+const INDOOR_FORBIDDEN_CONTENT = /\b(?:whole|complete|entire)\s+(?:room|interior)\b|\broom\s+shell\b|\bfloor(?:ing)?\s+(?:finish|surface|plane|slab)\b|\bceiling\s+(?:finish|surface|plane|slab)\b|\bwall(?:paper|\s+(?:finish|surface|shell))\b|\b(?:carpet|rug)\s+(?:finish|surface|plane|slab)\b|\b(?:terrain|outdoor ground|building exterior)\b|整间房|整体房间|房间外壳|地板饰面|墙面饰面|天花饰面|墙纸|地毯饰面|室外地形|建筑外立面/i;
 
 type Point2 = [number, number];
 type Point3 = [number, number, number];
@@ -3845,8 +3847,8 @@ You have total creative freedom: style, furniture families, density and atmosphe
 ${styleParagraph ? `\n${styleParagraph}\n` : ''}
 Define as many of your own variables, constants and helper functions inside plan as you like — layout helpers, samplers, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
-The sandbox exposes exactly these APIs. Everything else is yours to build:
-1. api.room — the room data {position, size, wallThickness, openings}; also api.seed, api.bounds, api.TAU, api.PHI.
+The sandbox exposes exactly these ten APIs. Everything else is yours to build:
+1. api.room — the room data {position, size, wallThickness, openings}.
 2. api.roomPoint(localX, localZ, height?) — a floor point, offset from the room center; height 0 for floor furniture.
 3. api.wallFrame(wall, offset?, bottom?, inset?) — wall is 'north'|'south'|'east'|'west'; returns {point, inward, outward, tangent}. Place wall-mounted assets at frame.point with facing:{direction:frame.inward}.
 4. api.ceilingPoint(localX, localZ, objectHeight?, drop?) — a point with the object below the ceiling; pass its declared height.
@@ -3855,8 +3857,7 @@ The sandbox exposes exactly these APIs. Everything else is yours to build:
 7. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
 8. api.place({assetId, name?, position, rotationY?, facing?, dimensions?, roomOpeningId?, role:'functional'|'decor'}) — dimensions is the intended world [width,height,depth]; rotationY in radians, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
 9. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side north|south|east|west with local [horizontal, vertical] offset.
-10. api.placeBetween({...}) — connected runs of counters, shelves or benches.
-11. api.random(min?, max?) — seeded. Math helpers: api.clamp, api.lerp, api.remap, api.smoothstep, api.rotate2D, api.distance2D, api.faceYaw, api.tangentYaw, api.gridPoints, api.circlePoint, api.linePoint.
+10. api.random(min?, max?) — seeded. Full \`Math\` is available and \`Math.random\` is seeded; everything beyond these ten keys — lerp, clamps, samplers, relation helpers — you define yourself.
 
 Rules:
 - Declare ${minNewAssets}..${maxNewAssets} requireAsset families; place every declared variant at least once.

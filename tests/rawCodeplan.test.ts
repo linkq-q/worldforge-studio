@@ -46,10 +46,10 @@ describe('raw codeplan mode', () => {
     expect(prompt).not.toContain("'rolling'");
   });
 
-  it('gives indoor raw mode a room-native minimal prompt without outdoor APIs', () => {
+  it('gives indoor raw mode a ten-key room-native minimal prompt without outdoor APIs', () => {
     const room = createEmptyMap('教室', 'indoor-raw-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
     const prompt = buildRawIndoorSceneCodeSystemPrompt(room, 2, 8);
-    for (const name of ['roomPoint', 'wallFrame', 'ceilingPoint', 'opening', 'attach', 'placeBetween', 'requireAsset', 'asset', 'place', 'random']) {
+    for (const name of ['room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening', 'attach', 'requireAsset', 'asset', 'place', 'random']) {
       expect(prompt).toContain(`api.${name}`);
     }
     expect(prompt).toContain('CIRCULATION');
@@ -57,6 +57,31 @@ describe('raw codeplan mode', () => {
     expect(prompt).not.toContain('api.terrain');
     expect(prompt).not.toContain('SPATIAL RHYTHM');
     expect(prompt).not.toContain('Composition style —');
+    // The reduction to ten keys: no composite placement key, no preset math
+    // helpers — the prompt tells the model to define its own instead.
+    expect(prompt).not.toContain('api.placeBetween');
+    expect(prompt).not.toContain('api.clamp');
+    expect(prompt).not.toContain('api.gridPoints');
+    expect(prompt).toContain('you define yourself');
+  });
+
+  it('keeps rugs and carpets available as indoor decor objects', () => {
+    const room = createEmptyMap('客厅', 'indoor-raw-rug', [16, 4, 12], 'voxel', 'indoor', [16, 4, 12]);
+    const code = `function plan(api) {
+      const rug = api.requireAsset({ key:'rug', name:'地毯', prompt:'round woven wool rug. Coordinate contract: Y+ is up, Z+ is the front direction, X+ is right.', dimensions:[2.4,0.03,2.4], role:'decor' });
+      api.place({ assetId: api.asset(rug), name:'地毯', position: api.roomPoint(0, 0), role:'decor' });
+    }`;
+    const suggestion = executeMapCodePlan(code, room, [], {
+      mode: 'discovery', requestMode: 'generate', scope: 'scene'
+    });
+    expect(suggestion.operations.filter((op) => op.type === 'object.add')).toHaveLength(1);
+  });
+
+  it('rejects removed math-helper keys so the model writes its own helpers', () => {
+    const room = createEmptyMap('教室', 'indoor-raw-pruned', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.place({ name:'x', position: api.lerp([0, 0], [2, 2], 0.5) });
+    }`, room, [], { mode: 'discovery', requestMode: 'generate', scope: 'scene' })).toThrow();
   });
 
   it('injects the indoor variant of the selected composition style', async () => {

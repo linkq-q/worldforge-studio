@@ -345,7 +345,16 @@ describe('map AI adapter', () => {
       const chairs = api.requireAsset({ key: 'chairs', name: '课椅', prompt: '独立教室课椅', tags: ['chair', 'furniture'], role: 'functional' });
       const frame = api.wallFrame('north', 0, 1.1);
       api.place({ assetId: api.asset(board), name: '黑板', position: frame.point, facing: { direction: frame.inward }, dimensions: [3, 1.3, 0.12], role: 'functional' });
-      for (const point of api.gridPoints({ rows: 2, columns: 3, spacing: [1.5, 1.6], center: [0, 0.5] })) {
+      function gridPoints(rows, columns, spacing, center) {
+        const points = [];
+        for (let r = 0; r < rows; r += 1) {
+          for (let c = 0; c < columns; c += 1) {
+            points.push([center[0] + (c - (columns - 1) / 2) * spacing[0], center[1] + (r - (rows - 1) / 2) * spacing[1]]);
+          }
+        }
+        return points;
+      }
+      for (const point of gridPoints(2, 3, [1.5, 1.6], [0, 0.5])) {
         api.place({ assetId: api.asset(chairs), name: '课椅', position: api.roomPoint(point[0], point[1]), facing: { direction: [0, -1] }, dimensions: [0.5, 0.85, 0.5], role: 'functional' });
       }
     }`));

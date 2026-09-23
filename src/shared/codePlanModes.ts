@@ -15,6 +15,20 @@ export const CODE_PLAN_MODE_OPTIONS = [
   { key: 'hybrid', label: '混合 · 语法+场 Hybrid' }
 ] as const;
 
+/**
+ * Indoor dropdown uses the same mode keys (identical request plumbing) but
+ * room-native labels: the indoor vocabularies are mental models drawn from
+ * furniture-layout research, not the outdoor landform techniques.
+ */
+export const CODE_PLAN_INDOOR_MODE_OPTIONS = [
+  { key: 'minimal', label: '默认 · 极简基线' },
+  { key: 'grammar', label: 'A · 功能规划 Program' },
+  { key: 'algebra', label: 'B · 锚点关系 Relate' },
+  { key: 'fields', label: 'C · 场与动线 Fields' },
+  { key: 'search', label: 'D · 生成-选择 Anneal' },
+  { key: 'hybrid', label: '混合 · 语法+场（上一代）' }
+] as const;
+
 export type CodePlanMode = typeof CODE_PLAN_MODE_OPTIONS[number]['key'];
 
 export const DEFAULT_CODE_PLAN_MODE: CodePlanMode = 'minimal';
@@ -39,15 +53,20 @@ export const CODE_PLAN_STYLE_PARAGRAPHS: Record<CodePlanMode, string> = {
 };
 
 /**
- * Indoor variants of the same five composition styles. Same keys, same intent,
- * but grounded in the room API (floor subdivision, wall/ceiling frames) instead
- * of terrain and landform, so a style switch reads natively indoors.
+ * Indoor variants of the composition styles. Same keys, but each paragraph is
+ * a mental model drawn from furniture-layout research — mental guidance only,
+ * never concrete implementation — so the model invents its own code. The four
+ * experiment routes are deliberately orthogonal:
+ * - grammar: functional decomposition of SPACE (program → zones)   [Merrell 2010]
+ * - algebra: relational composition of OBJECTS (anchors → pairs)   [Yu 2011, Holodeck]
+ * - fields:  continuous scalar questions at every FLOOR POINT      [SDF / carve-then-fill]
+ * - search:  whole-LAYOUT optimization (candidates → rubric)       [shape annealing]
  */
 export const CODE_PLAN_INDOOR_STYLE_PARAGRAPHS: Record<CodePlanMode, string> = {
   minimal: '',
-  grammar: 'Composition style — shape grammar. Think like CGA rule systems: subdivide the floor plate top-down with recursive split functions — cut the room into named zones (entrance, primary activity, service, storage), each cut leaving circulation gaps for door swings and walking routes, then recurse until every zone holds one furniture group. Express repeated structures (a run of shelves, a row of chairs) as one rewrite rule instantiated across slots instead of placing each piece by hand.',
-  algebra: "Composition style — picture algebra. Think like SICP's picture language: define a few meaningful furniture fragments (a desk cluster, a seating group, a dining set, a storage wall) as reusable fragment functions, then build the room by combining fragments with combinators you author yourself — beside, across, mirror, corner, echo. Fragments should close under composition: each returns placed objects and free coordinates that other fragments can consume. Reuse the same motif at two scales — a full wall and a single shelf — so the room reads as one composed family.",
-  fields: 'Composition style — continuous fields. Think like an SDF shader: describe the room as smooth scalar fields over the floor before placing anything. Write small field functions — distance falloffs from doors and walls, a circulation-keepout field along walking routes, a coziness or display-density field — that return placement preference at any floor point. Sample the master field to decide how strongly furniture appears: dense along walls and in the activity core, empty on door clearance and route lines, with soft transitions instead of hard rectangles.',
-  search: 'Composition style — generate and select. Treat the plan as a parametric model plus your own fitness functions. Define what a good room means for this request as small scoring functions — circulation score (door routes stay clear), pairing score (desk with chair, table with seats), focal score (one dominant relationship) — then generate several candidate layouts with different seeds or parameters, evaluate each, and emit only the winner. The visible room must be the one your scoring loop chose, not your first idea; keep the search bounded so it finishes in seconds.',
+  grammar: 'Composition style — program and partition, in the lineage of Merrell\u0027s computer-generated residential layouts (SIGGRAPH Asia 2010) and the architect\u0027s bubble diagram. Start from the brief, not the furniture: state the room as a program — a small data table of functional slots, each with a role, a count, a minimum footprint and the slots it must sit beside — and treat the floor plate as material your rules subdivide. Partition the floor recursively into named zones until every slot owns a zone and every zone serves a slot: cut so daylight-hungry slots land by windows, service slots pool near the entrance, storage takes the leftover slices, and adjacency wishes become shared boundaries. A right partition makes most placements obvious afterwards; if a slot has no zone or a zone has no slot, repair the partition, not the furniture.',
+  algebra: 'Composition style — anchor and relate: interior design as pairwise relations, the room-scale reading of Yu et al.\u0027s Make It Home (SIGGRAPH 2011) and of Holodeck\u0027s relational constraints (CVPR 2024) — against-wall, near, far, facing, in-front-of. Think in objects and the bonds between them, not floor regions. Anchor every hero piece first — bed, sofa, desk, dining table — on the wall or focal point that justifies it, then define each remaining piece as a relation function on an anchor with a declared numeric range: the nightstand at arm\u0027s reach of the bed, the screen facing the sofa at seating distance, the rug binding the seating group, the pendant centered over the table, the reading chair angled toward the window. Secondary relations chain off primary ones, so the room reads as a few strong pairs plus their satellites — never a scatter of placed props.',
+  fields: 'Composition style — fields and flow. Think like a signed-distance-field shader over the floor: before anything exists, the room is a set of smooth scalar questions you can evaluate at any floor point — daylight falloff from each window, walking distance from the entrance, a circulation keepout along the routes the doors demand, quietness versus social energy. Carve before you fill: the walking network is negative space, reserved the way carve-rooms-then-corridors generators do it, and nothing may sample inside it. Then compose by thresholds: dense where your fields say belong — the desk where daylight is strong, the cushion pile where coziness peaks — empty where they forbid, and let zone boundaries emerge where a field crosses a value rather than from hand-drawn rectangles, so transitions read gradual.',
+  search: 'Composition style — generate and select by shape annealing, after Cagan\u0027s shape annealing (1998), the simulated-annealing furniture layouts of Yu et al. (SIGGRAPH 2011), and Infinigen Indoors\u0027 staged greedy solver (CVPR 2024). Your first arrangement is only a candidate. Declare what a good room means as a few small fitness functions — clearance kept, every pair distance honored, one dominant focal view, nothing colliding — then settle the layout in stages the way annealing solvers do: large pieces first, small decor last, and between stages run bounded repair passes that push overlapping pieces apart, snap backs to walls, turn faces toward their focus, and drop-and-replace whatever scores worst. Emit only the layout your scoring kept; if two candidates both pass, keep the one with the stronger focal hierarchy. Keep the whole search within seconds.',
   hybrid: 'Composition style — grammar-and-fields hybrid, in the lineage of Parish–Müller procedural cities and CGA shape grammars, adapted to a room. Think in two languages that feed each other: a field is a smooth scalar question you can evaluate at any floor point (distance to doors and windows, circulation keepout, coziness, display density), and a grammar is a family of rewrite rules applied to named zones. Three habits of mind. First, let the field shape the skeleton: subdivide the floor with recursive rewrite rules into named zones, and place at least one cut where a field crosses a threshold — where daylight or walking distance falls off — instead of at an arbitrary constant. Second, let boundaries materialize: a cut only counts when the room shows it — a rug edge, a lighting change, a low cabinet or runner along the seam — and every terminal zone keeps its own field bias (density, height, warmth) so transitions stay gradual. Third, let evaluation choose, in the spirit of shape annealing: when two layouts could both work, score them with your own declared criteria — door clearance, pairing, focal view — and keep the winner. Give furniture a sampling budget proportional to each zone\u0027s area. Final test: if deleting your skeleton would not change the room, the skeleton was decoration — reattach it to routes, rugs, lighting and furniture clusters.'
 };
