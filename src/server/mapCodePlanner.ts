@@ -1,6 +1,7 @@
 import vm from 'node:vm';
 import {
   createId,
+  createMapObject,
   getMapBounds,
   getMapObjectAabbs,
   getMapObjectVisualAabbs,
@@ -2519,15 +2520,20 @@ function executeMapCodePlanInternal(
       const linked = Array.isArray(input.under)
         ? [...new Set(input.under.filter((id): id is string => typeof id === 'string' && id.trim().length > 0))].slice(0, 64)
         : [];
+      const environmentMap = currentEnvironmentMap();
       const linkedPlacements = linked.flatMap((id) => placements.filter((placement) => placement.referenceId === id));
       const existingBounds = new Map(existingVisualAabbs().map((bounds) => [bounds.objectId, bounds]));
+      const placementBounds = new Map(getMapObjectVisualAabbs({
+        ...environmentMap,
+        assets: [...new Map([...(environmentMap.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()],
+        objects: linkedPlacements.map((placement) => {
+          const fallback = createMapObject(placement.name, placement.assetId);
+          const object = placementObject(placement, placement.referenceId, environmentMap, map.sceneMode);
+          return { ...fallback, ...object, transform: { ...fallback.transform, ...object.transform } };
+        })
+      }).map((bounds) => [bounds.objectId, bounds]));
       const linkedBounds = linked.flatMap((id) => {
-        const placement = linkedPlacements.find((candidate) => candidate.referenceId === id);
-        if (placement) return [{
-          min: [placement.position[0] - placement.size[0] * placement.scale[0] / 2, placement.position[2] - placement.size[2] * placement.scale[2] / 2] as Point2,
-          max: [placement.position[0] + placement.size[0] * placement.scale[0] / 2, placement.position[2] + placement.size[2] * placement.scale[2] / 2] as Point2
-        }];
-        const bounds = existingBounds.get(id);
+        const bounds = placementBounds.get(id) ?? existingBounds.get(id);
         return bounds ? [{ min: [bounds.min[0], bounds.min[2]] as Point2, max: [bounds.max[0], bounds.max[2]] as Point2 }] : [];
       });
       const explicit = input.position === undefined ? null : placementPosition(input.position, map, false);
@@ -2552,7 +2558,7 @@ function executeMapCodePlanInternal(
       const sin = Math.sin(yaw);
       const boundary = foundationBoundary(foundation);
       const terrainHeights = boundary.map(([x, z]) => sampleTerrainHeight(
-        map,
+        environmentMap,
         centerX + x * cos + z * sin,
         centerZ - x * sin + z * cos
       ));
@@ -2568,7 +2574,7 @@ function executeMapCodePlanInternal(
       const explicitTopY = explicit && !placementUsesTerrain(input.position) ? explicit[1] : undefined;
       const topY = explicitTopY
         ?? (existingTopCandidates.length > 0 ? Math.min(...existingTopCandidates) : undefined)
-        ?? Math.max(...terrainHeights, sampleTerrainHeight(map, centerX, centerZ)) + 0.03;
+        ?? Math.max(...terrainHeights, sampleTerrainHeight(environmentMap, centerX, centerZ)) + 0.03;
       const requiredThickness = topY - Math.min(...terrainHeights, topY);
       if (requiredThickness > foundation.maxThickness + 0.001) {
         foundationWarnings.push(`${input.name ?? '地基'} 需要 ${requiredThickness.toFixed(2)}m 厚度，超过 ${foundation.maxThickness.toFixed(2)}m 上限，已跳过。`);

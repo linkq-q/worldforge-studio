@@ -318,6 +318,33 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toContain('foundation');
   });
 
+  it('sizes a new building foundation from its visual footprint on the modified terrain', () => {
+    const asset: MapAsset = {
+      ...testAsset('asset-wide-hall', '宽大厅'),
+      modelJson: {
+        format: 2,
+        nodes: [{
+          id: 'hall-body',
+          transform: { pos: [0, 2, 0] },
+          mesh: { type: 'box', params: { width: 10, height: 4, depth: 8 } }
+        }]
+      }
+    };
+    const map = createEmptyMap('Hill hall', 'hill-hall', [48, 12, 48]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.modifyTerrain({ modifier:'cliff', region:{kind:'circle',center:[0,0],radius:15}, amplitude:4, layout:'wall' });
+      const hall = api.place({ assetId:'asset-wide-hall', name:'宽大厅', position:[0,0], role:'structure' });
+      api.foundation({ under:[hall], margin:0.4, maxThickness:16 });
+    }`, map, [asset]);
+    const applied = applyMapOperations({ ...map, assets: [asset] }, suggestion.operations);
+    const foundation = applied.objects.find((object) => object.foundation);
+    const hall = applied.objects.find((object) => object.assetId === asset.id);
+
+    expect(foundation?.foundation).toMatchObject({ width: 10.8, depth: 8.8 });
+    expect(foundation?.transform.position[1]).toBeGreaterThan(sampleTerrainHeight(applied, 0, 0));
+    expect(hall?.transform.position[1]).toBeCloseTo(foundation?.transform.position[1] ?? -1);
+  });
+
   it('lets explicit terrain placement ground a three-component outdoor position', () => {
     const map = createEmptyMap('Grounded', 'grounded-three-component', [24, 8, 24]);
     map.terrain.heights.fill(2.5);
