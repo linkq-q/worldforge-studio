@@ -21,7 +21,7 @@ import { evaluateSettlementQuality, isSettlementBuildingSemantic } from './settl
 export type MapLintSeverity = 'info' | 'warning' | 'error';
 
 export interface MapLintIssue {
-  code: 'spawn.unsafe' | 'object.out-of-bounds' | 'object.off-ground' | 'object.duplicate'
+  code: 'spawn.unsafe' | 'object.out-of-bounds' | 'object.off-ground' | 'object.buried' | 'object.duplicate'
     | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
     | 'object.wall-mounted'
     | 'object.waterline'
@@ -72,6 +72,7 @@ export function lintMap(
   lintSpawn(workingMap, issues, repairOperations);
   lintWaterExposure(map, issues, repairOperations);
   lintFloatingObjects(workingMap, issues, repairOperations);
+  lintBuriedObjects(workingMap, removedIds, issues);
   lintInteriorQuality(workingMap, issues, repairOperations);
   issues.push(...evaluateSettlementQuality(workingMap).issues.map((issue) => ({
     code: issue.code,
@@ -89,6 +90,35 @@ export function lintMap(
     });
   }
   return { issues, repairOperations };
+}
+
+function lintBuriedObjects(map: EditableMap, removedIds: ReadonlySet<string>, issues: MapLintIssue[]): void {
+  if (map.sceneMode !== 'outdoor') return;
+  const candidates = map.objects.filter((object) => object.visible && object.heightMode === 'fixed'
+    && !object.parentId && !removedIds.has(object.id));
+  if (candidates.length === 0) return;
+  const boundsById = new Map(getMapObjectVisualAabbs({ ...map, objects: candidates })
+    .map((bounds) => [bounds.objectId, bounds]));
+  for (const object of candidates) {
+    const bounds = boundsById.get(object.id);
+    if (!bounds) continue;
+    const x = object.transform.position[0];
+    const z = object.transform.position[2];
+    if (map.waterBodies.some((water) => isPointInsideWaterBody(water, x, z, map))) continue;
+    const ground = Math.min(...[
+      [x, z],
+      [bounds.min[0], bounds.min[2]], [bounds.min[0], bounds.max[2]],
+      [bounds.max[0], bounds.min[2]], [bounds.max[0], bounds.max[2]]
+    ].map(([sampleX, sampleZ]) => sampleTerrainHeight(map, sampleX, sampleZ)));
+    if (bounds.max[1] >= ground - 0.25) continue;
+    issues.push({
+      code: 'object.buried',
+      severity: 'warning',
+      message: `物体「${object.name}」顶部低于地面约 ${(ground - bounds.max[1]).toFixed(2)}m，场景中可能完全不可见。`,
+      objectIds: [object.id],
+      repaired: false
+    });
+  }
 }
 
 function findExactDuplicates(

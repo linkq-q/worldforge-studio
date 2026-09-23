@@ -379,6 +379,16 @@ describe('map code planner', () => {
     expect(additions[2].object.transform?.position).toEqual([0, 0, -4]);
   });
 
+  it('surfaces a fixed-Y object hidden below the final terrain', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.place({ name:'悬浮行星', position:[4,-18,3.8], role:'environment' });
+    }`, createEmptyMap(), [], { spatialPolicy: 'diagnose' });
+
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.buried', message: expect.stringContaining('悬浮行星'), repaired: false })
+    ]));
+  });
+
   it('skips foundations that exceed the bounded thickness and reports why', () => {
     const map = createEmptyMap('Steep', 'steep-foundation', [24, 12, 24]);
     const suggestion = executeMapCodePlan(`function plan(api) {

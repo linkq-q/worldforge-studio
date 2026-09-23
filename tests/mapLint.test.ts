@@ -73,6 +73,28 @@ describe('map lint and deterministic repair', () => {
     expect(repaired.objects[0].transform.position[1]).toBe(0);
   });
 
+  it('reports a fully buried fixed object without moving intentional placements', () => {
+    const map = createEmptyMap('buried object', 'buried-object');
+    const buried = createMapObject('Hidden planet');
+    buried.id = 'hidden-planet';
+    buried.locked = true;
+    buried.heightMode = 'fixed';
+    buried.transform.position = [0, -8, 0];
+    const visible = createMapObject('Visible planet');
+    visible.id = 'visible-planet';
+    visible.heightMode = 'fixed';
+    visible.transform.position = [8, 2, 0];
+    map.objects = [buried, visible];
+
+    const lint = lintMap(map);
+
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.buried', objectIds: ['hidden-planet'], repaired: false })
+    ]));
+    expect(lint.issues.some((issue) => issue.code === 'object.buried' && issue.objectIds?.includes('visible-planet'))).toBe(false);
+    expect(lint.repairOperations.some((operation) => 'objectId' in operation && operation.objectId === buried.id)).toBe(false);
+  });
+
   it('re-carves an exposed lake and keeps repairs in the same suggestion transaction', () => {
     const map = createEmptyMap('lake lint', 'map-lake-lint');
     map.waterBodies = [{
