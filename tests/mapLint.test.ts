@@ -119,6 +119,27 @@ describe('map lint and deterministic repair', () => {
     ]));
   });
 
+  it('warns when a raised lake surface has no surrounding terrain bank', () => {
+    const base = createEmptyMap('elevated reservoir', 'elevated-reservoir', [48, 16, 48]);
+    const lake = (level: number) => applyMapOperations(base, [{
+      type: 'water.add',
+      water: { id: 'reservoir', type: 'lake', points: [[-8,-6],[8,-6],[8,6],[-8,6]], level, depth: 3 }
+    }]);
+
+    expect(lintMap(lake(6)).issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'water.unsupported-shore', repaired: false })
+    ]));
+    expect(lintMap(lake(0.3)).issues.some((issue) => issue.code === 'water.unsupported-shore')).toBe(false);
+
+    const banked = createEmptyMap('banked reservoir', 'banked-reservoir', [48, 16, 48]);
+    banked.terrain.heights.fill(6);
+    const supported = applyMapOperations(banked, [{
+      type: 'water.add',
+      water: { id: 'reservoir', type: 'lake', points: [[-8,-6],[8,-6],[8,6],[-8,6]], level: 6, depth: 3 }
+    }]);
+    expect(lintMap(supported).issues.some((issue) => issue.code === 'water.unsupported-shore')).toBe(false);
+  });
+
   it('can report deterministic lint findings without appending their repairs', () => {
     const map = createEmptyMap('lake diagnostics', 'map-lake-diagnostics');
     map.waterBodies = [{

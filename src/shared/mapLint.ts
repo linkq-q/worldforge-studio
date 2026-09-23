@@ -15,7 +15,7 @@ import { evaluateIndoorLightCoverage } from './indoorLighting';
 import { applyMapOperations, type MapOperation } from './mapOperations';
 import { sampleMapGuide, type MapGuide, type MapGuideSample } from './mapGuide';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
-import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
+import { isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from './mapWater';
 import { evaluateSettlementQuality, isSettlementBuildingSemantic } from './settlementQuality';
 
 export type MapLintSeverity = 'info' | 'warning' | 'error';
@@ -25,7 +25,7 @@ export interface MapLintIssue {
     | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
     | 'object.wall-mounted'
     | 'object.waterline'
-    | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
+    | 'water.exposed-terrain' | 'water.unsupported-shore' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
     | 'asset.minimum-degraded' | 'asset.generation-degraded' | 'asset.role-inferred'
     | 'interior.light-coverage' | 'interior.style-drift'
     | 'interior.operational-clearance' | 'object.invalid-support' | 'outdoor.access-repaired' | 'outdoor.water-intrusion-repaired'
@@ -71,6 +71,7 @@ export function lintMap(
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
   lintSpawn(workingMap, issues, repairOperations);
   lintWaterExposure(map, issues, repairOperations);
+  lintRaisedLakeShore(workingMap, issues);
   lintFloatingObjects(workingMap, issues, repairOperations);
   lintBuriedObjects(workingMap, removedIds, issues);
   lintInteriorQuality(workingMap, issues, repairOperations);
@@ -116,6 +117,42 @@ function lintBuriedObjects(map: EditableMap, removedIds: ReadonlySet<string>, is
       severity: 'warning',
       message: `物体「${object.name}」顶部低于地面约 ${(ground - bounds.max[1]).toFixed(2)}m，场景中可能完全不可见。`,
       objectIds: [object.id],
+      repaired: false
+    });
+  }
+}
+
+function lintRaisedLakeShore(map: EditableMap, issues: MapLintIssue[]): void {
+  if (map.sceneMode !== 'outdoor') return;
+  const bounds = getMapBounds(map);
+  const shoreOffset = Math.max(0.5, Math.min(
+    map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
+    map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
+  ) * 1.5);
+  for (const water of map.waterBodies) {
+    if (water.type !== 'lake') continue;
+    const boundary = waterBoundaryPoints(water);
+    if (boundary.length < 3) continue;
+    const centerX = boundary.reduce((sum, point) => sum + point[0], 0) / boundary.length;
+    const centerZ = boundary.reduce((sum, point) => sum + point[1], 0) / boundary.length;
+    const gaps: number[] = [];
+    for (let index = 0; index < boundary.length; index += Math.max(1, Math.floor(boundary.length / 16))) {
+      const [x, z] = boundary[index];
+      const distance = Math.hypot(x - centerX, z - centerZ);
+      if (distance < 0.001) continue;
+      const shoreX = x + (x - centerX) / distance * shoreOffset;
+      const shoreZ = z + (z - centerZ) / distance * shoreOffset;
+      if (shoreX < bounds.minX || shoreX > bounds.maxX || shoreZ < bounds.minZ || shoreZ > bounds.maxZ
+        || isPointInsideWaterBody(water, shoreX, shoreZ, map)) continue;
+      gaps.push(water.level - sampleTerrainHeight(map, shoreX, shoreZ));
+    }
+    const unsupported = gaps.filter((gap) => gap > 1);
+    if (gaps.length < 3 || unsupported.length <= gaps.length / 2) continue;
+    const meanGap = unsupported.reduce((sum, gap) => sum + gap, 0) / unsupported.length;
+    issues.push({
+      code: 'water.unsupported-shore',
+      severity: 'warning',
+      message: `湖泊「${water.name}」水面比多数岸边地形高约 ${meanGap.toFixed(2)}m；请检查围岸或挡水结构是否足够。`,
       repaired: false
     });
   }
