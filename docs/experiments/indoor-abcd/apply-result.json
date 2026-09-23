@@ -1,0 +1,125 @@
+{
+  "generatedAt": "2026-09-23T14:40:35.645Z",
+  "results": [
+    {
+      "key": "loft:fields",
+      "mapId": "map-9660f7cc-56a9-45d4",
+      "mapName": "室内ABCD · LOFT 工作室 · C 场与动线",
+      "ok": true,
+      "assetCount": 20,
+      "operationCount": 40,
+      "objectCount": 39,
+      "durationMs": 34650
+    },
+    {
+      "key": "loft:search",
+      "mapId": "map-08acd7ce-6217-424e",
+      "mapName": "室内ABCD · LOFT 工作室 · D 退火",
+      "ok": true,
+      "assetCount": 23,
+      "operationCount": 38,
+      "objectCount": 37,
+      "durationMs": 53057
+    },
+    {
+      "key": "suite:grammar",
+      "mapId": "map-8828d30c-b5d1-404b",
+      "mapName": "室内ABCD · 主卧套房 · A 功能规划",
+      "ok": true,
+      "assetCount": 23,
+      "operationCount": 32,
+      "objectCount": 31,
+      "durationMs": 46900
+    },
+    {
+      "key": "suite:algebra",
+      "mapId": "map-51061f38-d73c-4d74",
+      "mapName": "室内ABCD · 主卧套房 · B 锚点关系",
+      "ok": true,
+      "assetCount": 22,
+      "operationCount": 26,
+      "objectCount": 25,
+      "durationMs": 37270
+    },
+    {
+      "key": "suite:fields",
+      "mapId": "map-c5ae5362-20fb-4321",
+      "mapName": "室内ABCD · 主卧套房 · C 场与动线",
+      "ok": true,
+      "assetCount": 18,
+      "operationCount": 25,
+      "objectCount": 24,
+      "durationMs": 39607
+    },
+    {
+      "key": "suite:search",
+      "mapId": "map-16c69961-82b7-408e",
+      "mapName": "室内ABCD · 主卧套房 · D 退火",
+      "ok": true,
+      "assetCount": 20,
+      "operationCount": 23,
+      "objectCount": 22,
+      "durationMs": 43423
+    },
+    {
+      "key": "cafe:grammar",
+      "mapId": "map-7d33670c-e406-42fd",
+      "mapName": "室内ABCD · 街角咖啡馆 · A 功能规划",
+      "ok": true,
+      "assetCount": 24,
+      "operationCount": 53,
+      "objectCount": 52,
+      "durationMs": 48386
+    },
+    {
+      "key": "cafe:algebra",
+      "mapId": "map-6593a89a-2a99-44f3",
+      "mapName": "室内ABCD · 街角咖啡馆 · B 锚点关系",
+      "ok": true,
+      "assetCount": 23,
+      "operationCount": 60,
+      "objectCount": 59,
+      "durationMs": 45670
+    },
+    {
+      "key": "loft:grammar",
+      "mapId": "map-c3ce89cb-878b-4243",
+      "mapName": "室内ABCD · LOFT 工作室 · A 功能规划",
+      "ok": true,
+      "assetCount": 18,
+      "operationCount": 21,
+      "objectCount": 20,
+      "durationMs": 36706
+    },
+    {
+      "key": "loft:algebra",
+      "mapId": "map-0ea5f697-c19a-4389",
+      "mapName": "室内ABCD · LOFT 工作室 · B 锚点关系",
+      "ok": true,
+      "assetCount": 22,
+      "operationCount": 34,
+      "objectCount": 33,
+      "durationMs": 50372
+    },
+    {
+      "key": "cafe:fields",
+      "mapId": "map-d8970196-74df-41a4",
+      "mapName": "室内ABCD · 街角咖啡馆 · C 场与动线",
+      "ok": true,
+      "assetCount": 20,
+      "operationCount": 64,
+      "objectCount": 63,
+      "durationMs": 49775
+    },
+    {
+      "key": "cafe:search",
+      "mapId": "map-c0172ec8-3a50-4729",
+      "mapName": "室内ABCD · 街角咖啡馆 · D 退火",
+      "ok": true,
+      "assetCount": 20,
+      "operationCount": 66,
+      "objectCount": 65,
+      "durationMs": 44871
+    }
+  ]
+}

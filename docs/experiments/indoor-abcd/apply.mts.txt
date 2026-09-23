@@ -1,0 +1,122 @@
+/**
+ * WorldForge 室内 A-D 实验落地脚本：把 wf-indoor-abcd-results.json 里 12 份
+ * planOnly 代码用 approvedCode 重放（跳过规划 LLM），deepseek 生成 3D 资产，
+ * 逐场景建图（带原实验种子，重放出与评测一致的布局）并提交事务入库。
+ * 运行（在 worldforge-studio 目录下）：npx tsx ../wf-indoor-abcd-apply.mts
+ * 产出：wf-indoor-abcd-apply-result.json（sketchbook 根目录），可断点续跑。
+ */
+import { writeFile, readFile } from 'node:fs/promises';
+import type { EditableMap } from './worldforge-studio/src/shared/map';
+
+const API = 'http://127.0.0.1:8797';
+const OUT = './wf-indoor-abcd-apply-result.json';
+
+const SCENARIOS: Record<string, { label: string; seed: number; size: [number, number, number]; roomSize: [number, number, number] }> = {
+  loft: { label: 'LOFT 工作室', seed: 4246046752, size: [28, 4, 22], roomSize: [16, 4, 12] },
+  suite: { label: '主卧套房', seed: 2393289305, size: [26, 4, 22], roomSize: [14, 4, 12] },
+  cafe: { label: '街角咖啡馆', seed: 3821297835, size: [28, 4, 22], roomSize: [16, 4, 12] }
+};
+const MODE_LABEL: Record<string, string> = {
+  grammar: 'A 功能规划', algebra: 'B 锚点关系', fields: 'C 场与动线', search: 'D 退火'
+};
+
+interface RunRecord { key: string; mode: string; scenario: string; ok: boolean; prompt?: string; suggestion?: any }
+const doc = JSON.parse(await readFile(new URL(OUT.replace('wf-indoor-abcd-apply-result', 'wf-indoor-abcd-results'), import.meta.url), 'utf8'));
+const seen = new Map<string, RunRecord>();
+for (const run of doc.runs as RunRecord[]) if (run.ok) seen.set(run.key, run);
+const targets = [...seen.values()];
+if (targets.length !== 12) console.log(`warning: expected 12 ok runs, got ${targets.length}`);
+
+async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(API + path, init);
+  const text = await res.text();
+  let body: unknown = null;
+  try { body = JSON.parse(text); } catch { body = text; }
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${path}: ${text.slice(0, 400)}`);
+  return body as T;
+}
+
+interface ApplyResult {
+  key: string; mapId?: string; mapName: string; ok: boolean;
+  assetCount?: number; operationCount?: number; objectCount?: number;
+  durationMs?: number; error?: string;
+}
+let results: ApplyResult[] = [];
+try {
+  const prev = JSON.parse(await readFile(new URL(OUT, import.meta.url), 'utf8'));
+  results = (prev.results ?? []).filter((r: ApplyResult) => r.ok);
+} catch { /* first run */ }
+const done = new Set(results.filter((r) => r.ok).map((r) => r.key));
+
+async function persist() {
+  await writeFile(new URL(OUT, import.meta.url), JSON.stringify({ generatedAt: new Date().toISOString(), results }, null, 2), 'utf8');
+}
+
+for (const run of targets) {
+  if (done.has(run.key)) { console.log(`skip ${run.key} (already applied)`); continue; }
+  const sc = SCENARIOS[run.scenario]!;
+  const mapName = `室内ABCD · ${sc.label} · ${MODE_LABEL[run.mode] ?? run.mode}`;
+  const started = Date.now();
+  process.stdout.write(`[${new Date().toISOString()}] ${mapName} ... `);
+  try {
+    const made = await api<{ map: EditableMap }>('/api/editor/maps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: mapName, seed: sc.seed, size: sc.size, sceneMode: 'indoor',
+        roomSize: sc.roomSize, assetGenerationMode: 'voxel'
+      })
+    });
+    const map = made.map;
+    const generate = await api<{ suggestion: any }>(
+      `/api/editor/maps/${encodeURIComponent(map.id)}/generate`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: run.prompt ?? sc.label,
+          provider: 'gpt',
+          planMode: run.mode,
+          approvedCode: run.suggestion!.codePlan.code,
+          reuseExistingAssets: false,
+          minNewAssets: 15,
+          maxNewAssets: 25
+        }),
+        signal: AbortSignal.timeout(900_000)
+      }
+    );
+    const suggestion = generate.suggestion;
+    const assetCount = suggestion.generatedAssets?.length ?? 0;
+    const operationCount = suggestion.operations?.length ?? 0;
+    process.stdout.write(`generate OK ${(Date.now() - started) / 1000 | 0}s | assets ${assetCount} | ops ${operationCount} | commit ... `);
+    const committed = await api<{ map: EditableMap }>(
+      `/api/editor/maps/${encodeURIComponent(map.id)}/transactions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'agent',
+          label: suggestion.summary,
+          operations: suggestion.operations,
+          ai: {
+            prompt: run.prompt ?? sc.label,
+            generationTraceId: suggestion.generationTraceId,
+            agent: suggestion.agent,
+            codePlan: suggestion.codePlan,
+            generatedAssets: suggestion.generatedAssets
+          }
+        }),
+        signal: AbortSignal.timeout(120_000)
+      }
+    );
+    const objectCount = (committed.map.objects as unknown[] | undefined)?.length ?? 0;
+    console.log(`OK | objects ${objectCount}`);
+    results.push({ key: run.key, mapId: map.id, mapName, ok: true, assetCount, operationCount, objectCount, durationMs: Date.now() - started });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.log(`FAILED | ${message.slice(0, 240)}`);
+    results.push({ key: run.key, mapName, ok: false, error: message, durationMs: Date.now() - started });
+  }
+  await persist();
+}
+console.log(`done: ${results.filter((r) => r.ok).length}/${targets.length} applied -> wf-indoor-abcd-apply-result.json`);
