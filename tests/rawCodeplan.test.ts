@@ -5,6 +5,7 @@ process.env.WORLDFORGE_RAW_CODEPLAN = '1';
 
 const { buildRawSceneCodeSystemPrompt, executeMapCodePlan } = await import('../src/server/mapCodePlanner');
 const { createEmptyMap } = await import('../src/shared/map');
+const { CODE_PLAN_MODE_OPTIONS, normalizeCodePlanMode } = await import('../src/shared/codePlanModes');
 
 describe('raw codeplan mode', () => {
   it('exposes only the ten basic APIs in the system prompt', () => {
@@ -13,6 +14,36 @@ describe('raw codeplan mode', () => {
       expect(prompt).toContain(`api.${name}`);
     }
     expect(prompt).toContain('SPATIAL RHYTHM');
+  });
+
+  it('keeps the minimal baseline prompt free of style paragraphs by default', () => {
+    const prompt = buildRawSceneCodeSystemPrompt(createEmptyMap(), 2, 8);
+    expect(prompt).not.toContain('Composition style —');
+    expect(prompt).not.toContain('shape grammar');
+  });
+
+  it('injects exactly the selected composition-style paragraph', async () => {
+    const { CODE_PLAN_STYLE_PARAGRAPHS } = await import('../src/shared/codePlanModes');
+    const minimal = buildRawSceneCodeSystemPrompt(createEmptyMap(), 2, 8);
+    expect((minimal.match(/Composition style —/g) ?? []).length).toBe(0);
+    for (const option of CODE_PLAN_MODE_OPTIONS) {
+      if (option.key === 'minimal') continue;
+      const prompt = buildRawSceneCodeSystemPrompt(createEmptyMap(), 2, 8, option.key);
+      expect((prompt.match(/Composition style —/g) ?? []).length).toBe(1);
+      expect(prompt).toContain(CODE_PLAN_STYLE_PARAGRAPHS[option.key]);
+    }
+  });
+
+  it('normalizes unknown plan modes to the minimal baseline', () => {
+    expect(normalizeCodePlanMode(undefined)).toBe('minimal');
+    expect(normalizeCodePlanMode('grammar')).toBe('grammar');
+    expect(normalizeCodePlanMode('no-such-mode')).toBe('minimal');
+  });
+
+  it('lists the canonical terrain preset names', () => {
+    const prompt = buildRawSceneCodeSystemPrompt(createEmptyMap(), 2, 8);
+    expect(prompt).toContain("'dune-desert'");
+    expect(prompt).not.toContain("'rolling'");
   });
 
   it('lets the model define its own variables, helpers, loops and noise', () => {

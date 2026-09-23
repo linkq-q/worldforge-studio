@@ -26,6 +26,7 @@ import {
   type ChatProvider,
   type Vec3
 } from '../shared/protocol';
+import type { CodePlanMode } from '../shared/codePlanModes';
 import {
   normalizeMapAiNewAssetRange,
   planLimits,
@@ -89,6 +90,8 @@ export interface MapAiOptions {
   approvedCompositionPlan?: SceneCompositionPlan;
   /** Use one unified bounded Scene Code program for outdoor generation. */
   sceneAgent?: boolean;
+  /** Composition-style route for the raw scene Code prompt; see shared/codePlanModes. */
+  planMode?: CodePlanMode;
   /** Optional user-authored preference for focal assets. */
   focusPrompt?: string;
   /** Return an indoor Code candidate and asset declaration list without generating assets. */

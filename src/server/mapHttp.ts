@@ -17,6 +17,7 @@ import {
   type ChatProvider,
   type Vec3
 } from '../shared/protocol';
+import { normalizeCodePlanMode, type CodePlanMode } from '../shared/codePlanModes';
 import {
   applyMapOperations,
   type CodePlanAssetReadyPayload,
@@ -559,6 +560,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       approvedCompositionPlan?: SceneCompositionPlan;
       approvedCode?: string;
       sceneAgent?: boolean;
+      planMode?: CodePlanMode;
       focusPrompt?: string;
       paletteId?: string;
       selectedObjectIds?: string[];
@@ -570,6 +572,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    const planMode = normalizeCodePlanMode(body.planMode);
     const controller = new AbortController();
     const stream = acceptsEventStream(req);
     if (stream) beginSse(res);
@@ -649,6 +652,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             maxNewAssets: body.maxNewAssets,
             focusPrompt: body.focusPrompt,
             sceneAgent: body.sceneAgent === true,
+            planMode,
             discoveryOnly: true,
             onProgress,
             onPlanPreview,
@@ -698,6 +702,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           approvedCompositionPlan: body.approvedCompositionPlan,
           approvedCode: body.approvedCode,
           sceneAgent: body.sceneAgent === true,
+          planMode,
           focusPrompt: body.focusPrompt,
           refinableObjectIds,
           selectedObjectIds: Array.isArray(body.selectedObjectIds)

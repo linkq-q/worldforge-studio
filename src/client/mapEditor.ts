@@ -196,6 +196,7 @@ import {
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
 import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
+import { CODE_PLAN_MODE_OPTIONS, DEFAULT_CODE_PLAN_MODE, normalizeCodePlanMode, type CodePlanMode } from '../shared/codePlanModes';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import {
   VISUAL_ZONE_FIELDS,
@@ -444,6 +445,7 @@ class MapEditor {
   private mapAiTargetRegionId = '';
   private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
+  private mapAiPlanMode: CodePlanMode = DEFAULT_CODE_PLAN_MODE;
   private mapAiUseSceneAgent = true;
   private mapAiReuseExistingAssets = false;
   private mapAiConfirmCompositionPlan = false;
@@ -1615,6 +1617,12 @@ class MapEditor {
               ${visualZones.map((zone) => `<option value="${escapeHtml(zone.id)}" ${zone.id === this.mapAiTargetVisualZoneId ? 'selected' : ''}>${escapeHtml(zone.id)} · ${escapeHtml(zone.tags.join(', ') || '未标记')}</option>`).join('')}
             </select>
           </label>` : ''}
+          ${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? `<label class="field compact">
+            <span>构图模式</span>
+            <select id="map-ai-plan-mode" ${this.state.busy ? 'disabled' : ''}>
+              ${CODE_PLAN_MODE_OPTIONS.map((option) => `<option value="${option.key}" ${option.key === this.mapAiPlanMode ? 'selected' : ''}>${option.label}</option>`).join('')}
+            </select>
+          </label>` : ''}
         </div>
         <div class="map-ai-controls">
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '先生成灰盒构图' : map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成室内规划' : '生成新规划'}</button>
@@ -1766,6 +1774,9 @@ class MapEditor {
     }
     host.querySelector<HTMLSelectElement>('#map-ai-target-zone')?.addEventListener('change', (event) => {
       this.mapAiTargetVisualZoneId = (event.target as HTMLSelectElement).value;
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-plan-mode')?.addEventListener('change', (event) => {
+      this.mapAiPlanMode = normalizeCodePlanMode((event.target as HTMLSelectElement).value);
     });
     host.querySelector('#generate-map-ai')?.addEventListener('click', () => {
       this.mapAiBaseTerrainOnly = false;
@@ -2450,6 +2461,7 @@ class MapEditor {
             maxNewAssets: this.mapAiMaxNewAssets,
             paletteId: this.selectedPaletteId || undefined,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
+            planMode: this.mapAiPlanMode,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             planOnly: true
           }),
@@ -2551,6 +2563,7 @@ class MapEditor {
             approvedCompositionPlan,
             approvedCode,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
+            planMode: this.mapAiPlanMode,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             paletteId: this.selectedPaletteId || undefined,
             selectedObjectIds: [...this.selectedObjectIds],

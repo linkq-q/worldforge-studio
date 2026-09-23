@@ -27,6 +27,7 @@ import {
   resolveMapDesignFocusObjects
 } from '../shared/mapDesignRelations';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
+import { CODE_PLAN_STYLE_PARAGRAPHS, type CodePlanMode } from '../shared/codePlanModes';
 import {
   applyMapOperations,
   isCodePlanPlaceholderAssetId,
@@ -154,6 +155,8 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   scope?: MapCodeScope;
   /** Generate a complete scene or emit a delta over the supplied map. */
   mode?: MapCodeRequestMode;
+  /** Composition-style route injected into the raw scene prompt; 'minimal' keeps the baseline prompt. */
+  planMode?: CodePlanMode;
   /** Return the validated Code and declared asset list without generating assets. */
   discoveryOnly?: boolean;
   /** Reuse a user-approved Code candidate without asking the model to redesign it. */
@@ -613,7 +616,8 @@ export async function generateMapCodeSuggestion(
     options.scope,
     requestMode,
     prompt,
-    options.refinableObjectIds
+    options.refinableObjectIds,
+    options.planMode
   );
   const focalPreference = options.focusPrompt?.trim().slice(0, 300);
   const userPrompt = [
@@ -3563,22 +3567,25 @@ function mapRefineSpatialSummary(map: EditableMap) {
 }
 
 /**
- * Minimal raw-mode system prompt: only the ten basic APIs and the spatial
- * rhythm mandate. Every other technique (curves, sampling, noise, connected
+ * Raw-mode system prompt: the ten basic APIs, the spatial rhythm mandate and
+ * — when a non-minimal plan mode is selected — one composition-style
+ * paragraph. Every other technique (curves, sampling, noise, connected
  * modules) is intentionally left for the model to author in plain JavaScript.
  */
 export function buildRawSceneCodeSystemPrompt(
   map: EditableMap,
   minNewAssets: number,
-  maxNewAssets: number
+  maxNewAssets: number,
+  planMode: CodePlanMode = 'minimal'
 ): string {
   const bounds = getMapBounds(map);
+  const styleParagraph = CODE_PLAN_STYLE_PARAGRAPHS[planMode];
   return `You are a scene composer. Write ONE JavaScript function \`function plan(api) { ... }\` that lays out the complete outdoor scene on a 2D map (x/z are ground coordinates, y is terrain height). This first version is final — nobody will iterate on it.
 
 Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}. \`Math\` is available and \`Math.random\` is seeded, so it is deterministic.
 
 You have total creative freedom: theme, landform, architecture, vegetation and density are yours to derive from the user's request. Your one standing duty is SPATIAL RHYTHM: compose like music. Alternate open and enclosed areas, dense and sparse patches, tall and low masses. Stagger elements irregularly — never uniform grids, never even spacing. Give the scene one dominant focus, a few subordinate ones, deliberate sightline reveals and honest empty space.
-
+${styleParagraph ? `\n${styleParagraph}\n` : ''}
 Define as many of your own variables, constants and helper functions inside plan as you like — geometry helpers, samplers, noise, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
 The sandbox exposes exactly these 10 APIs. Everything else is yours to build: plain JavaScript is fully available — \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, local helper functions, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`). Write your own helpers freely: curve sampling, grid or Poisson point sets, value noise, path subdivision, jitter, orientation math — all of it is just JS you author yourself. For example:
@@ -3588,7 +3595,7 @@ The sandbox exposes exactly these 10 APIs. Everything else is yours to build: pl
   }
 
 The 10 APIs:
-1. api.terrain(preset, {amplitude?, roughness?, seed?}) — preset: 'plain'|'rolling'|'hilly'|'mountainous'|'dunes'|'islands'|'mesa'|'canyon'; 'plain' stays flat.
+1. api.terrain(preset, {amplitude?, roughness?, seed?}) — preset: 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; 'plain' stays flat.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island', region:{kind:'circle',center:[x,z],radius}|{kind:'path',points, width}|{kind:'polygon',points}, amplitude, softness?}) — local landform.
 3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving', material?, region, intensity?}) — paints existing terrain; cannot create height.
 4. api.water(id, {type:'lake'|'river'|'ocean', points:[[x,z],...], level, depth}).
@@ -3614,13 +3621,14 @@ export function buildMapCodePlannerSystemPrompt(
   scope: MapCodeScope = 'general',
   requestMode: MapCodeRequestMode = 'generate',
   _taskPrompt = '',
-  refinableIds: readonly string[] = []
+  refinableIds: readonly string[] = [],
+  planMode: CodePlanMode = 'minimal'
 ): string {
   if (map.sceneMode === 'indoor') {
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
   }
   if (RAW_CODEPLAN_MODE && requestMode === 'generate' && scope === 'scene') {
-    return buildRawSceneCodeSystemPrompt(map, minNewAssets, maxNewAssets);
+    return buildRawSceneCodeSystemPrompt(map, minNewAssets, maxNewAssets, planMode);
   }
   const bounds = getMapBounds(map);
   const assetCatalog = assetCatalogContext(assets);
