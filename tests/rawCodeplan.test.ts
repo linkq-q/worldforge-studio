@@ -3,8 +3,12 @@ import { describe, expect, it } from 'vitest';
 // Raw codeplan experiment must be enabled before the planner module is imported.
 process.env.WORLDFORGE_RAW_CODEPLAN = '1';
 
+
+
 const { buildRawSceneCodeSystemPrompt, buildRawIndoorSceneCodeSystemPrompt, executeMapCodePlan } = await import('../src/server/mapCodePlanner');
-const { createEmptyMap } = await import('../src/shared/map');
+import type { MapOperation } from '../src/shared/mapOperations';
+const { createEmptyMap, buildInteriorWallSegments } = await import('../src/shared/map');
+import type { MapInteriorWall } from '../src/shared/map';
 const { CODE_PLAN_MODE_OPTIONS, normalizeCodePlanMode } = await import('../src/shared/codePlanModes');
 
 describe('raw codeplan mode', () => {
@@ -46,10 +50,10 @@ describe('raw codeplan mode', () => {
     expect(prompt).not.toContain("'rolling'");
   });
 
-  it('gives indoor raw mode a ten-key room-native minimal prompt without outdoor APIs', () => {
+  it('gives indoor raw mode an eleven-key room-native minimal prompt without outdoor APIs', () => {
     const room = createEmptyMap('教室', 'indoor-raw-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
     const prompt = buildRawIndoorSceneCodeSystemPrompt(room, 2, 8);
-    for (const name of ['room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening', 'attach', 'requireAsset', 'asset', 'place', 'random']) {
+    for (const name of ['room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening', 'interiorWall', 'attach', 'requireAsset', 'asset', 'place', 'random']) {
       expect(prompt).toContain(`api.${name}`);
     }
     expect(prompt).toContain('CIRCULATION');
@@ -59,12 +63,40 @@ describe('raw codeplan mode', () => {
     expect(prompt).not.toContain('api.terrain');
     expect(prompt).not.toContain('SPATIAL RHYTHM');
     expect(prompt).not.toContain('Composition style —');
-    // The reduction to ten keys: no composite placement key, no preset math
+    // The reduction to eleven keys: no composite placement key, no preset math
     // helpers — the prompt tells the model to define its own instead.
     expect(prompt).not.toContain('api.placeBetween');
     expect(prompt).not.toContain('api.clamp');
     expect(prompt).not.toContain('api.gridPoints');
     expect(prompt).toContain('you define yourself');
+  });
+
+  it('builds interior walls as whole surfaces with door holes punched out', () => {
+    const room = createEmptyMap('公寓', 'interior-wall-geometry', [14, 4, 10], 'voxel', 'indoor', [14, 4, 10]);
+    const code = `function plan(api) {
+      api.interiorWall({
+        id: 'bath-wall', from: [-3, 0], to: [3, 0], thickness: 0.12, height: 2.8,
+        wallType: 'solid', color: '#e8e0d0',
+        openings: [{ id: 'bath-door', kind: 'door', offset: 0, bottom: 0, width: 0.9, height: 2.1 }]
+      });
+      const leaf = api.requireAsset({ key:'leaf', name:'卫浴门', prompt:'oak interior door leaf. Coordinate contract: Y+ is up, Z+ is the front direction, X+ is right.', dimensions:[0.9,2.1,0.05], role:'functional' });
+      api.place({ assetId: api.asset(leaf), roomOpeningId: 'bath-wall/bath-door', dimensions:[0.9,2.1,0.05], role:'functional' });
+    }`;
+    const suggestion = executeMapCodePlan(code, room, [], {
+      mode: 'discovery', requestMode: 'generate', scope: 'scene'
+    });
+    const wallOps = suggestion.operations.filter((op) => op.type === 'interior-wall.set');
+    expect(wallOps).toHaveLength(1);
+    const wallOp = wallOps[0] as Extract<MapOperation, { type: 'interior-wall.set' }>;
+    const segments = buildInteriorWallSegments({ interiorWalls: [wallOp.wall as MapInteriorWall] });
+    // One door hole splits the wall into left + right + above-door strips.
+    expect(segments).toHaveLength(3);
+    const leaf: any = suggestion.operations.find(
+      (op) => op.type === 'object.add' && (op.object as any).roomOpeningId === 'bath-wall/bath-door'
+    );
+    expect(leaf).toBeTruthy();
+    // Leaf sits inside the hole on the wall axis.
+    expect(leaf.object.transform.position[1]).toBeCloseTo(0.02, 2);
   });
 
   it('keeps rugs and carpets available as indoor decor objects', () => {

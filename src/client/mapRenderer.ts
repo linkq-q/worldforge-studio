@@ -5,6 +5,7 @@ import {
   ROOM_SURFACES,
   SUN_OBJECT_ID,
   buildRoomShellSegments,
+  buildInteriorWallSegments,
   getMapBounds,
   getPlayerSpawnYaw,
   getSpawnPoints,
@@ -466,6 +467,45 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     mesh.userData.roomYMax = segment.yMax;
     surfaceGroups.get(segment.surface)?.add(mesh);
     if (segment.surface !== 'floor' && !glass) {
+      const shadowMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+      shadowMaterial.colorWrite = false;
+      shadowMaterial.depthWrite = false;
+      const shadowMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), shadowMaterial);
+      shadowMesh.position.set(...segment.center);
+      shadowMesh.scale.set(...segment.size);
+      shadowMesh.castShadow = true;
+      shadowMesh.receiveShadow = false;
+      shadowShell.add(shadowMesh);
+    }
+  }
+
+  const interiorWallById = new Map((map.interiorWalls ?? []).map((wall) => [wall.id, wall]));
+  const interiorWallGroup = new THREE.Group();
+  interiorWallGroup.name = 'room:interior-walls';
+  group.add(interiorWallGroup);
+  for (const segment of buildInteriorWallSegments(map)) {
+    const wall = interiorWallById.get(segment.wallId);
+    if (!wall) continue;
+    const glass = wall.wallType === 'glass';
+    const parameters = {
+      color: wall.color ?? map.box.colors.north,
+      roughness: glass ? 0.15 : 0.82, metalness: glass ? 0.08 : 0, side: THREE.DoubleSide,
+      emissive: '#101519', emissiveIntensity: 0.08
+    };
+    const material = glass
+      ? new THREE.MeshPhysicalMaterial({
+          ...parameters, transparent: true, opacity: 0.42, transmission: 0.62,
+          thickness: Math.max(0.02, Math.min(...segment.size)), depthWrite: false
+        })
+      : new THREE.MeshStandardMaterial(parameters);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+    mesh.position.set(...segment.center);
+    mesh.scale.set(...segment.size);
+    mesh.castShadow = !glass;
+    mesh.receiveShadow = true;
+    mesh.userData.mapObjectId = `__interior__:${wall.id}`;
+    interiorWallGroup.add(mesh);
+    if (!glass) {
       const shadowMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
       shadowMaterial.colorWrite = false;
       shadowMaterial.depthWrite = false;

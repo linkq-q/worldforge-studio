@@ -4,12 +4,14 @@ import {
   DEFAULT_WATER_DEPTH,
   createMapObject,
   createPaintStroke,
+  normalizeInteriorWall,
   normalizeMap,
   normalizeMapRoom,
   placeRoomOpeningObjectInPlace,
   snapTerrainObjectsInPlace,
   type EditableMap,
   type MapAsset,
+  type MapInteriorWall,
   type MapLighting,
   type MapBoxColors,
   type MapObject,
@@ -181,6 +183,8 @@ export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 export type MapOperation =
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; lighting?: Pick<MapLighting, 'pointLightBudget'>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; designSemantics?: MapDesignSemantics; layout?: MapLayout }
   | { type: 'room.set'; room: Partial<MapRoom> }
+  | { type: 'interior-wall.set'; wall: Partial<MapInteriorWall> & Pick<MapInteriorWall, 'id' | 'from' | 'to'> }
+  | { type: 'interior-wall.remove'; wallId: string }
   | { type: 'interior.art-direction.set'; artDirection: InteriorArtDirectionInput }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
@@ -301,6 +305,28 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (!operation.room || typeof operation.room !== 'object') throw new Error('invalid_room');
         next.room = normalizeMapRoom(operation.room, next.box.size, next.room ?? undefined);
         next.objects.forEach((object) => placeRoomOpeningObjectInPlace(next, object));
+        break;
+      case 'interior-wall.set':
+        if (next.sceneMode === 'outdoor') throw new Error('interior_wall_requires_indoor_map');
+        if (!operation.wall?.id || !operation.wall.from || !operation.wall.to) throw new Error('invalid_interior_wall');
+        {
+          const roomHeight = next.room?.size[1] ?? Math.max(2.2, next.box.size[1]);
+          const wall = normalizeInteriorWall(
+            operation.wall as Partial<MapInteriorWall> & Pick<MapInteriorWall, 'id' | 'from' | 'to'>,
+            roomHeight
+          );
+          const existing = next.interiorWalls.findIndex((item) => item.id === wall.id);
+          if (existing >= 0) next.interiorWalls[existing] = wall;
+          else next.interiorWalls.push(wall);
+        }
+        next.objects.forEach((object) => placeRoomOpeningObjectInPlace(next, object));
+        break;
+      case 'interior-wall.remove':
+        next.interiorWalls = next.interiorWalls.filter((item) => item.id !== operation.wallId);
+        next.objects.forEach((object) => {
+          if (object.roomOpeningId?.startsWith(`${operation.wallId}/`)) object.roomOpeningId = undefined;
+          placeRoomOpeningObjectInPlace(next, object);
+        });
         break;
       case 'interior.art-direction.set':
         if (next.sceneMode === 'outdoor') throw new Error('interior_art_direction_requires_indoor_map');

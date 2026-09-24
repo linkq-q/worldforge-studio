@@ -4,10 +4,13 @@ import {
   getMapBounds,
   getMapObjectVisualAabbs,
   getMapPlayerMetrics,
+  normalizeInteriorWall,
   normalizeMapRoom,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
+  type MapInteriorWall,
+  type MapInteriorWallOpening,
   type MapRoom,
   type MapRoomOpening,
   type MapWaterBody,
@@ -105,7 +108,7 @@ const RAW_CODEPLAN_API_KEYS = [
  * its own helpers, which is the generativity we want.
  */
 const RAW_INDOOR_CODEPLAN_API_KEYS = [
-  'room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening',
+  'room', 'roomPoint', 'wallFrame', 'ceilingPoint', 'opening', 'interiorWall',
   'requireAsset', 'asset', 'place', 'attach', 'random'
 ] as const;
 
@@ -149,7 +152,11 @@ const FLOATING_WATER_ASSET = /\b(?:boat|ship)\b|船|舟/i;
 // Rugs and carpets are placeable decor objects (a seating group's boundary,
 // a bed-side runner) and must stay available to indoor plans; only the
 // finish-sense phrasings — baking carpet/rug as a floor surface — are forbidden.
-const INDOOR_FORBIDDEN_CONTENT = /\b(?:whole|complete|entire)\s+(?:room|interior)\b|\broom\s+shell\b|\bfloor(?:ing)?\s+(?:finish|surface|plane|slab)\b|\bceiling\s+(?:finish|surface|plane|slab)\b|\bwall(?:paper|\s+(?:finish|surface|shell))\b|\b(?:carpet|rug)\s+(?:finish|surface|plane|slab)\b|\b(?:terrain|outdoor ground|building exterior)\b|整间房|整体房间|房间外壳|地板饰面|墙面饰面|天花饰面|墙纸|地毯饰面|室外地形|建筑外立面/i;
+// Rugs and carpets are placeable decor objects (a seating group's boundary,
+// a bed-side runner) and must stay available to indoor plans; only the
+// finish-sense phrasings — baking carpet/rug as a floor surface — are forbidden.
+// Negated descriptions ("no ceiling plane") describe honest assets, not finishes.
+const INDOOR_FORBIDDEN_CONTENT = /\b(?:whole|complete|entire)\s+(?:room|interior)\b|\broom\s+shell\b|(?<!no\s)(?<!without\s)\bfloor(?:ing)?\s+(?:finish|surface|plane|slab)\b|(?<!no\s)(?<!without\s)\bceiling\s+(?:finish|surface|plane|slab)\b|\bwall(?:paper|\s+(?:finish|surface|shell))\b|(?<!no\s)(?<!without\s)\b(?:carpet|rug)\s+(?:finish|surface|plane|slab)\b|\b(?:terrain|outdoor ground|building exterior)\b|整间房|整体房间|房间外壳|地板饰面|墙面饰面|天花饰面|墙纸|地毯饰面|室外地形|建筑外立面/i;
 
 type Point2 = [number, number];
 type Point3 = [number, number, number];
@@ -1148,6 +1155,7 @@ function executeMapCodePlanInternal(
     ? normalizeMapRoom(map.room, map.box.size, map.room)
     : null;
   const roomOpenings = indoorRoom ? [...indoorRoom.openings] : [];
+  const interiorWalls: MapInteriorWall[] = [];
   const mode = options.mode ?? 'final';
   const requestMode = options.requestMode ?? 'generate';
   const scope = options.scope ?? 'general';
@@ -1255,7 +1263,15 @@ function executeMapCodePlanInternal(
       if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
     }
     const roomOpeningId = input.roomOpeningId?.trim();
-    if (roomOpeningId && !roomOpenings.some((opening) => opening.id === roomOpeningId)) {
+    const interiorOpeningRef = roomOpeningId && roomOpeningId.includes('/') ? roomOpeningId : null;
+    let interiorOpening: { wall: MapInteriorWall; opening: MapInteriorWallOpening } | null = null;
+    if (interiorOpeningRef) {
+      const [wallId, openingId] = interiorOpeningRef.split('/');
+      const wall = interiorWalls.find((item) => item.id === wallId);
+      const opening = wall?.openings.find((item) => item.id === openingId);
+      if (!wall || !opening) throw new Error(`unknown_map_code_room_opening:${roomOpeningId}`);
+      interiorOpening = { wall, opening };
+    } else if (roomOpeningId && !roomOpenings.some((opening) => opening.id === roomOpeningId)) {
       throw new Error(`unknown_map_code_room_opening:${roomOpeningId}`);
     }
     if (input.position === undefined && !roomOpeningId) throw new Error('invalid_map_code_position');
@@ -1264,7 +1280,9 @@ function executeMapCodePlanInternal(
       && input.position !== undefined
       && placementUsesTerrain(input.position);
     const position = input.position === undefined
-      ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
+      ? interiorOpening
+        ? interiorWallOpeningPlacement(interiorOpening.wall, interiorOpening.opening, requireIndoorRoom(indoorRoom))
+        : roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
       : placementPosition(input.position, map, terrain);
     const asset = assetId ? assetById.get(assetId) : undefined;
     const role = roleByAssetId.get(assetId ?? '')
@@ -1282,7 +1300,10 @@ function executeMapCodePlanInternal(
       assetId,
       name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化物体', 80),
       position,
-      rotationY: placementRotation(input.facing, position, input.rotationY),
+      rotationY: interiorOpening && input.rotationY === undefined && input.facing === undefined
+        ? (Math.abs(interiorOpening.wall.to[0] - interiorOpening.wall.from[0])
+          >= Math.abs(interiorOpening.wall.to[1] - interiorOpening.wall.from[1]) ? 0 : Math.PI / 2)
+        : placementRotation(input.facing, position, input.rotationY),
       scale: fitted.scale,
       size: dimensions ?? point3(input.size ?? [1, 1, 1]),
       ...(dimensions ? { fitToDimensions: true } : {}),
@@ -1355,6 +1376,35 @@ function executeMapCodePlanInternal(
       if (!opening) throw new Error('invalid_map_code_room_opening');
       roomOpenings.splice(0, roomOpenings.length, ...normalizedRoom.openings);
       return opening.id;
+    },
+    interiorWall(input: {
+      id: string;
+      from: number[];
+      to: number[];
+      thickness?: number;
+      height?: number;
+      wallType?: 'solid' | 'glass';
+      color?: string;
+      finish?: string;
+      openings?: Array<{ id?: string; kind?: 'door' | 'window' | 'pass'; offset?: number; bottom?: number; width?: number; height?: number }>;
+    }): string {
+      record('interiorWall');
+      requireIndoorRoom(indoorRoom);
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_interior_wall');
+      const id = cleanText(input.id, 80);
+      if (!id || !Array.isArray(input.from) || !Array.isArray(input.to)) throw new Error('invalid_map_code_interior_wall');
+      const room = requireIndoorRoom(indoorRoom);
+      const wall = normalizeInteriorWall({ ...input, id } as Partial<MapInteriorWall> & Pick<MapInteriorWall, 'id' | 'from' | 'to'>, room.size[1]);
+      const existing = interiorWalls.findIndex((item) => item.id === wall.id);
+      if (existing >= 0) interiorWalls[existing] = wall;
+      else interiorWalls.push(wall);
+      const opIndex = sceneOperations.findIndex(
+        (operation) => operation.type === 'interior-wall.set' && operation.wall.id === wall.id
+      );
+      const operation = { type: 'interior-wall.set', wall } satisfies MapOperation;
+      if (opIndex >= 0) sceneOperations[opIndex] = operation;
+      else sceneOperations.push(operation);
+      return wall.id;
     },
     sceneIntent(input: { kind: CodeSceneIntent; reason?: string }): CodeSceneIntent {
       record('sceneIntent');
@@ -3847,17 +3897,18 @@ You have total creative freedom: style, furniture families, density and atmosphe
 ${styleParagraph ? `\n${styleParagraph}\n` : ''}
 Define as many of your own variables, constants and helper functions inside plan as you like — layout helpers, samplers, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: \`const\`/\`let\`, \`for\` / \`for...of\` / \`while\` loops, \`if\`/\`else\`, function declarations and arrows, arrays, objects, and all of \`Math\` (including seeded \`Math.random\`).
 
-The sandbox exposes exactly these ten APIs. Everything else is yours to build:
+The sandbox exposes exactly these eleven APIs. Everything else is yours to build:
 1. api.room — the room data {position, size, wallThickness, openings}.
 2. api.roomPoint(localX, localZ, height?) — a floor point, offset from the room center; height 0 for floor furniture.
 3. api.wallFrame(wall, offset?, bottom?, inset?) — wall is 'north'|'south'|'east'|'west'; returns {point, inward, outward, tangent}. Place wall-mounted assets at frame.point with facing:{direction:frame.inward}.
 4. api.ceilingPoint(localX, localZ, objectHeight?, drop?) — a point with the object below the ceiling; pass its declared height.
 5. api.opening({id, kind:'door'|'window', wall, offset?, bottom?, width?, height?}) — declares a parameterized opening and returns its ID; then api.place({assetId, roomOpeningId:id, dimensions:[w,h,d]}) binds a door/window model to it.
-6. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'functional'|'decor', variants?, optional?}) — declares an asset family; returns the key.
-7. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
-8. api.place({assetId, name?, position, rotationY?, facing?, dimensions?, roomOpeningId?, role:'functional'|'decor'}) — dimensions is the intended world [width,height,depth]; rotationY in radians, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
-9. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side 'north'|'south'|'east'|'west' — ONLY the four shell walls, never a partition you built — with local [horizontal, vertical] offset.
-10. api.random(min?, max?) — seeded. Full \`Math\` is available and \`Math.random\` is seeded; everything beyond these ten keys — lerp, clamps, samplers, relation helpers — you define yourself.
+6. api.interiorWall({id, from:[x,z], to:[x,z], thickness?, height?, wallType?:'solid'|'glass', color?:'#hex', openings?}) — declares a WHOLE interior wall on the from→to axis (axis-aligned, run corner-to-corner across the room or into the shell walls) and punches its openings: openings:[{id, kind:'door'|'window'|'pass', offset along the wall from its midpoint, bottom, width, height}]. Then fit a door/window leaf into the hole with api.place({assetId, roomOpeningId:'<wallId>/<openingId>'}). Returns the wall id; re-calling with the same id replaces the wall. glass walls read as framed glass partitions; color tints solid walls.
+7. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'functional'|'decor', variants?, optional?}) — declares an asset family; returns the key.
+8. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
+9. api.place({assetId, name?, position, rotationY?, facing?, dimensions?, roomOpeningId?, role:'functional'|'decor'}) — dimensions is the intended world [width,height,depth]; rotationY in radians, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
+10. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side 'north'|'south'|'east'|'west' — ONLY the four shell walls, never a partition you built — with local [horizontal, vertical] offset.
+11. api.random(min?, max?) — seeded. Full \`Math\` is available and \`Math.random\` is seeded; everything beyond these eleven keys — lerp, clamps, samplers, relation helpers — you define yourself.
 
 Rules:
 - Declare ${minNewAssets}..${maxNewAssets} requireAsset families; place every declared variant at least once.
@@ -5594,6 +5645,15 @@ function roomOpeningPlacement(room: MapRoom, openings: readonly MapRoomOpening[]
   const opening = openings.find((item) => item.id === openingId);
   if (!opening) throw new Error(`unknown_map_code_room_opening:${openingId}`);
   return roomWallFrame(room, opening.wall, opening.offset, opening.bottom, 0.02).point;
+}
+
+function interiorWallOpeningPlacement(wall: MapInteriorWall, opening: MapInteriorWallOpening, room: MapRoom): Point3 {
+  const horizontal = Math.abs(wall.to[0] - wall.from[0]) >= Math.abs(wall.to[1] - wall.from[1]);
+  const midX = (wall.from[0] + wall.to[0]) / 2;
+  const midZ = (wall.from[1] + wall.to[1]) / 2;
+  return horizontal
+    ? [midX + opening.offset, room.position[1] + opening.bottom + 0.02, midZ]
+    : [midX, room.position[1] + opening.bottom + 0.02, midZ + opening.offset];
 }
 
 function fittedPlacementTransform(

@@ -89,6 +89,32 @@ export interface MapRoom {
   openings: MapRoomOpening[];
 }
 
+export interface MapInteriorWallOpening {
+  id: string;
+  kind: 'door' | 'window' | 'pass';
+  /** Offset along the wall axis from the wall midpoint. */
+  offset: number;
+  /** Height above the room floor in metres. */
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+export interface MapInteriorWall {
+  id: string;
+  /** Axis endpoints of the wall centreline in world x/z (P1: axis-aligned). */
+  from: [number, number];
+  to: [number, number];
+  thickness: number;
+  height: number;
+  wallType: 'solid' | 'glass';
+  /** Paint/tint colour overriding the room default wall finish. */
+  color: string | null;
+  /** Optional surface recipe id (a wallpaper, wood or tile recipe) taking precedence over color. */
+  finish: string | null;
+  openings: MapInteriorWallOpening[];
+}
+
 export interface RoomShellSegment {
   surface: RoomSurface;
   center: Vec3;
@@ -253,6 +279,7 @@ export interface EditableMap {
   playerRadius: number;
   worldScaleProfile: WorldScaleProfile;
   room: MapRoom | null;
+  interiorWalls: MapInteriorWall[];
   interiorArtDirection: InteriorArtDirection | null;
   lighting: MapLighting;
   terrain: MapTerrain;
@@ -571,6 +598,89 @@ export function normalizeMapRoom(
   return { position, size, wallThickness, openings };
 }
 
+export function normalizeInteriorWall(
+  value: Partial<MapInteriorWall> & Pick<MapInteriorWall, 'id' | 'from' | 'to'>,
+  roomHeight: number
+): MapInteriorWall {
+  const from: [number, number] = [finiteNumber(value.from[0], 0), finiteNumber(value.from[1], 0)];
+  const to: [number, number] = [finiteNumber(value.to[0], 0), finiteNumber(value.to[1], 0)];
+  // P1: axis-aligned walls — snap to the dominant axis.
+  const horizontal = Math.abs(to[0] - from[0]) >= Math.abs(to[1] - from[1]);
+  const fromSnapped: [number, number] = horizontal ? [from[0], from[1]] : [from[0], from[1]];
+  const toSnapped: [number, number] = horizontal ? [to[0], from[1]] : [from[0], to[1]];
+  const length = horizontal
+    ? Math.abs(toSnapped[0] - fromSnapped[0])
+    : Math.abs(toSnapped[1] - fromSnapped[1]);
+  const thickness = clamp(finiteNumber(value.thickness, 0.12), 0.04, 0.6);
+  const height = clamp(finiteNumber(value.height, roomHeight), 0.5, Math.max(0.5, roomHeight));
+  const openings: MapInteriorWallOpening[] = [];
+  const seen = new Set<string>();
+  for (const raw of (Array.isArray(value.openings) ? value.openings : []).slice(0, 16)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const id = typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim().slice(0, 80)
+      : createId('wall-opening');
+    if (seen.has(id)) continue;
+    const kind = raw.kind === 'window' ? 'window' : raw.kind === 'pass' ? 'pass' : 'door';
+    const width = clamp(finiteNumber(raw.width, kind === 'door' ? 0.95 : 1.6), 0.4, Math.max(0.4, length - 0.1));
+    const openHeight = clamp(
+      finiteNumber(raw.height, kind === 'window' ? 1.3 : Math.min(2.1, height)),
+      0.3,
+      Math.max(0.3, height)
+    );
+    const bottom = kind === 'window'
+      ? clamp(finiteNumber(raw.bottom, 1), 0, Math.max(0, height - openHeight))
+      : 0;
+    openings.push({
+      id,
+      kind,
+      offset: clamp(
+        finiteNumber(raw.offset, 0),
+        -length / 2 + width / 2 + 0.05,
+        length / 2 - width / 2 - 0.05
+      ),
+      bottom,
+      width,
+      height: openHeight
+    });
+    seen.add(id);
+  }
+  return {
+    id: value.id.trim().slice(0, 80),
+    from: fromSnapped,
+    to: toSnapped,
+    thickness,
+    height,
+    wallType: value.wallType === 'glass' ? 'glass' : 'solid',
+    color: typeof value.color === 'string' && value.color.trim()
+      ? normalizeColor(value.color.trim(), '#d8d2c6')
+      : null,
+    finish: typeof value.finish === 'string' && value.finish.trim()
+      ? value.finish.trim().slice(0, 60)
+      : null,
+    openings
+  };
+}
+
+export function normalizeInteriorWalls(value: unknown, roomHeight: number): MapInteriorWall[] {
+  if (!Array.isArray(value)) return [];
+  const walls: MapInteriorWall[] = [];
+  const seen = new Set<string>();
+  for (const raw of value.slice(0, 48)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const candidate = raw as Partial<MapInteriorWall>;
+    if (!candidate.id || typeof candidate.id !== 'string' || !candidate.from || !candidate.to) continue;
+    const id = candidate.id.trim().slice(0, 80);
+    if (seen.has(id)) continue;
+    walls.push(normalizeInteriorWall(
+      { ...candidate, id } as Partial<MapInteriorWall> & Pick<MapInteriorWall, 'id' | 'from' | 'to'>,
+      roomHeight
+    ));
+    seen.add(id);
+  }
+  return walls;
+}
+
 export function buildRoomShellSegments(map: Pick<EditableMap, 'room'>): RoomShellSegment[] {
   const room = map.room;
   if (!room) return [];
@@ -630,6 +740,49 @@ export function buildRoomShellSegments(map: Pick<EditableMap, 'room'>): RoomShel
   return result;
 }
 
+export interface InteriorWallSegment {
+  wallId: string;
+  center: Vec3;
+  size: Vec3;
+  uMin: number;
+  uMax: number;
+  yMin: number;
+  yMax: number;
+}
+
+/** Whole-wall-with-holes: each interior wall minus its openings, as world boxes. */
+export function buildInteriorWallSegments(map: Pick<EditableMap, 'interiorWalls'>): InteriorWallSegment[] {
+  const result: InteriorWallSegment[] = [];
+  for (const wall of map.interiorWalls ?? []) {
+    const horizontal = Math.abs(wall.to[0] - wall.from[0]) >= Math.abs(wall.to[1] - wall.from[1]);
+    const length = horizontal
+      ? Math.abs(wall.to[0] - wall.from[0])
+      : Math.abs(wall.to[1] - wall.from[1]);
+    if (length < 0.05) continue;
+    const midX = (wall.from[0] + wall.to[0]) / 2;
+    const midZ = (wall.from[1] + wall.to[1]) / 2;
+    let rectangles: RoomWallRectangle[] = [{ uMin: -length / 2, uMax: length / 2, yMin: 0, yMax: wall.height }];
+    for (const opening of wall.openings) {
+      rectangles = rectangles.flatMap((rectangle) => subtractRoomOpening(rectangle, opening));
+    }
+    for (const rectangle of rectangles) {
+      if (rectangle.uMax - rectangle.uMin <= 0.001 || rectangle.yMax - rectangle.yMin <= 0.001) continue;
+      const u = (rectangle.uMin + rectangle.uMax) / 2;
+      const centreY = (rectangle.yMin + rectangle.yMax) / 2;
+      const span = rectangle.uMax - rectangle.uMin;
+      const spanY = rectangle.yMax - rectangle.yMin;
+      const center: Vec3 = horizontal ? [midX + u, centreY, midZ] : [midX, centreY, midZ + u];
+      result.push({
+        wallId: wall.id,
+        center,
+        size: horizontal ? [span, spanY, wall.thickness] : [wall.thickness, spanY, span],
+        ...rectangle
+      });
+    }
+  }
+  return result;
+}
+
 export function getRoomShellAabbs(map: Pick<EditableMap, 'room'>): MapObjectAabb[] {
   return buildRoomShellSegments(map).map((segment, index) => ({
     objectId: `${ROOM_OBJECT_ID}:${segment.surface}:${index}`,
@@ -649,6 +802,30 @@ export function getRoomShellAabbs(map: Pick<EditableMap, 'room'>): MapObjectAabb
 export function placeRoomOpeningObjectInPlace(map: EditableMap, object: MapObject): void {
   const room = map.room;
   if (!room || !object.roomOpeningId) return;
+  // Interior-wall bound leaves use the composite id '<wallId>/<openingId>'.
+  const separatorIndex = object.roomOpeningId.indexOf('/');
+  if (separatorIndex > 0) {
+    const wallId = object.roomOpeningId.slice(0, separatorIndex);
+    const openingId = object.roomOpeningId.slice(separatorIndex + 1);
+    const wall = (map.interiorWalls ?? []).find((item) => item.id === wallId);
+    const opening = wall?.openings.find((item) => item.id === openingId);
+    if (!wall || !opening) {
+      object.roomOpeningId = undefined;
+      return;
+    }
+    const horizontal = Math.abs(wall.to[0] - wall.from[0]) >= Math.abs(wall.to[1] - wall.from[1]);
+    const midX = (wall.from[0] + wall.to[0]) / 2;
+    const midZ = (wall.from[1] + wall.to[1]) / 2;
+    const asset = object.assetId ? map.assets?.find((item) => item.id === object.assetId) : undefined;
+    const localMinY = asset ? calculateModelVisualBounds(asset.modelJson).min[1] : 0;
+    const objectY = room.position[1] + opening.bottom - localMinY * object.transform.scale[1];
+    object.heightMode = 'fixed';
+    object.transform.position = horizontal
+      ? [midX + opening.offset, objectY, midZ]
+      : [midX, objectY, midZ + opening.offset];
+    object.transform.rotation[1] = horizontal ? 0 : Math.PI / 2;
+    return;
+  }
   const opening = room.openings.find((item) => item.id === object.roomOpeningId);
   if (!opening) {
     object.roomOpeningId = undefined;
@@ -709,7 +886,10 @@ interface RoomWallRectangle {
   yMax: number;
 }
 
-function subtractRoomOpening(rectangle: RoomWallRectangle, opening: MapRoomOpening): RoomWallRectangle[] {
+function subtractRoomOpening(
+  rectangle: RoomWallRectangle,
+  opening: Pick<MapRoomOpening, 'offset' | 'width' | 'bottom' | 'height'>
+): RoomWallRectangle[] {
   const uMin = opening.offset - opening.width / 2;
   const uMax = opening.offset + opening.width / 2;
   const yMin = opening.bottom;
@@ -792,6 +972,9 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     playerRadius,
     worldScaleProfile: normalizeWorldScaleProfile(input.worldScaleProfile),
     room: sceneMode === 'outdoor' ? null : normalizeMapRoom(input.room, boxSize),
+    interiorWalls: sceneMode === 'outdoor'
+      ? []
+      : normalizeInteriorWalls(input.interiorWalls, normalizeMapRoom(input.room, boxSize).size[1]),
     interiorArtDirection: sceneMode === 'outdoor'
       ? null
       : normalizeInteriorArtDirection(input.interiorArtDirection, Number.isFinite(Number(input.seed)) ? Number(input.seed) : seedFromString(id)),

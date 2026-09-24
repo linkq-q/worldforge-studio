@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-09-24T07:12:47.163Z",
+  "results": [
+    {
+      "key": "spa:program-anchor",
+      "mapId": "map-fe38c4b2-e237-425f",
+      "mapName": "室内ABCD6 · 美容SPA · E·墙 v2",
+      "ok": true,
+      "assetCount": 24,
+      "objectCount": 52,
+      "durationMs": 14269
+    },
+    {
+      "key": "apartment:program-anchor",
+      "mapId": "map-c897b6ec-cd32-40f7",
+      "mapName": "室内ABCD6 · 单身公寓 · E·墙 v2",
+      "ok": true,
+      "assetCount": 25,
+      "objectCount": 40,
+      "durationMs": 24617
+    },
+    {
+      "key": "clinic:program-anchor",
+      "mapId": "map-bd25784c-50d3-4320",
+      "mapName": "室内ABCD6 · 社区诊所 · E·墙 v2",
+      "ok": true,
+      "assetCount": 23,
+      "objectCount": 59,
+      "durationMs": 17326
+    },
+    {
+      "key": "music:program-anchor",
+      "mapId": "map-93cb1633-f82c-416b",
+      "mapName": "室内ABCD6 · 琴行 · E·墙 v2",
+      "ok": true,
+      "assetCount": 18,
+      "objectCount": 31,
+      "durationMs": 17481
+    }
+  ]
+}
