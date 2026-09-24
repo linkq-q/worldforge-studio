@@ -79,3 +79,14 @@ Based on accepted commit `b61554a`, terrain-backed realistic/hybrid lakes now va
 `/tests/manual/waterWind.html` compiles the actual material block and noise chunk on the GPU. With base strength 0.8, sampled strength is 0.522..0.961 (8-bit readback), remains spatially varied, moves over time, and is zero when strength is zero. Terrain-invalid, non-scene-lit, river and cartoon cases all preserve the original constant strength.
 
 Validation: 953 tests across 121 files and the production build passed. Captured 64 frames at 8 fps with identical camera/light/time for both variants; inspected nonadjacent frames plus close, distant and grazing views. The GIF wraps time at its end; this is only a recording boundary. This is a subtle artistic adjustment awaiting user acceptance, not a claim of complete photorealism.
+
+
+## Self-audit: normal orientation (2026-09-24)
+
+The previously added scene-water tangent frame used `cross(+Z, normal)`, which points toward -X on flat water although the normal texture is sampled on world +X/+Z. It inverted the texture's X lighting response. The frame also collapsed for a vertical normal parallel to +Z.
+
+Replace that frame with world-X/Z height-gradient composition, scaled by the base normal's Y component. This keeps authored slopes and avoids normalization of a zero tangent on vertical faces. It does not change legacy non-scene-water composition.
+
+`/tests/manual/waterNormals.html` compiles the actual material block on the GPU. Before the fix, a positive-X test normal returned X=-0.192 and the vertical case rendered invalid black values. After the fix, X=+0.192, positive-Z also stays positive, a vertical surface retains [0,0,1] within byte readback precision, and an unperturbed sloped surface remains unchanged. The test was observed failing before the fix and passing afterwards.
+
+Reviewed 48 matched frames of the reservoir plus a close spillway view. This corrects the orientation of glints; it does not add missing spray or scene-object reflections. Full tests (953 across 121 files) and the production build passed.

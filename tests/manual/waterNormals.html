@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Water normal orientation regression</title></head>
+<body><pre id="output">Running...</pre><script type="module">
+import * as THREE from 'three';
+import { WaterSurface } from '/vendor/voxel-render-runtime/src/environment/water/WaterSurface.js';
+const renderer=new THREE.WebGLRenderer();
+const surface=new WaterSurface(new THREE.Scene(),renderer,new THREE.Group(),{size:1,segments:1});
+const source=surface.material.fragmentShader;
+const start=source.indexOf('      // Y-up water plane:');
+const block=source.slice(start,source.indexOf('      float detailStrength',start));
+const material=new THREE.ShaderMaterial({
+  uniforms:{baseNormal:{value:new THREE.Vector3(0,1,0)},detailNormal:{value:new THREE.Vector3(0.2,0,1).normalize()},uUseSceneWaterLight:{value:true},uWaveNormalBlend:{value:1}},
+  vertexShader:'void main(){gl_Position=vec4(position.xy,0.0,1.0);}',
+  fragmentShader:`uniform vec3 baseNormal,detailNormal;uniform bool uUseSceneWaterLight;uniform float uWaveNormalBlend;
+    void main(){${block} gl_FragColor=vec4(detailNormalWorld*0.5+0.5,1.0);}`
+});
+const scene=new THREE.Scene(),geometry=new THREE.PlaneGeometry(2,2);
+scene.add(new THREE.Mesh(geometry,material));
+const target=new THREE.WebGLRenderTarget(1,1),camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+function sample(base,detail){
+  material.uniforms.baseNormal.value.set(...base).normalize();material.uniforms.detailNormal.value.set(...detail).normalize();
+  renderer.setRenderTarget(target);renderer.render(scene,camera);
+  const pixels=new Uint8Array(4);renderer.readRenderTargetPixels(target,0,0,1,1,pixels);
+  return Array.from(pixels.slice(0,3),v=>v/255*2-1);
+}
+const x=sample([0,1,0],[0.2,0,1]);
+const z=sample([0,1,0],[0,0.2,1]);
+const vertical=sample([0,0,1],[0.2,0.1,1]);
+const slope=sample([0,1,1],[0,0,1]);
+const passed=x[0]>0.18&&x[1]>0.97&&z[2]>0.18&&vertical[2]>0.99&&Math.abs(vertical[0])<0.01&&Math.abs(slope[1]-Math.SQRT1_2)<0.01&&Math.abs(slope[2]-Math.SQRT1_2)<0.01;
+window.result={passed,x,z,vertical,slope};document.querySelector('#output').textContent=JSON.stringify(window.result,null,2);
+surface.dispose();geometry.dispose();material.dispose();target.dispose();renderer.dispose();
+if(!passed)throw Error('Water normal world-axis mapping or vertical stability failed');
+</script></body></html>

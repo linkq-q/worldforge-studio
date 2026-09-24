@@ -1136,9 +1136,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       // Y-up water plane: normal-map XY contributes detail slope on world XZ.
       vec3 detailNormalWorld = normalize(baseNormal + vec3(detailNormal.x, 0.0, detailNormal.y) * uWaveNormalBlend);
       if (uUseSceneWaterLight) {
-        vec3 tangent = normalize(cross(vec3(0.0, 0.0, 1.0), baseNormal));
-        vec3 bitangent = normalize(cross(baseNormal, tangent));
-        detailNormalWorld = normalize(baseNormal + (tangent * detailNormal.x + bitangent * detailNormal.y) * uWaveNormalBlend);
+        // The texture is sampled on world +X/+Z. Add height-field slopes in
+        // those axes; a cross-product frame mirrored X and collapsed on vertical faces.
+        vec2 detailSlope = detailNormal.xy / max(detailNormal.z, 0.001);
+        detailNormalWorld = normalize(baseNormal + vec3(detailSlope.x, 0.0, detailSlope.y) * baseNormal.y * uWaveNormalBlend);
       }
       float detailStrength = uWaterNormalStrength;
       if (hasTerrainDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
