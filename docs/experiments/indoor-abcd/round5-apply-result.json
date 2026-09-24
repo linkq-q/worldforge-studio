@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-09-24T05:38:28.424Z",
+  "results": [
+    {
+      "key": "music:program-anchor",
+      "mapId": "map-dcac79db-e937-4c94",
+      "mapName": "室内ABCD5 · 琴行 · E 程序×锚点·墙",
+      "ok": true,
+      "assetCount": 23,
+      "objectCount": 35,
+      "durationMs": 14423
+    },
+    {
+      "key": "spa:program-anchor",
+      "mapId": "map-0fe68702-1849-4461",
+      "mapName": "室内ABCD5 · 美容SPA · E 程序×锚点·墙",
+      "ok": true,
+      "assetCount": 23,
+      "objectCount": 50,
+      "durationMs": 15001
+    },
+    {
+      "key": "clinic:program-anchor",
+      "mapId": "map-1dcf7790-cc30-4bf4",
+      "mapName": "室内ABCD5 · 社区诊所 · E 程序×锚点·墙",
+      "ok": true,
+      "assetCount": 23,
+      "objectCount": 65,
+      "durationMs": 15034
+    },
+    {
+      "key": "apartment:program-anchor",
+      "mapId": "map-a66c9348-42ea-4af4",
+      "mapName": "室内ABCD5 · 单身公寓 · E 程序×锚点·墙",
+      "ok": true,
+      "assetCount": 25,
+      "objectCount": 46,
+      "durationMs": 25438
+    }
+  ]
+}

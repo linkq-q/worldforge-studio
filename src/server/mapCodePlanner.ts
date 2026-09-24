@@ -3856,7 +3856,7 @@ The sandbox exposes exactly these ten APIs. Everything else is yours to build:
 6. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'functional'|'decor', variants?, optional?}) — declares an asset family; returns the key.
 7. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
 8. api.place({assetId, name?, position, rotationY?, facing?, dimensions?, roomOpeningId?, role:'functional'|'decor'}) — dimensions is the intended world [width,height,depth]; rotationY in radians, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
-9. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side north|south|east|west with local [horizontal, vertical] offset.
+9. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side 'north'|'south'|'east'|'west' — ONLY the four shell walls, never a partition you built — with local [horizontal, vertical] offset.
 10. api.random(min?, max?) — seeded. Full \`Math\` is available and \`Math.random\` is seeded; everything beyond these ten keys — lerp, clamps, samplers, relation helpers — you define yourself.
 
 Rules:
