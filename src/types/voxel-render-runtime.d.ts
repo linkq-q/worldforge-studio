@@ -346,6 +346,13 @@ declare module '@voxel-studio/render-runtime/environment' {
     removeFromParent(): void;
     dispose(disposeTexture?: boolean): void;
   }
+  export class WaterSceneCapture {
+    constructor(renderer: import('three').WebGLRenderer, scene: import('three').Scene, options?: { scale?: number });
+    target: import('three').WebGLRenderTarget;
+    readonly texture: import('three').Texture;
+    render(camera: import('three').Camera): boolean;
+    dispose(): void;
+  }
   export class WaterSurface {
     mesh: import('three').Mesh;
     material: import('three').ShaderMaterial;

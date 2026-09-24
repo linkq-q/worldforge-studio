@@ -6,6 +6,9 @@ import { WaterSurface } from '@voxel-studio/render-runtime/environment';
 describe('water material lighting', () => {
   it('follows the actual sun target and dims direct highlights when the sun is off', () => {
     const surface=new WaterSurface(new THREE.Scene(),{} as THREE.WebGLRenderer,new THREE.Group(),{size:1,segments:1});
+    expect(surface.material.uniforms.uHasTerrainWaterDepth.value).toBe(false);
+    expect(surface.material.uniforms.uHasWaterSceneColor.value).toBe(false);
+    expect(surface.material.uniforms.uUseSceneWaterLight.value).toBe(false);
     const sun=new THREE.DirectionalLight(0xffccaa,2.5);
     sun.position.set(3,4,0); sun.target.position.set(0,0,0);
     syncWaterSurfaceLight(surface.material,sun);

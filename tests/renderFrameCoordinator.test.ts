@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderFrameCoordinator } from '../src/client/renderFrameCoordinator';
 
-function createHarness(needsPrePass = true) {
+function createHarness(needsPrePass = true, captureWater = false) {
   const order: string[] = [];
   const renderer = {
     render: vi.fn(() => order.push('direct'))
@@ -26,6 +26,8 @@ function createHarness(needsPrePass = true) {
     camera,
     composer: composer as unknown as EffectComposer,
     needsPrePass: () => needsPrePass,
+    needsWaterSceneColor: () => captureWater,
+    captureWaterSceneColor: () => { order.push('water-color'); },
     producePrePass: () => {
       order.push('prepass');
       return { normal, depth };
@@ -39,6 +41,17 @@ function createHarness(needsPrePass = true) {
 }
 
 describe('RenderFrameCoordinator', () => {
+  it('captures shared water background once each frame before water and skips it without demand', () => {
+    const active = createHarness(false, true);
+    active.coordinator.registerPass({name:'base',enabled:true} as never,'base',0,true);
+    active.coordinator.renderFrame(0.016,1);
+    active.coordinator.renderFrame(0.016,2);
+    expect(active.order).toEqual(['water-color','water:none','composer','water-color','water:none','composer']);
+    const inactive = createHarness(false, false);
+    inactive.coordinator.registerPass({name:'base',enabled:true} as never,'base',0,true);
+    inactive.coordinator.renderFrame(0.016,1);
+    expect(inactive.order).not.toContain('water-color');
+  });
   it('runs the demanded pre-pass, water and the composer in runtime order', () => {
     const { coordinator, order } = createHarness(true);
     coordinator.registerPass({ name: 'base', enabled: true } as never, 'base', 0, true);

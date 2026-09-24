@@ -29,3 +29,18 @@ The scripts import the trace through MapStore into `data/water-qa` and apply one
 These deterministic fixtures establish geometry and renderer behavior. New LLM generations and final artistic water colors remain separate acceptance checks. This does not add volumetric fluid simulation or a spray particle system.
 
 Validated on 2026-09-24: 944 tests across 119 files and the production build passed. The isolated editor loaded the final 61-object/5-water hydropower copy; its 9-operation agent transaction was available through HTTP. Two dam close-up frames 0.35 seconds apart differ visibly. No new runtime exception was observed; the existing shader compiler warning and missing favicon remain.
+
+
+## Terrain-aware water material acceptance (2026-09-24)
+
+- Terrain-backed lakes/rivers use a separate 16-bit packed column-depth texture (0..64 m). Shore distance still clips/blends the boundary. Hidden indoor terrain, outside-map samples and structure-supported spillway sections retain the old fallback. Mixed connected meshes carry a validity mask. Brushing refreshes the same texture; disposal releases it.
+- The existing dual-normal slots share one 128-square, mipmapped periodic normal field. River normals use two short cross-faded flow phases. The scene sun drives direction, colour and intensity. The old decorative contour-line pattern stays off in the new terrain-water path; global model-water defaults are unchanged.
+- Existing WaterSceneCapture supplies one half-resolution opaque colour/depth capture per frame, through the existing frame coordinator/graph. All terrain water shares it. Refraction rejects foreground samples and fades with shallow depth. No per-lake planar reflection pass was added.
+- Optional `recipe=calm-lake` and `recipe=stylized` on the manual water page create new custom schemes with the same neutral lighting. The accepted hydropower geometry is unchanged. Default comparison uses no recipe, with camera [-38,31,45] looking at [0,3,-5]; the sun-reflection view uses [38,25,-50].
+- Browser checks: hydropower and curved river, alternate view, two animation frames 0.35 seconds apart, cartoon/realistic schemes, and five scheme resets. Texture count stayed at 15 on the river fixture; compiled water programs report no shader errors. The earlier shader compiler warning and missing favicon remain unrelated.
+- One local synchronous frame comparison at 1280x820 measured median 0.8 ms without the new capture and 1.0 ms with it (20 samples each after warm-up, CPU wall time including a WebGL finish request). This is only a local relative check, not a cross-device GPU performance guarantee.
+- Both material schemes were saved as new custom entries through the isolated server API. No built-in preset, original map or main checkout was overwritten.
+
+Remaining artistic scope: no volumetric spray/mist, no geometric obstacle-aware fluid simulation, and no new planar reflections. The depth field describes terrain, not arbitrary submerged mesh surfaces. Final visual preference remains human acceptance.
+
+Final material validation: 952 tests across 121 files and the production build passed. The isolated production editor loaded the 61-object hydropower scene and selected the saved calm-lake scheme. Scheme IDs: render-43b8a181-e340-420d (calm-lake), render-b3385422-7fe3-475c (stylized).

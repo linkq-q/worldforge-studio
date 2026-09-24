@@ -636,6 +636,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform bool uUseSceneWaterLight;
   uniform vec3 uSceneWaterLightDirection;
   uniform vec3 uSceneWaterLightColor;
+  uniform sampler2D tWaterSceneColor;
+  uniform sampler2D tWaterSceneDepth;
+  uniform bool uHasWaterSceneColor;
   uniform sampler2D tTerrainWaterDepth;
   uniform bool uHasTerrainWaterDepth;
   uniform sampler2D tWaterNormalA;
@@ -1512,6 +1515,16 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       alpha = mix(alpha, 1.0, oceanDeepOcclusion);
       alpha = mix(alpha, 1.0, foam * 0.65);
     }
+    if (hasTerrainDepth && uHasWaterSceneColor) {
+      vec3 detailView = mat3(viewMatrix) * (finalWaterNormal - baseNormal);
+      vec2 refractedUv = clamp(screenUV + detailView.xy * 0.018 * min(terrainWaterDepth, 2.0), vec2(0.001), vec2(0.999));
+      float backgroundDepth = linearizeDepth(texture2D(tWaterSceneDepth, refractedUv).r, uCameraNear, uCameraFar);
+      // Never pull a foreground bank or dam over the water. Fade distortion at shore.
+      if (backgroundDepth < waterDepth + 0.02) refractedUv = screenUV;
+      vec3 transmittedColor = texture2D(tWaterSceneColor, refractedUv).rgb;
+      finalColor = mix(transmittedColor, finalColor, clamp(alpha, 0.0, 1.0));
+      alpha = 1.0;
+    }
     gl_FragColor = vec4(finalColor, alpha);
   }
 `;
@@ -1572,6 +1585,9 @@ export class WaterSurface {
         uUseSceneWaterLight: { value: false },
         uSceneWaterLightDirection: { value: new THREE.Vector3(0.5, 1.0, 0.3).normalize() },
         uSceneWaterLightColor: { value: new THREE.Color(1, 1, 1) },
+        tWaterSceneColor: { value: null },
+        tWaterSceneDepth: { value: null },
+        uHasWaterSceneColor: { value: false },
         tTerrainWaterDepth: { value: null },
         uHasTerrainWaterDepth: { value: false },
         uTime: { value: 0 },

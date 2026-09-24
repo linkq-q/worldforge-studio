@@ -19,7 +19,7 @@ import {
   createToneMapPass,
   createExponentialFogPass
 } from '@voxel-studio/render-runtime/postprocess';
-import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/environment';
+import { WaterSurface, WaterfallSurface, WaterSceneCapture } from '@voxel-studio/render-runtime/environment';
 import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
 import { applyRenderPlanWaterBaseState, DEFAULT_WATER_STATE } from './defaultWaterState';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
@@ -95,6 +95,7 @@ export class RenderRuntimeAdapter {
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private waterDetailTexture: THREE.DataTexture | null = null;
+  private waterSceneCapture: WaterSceneCapture | null = null;
   private readonly waterInteractionAt = new Map<string, number>();
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
@@ -157,6 +158,8 @@ export class RenderRuntimeAdapter {
       camera,
       composer: this.composer,
       needsPrePass: () => this.needsPrePass(),
+      needsWaterSceneColor: () => this.waterSceneCapture !== null,
+      captureWaterSceneColor: () => this.waterSceneCapture?.render(this.camera),
       producePrePass: () => this.producePrePass(),
       updateWater: (deltaTime, depthTexture) => this.updateWater(deltaTime, depthTexture)
     });
@@ -361,9 +364,12 @@ export class RenderRuntimeAdapter {
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
+      if (binding.mesh.userData.waterShore?.depthTexture) delete binding.mesh.userData.isWaterRefractionBody;
     }
     this.waterDetailTexture?.dispose();
     this.waterDetailTexture = null;
+    this.waterSceneCapture?.dispose();
+    this.waterSceneCapture = null;
     for (const baseline of this.materialBaselines.values()) {
       const material = baseline.material as THREE.MeshStandardMaterial;
       if (baseline.color && material.color) material.color.copy(baseline.color);
@@ -652,6 +658,14 @@ export class RenderRuntimeAdapter {
           surface.material.uniforms.uShoreDistanceScale.value = shore.distanceScale ?? 1;
           if (shore.depthTexture) {
             this.waterDetailTexture ??= createWaterDetailTexture();
+            if (!this.waterSceneCapture) {
+              this.waterSceneCapture = new WaterSceneCapture(this.renderer, this.scene, { scale: 0.5 });
+              this.waterSceneCapture.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+            }
+            mesh.userData.isWaterRefractionBody = true;
+            surface.material.uniforms.tWaterSceneColor.value = this.waterSceneCapture.texture;
+            surface.material.uniforms.tWaterSceneDepth.value = this.waterSceneCapture.target.depthTexture;
+            surface.material.uniforms.uHasWaterSceneColor.value = true;
             surface.setWaterNormalTexture('A', this.waterDetailTexture);
             surface.setWaterNormalTexture('B', this.waterDetailTexture);
             surface.importState({
@@ -664,7 +678,7 @@ export class RenderRuntimeAdapter {
               uRealisticSpecularPower: 110,
               uHighlightIntensity: 0.06,
               uHighlightMax: 0.12,
-              uToonPatternIntensity: 0.18,
+              uToonPatternEnabled: false,
               uToonSparkleIntensity: 0.12,
               uUseCartoonBands: recipe.mode === 'cartoon'
             });
