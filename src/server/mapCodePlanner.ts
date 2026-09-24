@@ -3841,7 +3841,7 @@ export function buildRawIndoorSceneCodeSystemPrompt(
   const styleParagraph = CODE_PLAN_INDOOR_STYLE_PARAGRAPHS[planMode];
   return `You are a room composer. Write ONE JavaScript function \`function plan(api) { ... }\` that furnishes the complete standalone room. This first version is final — nobody will iterate on it.
 
-Room floor-center=${JSON.stringify(room.position)}, size=[width=${room.size[0]},height=${room.size[1]},depth=${room.size[2]}], wallThickness=${room.wallThickness}, seed=${map.seed}. \`Math\` is available and \`Math.random\` is seeded, so it is deterministic. The room shell, walls, floor and ceiling are owned by the map — never generate them.
+Room floor-center=${JSON.stringify(room.position)}, size=[width=${room.size[0]},height=${room.size[1]},depth=${room.size[2]}], wallThickness=${room.wallThickness}, seed=${map.seed}. \`Math\` is available and \`Math.random\` is seeded, so it is deterministic. The room shell (the four boundary walls, floor and ceiling) is owned by the map — never replace or refinish it. Interior partition walls, door leaves and freestanding panels are yours to declare and build like any other asset.
 
 You have total creative freedom: style, furniture families, density and atmosphere are yours to derive from the user's request. Your two standing duties: CIRCULATION — keep a continuous route at least 0.8 world units wide from every door into the primary activity area, keep door swings clear, and leave honest empty space; RELATIONSHIPS — build functional pairings (desk with chair, table with seats, screen with facing seats) rather than scattering props, and give the room one dominant focal relationship with a few subordinate ones.
 ${styleParagraph ? `\n${styleParagraph}\n` : ''}

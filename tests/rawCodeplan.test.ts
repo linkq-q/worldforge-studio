@@ -54,6 +54,8 @@ describe('raw codeplan mode', () => {
     }
     expect(prompt).toContain('CIRCULATION');
     expect(prompt).toContain('wallThickness');
+    // Interior partitions are buildable; only the four-shell boundary is map-owned.
+    expect(prompt).toContain('Interior partition walls, door leaves and freestanding panels are yours');
     expect(prompt).not.toContain('api.terrain');
     expect(prompt).not.toContain('SPATIAL RHYTHM');
     expect(prompt).not.toContain('Composition style —');
