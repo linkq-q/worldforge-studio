@@ -351,6 +351,8 @@ const WATER_VERTEX_SHADER = /* glsl */ `
       ? 1.0 - smoothstep(uShoreWaveWidth * 0.85, uShoreWaveWidth, stripe)
       : 1.0 - smoothstep(0.0, uShoreWaveWidth, stripe);
     float breakup = smoothstep(uShoreWaveBreakup - 0.08, uShoreWaveBreakup + 0.08, shoreNoise);
+    // Fade in after the phase wrap: height and slope must meet at both ends.
+    waveLine *= smoothstep(0.0, max(uShoreWaveWidth * 0.25, 0.001), stripe);
     return waveLine * shoreRangeMask * breakup * uShoreWaveCrestHeight;
   }
 

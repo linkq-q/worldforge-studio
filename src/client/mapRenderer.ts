@@ -1001,13 +1001,12 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
     const water = waters[0];
     const shore = createCompositeWaterShoreBinding(map, waters, water.type === 'ocean' ? coast : null);
     const isComposite = waters.length > 1;
+    const usesGrid = water.type !== 'ocean' && (isComposite || water.type === 'lake');
     const geometry = water.type === 'ocean'
       ? buildOceanGeometry(map)
-      : isComposite
-      ? buildCompositeWaterGeometry(shore, waters)
-      : water.type !== 'river'
-        ? buildLakeGeometry(waterBoundaryPoints(water))
-        : buildRiverGeometry(water);
+      : usesGrid
+      ? buildWaterGridGeometry(shore, waters)
+      : buildRiverGeometry(water);
     const material = new THREE.MeshStandardMaterial({
       color: 0x4f96a8,
       transparent: true,
@@ -1020,9 +1019,9 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = `water:${water.id}`;
     mesh.position.set(
-      isComposite ? shore.center[0] : 0,
+      usesGrid ? shore.center[0] : 0,
       waters.reduce((sum, candidate) => sum + candidate.level, 0) / waters.length,
-      isComposite ? shore.center[1] : 0
+      usesGrid ? shore.center[1] : 0
     );
     mesh.renderOrder = 8;
     mesh.userData.waterBodyId = water.id;
@@ -1039,7 +1038,7 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
       ...new Set(waters.flatMap((candidate) => [candidate.type, candidate.id]))
     ];
     mesh.userData.assetTags = ['water', ...new Set(waters.map((candidate) => candidate.type))];
-    mesh.userData.waterShore = { ...shore, worldSpace: !isComposite };
+    mesh.userData.waterShore = { ...shore, worldSpace: !usesGrid };
     if (water.type === 'ocean' && coast) mesh.userData.waterOceanTerrain = createOceanTerrainBinding(map, water, coast);
     group.add(mesh);
   }
@@ -1176,7 +1175,7 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   return { texture, depthTexture, center, size, distanceScale: coast ? 1 : Math.max(0.01, maxDistance * size / resolution / 4) };
 }
 
-function buildCompositeWaterGeometry(shore: WaterShoreBinding, waters: readonly MapWaterBody[]): THREE.BufferGeometry {
+function buildWaterGridGeometry(shore: WaterShoreBinding, waters: readonly MapWaterBody[]): THREE.BufferGeometry {
   const rivers = waters.filter((water) => water.type === 'river');
   const cellSize = Math.min(1, ...rivers.map((water) => Math.max(0.3, Math.min(water.width, ...(water.widths ?? [])) / 4)));
   const segments = THREE.MathUtils.clamp(Math.ceil(shore.size / cellSize), 8, 192);
@@ -1202,7 +1201,7 @@ function buildCompositeWaterGeometry(shore: WaterShoreBinding, waters: readonly 
       flow.set(sample.direction, i * 2);
     } else positions.setY(i, owner.water.level - base);
   }
-  geometry.setAttribute('riverFlow', new THREE.BufferAttribute(flow, 2));
+  if (rivers.length > 0) geometry.setAttribute('riverFlow', new THREE.BufferAttribute(flow, 2));
   geometry.computeVertexNormals();
   return geometry;
 }
@@ -1369,26 +1368,28 @@ function distanceFromOutside(inside: Uint8Array, width: number, height = width):
   return distances;
 }
 
-function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry {
-  const points = cleanWaterPoints(input);
-  const vertices = points.flatMap(([x, z]) => [x, 0, z]);
-  const contour = points.map(([x, z]) => new THREE.Vector2(x, z));
-  const faces = THREE.ShapeUtils.triangulateShape(contour, []);
-  const indices: number[] = [];
-  for (const [a, b, c] of faces) pushUpwardTriangle(indices, vertices, a, b, c);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
 function buildRiverGeometry(water: MapWaterBody): THREE.BufferGeometry {
-  const edges = riverEdgePairs(water);
+  const controls = riverEdgePairs(water);
+  const spans = controls.slice(1).map((edge, i) => Math.max(...(['left', 'right'] as const).map(side =>
+    Math.hypot(edge[side][0] - controls[i][side][0], edge[side][1] - controls[i][side][1], edge.level - controls[i].level))));
+  const maxWidth = Math.max(...controls.map(edge => Math.hypot(edge.right[0] - edge.left[0], edge.right[1] - edge.left[1])));
+  // Bound samples by world distance, while retaining every authored bend and level.
+  const spacing = Math.max(1, spans.reduce((sum, length) => sum + length, 0) / 192, maxWidth / 192);
+  const edges = controls.slice(0, 1);
+  for (let i = 1; i < controls.length; i++) {
+    const from = controls[i - 1], to = controls[i], steps = Math.max(1, Math.ceil(spans[i - 1] / spacing));
+    for (let step = 1; step <= steps; step++) {
+      const t = step / steps;
+      const pair = (key: 'left' | 'right' | 'direction'): [number, number] => [
+        THREE.MathUtils.lerp(from[key][0], to[key][0], t), THREE.MathUtils.lerp(from[key][1], to[key][1], t)
+      ];
+      edges.push({ left: pair('left'), right: pair('right'), direction: pair('direction'), level: THREE.MathUtils.lerp(from.level, to.level, t) });
+    }
+  }
   const vertices: number[] = [];
   const directions: number[] = [];
   const uvs: number[] = [];
-  const columns = 8;
+  const columns = THREE.MathUtils.clamp(Math.ceil(maxWidth / spacing), 8, 192);
   let distance = 0;
   for (let row = 0; row < edges.length; row += 1) {
     const edge = edges[row];
@@ -1438,14 +1439,6 @@ function pointInPolygon(x: number, z: number, points: readonly [number, number][
     }
   }
   return inside;
-}
-
-function cleanWaterPoints(points: MapWaterBody['points']): MapWaterBody['points'] {
-  return points.filter((point, index) => (
-    index === 0
-    || point[0] !== points[index - 1][0]
-    || point[1] !== points[index - 1][1]
-  ));
 }
 
 function pushUpwardTriangle(

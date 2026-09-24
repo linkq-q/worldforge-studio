@@ -99,3 +99,19 @@ The 256-square/64-mode bake previously called trigonometric functions and recomp
 Same-machine browser timings for five successive bakes: before [158.6,148.8,147.9,139.4,138.4] ms; after [14.3,11.7,11.5,11.9,11.4] ms. Median falls from 147.9 to 11.7 ms. This measures texture initialization only, not frame time or a cross-device performance guarantee.
 
 All texture bytes retain SHA-256 `811fc0c3cbae1fbc1b8698b3836f826a164ef5935e37b4bd1d6f33772bb1b321`; the accepted texture hash is now guarded in the existing unit test. Full tests/build passed, all three manual GPU regressions passed, lake/river/cartoon browser fixtures compiled without shader failures, and local API health returned OK. Existing shader compiler warnings and missing scene-object reflection/spray remain outside these two fixes.
+
+## Fixed-camera lake glint repair: surface sampling (2026-09-24)
+
+Standalone lakes now reuse the existing bounded water grid and shoreline mask instead of interpolating waves from boundary-only triangles. The grid remains capped at 192 segments per axis. Its local vertex shore lookup uses the actual plane size. Lake-only grids omit the river-flow attribute so they retain lake waves rather than being classified as rivers. River strips subdivide both longitudinal spans and width by world distance, preserving authored edges, levels and flow while bounding the sampling budget.
+
+The new regression first failed for a four-corner lake (56.57 m triangle edge) and a 60 m river span. After the fix, all 59 related geometry/authoring/depth/renderer tests pass. The real garden fixture has 2,401 vertices, retains shore waves, and has matching geometry/uniform dimensions of 47.4713 m. In the same fixed-camera bright-water ROI, 120 samples at 0.1 s intervals gave a maximum mean absolute luma change of 0.00131; the prior implementation was about 0.0749. This ROI comparison is not a whole-screen stability or performance guarantee. The periodic shore-height seam is handled in the next change.
+
+## Fixed-camera lake glint repair: continuous shore crests (2026-09-24)
+
+The periodic vertex shore crest now fades in with smoothstep after the phase wrap, so both height and slope meet at the cycle boundary. Map render plans scale crest height by the authored wave strength (capped at the original height); the garden's calm-water strength 0.08 now produces a 0.0028 m crest. Specular power, normal textures and reflection settings are unchanged.
+
+`tests/manual/waterShoreWaves.html` extracts and compiles the production vertex crest function on the GPU. With noise and shore distance held fixed, both cartoon and realistic modes previously jumped from normalized height 1 to 0 across the seam. Both now return 0 on either side at the sampled epsilon, while a nonzero crest remains later in the cycle. It was observed failing before the shader change and passing after it.
+
+Final verification: all 988 tests across 129 files and the production build passed; four manual GPU regressions (shore cycle, normal orientation, flow blending, wind patches) passed. The local API health returned OK. Real viewer checks covered the garden lake, cartoon variant, independent river, river/lake junction and hydroelectric reservoir/spillway, with no observed runtime or shader errors (the pre-existing compiler warning remains).
+
+The garden comparison uses identical camera, map, scheme and 96 sampled frames at 8 fps over 12 seconds. Fixed-camera ROI maximum mean absolute luma change fell from 0.0748748 to 0.00132413 (98.2% reduction), measured separately at 0.1 s intervals. This is one bright-water ROI, not a guarantee that all animated glints disappear. Shore waves remain enabled. Captures live under ignored `output/water-qa/flicker-fix/`; the comparison GIF loops back to the initial recorded time at its end. Independent directional-wave speed controls have not been remapped in these two fixes.
