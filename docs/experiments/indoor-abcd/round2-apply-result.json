@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-09-24T02:28:46.728Z",
+  "results": [
+    {
+      "key": "hotel:minimal",
+      "mapId": "map-09bc694e-8758-412a",
+      "mapName": "室内ABCD2 · 酒店大堂 · 极简基线",
+      "ok": true,
+      "assetCount": 22,
+      "objectCount": 36,
+      "durationMs": 55711
+    },
+    {
+      "key": "hotel:search",
+      "mapId": "map-522dbdd6-4c14-4668",
+      "mapName": "室内ABCD2 · 酒店大堂 · D 退火",
+      "ok": true,
+      "assetCount": 24,
+      "objectCount": 67,
+      "durationMs": 61043
+    },
+    {
+      "key": "hotel:fields",
+      "mapId": "map-a6db5c41-d8ab-484c",
+      "mapName": "室内ABCD2 · 酒店大堂 · C 场与动线",
+      "ok": true,
+      "assetCount": 26,
+      "objectCount": 77,
+      "durationMs": 82646
+    },
+    {
+      "key": "hotel:algebra",
+      "mapId": "map-4b0e1eac-a649-4040",
+      "mapName": "室内ABCD2 · 酒店大堂 · B 锚点关系",
+      "ok": true,
+      "assetCount": 27,
+      "objectCount": 73,
+      "durationMs": 82738
+    },
+    {
+      "key": "hotel:grammar",
+      "mapId": "map-58f64ffe-c7eb-4dc7",
+      "mapName": "室内ABCD2 · 酒店大堂 · A 功能规划",
+      "ok": true,
+      "assetCount": 31,
+      "objectCount": 42,
+      "durationMs": 82770
+    },
+    {
+      "key": "cowork:fields",
+      "mapId": "map-396b39c7-a970-49ba",
+      "mapName": "室内ABCD2 · 联合办公 · C 场与动线",
+      "ok": true,
+      "assetCount": 22,
+      "objectCount": 50,
+      "durationMs": 41382
+    },
+    {
+      "key": "cowork:minimal",
+      "mapId": "map-4968dd40-b1b0-4334",
+      "mapName": "室内ABCD2 · 联合办公 · 极简基线",
+      "ok": true,
+      "assetCount": 23,
+      "objectCount": 42,
+      "durationMs": 49185
+    },
+    {
+      "key": "cowork:search",
+      "mapId": "map-0521a72d-08b1-47ac",
+      "mapName": "室内ABCD2 · 联合办公 · D 退火",
+      "ok": true,
+      "assetCount": 25,
+      "objectCount": 77,
+      "durationMs": 54277
+    },
+    {
+      "key": "cowork:grammar",
+      "mapId": "map-84c89814-397d-4d52",
+      "mapName": "室内ABCD2 · 联合办公 · A 功能规划",
+      "ok": true,
+      "assetCount": 28,
+      "objectCount": 110,
+      "durationMs": 62419
+    },
+    {
+      "key": "cowork:algebra",
+      "mapId": "map-5468dca9-3289-4a22",
+      "mapName": "室内ABCD2 · 联合办公 · B 锚点关系",
+      "ok": true,
+      "assetCount": 28,
+      "objectCount": 67,
+      "durationMs": 33433
+    }
+  ]
+}

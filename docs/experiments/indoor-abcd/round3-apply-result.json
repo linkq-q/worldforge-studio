@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-09-24T02:40:29.988Z",
+  "results": [
+    {
+      "key": "loft:program-anchor",
+      "mapId": "map-c05de7d1-d9bf-4b70",
+      "mapName": "室内ABCD3 · LOFT 工作室 · E 程序×锚点",
+      "ok": true,
+      "assetCount": 23,
+      "objectCount": 67,
+      "durationMs": 27724
+    },
+    {
+      "key": "suite:program-anchor",
+      "mapId": "map-1078e025-4061-4810",
+      "mapName": "室内ABCD3 · 主卧套房 · E 程序×锚点",
+      "ok": true,
+      "assetCount": 21,
+      "objectCount": 30,
+      "durationMs": 29105
+    },
+    {
+      "key": "cowork:program-anchor",
+      "mapId": "map-79ec818d-fd1e-4777",
+      "mapName": "室内ABCD3 · 联合办公 · E 程序×锚点",
+      "ok": true,
+      "assetCount": 25,
+      "objectCount": 68,
+      "durationMs": 32613
+    },
+    {
+      "key": "hotel:program-anchor",
+      "mapId": "map-d375ecbb-90ab-440f",
+      "mapName": "室内ABCD3 · 酒店大堂 · E 程序×锚点",
+      "ok": true,
+      "assetCount": 26,
+      "objectCount": 69,
+      "durationMs": 36334
+    },
+    {
+      "key": "cafe:program-anchor",
+      "mapId": "map-2f01a1ca-9640-46ef",
+      "mapName": "室内ABCD3 · 街角咖啡馆 · E 程序×锚点",
+      "ok": true,
+      "assetCount": 22,
+      "objectCount": 69,
+      "durationMs": 40474
+    }
+  ]
+}

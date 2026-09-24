@@ -2,7 +2,7 @@
   "branch": "unknown",
   "commit": "unknown",
   "api": "http://127.0.0.1:8797",
-  "generatedAt": "2026-09-23T15:27:50.979Z",
+  "generatedAt": "2026-09-24T02:28:13.269Z",
   "runs": [
     {
       "key": "hotel:minimal",
@@ -21292,10 +21292,3025 @@
       "key": "cowork:algebra",
       "mode": "algebra",
       "scenario": "cowork",
-      "ok": false,
-      "durationMs": 306669,
-      "startedAt": "2026-09-23T15:22:44.309Z",
-      "error": "fetch failed"
+      "ok": true,
+      "durationMs": 113091,
+      "startedAt": "2026-09-24T02:26:20.178Z",
+      "mapId": "map-9b758125-6fe4-48a0",
+      "suggestion": {
+        "summary": "室内功能规划生成了 67 个摆放意图与 2 个门窗预留",
+        "operations": [
+          {
+            "type": "room.set",
+            "room": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "size": [
+                22,
+                4,
+                15
+              ],
+              "wallThickness": 0.16,
+              "openings": [
+                {
+                  "id": "cowork-south",
+                  "kind": "door",
+                  "wall": "south",
+                  "offset": 0,
+                  "bottom": 0,
+                  "width": 2,
+                  "height": 2.7
+                },
+                {
+                  "id": "cowork-north",
+                  "kind": "door",
+                  "wall": "north",
+                  "offset": 0,
+                  "bottom": 0,
+                  "width": 2,
+                  "height": 2.7
+                }
+              ]
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-d37a7412-fbad-4f2b",
+              "name": "程序化物体",
+              "assetId": "code-asset://entry/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "roomOpeningId": "cowork-south",
+              "transform": {
+                "position": [
+                  0,
+                  0,
+                  7.4
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2,
+                  2.7,
+                  0.16
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-1e3d96ce-abe9-4961",
+              "name": "程序化物体",
+              "assetId": "code-asset://entry/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "roomOpeningId": "cowork-north",
+              "transform": {
+                "position": [
+                  0,
+                  0,
+                  -7.4
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2,
+                  2.7,
+                  0.16
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-b8e3c6c9-111d-4535",
+              "name": "程序化物体",
+              "assetId": "code-asset://reception/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -3.55,
+                  0,
+                  5.45
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  3.2,
+                  1.05,
+                  1.05
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-b060c37a-9fb6-410f",
+              "name": "程序化物体",
+              "assetId": "code-asset://staffchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -3.55,
+                  0,
+                  4.25
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.62,
+                  1.05,
+                  0.65
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-77671d3e-eefb-4c62",
+              "name": "程序化物体",
+              "assetId": "code-asset://brand/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -3.6,
+                  2.05,
+                  7.36
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.3,
+                  0.65,
+                  0.07
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-c0517140-6f70-43b7",
+              "name": "程序化物体",
+              "assetId": "code-asset://plant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -1.85,
+                  0,
+                  3.65
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.78,
+                  1.8,
+                  0.78
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-d3c05d8e-01f3-4204",
+              "name": "程序化物体",
+              "assetId": "code-asset://benchdesk/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  5.6,
+                  0.78,
+                  1.55
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-20be9fb5-52e8-493d",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -7.699999999999999,
+                  0,
+                  -1.6
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-4b4e8f15-873e-43d3",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-3369baa6-8386-42ea",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -7.699999999999999,
+                  0,
+                  0.9
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-ff00c9de-d87e-434f",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-977b4ac4-5b92-42ab",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -4.9,
+                  0,
+                  -1.6
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-3c4fe48c-d53f-42e4",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-7354554a-1b58-419c",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -4.9,
+                  0,
+                  0.9
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-37832d71-7c2a-4f11",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-9d45bd8c-ab11-4e64",
+              "name": "室内附件",
+              "assetId": "code-asset://lamp/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-273d42aa-c6c9-434c",
+              "name": "程序化物体",
+              "assetId": "code-asset://pendant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  2.9699999999999998,
+                  -0.35
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.1,
+                  0.62,
+                  0.13
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-71252015-7e40-422d",
+              "name": "程序化物体",
+              "assetId": "code-asset://benchdesk/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  5.6,
+                  0.78,
+                  1.55
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-ca2c1c09-a34b-4d25",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -7.699999999999999,
+                  0,
+                  -5.3
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-df86d766-8efa-4e95",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-263cf78e-0edf-444d",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -7.699999999999999,
+                  0,
+                  -2.8
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-4e3efac8-eee9-4f9e",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-7327d5de-6e5c-455b",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -4.9,
+                  0,
+                  -5.3
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-ea56f200-16fa-45ab",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-7042d30c-5272-40d9",
+              "name": "程序化物体",
+              "assetId": "code-asset://taskchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -4.9,
+                  0,
+                  -2.8
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.65,
+                  1.1,
+                  0.68
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-338f1101-6c28-478d",
+              "name": "室内附件",
+              "assetId": "code-asset://computer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-e1f2af94-7637-4645",
+              "name": "室内附件",
+              "assetId": "code-asset://lamp/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  0,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-c56a7ea6-a2cd-47fe",
+              "name": "程序化物体",
+              "assetId": "code-asset://pendant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.3,
+                  2.9699999999999998,
+                  -4.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.1,
+                  0.62,
+                  0.13
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-15234541-b958-4583",
+              "name": "程序化物体",
+              "assetId": "code-asset://locker/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -9.35,
+                  0,
+                  -7.02
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.5,
+                  1.95,
+                  0.48
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-e852d0f9-95bc-4816",
+              "name": "程序化物体",
+              "assetId": "code-asset://locker/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -6.6,
+                  0,
+                  -7.02
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.5,
+                  1.95,
+                  0.48
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-cd7ae0b5-15f1-4f35",
+              "name": "程序化物体",
+              "assetId": "code-asset://printcabinet/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -3.8,
+                  0,
+                  -6.94
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1.7,
+                  0.76,
+                  0.65
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-619435a5-8864-4ab2",
+              "name": "室内附件",
+              "assetId": "code-asset://printer/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -3.8,
+                  0,
+                  -6.94
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-48d58cdb-d90a-4408",
+              "name": "程序化物体",
+              "assetId": "code-asset://sign/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -3.8,
+                  1.75,
+                  -7.36
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1.8,
+                  0.38,
+                  0.04
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-82441f2b-fc3d-49d6",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingtable/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.1,
+                  0,
+                  -4.65
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  4.2,
+                  0.76,
+                  1.55
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-aaa93754-cdda-4f42",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  4.699999999999999,
+                  0,
+                  -3.4000000000000004
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-a7a0326a-50a0-4871",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  4.699999999999999,
+                  0,
+                  -5.9
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-fd889b5a-f197-4eca",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.1,
+                  0,
+                  -3.4000000000000004
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-697d4449-bf70-4a76",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.1,
+                  0,
+                  -5.9
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-acdb5ffc-fe21-4850",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  7.5,
+                  0,
+                  -3.4000000000000004
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-f38608de-cf15-43aa",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  7.5,
+                  0,
+                  -5.9
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-d87d19d0-b262-4d09",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  3.4499999999999997,
+                  0,
+                  -4.65
+                ],
+                "rotation": [
+                  0,
+                  1.5707963267948966,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-49ef60a0-c413-4b50",
+              "name": "程序化物体",
+              "assetId": "code-asset://meetingchair/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  8.75,
+                  0,
+                  -4.65
+                ],
+                "rotation": [
+                  0,
+                  -1.5707963267948966,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.6,
+                  0.89,
+                  0.62
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-046d3f51-ed96-4b47",
+              "name": "程序化物体",
+              "assetId": "code-asset://screen/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.1,
+                  1.28,
+                  -7.36
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.6,
+                  1.48,
+                  0.1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-016cc85f-6df1-4757",
+              "name": "程序化物体",
+              "assetId": "code-asset://pendant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.1,
+                  2.9699999999999998,
+                  -4.65
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.1,
+                  0.62,
+                  0.13
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-56a4c257-3c64-4ddc",
+              "name": "程序化物体",
+              "assetId": "code-asset://partition/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  2.4,
+                  0,
+                  -4.65
+                ],
+                "rotation": [
+                  0,
+                  1.5707963267948966,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  3.8,
+                  2.65,
+                  0.22
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-a698b7a5-b005-45ec",
+              "name": "程序化物体",
+              "assetId": "code-asset://partition/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  9.85,
+                  0,
+                  -4.65
+                ],
+                "rotation": [
+                  0,
+                  1.5707963267948966,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  3.8,
+                  2.65,
+                  0.22
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-30a86f40-5ced-4922",
+              "name": "程序化物体",
+              "assetId": "code-asset://partition/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  3.95,
+                  0,
+                  -2.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.9,
+                  2.65,
+                  0.22
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-0143179b-ac9f-4ea2",
+              "name": "程序化物体",
+              "assetId": "code-asset://partition/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  8.45,
+                  0,
+                  -2.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.9,
+                  2.65,
+                  0.22
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-acf8ec90-7e55-4d25",
+              "name": "程序化物体",
+              "assetId": "code-asset://booth/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  3.05,
+                  0,
+                  0.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1.5,
+                  2.5,
+                  1.45
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-cedb2749-c4fb-4363",
+              "name": "程序化物体",
+              "assetId": "code-asset://booth/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  5.05,
+                  0,
+                  0.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1.5,
+                  2.5,
+                  1.45
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-80ba1d43-d001-4148",
+              "name": "程序化物体",
+              "assetId": "code-asset://plant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  7,
+                  0,
+                  0.05
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.78,
+                  1.8,
+                  0.78
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-3712efe7-3d7f-4234",
+              "name": "程序化物体",
+              "assetId": "code-asset://bar/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  10.3,
+                  0,
+                  4.6
+                ],
+                "rotation": [
+                  0,
+                  -1.5707963267948966,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  3.5,
+                  0.95,
+                  0.75
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-7876e217-bac5-46f1",
+              "name": "室内附件",
+              "assetId": "code-asset://machine/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  10.3,
+                  0,
+                  4.6
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-850a286d-4eda-4024",
+              "name": "室内附件",
+              "assetId": "code-asset://tray/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  10.3,
+                  0,
+                  4.6
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-81ae1915-3d8b-4305",
+              "name": "程序化物体",
+              "assetId": "code-asset://hightable/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  5.8,
+                  0,
+                  4.85
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.5,
+                  1.05,
+                  0.8
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-075f9ad6-c5ae-4368",
+              "name": "程序化物体",
+              "assetId": "code-asset://stool/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  5,
+                  0,
+                  5.77
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.48,
+                  0.84,
+                  0.5
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-fdd92919-e6c3-43a1",
+              "name": "程序化物体",
+              "assetId": "code-asset://stool/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  5,
+                  0,
+                  3.9299999999999997
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.48,
+                  0.84,
+                  0.5
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-356c88b4-199c-4aa3",
+              "name": "程序化物体",
+              "assetId": "code-asset://stool/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.6,
+                  0,
+                  5.77
+                ],
+                "rotation": [
+                  0,
+                  3.141592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.48,
+                  0.84,
+                  0.5
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-454ad07a-2c55-4518",
+              "name": "程序化物体",
+              "assetId": "code-asset://stool/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  6.6,
+                  0,
+                  3.9299999999999997
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.48,
+                  0.84,
+                  0.5
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-15cde245-2ea3-4bcd",
+              "name": "程序化物体",
+              "assetId": "code-asset://pendant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  5.8,
+                  2.9699999999999998,
+                  4.85
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.1,
+                  0.62,
+                  0.13
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-584b65b6-18c6-4fb7",
+              "name": "程序化物体",
+              "assetId": "code-asset://plant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  8.85,
+                  0,
+                  6.7
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.78,
+                  1.8,
+                  0.78
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-8d94c9ad-edb5-4f00",
+              "name": "程序化物体",
+              "assetId": "code-asset://rug/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -8.1,
+                  0,
+                  4.6
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  3.4,
+                  0.018,
+                  3.1
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-e66058bd-76a2-4f64",
+              "name": "程序化物体",
+              "assetId": "code-asset://bookcase/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -10.65,
+                  0,
+                  4.65
+                ],
+                "rotation": [
+                  0,
+                  1.5707963267948966,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  2.2,
+                  2.15,
+                  0.36
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-7ace0012-be23-41c4",
+              "name": "程序化物体",
+              "assetId": "code-asset://sidetable/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -8.1,
+                  0,
+                  4.6
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.55,
+                  0.48,
+                  0.55
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-27dccc8d-8d7e-4785",
+              "name": "程序化物体",
+              "assetId": "code-asset://lounge/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -8.25,
+                  0,
+                  3.55
+                ],
+                "rotation": [
+                  0,
+                  -0.18,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.88,
+                  0.88,
+                  0.9
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-b5c32f22-5aa1-440a",
+              "name": "程序化物体",
+              "assetId": "code-asset://lounge/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -7.6499999999999995,
+                  0,
+                  5.63
+                ],
+                "rotation": [
+                  0,
+                  3.391592653589793,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.88,
+                  0.88,
+                  0.9
+                ]
+              }
+            }
+          },
+          {
+            "type": "object.add",
+            "object": {
+              "id": "obj-code-bd2b260c-0429-4bf5",
+              "name": "程序化物体",
+              "assetId": "code-asset://plant/0",
+              "locked": false,
+              "heightMode": "fixed",
+              "transform": {
+                "position": [
+                  -9.95,
+                  0,
+                  6.8
+                ],
+                "rotation": [
+                  0,
+                  0,
+                  0
+                ],
+                "scale": [
+                  1,
+                  1,
+                  1
+                ],
+                "size": [
+                  0.78,
+                  1.8,
+                  0.78
+                ]
+              }
+            }
+          }
+        ],
+        "renderPromptSuggestions": [],
+        "generatedAssets": [],
+        "codePlan": {
+          "code": "function plan(api) {\n  const PI = Math.PI;\n  const contract = \" Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.\";\n  const sizes = {};\n  function family(key, name, prompt, dimensions, role = \"functional\") {\n    sizes[key] = dimensions;\n    api.requireAsset({ key, name, prompt: prompt + contract, dimensions, role });\n  }\n  function floor(key, x, z, rotationY = 0, name) {\n    return api.place({\n      assetId: api.asset(key), name,\n      position: api.roomPoint(x, z, 0),\n      dimensions: sizes[key], rotationY\n    });\n  }\n  function supported(key, parentId, x = 0, z = 0) {\n    return api.attach({\n      assetId: api.asset(key), parentId, kind: \"supported\",\n      offset: [x, z], dimensions: sizes[key]\n    });\n  }\n  function wall(key, side, offset, bottom) {\n    const frame = api.wallFrame(side, offset, bottom, 0.06);\n    return api.place({\n      assetId: api.asset(key), position: frame.point,\n      facing: { direction: frame.inward }, dimensions: sizes[key]\n    });\n  }\n  function pendant(x, z) {\n    return api.place({\n      assetId: api.asset(\"pendant\"),\n      position: api.ceilingPoint(x, z, sizes.pendant[1], 0.25),\n      dimensions: sizes.pendant\n    });\n  }\n\n  family(\"entry\", \"玻璃双开门\", \"One understated double glass entrance door assembly, slim charcoal metal frame, clear glazing, brushed brass pull handles.\", [2, 2.7, 0.16]);\n  family(\"reception\", \"接待前台\", \"One sculptural coworking reception desk, warm oak fluted front facing Z+, cream solid surface countertop, accessible low transaction section, rear staff knee space, no accessories.\", [3.2, 1.05, 1.05]);\n  family(\"staffchair\", \"前台座椅\", \"One compact upholstered swivel office chair, charcoal fabric, black five-star base, restrained contemporary design.\", [0.62, 1.05, 0.65]);\n  family(\"brand\", \"品牌标牌\", \"One wall-mounted brass and warm white coworking identity plaque, beautifully typeset text COMMON / 共创, understated architectural signage.\", [2.3, 0.65, 0.07], \"decor\");\n  family(\"benchdesk\", \"四人工位桌\", \"One four-person back-to-back coworking bench desk, continuous pale oak rectangular worktop, two work positions on each long side, slim charcoal legs, integrated central low felt privacy spine and cable channel, no chairs or equipment.\", [5.6, 0.78, 1.55]);\n  family(\"taskchair\", \"人体工学椅\", \"One ergonomic office chair, sage green upholstered seat, charcoal mesh back, adjustable arms and black caster base.\", [0.65, 1.1, 0.68]);\n  family(\"computer\", \"桌面电脑\", \"One compact desktop computer workstation object with thin monitor on a pedestal, keyboard and mouse neatly arranged in front, charcoal finish.\", [0.72, 0.48, 0.48]);\n  family(\"lamp\", \"工作台灯\", \"One small adjustable desk lamp, warm brass articulated stem and matte ivory conical shade.\", [0.24, 0.43, 0.28], \"decor\");\n  family(\"meetingtable\", \"会议长桌\", \"One oval meeting table, natural oak top, two sculptural charcoal pedestal bases, flush central cable access, no accessories.\", [4.2, 0.76, 1.55]);\n  family(\"meetingchair\", \"会议座椅\", \"One refined meeting chair, muted terracotta upholstered seat and back, slim black sled base, padded arms.\", [0.6, 0.89, 0.62]);\n  family(\"screen\", \"会议显示屏\", \"One large wall-mounted video conferencing display with thin matte black bezel and integrated small lower camera bar, dark blue idle screen.\", [2.6, 1.48, 0.1]);\n  family(\"partition\", \"玻璃隔断\", \"One freestanding transparent acoustic glass office partition panel, charcoal perimeter frame, restrained frosted horizontal privacy band, discreet stabilizing feet, no doorway.\", [3.8, 2.65, 0.22]);\n  family(\"booth\", \"隔音电话亭\", \"One single-person acoustic phone booth, muted forest green outer shell, clear glazed front door facing Z+, internal wall desk and upholstered stool visible, warm integrated light, ceiling ventilation grille.\", [1.5, 2.5, 1.45]);\n  family(\"bar\", \"咖啡水吧\", \"One self-contained coffee bar cabinet, pale oak lower cabinets, cream stone countertop, integrated small sink and faucet, undercounter refrigerator and enclosed waste cupboard; service front faces Z+, no overhead cabinets.\", [3.5, 0.95, 0.75]);\n  family(\"machine\", \"咖啡机\", \"One professional compact espresso machine, brushed stainless steel and charcoal finish, twin brew heads and drip tray.\", [0.72, 0.48, 0.46]);\n  family(\"tray\", \"杯具托盘\", \"One neatly arranged coffee service tray with ceramic cups and a small covered sugar jar, cream and walnut materials.\", [0.52, 0.2, 0.32], \"decor\");\n  family(\"hightable\", \"咖啡高桌\", \"One slim standing-height communal cafe table, rounded rectangular oak top and charcoal steel pedestal legs.\", [2.5, 1.05, 0.8]);\n  family(\"stool\", \"吧台凳\", \"One comfortable cafe counter stool, sage upholstered seat and low back, slim black legs and circular footrest.\", [0.48, 0.84, 0.5]);\n  family(\"pendant\", \"线性吊灯\", \"One suspended linear architectural pendant, thin dark bronze housing with warm diffused underside and two suspension cables included.\", [2.1, 0.62, 0.13], \"decor\");\n  family(\"bookcase\", \"开放书架\", \"One tall open oak bookcase, neatly populated with books, a few ceramic objects and generous empty shelf space, softly rounded corners.\", [2.2, 2.15, 0.36]);\n  family(\"lounge\", \"阅读扶手椅\", \"One generous contemporary reading armchair, cream boucle upholstery, rounded arms, warm walnut feet.\", [0.88, 0.88, 0.9]);\n  family(\"sidetable\", \"阅读边桌\", \"One small round walnut side table with a sturdy cylindrical pedestal.\", [0.55, 0.48, 0.55]);\n  family(\"rug\", \"阅读地毯\", \"One flat woven oatmeal wool rug with subtle sage linear border, rectangular shape, very low pile.\", [3.4, 0.018, 3.1], \"decor\");\n  family(\"plant\", \"室内绿植\", \"One healthy indoor ficus tree with airy natural foliage in a cylindrical cream ceramic floor planter.\", [0.78, 1.8, 0.78], \"decor\");\n  family(\"locker\", \"个人储物柜\", \"One bank of personal office lockers, warm grey doors in a tidy grid with small brass number labels and recessed locks, oak outer frame.\", [2.5, 1.95, 0.48]);\n  family(\"printcabinet\", \"打印收纳台\", \"One low oak office storage cabinet with closed paper drawers and a clear flat top supporting office equipment.\", [1.7, 0.76, 0.65]);\n  family(\"printer\", \"办公打印机\", \"One multifunction office printer, warm white and charcoal housing, document scanner lid, paper output tray and small touchscreen.\", [0.65, 0.57, 0.56]);\n  family(\"sign\", \"导向标识\", \"One elegant wall-mounted coworking wayfinding plaque with crisp readable text WORK / MEET / COFFEE and simple directional icons, charcoal lettering on warm white.\", [1.8, 0.38, 0.04], \"decor\");\n\n  // The uninterrupted 2.6 m central spine links both doors.\n  // All occupied furniture envelopes remain outside x = [-1.3, 1.3].\n  for (const side of [\"south\", \"north\"]) {\n    const id = api.opening({\n      id: \"cowork-\" + side, kind: \"door\", wall: side,\n      offset: 0, bottom: 0, width: 2, height: 2.7\n    });\n    api.place({\n      assetId: api.asset(\"entry\"), roomOpeningId: id,\n      dimensions: sizes.entry\n    });\n  }\n\n  // Reception: staff chair 1.2 m behind its desk; entry approach stays clear.\n  const reception = { x: -3.55, z: 5.45 };\n  floor(\"reception\", reception.x, reception.z);\n  floor(\"staffchair\", reception.x, reception.z - 1.2);\n  wall(\"brand\", \"south\", -3.6, 2.05);\n  floor(\"plant\", -1.85, 3.65);\n\n  // Two four-person work benches: paired seats 1.25 m from desk centers.\n  // The 3.7 m row spacing preserves a useful passage behind occupied chairs.\n  for (const z of [-0.35, -4.05]) {\n    const x = -6.3;\n    const desk = floor(\"benchdesk\", x, z);\n    for (const dx of [-1.4, 1.4]) {\n      for (const side of [-1, 1]) {\n        floor(\"taskchair\", x + dx, z + side * 1.25, side === 1 ? PI : 0);\n        // Supported workstation equipment faces its own corresponding seat.\n        const station = api.attach({\n          assetId: api.asset(\"computer\"), parentId: desk,\n          kind: \"supported\", offset: [dx, side * 0.43],\n          dimensions: sizes.computer\n        });\n        // The rear-side asset is a monitor seen from behind by the opposite row;\n        // individual work surfaces and seating remain independently usable.\n      }\n    }\n    supported(\"lamp\", desk, -2.43, 0.4);\n    pendant(x, z);\n  }\n\n  // Northern storage and print station: at least 0.95 m clear in front.\n  floor(\"locker\", -9.35, -7.02);\n  floor(\"locker\", -6.6, -7.02);\n  const printStation = floor(\"printcabinet\", -3.8, -6.94);\n  supported(\"printer\", printStation, 0.25, 0);\n  wall(\"sign\", \"north\", -3.8, 1.75);\n\n  // Dominant focal relationship: enclosed meeting table facing a large display.\n  const meeting = { x: 6.1, z: -4.65 };\n  floor(\"meetingtable\", meeting.x, meeting.z);\n  for (const dx of [-1.4, 0, 1.4]) {\n    floor(\"meetingchair\", meeting.x + dx, meeting.z + 1.25, PI);\n    floor(\"meetingchair\", meeting.x + dx, meeting.z - 1.25, 0);\n  }\n  floor(\"meetingchair\", meeting.x - 2.65, meeting.z, PI / 2);\n  floor(\"meetingchair\", meeting.x + 2.65, meeting.z, -PI / 2);\n  wall(\"screen\", \"north\", 6.1, 1.28);\n  pendant(meeting.x, meeting.z);\n  // Three transparent sides; the 1.6 m southern opening is the meeting entrance.\n  floor(\"partition\", 2.4, -4.65, PI / 2);\n  floor(\"partition\", 9.85, -4.65, PI / 2);\n  api.place({\n    assetId: api.asset(\"partition\"), position: api.roomPoint(3.95, -2.05, 0),\n    dimensions: [2.9, 2.65, 0.22]\n  });\n  api.place({\n    assetId: api.asset(\"partition\"), position: api.roomPoint(8.45, -2.05, 0),\n    dimensions: [2.9, 2.65, 0.22]\n  });\n\n  // Phone booths have unobstructed forward door approaches.\n  floor(\"booth\", 3.05, 0.05);\n  floor(\"booth\", 5.05, 0.05);\n  floor(\"plant\", 7.0, 0.05);\n\n  // East-wall coffee counter, facing inward. Cafe seats face their own table.\n  const bar = floor(\"bar\", 10.3, 4.6, -PI / 2);\n  supported(\"machine\", bar, -0.9, 0);\n  supported(\"tray\", bar, 0.12, 0);\n  const cafe = { x: 5.8, z: 4.85 };\n  floor(\"hightable\", cafe.x, cafe.z);\n  for (const dx of [-0.8, 0.8]) {\n    floor(\"stool\", cafe.x + dx, cafe.z + 0.92, PI);\n    floor(\"stool\", cafe.x + dx, cafe.z - 0.92, 0);\n  }\n  pendant(cafe.x, cafe.z);\n  floor(\"plant\", 8.85, 6.7);\n\n  // Reading pair: chairs 0.8–1.0 m from their shared table, bound by one rug.\n  const reading = { x: -8.1, z: 4.6 };\n  floor(\"rug\", reading.x, reading.z);\n  floor(\"bookcase\", -10.65, 4.65, PI / 2);\n  floor(\"sidetable\", reading.x, reading.z);\n  floor(\"lounge\", reading.x - 0.15, reading.z - 1.05, -0.18);\n  floor(\"lounge\", reading.x + 0.45, reading.z + 1.03, PI + 0.25);\n  floor(\"plant\", -9.95, 6.8);\n}",
+          "placementCount": 67,
+          "functions": [
+            "asset",
+            "attach",
+            "ceilingPoint",
+            "opening",
+            "place",
+            "requireAsset",
+            "roomPoint",
+            "wallFrame"
+          ],
+          "repairAttempts": 0,
+          "assetRequirements": [
+            {
+              "key": "entry",
+              "name": "玻璃双开门",
+              "variants": 1,
+              "dimensions": [
+                2,
+                2.7,
+                0.16
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "reception",
+              "name": "接待前台",
+              "variants": 1,
+              "dimensions": [
+                3.2,
+                1.05,
+                1.05
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "staffchair",
+              "name": "前台座椅",
+              "variants": 1,
+              "dimensions": [
+                0.62,
+                1.05,
+                0.65
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "brand",
+              "name": "品牌标牌",
+              "variants": 1,
+              "dimensions": [
+                2.3,
+                0.65,
+                0.07
+              ],
+              "role": "decor"
+            },
+            {
+              "key": "benchdesk",
+              "name": "四人工位桌",
+              "variants": 1,
+              "dimensions": [
+                5.6,
+                0.78,
+                1.55
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "taskchair",
+              "name": "人体工学椅",
+              "variants": 1,
+              "dimensions": [
+                0.65,
+                1.1,
+                0.68
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "computer",
+              "name": "桌面电脑",
+              "variants": 1,
+              "dimensions": [
+                0.72,
+                0.48,
+                0.48
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "lamp",
+              "name": "工作台灯",
+              "variants": 1,
+              "dimensions": [
+                0.24,
+                0.43,
+                0.28
+              ],
+              "role": "decor"
+            },
+            {
+              "key": "meetingtable",
+              "name": "会议长桌",
+              "variants": 1,
+              "dimensions": [
+                4.2,
+                0.76,
+                1.55
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "meetingchair",
+              "name": "会议座椅",
+              "variants": 1,
+              "dimensions": [
+                0.6,
+                0.89,
+                0.62
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "screen",
+              "name": "会议显示屏",
+              "variants": 1,
+              "dimensions": [
+                2.6,
+                1.48,
+                0.1
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "partition",
+              "name": "玻璃隔断",
+              "variants": 1,
+              "dimensions": [
+                3.8,
+                2.65,
+                0.22
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "booth",
+              "name": "隔音电话亭",
+              "variants": 1,
+              "dimensions": [
+                1.5,
+                2.5,
+                1.45
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "bar",
+              "name": "咖啡水吧",
+              "variants": 1,
+              "dimensions": [
+                3.5,
+                0.95,
+                0.75
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "machine",
+              "name": "咖啡机",
+              "variants": 1,
+              "dimensions": [
+                0.72,
+                0.48,
+                0.46
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "tray",
+              "name": "杯具托盘",
+              "variants": 1,
+              "dimensions": [
+                0.52,
+                0.2,
+                0.32
+              ],
+              "role": "decor"
+            },
+            {
+              "key": "hightable",
+              "name": "咖啡高桌",
+              "variants": 1,
+              "dimensions": [
+                2.5,
+                1.05,
+                0.8
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "stool",
+              "name": "吧台凳",
+              "variants": 1,
+              "dimensions": [
+                0.48,
+                0.84,
+                0.5
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "pendant",
+              "name": "线性吊灯",
+              "variants": 1,
+              "dimensions": [
+                2.1,
+                0.62,
+                0.13
+              ],
+              "role": "decor"
+            },
+            {
+              "key": "bookcase",
+              "name": "开放书架",
+              "variants": 1,
+              "dimensions": [
+                2.2,
+                2.15,
+                0.36
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "lounge",
+              "name": "阅读扶手椅",
+              "variants": 1,
+              "dimensions": [
+                0.88,
+                0.88,
+                0.9
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "sidetable",
+              "name": "阅读边桌",
+              "variants": 1,
+              "dimensions": [
+                0.55,
+                0.48,
+                0.55
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "rug",
+              "name": "阅读地毯",
+              "variants": 1,
+              "dimensions": [
+                3.4,
+                0.018,
+                3.1
+              ],
+              "role": "decor"
+            },
+            {
+              "key": "plant",
+              "name": "室内绿植",
+              "variants": 1,
+              "dimensions": [
+                0.78,
+                1.8,
+                0.78
+              ],
+              "role": "decor"
+            },
+            {
+              "key": "locker",
+              "name": "个人储物柜",
+              "variants": 1,
+              "dimensions": [
+                2.5,
+                1.95,
+                0.48
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "printcabinet",
+              "name": "打印收纳台",
+              "variants": 1,
+              "dimensions": [
+                1.7,
+                0.76,
+                0.65
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "printer",
+              "name": "办公打印机",
+              "variants": 1,
+              "dimensions": [
+                0.65,
+                0.57,
+                0.56
+              ],
+              "role": "functional"
+            },
+            {
+              "key": "sign",
+              "name": "导向标识",
+              "variants": 1,
+              "dimensions": [
+                1.8,
+                0.38,
+                0.04
+              ],
+              "role": "decor"
+            }
+          ],
+          "diagnostics": [
+            {
+              "code": "object.duplicate",
+              "severity": "warning",
+              "message": "移除与 obj-code-4b4e8f15-873e-43d3 完全重叠的重复物体。",
+              "repaired": true
+            },
+            {
+              "code": "object.duplicate",
+              "severity": "warning",
+              "message": "移除与 obj-code-4b4e8f15-873e-43d3 完全重叠的重复物体。",
+              "repaired": true
+            },
+            {
+              "code": "object.duplicate",
+              "severity": "warning",
+              "message": "移除与 obj-code-4b4e8f15-873e-43d3 完全重叠的重复物体。",
+              "repaired": true
+            },
+            {
+              "code": "object.duplicate",
+              "severity": "warning",
+              "message": "移除与 obj-code-df86d766-8efa-4e95 完全重叠的重复物体。",
+              "repaired": true
+            },
+            {
+              "code": "object.duplicate",
+              "severity": "warning",
+              "message": "移除与 obj-code-df86d766-8efa-4e95 完全重叠的重复物体。",
+              "repaired": true
+            },
+            {
+              "code": "object.duplicate",
+              "severity": "warning",
+              "message": "移除与 obj-code-df86d766-8efa-4e95 完全重叠的重复物体。",
+              "repaired": true
+            },
+            {
+              "code": "object.out-of-bounds",
+              "severity": "warning",
+              "message": "物体已移回地图边界内。",
+              "repaired": true
+            },
+            {
+              "code": "object.out-of-bounds",
+              "severity": "warning",
+              "message": "物体已移回地图边界内。",
+              "repaired": true
+            },
+            {
+              "code": "object.out-of-bounds",
+              "severity": "warning",
+              "message": "物体已移回地图边界内。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.out-of-bounds",
+              "severity": "warning",
+              "message": "物体已移回地图边界内。",
+              "repaired": true
+            },
+            {
+              "code": "object.out-of-bounds",
+              "severity": "warning",
+              "message": "物体已移回地图边界内。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.out-of-bounds",
+              "severity": "warning",
+              "message": "物体已移回地图边界内。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.off-ground",
+              "severity": "warning",
+              "message": "物体已重新贴合地形。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "object.overlap",
+              "severity": "warning",
+              "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+              "repaired": true
+            },
+            {
+              "code": "interior.operational-clearance",
+              "severity": "warning",
+              "message": "已将遮挡门或柜体开启面的物体移到房间边缘，恢复操作净空。",
+              "repaired": true
+            },
+            {
+              "code": "interior.light-coverage",
+              "severity": "warning",
+              "message": "室内没有可用的实用灯光；生成规划应补充带光源元数据的顶灯或台灯。",
+              "repaired": false
+            }
+          ]
+        },
+        "diagnostics": [
+          {
+            "code": "object.duplicate",
+            "severity": "warning",
+            "message": "移除与 obj-code-4b4e8f15-873e-43d3 完全重叠的重复物体。",
+            "objectIds": [
+              "obj-code-4b4e8f15-873e-43d3",
+              "obj-code-ff00c9de-d87e-434f"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.duplicate",
+            "severity": "warning",
+            "message": "移除与 obj-code-4b4e8f15-873e-43d3 完全重叠的重复物体。",
+            "objectIds": [
+              "obj-code-4b4e8f15-873e-43d3",
+              "obj-code-3c4fe48c-d53f-42e4"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.duplicate",
+            "severity": "warning",
+            "message": "移除与 obj-code-4b4e8f15-873e-43d3 完全重叠的重复物体。",
+            "objectIds": [
+              "obj-code-4b4e8f15-873e-43d3",
+              "obj-code-37832d71-7c2a-4f11"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.duplicate",
+            "severity": "warning",
+            "message": "移除与 obj-code-df86d766-8efa-4e95 完全重叠的重复物体。",
+            "objectIds": [
+              "obj-code-df86d766-8efa-4e95",
+              "obj-code-4e3efac8-eee9-4f9e"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.duplicate",
+            "severity": "warning",
+            "message": "移除与 obj-code-df86d766-8efa-4e95 完全重叠的重复物体。",
+            "objectIds": [
+              "obj-code-df86d766-8efa-4e95",
+              "obj-code-ea56f200-16fa-45ab"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.duplicate",
+            "severity": "warning",
+            "message": "移除与 obj-code-df86d766-8efa-4e95 完全重叠的重复物体。",
+            "objectIds": [
+              "obj-code-df86d766-8efa-4e95",
+              "obj-code-338f1101-6c28-478d"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.out-of-bounds",
+            "severity": "warning",
+            "message": "物体已移回地图边界内。",
+            "objectIds": [
+              "obj-code-d37a7412-fbad-4f2b"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.out-of-bounds",
+            "severity": "warning",
+            "message": "物体已移回地图边界内。",
+            "objectIds": [
+              "obj-code-1e3d96ce-abe9-4961"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.out-of-bounds",
+            "severity": "warning",
+            "message": "物体已移回地图边界内。",
+            "objectIds": [
+              "obj-code-77671d3e-eefb-4c62"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-77671d3e-eefb-4c62"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-273d42aa-c6c9-434c"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-c56a7ea6-a2cd-47fe"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.out-of-bounds",
+            "severity": "warning",
+            "message": "物体已移回地图边界内。",
+            "objectIds": [
+              "obj-code-619435a5-8864-4ab2"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.out-of-bounds",
+            "severity": "warning",
+            "message": "物体已移回地图边界内。",
+            "objectIds": [
+              "obj-code-48d58cdb-d90a-4408"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-48d58cdb-d90a-4408"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.out-of-bounds",
+            "severity": "warning",
+            "message": "物体已移回地图边界内。",
+            "objectIds": [
+              "obj-code-046d3f51-ed96-4b47"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-046d3f51-ed96-4b47"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-016cc85f-6df1-4757"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.off-ground",
+            "severity": "warning",
+            "message": "物体已重新贴合地形。",
+            "objectIds": [
+              "obj-code-15cde245-2ea3-4bcd"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-d3c05d8e-01f3-4204",
+              "obj-code-4b4e8f15-873e-43d3"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-d3c05d8e-01f3-4204",
+              "obj-code-9d45bd8c-ab11-4e64"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-d3c05d8e-01f3-4204",
+              "obj-code-273d42aa-c6c9-434c"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-71252015-7e40-422d",
+              "obj-code-df86d766-8efa-4e95"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-71252015-7e40-422d",
+              "obj-code-e1f2af94-7637-4645"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-71252015-7e40-422d",
+              "obj-code-c56a7ea6-a2cd-47fe"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-cd7ae0b5-15f1-4f35",
+              "obj-code-619435a5-8864-4ab2"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-82441f2b-fc3d-49d6",
+              "obj-code-016cc85f-6df1-4757"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-3712efe7-3d7f-4234",
+              "obj-code-7876e217-bac5-46f1"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-3712efe7-3d7f-4234",
+              "obj-code-850a286d-4eda-4024"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "object.overlap",
+            "severity": "warning",
+            "message": "检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。",
+            "objectIds": [
+              "obj-code-81ae1915-3d8b-4305",
+              "obj-code-15cde245-2ea3-4bcd"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "interior.operational-clearance",
+            "severity": "warning",
+            "message": "已将遮挡门或柜体开启面的物体移到房间边缘，恢复操作净空。",
+            "objectIds": [
+              "obj-code-1e3d96ce-abe9-4961",
+              "obj-code-619435a5-8864-4ab2"
+            ],
+            "repaired": true
+          },
+          {
+            "code": "interior.light-coverage",
+            "severity": "warning",
+            "message": "室内没有可用的实用灯光；生成规划应补充带光源元数据的顶灯或台灯。",
+            "repaired": false
+          }
+        ],
+        "generationTraceId": "d3045629-552b-405e-95f1-066e78838caa"
+      },
+      "systemPrompt": "You are a room composer. Write ONE JavaScript function `function plan(api) { ... }` that furnishes the complete standalone room. This first version is final — nobody will iterate on it.\n\nRoom floor-center=[0,0,0], size=[width=22,height=4,depth=15], wallThickness=0.16, seed=1800875693. `Math` is available and `Math.random` is seeded, so it is deterministic. The room shell, walls, floor and ceiling are owned by the map — never generate them.\n\nYou have total creative freedom: style, furniture families, density and atmosphere are yours to derive from the user's request. Your two standing duties: CIRCULATION — keep a continuous route at least 0.8 world units wide from every door into the primary activity area, keep door swings clear, and leave honest empty space; RELATIONSHIPS — build functional pairings (desk with chair, table with seats, screen with facing seats) rather than scattering props, and give the room one dominant focal relationship with a few subordinate ones.\n\nComposition style — anchor and relate: interior design as pairwise relations, the room-scale reading of Yu et al.'s Make It Home (SIGGRAPH 2011) and of Holodeck's relational constraints (CVPR 2024) — against-wall, near, far, facing, in-front-of. Think in objects and the bonds between them, not floor regions. Anchor every hero piece first — bed, sofa, desk, dining table — on the wall or focal point that justifies it, then define each remaining piece as a relation function on an anchor with a declared numeric range: the nightstand at arm's reach of the bed, the screen facing the sofa at seating distance, the rug binding the seating group, the pendant centered over the table, the reading chair angled toward the window. Secondary relations chain off primary ones, so the room reads as a few strong pairs plus their satellites — never a scatter of placed props.\n\nDefine as many of your own variables, constants and helper functions inside plan as you like — layout helpers, samplers, small data tables — anything synchronous and bounded. Plain JavaScript is fully available: `const`/`let`, `for` / `for...of` / `while` loops, `if`/`else`, function declarations and arrows, arrays, objects, and all of `Math` (including seeded `Math.random`).\n\nThe sandbox exposes exactly these ten APIs. Everything else is yours to build:\n1. api.room — the room data {position, size, wallThickness, openings}.\n2. api.roomPoint(localX, localZ, height?) — a floor point, offset from the room center; height 0 for floor furniture.\n3. api.wallFrame(wall, offset?, bottom?, inset?) — wall is 'north'|'south'|'east'|'west'; returns {point, inward, outward, tangent}. Place wall-mounted assets at frame.point with facing:{direction:frame.inward}.\n4. api.ceilingPoint(localX, localZ, objectHeight?, drop?) — a point with the object below the ceiling; pass its declared height.\n5. api.opening({id, kind:'door'|'window', wall, offset?, bottom?, width?, height?}) — declares a parameterized opening and returns its ID; then api.place({assetId, roomOpeningId:id, dimensions:[w,h,d]}) binds a door/window model to it.\n6. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: \" Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right.\" */, dimensions:[width,height,depth], role:'functional'|'decor', variants?, optional?}) — declares an asset family; returns the key.\n7. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.\n8. api.place({assetId, name?, position, rotationY?, facing?, dimensions?, roomOpeningId?, role:'functional'|'decor'}) — dimensions is the intended world [width,height,depth]; rotationY in radians, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).\n9. api.attach({assetId?, name?, parentId, kind:'supported'|'mounted', side?, offset?, anchorY?:'bottom'|'center'|'top', dimensions?, role?}) — attaches a child to an earlier return value; supported uses local [x,z] offset on a surface, mounted requires side north|south|east|west with local [horizontal, vertical] offset.\n10. api.random(min?, max?) — seeded. Full `Math` is available and `Math.random` is seeded; everything beyond these ten keys — lerp, clamps, samplers, relation helpers — you define yourself.\n\nRules:\n- Declare 20..30 requireAsset families; place every declared variant at least once.\n- Return only the function body: no markdown, imports, async, eval, timers, network, or global state. Synchronous code, finite numbers only.\n- There are no hard caps in this mode — your output is applied verbatim — so keep loops sane on your own: seconds of computation, not minutes.\n- Keep every object inside the room; wall-mounted objects use api.wallFrame, ceiling objects use api.ceilingPoint, floor furniture uses api.roomPoint with height 0; never use terrain-following placement."
     },
     {
       "key": "cowork:fields",
