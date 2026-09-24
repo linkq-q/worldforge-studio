@@ -27,8 +27,7 @@ export const CODE_PLAN_INDOOR_MODE_OPTIONS = [
   { key: 'algebra', label: 'B · 锚点关系 Relate' },
   { key: 'fields', label: 'C · 场与动线 Fields' },
   { key: 'search', label: 'D · 生成-选择 Anneal' },
-  { key: 'hybrid', label: '混合 · 语法+场（上一代）' },
-  { key: 'program-anchor', label: 'E · 程序×锚点' }
+  { key: 'program-anchor', label: '混合 · 程序+锚点' }
 ] as const;
 
 export type CodePlanMode = typeof CODE_PLAN_MODE_OPTIONS[number]['key'];
