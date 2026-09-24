@@ -655,6 +655,8 @@ export class RenderRuntimeAdapter {
           surface.setTerrainDepthTexture(shore.depthTexture ?? null);
           surface.material.uniforms.uShoreWorldCenter.value.set(...shore.center);
           surface.material.uniforms.uShoreWorldSize.value = shore.size;
+          // Grid vertices use local XZ; the fragment shader uses the matching 0..1 UVs.
+          if (shore.worldSpace === false) surface.material.uniforms.uWaterPlaneSize.value = shore.size;
           surface.material.uniforms.uShoreDistanceScale.value = shore.distanceScale ?? 1;
           if (shore.depthTexture) {
             this.waterDetailTexture ??= createWaterDetailTexture();
