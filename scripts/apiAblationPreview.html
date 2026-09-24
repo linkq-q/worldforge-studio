@@ -22,11 +22,10 @@
       const { map } = await response.json();
       const viewer = await createMapViewer({ canvas: document.querySelector('canvas'), map, scheme: null, autoStart: false, pixelRatio: 1 });
       const [width, height, depth] = map.box.size;
-      const highestObject = Math.max(0, ...map.objects.map(object => object.transform.position[1]));
-      const targetY = Math.min(height, highestObject * 0.5);
+      const targetY = height * 0.5;
       const halfWidth = width * 0.5;
       const halfDepth = depth * 0.5;
-      const radius = Math.hypot(halfWidth, halfDepth, Math.max(height, highestObject) * 0.5);
+      const radius = Math.hypot(halfWidth, halfDepth, height * 1.5);
       const top = params.get('view') === 'top';
       viewer.setSize(innerWidth, innerHeight);
       if (top) {
