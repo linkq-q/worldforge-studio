@@ -23,6 +23,7 @@
       const viewer = await createMapViewer({ canvas: document.querySelector('canvas'), map, scheme: null, autoStart: false, pixelRatio: 1 });
       const [width, height, depth] = map.box.size;
       const landmark = params.get('framing') === 'landmark';
+      const study = params.get('framing') === 'study';
       const targetY = landmark ? 22 : height * 0.5;
       const halfWidth = landmark ? 40 : width * 0.5;
       const halfDepth = landmark ? 40 : depth * 0.5;
@@ -34,7 +35,20 @@
         viewer.camera.up.set(0, 0, -1);
         viewer.camera.position.set(0, targetY + distance, 0);
       } else {
-        const distance = radius / Math.sin(viewer.camera.fov * Math.PI / 360);
+        let distance = radius / Math.sin(viewer.camera.fov * Math.PI / 360);
+        if (study) {
+          // Fit the same map-size envelope for every condition, preserving a 45-degree view.
+          const tan = Math.tan(viewer.camera.fov * Math.PI / 360);
+          distance = 0;
+          for (const x of [-width / 2, width / 2]) for (const y of [-6, height]) for (const z of [-depth / 2, depth / 2]) {
+            const dy = y - targetY;
+            const cameraX = (x - z) * Math.SQRT1_2;
+            const cameraY = -(x + z) / 2 + dy * Math.SQRT1_2;
+            const towardCamera = (x + z) / 2 + dy * Math.SQRT1_2;
+            distance = Math.max(distance, towardCamera + Math.abs(cameraX) / (tan * viewer.camera.aspect), towardCamera + Math.abs(cameraY) / tan);
+          }
+          distance *= 1.08;
+        }
         viewer.camera.up.set(0, 1, 0);
         viewer.camera.position.set(distance * 0.5, targetY + distance * Math.SQRT1_2, distance * 0.5);
       }
