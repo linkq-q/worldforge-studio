@@ -137,7 +137,7 @@ export interface MapWaterBody {
   widths?: number[];
   /** False for water carried by an authored structure, such as a spillway. */
   carveTerrain?: boolean;
-  /** Explicit reservoir bank freeboard and outward blend width in metres. */
+  /** Explicit bank freeboard and outward blend width in metres. */
   bankHeight?: number;
   bankWidth?: number;
   /** 0 keeps control-point corners; 1 produces rounded arc segments. */
@@ -875,7 +875,7 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
       ...(type === 'river' && Array.isArray(input.widths) && input.widths.length === points.length
         ? { widths: input.widths.map((width) => clamp(finiteNumber(width, input.width ?? 1.2), 0.3, maxRiverWidth)) } : {}),
       ...(input.carveTerrain === false ? { carveTerrain: false } : {}),
-      ...(type === 'lake' && input.bankHeight !== undefined ? {
+      ...(type !== 'ocean' && input.bankHeight !== undefined ? {
         bankHeight: clamp(finiteNumber(input.bankHeight, 0.5), 0.1, 3),
         bankWidth: clamp(finiteNumber(input.bankWidth, 5), 1, maxRiverWidth)
       } : {}),

@@ -45,7 +45,7 @@ import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights, resolvedMapObjectLight } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
-import { isPointInsideWaterBody, riverEdgePairs, waterBoundaryPoints } from '../shared/mapWater';
+import { isPointInsideWaterBody, riverEdgePairs, riverPathSamples, sampleRiverProfile, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
 import { mapGuidePolyline } from '../shared/mapGuide';
 import type {
   SceneVisualZone,
@@ -1004,7 +1004,7 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
     const geometry = water.type === 'ocean'
       ? buildOceanGeometry(map)
       : isComposite
-      ? buildCompositeWaterGeometry(shore.size)
+      ? buildCompositeWaterGeometry(shore, waters)
       : water.type !== 'river'
         ? buildLakeGeometry(waterBoundaryPoints(water))
         : buildRiverGeometry(water);
@@ -1031,6 +1031,7 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
       ? water.type
       : 'mixed';
     mesh.userData.isWater = true;
+    mesh.userData.isSpillway = waters.some((candidate) => candidate.type === 'river' && candidate.carveTerrain === false);
     mesh.userData.skipShaderApply = true;
     mesh.userData.excludeFromPlanarReflection = true;
     mesh.userData.materialTags = [
@@ -1050,6 +1051,7 @@ interface WaterShoreBinding {
   center: [number, number];
   size: number;
   worldSpace?: boolean;
+  distanceScale?: number;
 }
 
 function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBody[][] {
@@ -1065,9 +1067,13 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
   for (let left = 0; left < waters.length; left += 1) {
     for (let right = left + 1; right < waters.length; right += 1) {
       if (waters[left].type === 'ocean' || waters[right].type === 'ocean') continue;
-      if (hasSlopedRiver(waters[left]) || hasSlopedRiver(waters[right])) continue;
-      if (Math.abs(waters[left].level - waters[right].level) > 0.05) continue;
       if (!waterBoundariesTouch(boundaries[left], boundaries[right])) continue;
+      const candidates = [...boundaries[left], ...boundaries[right]];
+      const compatible = candidates.some(([x, z]) =>
+        boundaryDistance(x, z, boundaries[left]) < 0.08 && boundaryDistance(x, z, boundaries[right]) < 0.08
+        && Math.abs(waterSurfaceLevelAt(waters[left], x, z) - waterSurfaceLevelAt(waters[right], x, z)) < 0.08);
+      if (!compatible && (hasSlopedRiver(waters[left]) || hasSlopedRiver(waters[right])
+        || Math.abs(waters[left].level - waters[right].level) > 0.05)) continue;
       parents[find(right)] = find(left);
     }
   }
@@ -1079,6 +1085,18 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
     groups.set(root, group);
   }
   return [...groups.values()];
+}
+
+function boundaryDistance(x: number, z: number, boundary: Array<[number, number]>): number {
+  if (pointInPolygon(x, z, boundary)) return 0;
+  let distance = Infinity;
+  for (let i = 0; i < boundary.length; i += 1) {
+    const a = boundary[i], b = boundary[(i + 1) % boundary.length];
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const t = THREE.MathUtils.clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+    distance = Math.min(distance, Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t));
+  }
+  return distance;
 }
 
 function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly MapWaterBody[], coast: OceanCoastField | null = null): WaterShoreBinding {
@@ -1109,6 +1127,7 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
         ? !pointInPolygon(x, z, boundaries[index]) || isPointInsideWaterBody(water, x, z, map)
         : pointInPolygon(x, z, boundaries[index]))) {
         inside[row * resolution + column] = 1;
+
       }
     }
   }
@@ -1127,13 +1146,37 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   texture.colorSpace = THREE.NoColorSpace;
   texture.flipY = false;
   texture.needsUpdate = true;
-  return { texture, center, size };
+  return { texture, center, size, distanceScale: coast ? 1 : Math.max(0.01, maxDistance * size / resolution / 4) };
 }
 
-function buildCompositeWaterGeometry(size: number): THREE.BufferGeometry {
-  const segments = THREE.MathUtils.clamp(Math.ceil(size / 4), 8, 32);
-  const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+function buildCompositeWaterGeometry(shore: WaterShoreBinding, waters: readonly MapWaterBody[]): THREE.BufferGeometry {
+  const rivers = waters.filter((water) => water.type === 'river');
+  const cellSize = Math.min(1, ...rivers.map((water) => Math.max(0.3, Math.min(water.width, ...(water.widths ?? [])) / 4)));
+  const segments = THREE.MathUtils.clamp(Math.ceil(shore.size / cellSize), 8, 192);
+  const geometry = new THREE.PlaneGeometry(shore.size, shore.size, segments, segments);
   geometry.rotateX(-Math.PI / 2);
+  const prepared = waters.map((water) => ({water, boundary:waterBoundaryPoints(water), samples:riverPathSamples(water)}));
+  // A receiving lake owns overlap pixels. All connected water is rendered once.
+  prepared.sort((a,b) => Number(a.water.type === 'river') - Number(b.water.type === 'river'));
+  const base = waters.reduce((sum, water) => sum + water.level, 0) / waters.length;
+  const positions = geometry.getAttribute('position');
+  const flow = new Float32Array(positions.count * 2);
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i) + shore.center[0], z = positions.getZ(i) + shore.center[1];
+    let owner = prepared[0], nearest = Infinity;
+    for (const candidate of prepared) {
+      const distance = boundaryDistance(x, z, candidate.boundary);
+      if (distance < nearest) {owner = candidate; nearest = distance;}
+      if (distance === 0) break;
+    }
+    if (owner.water.type === 'river') {
+      const sample = sampleRiverProfile(x,z,owner.samples);
+      positions.setY(i, sample.level - base);
+      flow.set(sample.direction, i * 2);
+    } else positions.setY(i, owner.water.level - base);
+  }
+  geometry.setAttribute('riverFlow', new THREE.BufferAttribute(flow, 2));
+  geometry.computeVertexNormals();
   return geometry;
 }
 
@@ -1311,21 +1354,38 @@ function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry 
 function buildRiverGeometry(water: MapWaterBody): THREE.BufferGeometry {
   const edges = riverEdgePairs(water);
   const vertices: number[] = [];
-  for (const edge of edges) {
-    const y = edge.level - water.level;
-    vertices.push(edge.left[0], y, edge.left[1], edge.right[0], y, edge.right[1]);
+  const directions: number[] = [];
+  const uvs: number[] = [];
+  const columns = 8;
+  let distance = 0;
+  for (let row = 0; row < edges.length; row += 1) {
+    const edge = edges[row];
+    if (row > 0) {
+      const previous = edges[row - 1];
+      distance += Math.hypot((edge.left[0] + edge.right[0] - previous.left[0] - previous.right[0]) / 2,
+        (edge.left[1] + edge.right[1] - previous.left[1] - previous.right[1]) / 2);
+    }
+    for (let column = 0; column <= columns; column += 1) {
+      const t = column / columns;
+      vertices.push(edge.left[0] + (edge.right[0] - edge.left[0]) * t,
+        edge.level - water.level, edge.left[1] + (edge.right[1] - edge.left[1]) * t);
+      directions.push(...edge.direction);
+      uvs.push(t, distance);
+    }
   }
   const indices: number[] = [];
-  for (let index = 0; index < edges.length - 1; index += 1) {
-    const left = index * 2;
-    const right = left + 1;
-    const nextLeft = left + 2;
-    const nextRight = left + 3;
-    pushUpwardTriangle(indices, vertices, left, nextLeft, right);
-    pushUpwardTriangle(indices, vertices, right, nextLeft, nextRight);
+  for (let row = 0; row < edges.length - 1; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const left = row * (columns + 1) + column;
+      const nextLeft = left + columns + 1;
+      pushUpwardTriangle(indices, vertices, left, nextLeft, left + 1);
+      pushUpwardTriangle(indices, vertices, left + 1, nextLeft, nextLeft + 1);
+    }
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('riverFlow', new THREE.Float32BufferAttribute(directions, 2));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;

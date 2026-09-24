@@ -45,7 +45,7 @@ Content-Type: application/json
 - `water.update`：修改水位、宽度、名称或控制点
 - `water.remove`：移除水域
 
-湖泊至少 3 个边界点；河流至少 2 个中心线点并使用 `width`。河流可用与控制点一一对应的 `levels` / `widths` 指定逐点水位和宽度。结构承托的溢洪水道可显式指定 `carveTerrain:false`，避免刻穿坝体下方地形。湖泊可显式用 `bankHeight`（水面以上的岸顶高度）和 `bankWidth`（向外过渡宽度）建立围岸；省略时保持只挖不填的原行为。筑岸与开槽均可重复执行，缩小或删除水体不自动恢复原地形。服务端会校验并裁剪到地图范围，渲染阶段通过 `runtime.water-style` 统一控制。
+湖泊至少 3 个边界点；河流至少 2 个中心线点并使用 `width`。河流可用与控制点一一对应的 `levels` / `widths` 指定逐点水位和宽度。结构承托的溢洪水道可显式指定 `carveTerrain:false`，避免刻穿坝体下方地形。湖泊和河流可显式用 `bankHeight`（水面以上的岸顶高度）和 `bankWidth`（向外过渡宽度）建立围岸；省略时保持只挖不填的原行为。筑岸与开槽均可重复执行，缩小或删除水体不自动恢复原地形。服务端会校验并裁剪到地图范围，渲染阶段通过 `runtime.water-style` 统一控制。
 
 提交：
 

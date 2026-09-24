@@ -572,6 +572,9 @@ export class RenderRuntimeAdapter {
       surface.mesh.geometry.dispose();
       if (surface instanceof WaterSurface) {
         applyRenderPlanWaterBaseState(surface);
+        const riverFlow = Boolean(mesh.geometry.getAttribute('riverFlow'));
+        surface.material.uniforms.uUseRiverFlow.value = riverFlow;
+        surface.material.uniforms.uRiverRapids.value = mesh.userData.isSpillway ? 1 : 0;
         const waveStrength = style?.waveStrength ?? recipe.waveStrength;
         const waveSpeed = style?.waveSpeed ?? recipe.waveSpeed;
         const foamStrength = style?.foamStrength ?? recipe.foamStrength;
@@ -580,6 +583,10 @@ export class RenderRuntimeAdapter {
           : THREE.MathUtils.degToRad(style.waveDirection);
         surface.importState({
           waterMode: recipe.mode,
+          uFlowEnabled: riverFlow,
+          uFlowSpeed: mesh.userData.isSpillway ? 1.8 : 0.6,
+          uShoreTransparency: mesh.userData.waterBodyType === 'ocean' ? 0 : 0.9,
+          uShoreEdgeAlpha: 0.08,
           uWaterColor: `#${waterColor.getHexString()}`,
           uShallowColor: `#${shallowColor.getHexString()}`,
           uDepthColor: `#${depthColor.getHexString()}`,
@@ -589,7 +596,7 @@ export class RenderRuntimeAdapter {
           uWaveScale: style?.waveScale,
           uShoreFoamStrength: foamStrength,
           uShoreFoamWidth: style?.shoreFoamWidth,
-          uShoreWaveEnabled: true,
+          uShoreWaveEnabled: !riverFlow,
           uShoreWaveStrength: Math.min(2.5, waveStrength * 2),
           uShoreWaveSpeed: waveSpeed,
           uShoreWaveRange: style?.shoreWaveRange,
@@ -634,6 +641,7 @@ export class RenderRuntimeAdapter {
         const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
         if (shore?.texture?.isTexture && Array.isArray(shore.center) && shore.size > 0) {
           syncWaterSurfaceShore(surface, shore);
+          surface.material.uniforms.uShoreDistanceScale.value = shore.distanceScale ?? 1;
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {

@@ -29,6 +29,7 @@ export interface WaterShoreBinding {
   center: [number, number];
   size: number;
   worldSpace?: boolean;
+  distanceScale?: number;
 }
 
 export interface WaterOceanTerrainBinding {

@@ -100,9 +100,9 @@ export function prepareStructuredWaterInPlace(map: EditableMap): void {
   }
 }
 
-export function waterSurfaceLevelAt(water: MapWaterBody, x: number, z: number): number {
+export function waterSurfaceLevelAt(water: MapWaterBody, x: number, z: number, samples?: readonly RiverPathSample[]): number {
   if (water.type !== 'river') return water.level;
-  return closestRiverPoint(x, z, riverPathSamples(water)).level;
+  return sampleRiverProfile(x, z, samples ?? riverPathSamples(water)).level;
 }
 
 /**
@@ -124,13 +124,15 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
 
   const bankWidth = water.bankHeight === undefined ? 0 : (water.bankWidth ?? 5);
+  const bankCrest = bankWidth > 0 ? Math.max(1, boxWidth / (terrain.resolutionX - 1), boxDepth / (terrain.resolutionZ - 1)) * 1.5 : 0;
+  const bankReach = bankWidth + bankCrest;
   const boundary = waterBoundaryPoints(water);
   const xs = boundary.map((point) => point[0]);
   const zs = boundary.map((point) => point[1]);
-  const minX = gridFloor(Math.min(...xs) - bankWidth, boxWidth, terrain.resolutionX);
-  const maxX = gridCeil(Math.max(...xs) + bankWidth, boxWidth, terrain.resolutionX);
-  const minZ = gridFloor(Math.min(...zs) - bankWidth, boxDepth, terrain.resolutionZ);
-  const maxZ = gridCeil(Math.max(...zs) + bankWidth, boxDepth, terrain.resolutionZ);
+  const minX = gridFloor(Math.min(...xs) - bankReach, boxWidth, terrain.resolutionX);
+  const maxX = gridCeil(Math.max(...xs) + bankReach, boxWidth, terrain.resolutionX);
+  const minZ = gridFloor(Math.min(...zs) - bankReach, boxDepth, terrain.resolutionZ);
+  const maxZ = gridCeil(Math.max(...zs) + bankReach, boxDepth, terrain.resolutionZ);
 
   for (let zIndex = minZ; zIndex <= maxZ; zIndex += 1) {
     for (let xIndex = minX; xIndex <= maxX; xIndex += 1) {
@@ -138,8 +140,8 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
       const distance = polygonEdgeDistance(world[0], world[2], boundary);
       const index = terrainIndex(terrain, xIndex, zIndex);
       if (!pointInPolygon(world[0], world[2], boundary)) {
-        if (bankWidth > 0 && distance < bankWidth) {
-          const t = smoothstep(distance / bankWidth);
+        if (bankWidth > 0 && distance < bankReach) {
+          const t = smoothstep(Math.max(0, distance - bankCrest) / bankWidth);
           const rim = Math.min(map.box.size[1], water.level + water.bankHeight!);
           terrain.heights[index] = Math.max(terrain.heights[index] ?? 0, rim + (bottom - rim) * t);
         }
@@ -161,7 +163,9 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
   const [boxWidth, , boxDepth] = map.box.size;
   const maxHalfWidth = Math.max(0.15, ...samples.map((sample) => sample.width / 2));
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
-  const reach = maxHalfWidth + shore;
+  const bankWidth = water.bankHeight === undefined ? 0 : (water.bankWidth ?? 5);
+  const bankCrest = bankWidth > 0 ? Math.max(1, boxWidth / (terrain.resolutionX - 1), boxDepth / (terrain.resolutionZ - 1)) * 1.5 : 0;
+  const reach = maxHalfWidth + (bankWidth > 0 ? bankCrest + bankWidth : shore);
   const xs = samples.map((sample) => sample.point[0]);
   const zs = samples.map((sample) => sample.point[1]);
   const minX = gridFloor(Math.min(...xs) - reach, boxWidth, terrain.resolutionX);
@@ -172,10 +176,10 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
   for (let zIndex = minZ; zIndex <= maxZ; zIndex += 1) {
     for (let xIndex = minX; xIndex <= maxX; xIndex += 1) {
       const world = terrainPointAt(map, xIndex, zIndex);
-      const closest = closestRiverPoint(world[0], world[2], samples);
+      const closest = sampleRiverProfile(world[0], world[2], samples);
       const halfWidth = closest.width / 2;
       const bedHalfWidth = halfWidth * 0.5;
-      if (closest.distance > halfWidth + shore) continue;
+      if (closest.distance > halfWidth + (bankWidth > 0 ? bankCrest + bankWidth : shore)) continue;
       const top = closest.level - SHORE_RIM;
       const bottom = Math.max(TERRAIN_MIN_HEIGHT, closest.level - water.depth);
       let ceiling: number;
@@ -185,11 +189,20 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
         const t = smoothstep((closest.distance - bedHalfWidth) / Math.max(0.01, halfWidth - bedHalfWidth));
         ceiling = bottom + (top - bottom) * t;
       } else {
-        const t = smoothstep((closest.distance - halfWidth) / shore);
-        ceiling = top + water.depth * t;
+        const distance = closest.distance - halfWidth;
+        if (bankWidth > 0) {
+          const rim = Math.min(map.box.size[1], closest.level + water.bankHeight!);
+          ceiling = distance < bankCrest
+            ? top + (rim - top) * smoothstep(distance / bankCrest)
+            : rim + (bottom - rim) * smoothstep((distance - bankCrest) / bankWidth);
+        } else {
+          ceiling = top + water.depth * smoothstep(distance / shore);
+        }
       }
       const index = terrainIndex(terrain, xIndex, zIndex);
-      terrain.heights[index] = Math.min(terrain.heights[index] ?? 0, ceiling);
+      terrain.heights[index] = bankWidth > 0 && closest.distance > bedHalfWidth
+        ? (closest.distance <= halfWidth ? ceiling : Math.max(terrain.heights[index] ?? 0, ceiling))
+        : Math.min(terrain.heights[index] ?? 0, ceiling);
     }
   }
 }
@@ -249,12 +262,12 @@ export function riverEdgePairs(water: MapWaterBody): Array<{
   });
 }
 
-function closestRiverPoint(
+export function sampleRiverProfile(
   x: number,
   z: number,
   samples: readonly RiverPathSample[]
-): { distance: number; level: number; width: number } {
-  let closest = { distance: Number.POSITIVE_INFINITY, level: samples[0]?.level ?? 0, width: samples[0]?.width ?? 1 };
+): { distance: number; level: number; width: number; direction: [number, number] } {
+  let closest = { distance: Number.POSITIVE_INFINITY, level: samples[0]?.level ?? 0, width: samples[0]?.width ?? 1, direction: [0, 0] as [number, number] };
   for (let index = 1; index < samples.length; index += 1) {
     const start = samples[index - 1];
     const end = samples[index];
@@ -269,7 +282,7 @@ function closestRiverPoint(
       z - (start.point[1] + dz * t)
     );
     if (distance < closest.distance) {
-      closest = { distance, level: start.level + (end.level - start.level) * t, width: start.width + (end.width - start.width) * t };
+      closest = { distance, level: start.level + (end.level - start.level) * t, width: start.width + (end.width - start.width) * t, direction: [dx / (Math.sqrt(lengthSquared) || 1), dz / (Math.sqrt(lengthSquared) || 1)] };
     }
   }
   return closest;

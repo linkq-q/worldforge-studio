@@ -106,6 +106,8 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   ${WATER_NOISE_UTILS_GLSL}
   ${OCEAN_TERRAIN_GLSL}
 
+  attribute vec2 riverFlow;
+  varying vec2 vRiverFlow;
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
@@ -370,15 +372,13 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     float eps = 0.1;
     float dx = computeDisplacedWaveHeight(vec2(position.x + eps, position.z), vec3(position.x + eps, position.y, position.z));
     float dz = computeDisplacedWaveHeight(vec2(position.x, position.z + eps), vec3(position.x, position.y, position.z + eps));
-    vec3 posX = vec3(position.x + eps, dx, position.z);
-    vec3 posZ = vec3(position.x, dz, position.z + eps);
-    vec3 toX = normalize(posX - displaced);
-    vec3 toZ = normalize(posZ - displaced);
-    vec3 perturbedNormal = normalize(cross(toZ, toX));
+    // Keep the authored river slope; wave derivatives are only a perturbation.
+    vec3 perturbedNormal = normalize(normal + vec3((waveH - dx) / eps, 0.0, (waveH - dz) / eps) * normal.y);
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
     vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);
 
+    vRiverFlow = (modelMatrix * vec4(riverFlow.x, 0.0, riverFlow.y, 0.0)).xz;
     vWorldPosition = worldPos.xyz;
     vReflectionWorldPosition = reflectionWorldPos.xyz;
     vWorldNormal = normalize(mat3(modelMatrix) * perturbedNormal);
@@ -407,6 +407,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   ${WATER_RING_STRIPE_GLSL}
   ${OCEAN_TERRAIN_GLSL}
 
+  varying vec2 vRiverFlow;
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
@@ -489,6 +490,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform sampler2D tFoamNoise;
   uniform bool uUseFoamNoise;
   uniform bool uFlowEnabled;
+  uniform bool uUseRiverFlow;
+  uniform float uRiverRapids;
   uniform vec2 uFlowDirection;
   uniform float uFlowSpeed;
 
@@ -649,9 +652,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   }
 
   vec2 computeWaterFlowOffset() {
-    if (!uFlowEnabled) return vec2(0.0);
-    vec2 flowDir = normalizeDirection(uFlowDirection, uPrimaryWaveDirection);
-    return flowDir * uTime * uFlowSpeed;
+    if (!uFlowEnabled || (uUseRiverFlow && length(vRiverFlow) < 0.01)) return vec2(0.0);
+    vec2 flowDir = normalizeDirection(uUseRiverFlow ? vRiverFlow : uFlowDirection, uPrimaryWaveDirection);
+    return flowDir * uTime * uFlowSpeed * (uUseRiverFlow ? -1.0 : 1.0);
   }
 
   float directionalWavePhase(
@@ -1016,6 +1019,14 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);
     }
     float foam = foamCoverage;
+    if (uUseRiverFlow && uRiverRapids > 0.0) {
+      vec2 dir = normalizeDirection(vRiverFlow, vec2(0.0, 1.0));
+      vec2 rapidsUv = vec2(dot(vWorldPosition.xz, vec2(-dir.y, dir.x)) * 2.0,
+        dot(vWorldPosition.xz, dir) * 0.65 - uTime * uFlowSpeed * 2.0);
+      float rapids = smoothstep(0.28, 0.72, fbmNoise(rapidsUv, uTime * 0.1));
+      float slope = smoothstep(0.02, 0.16, 1.0 - abs(normalize(vWorldNormal).y));
+      foam = max(foam, rapids * slope * uRiverRapids);
+    }
     // v4 Phase 2.3: cartoon foam 硬切（噪声/岸线已提供不规则轮廓，step 出手绘白边）
     if (uWaterMode < 0.5 && uToonFoamHardCut) {
       if (uUseOceanTerrain) {
@@ -1591,6 +1602,8 @@ export class WaterSurface {
         tFoamNoise:    { value: null },
         uUseFoamNoise:    { value: false },
         uFlowEnabled: { value: false },
+        uUseRiverFlow: { value: false },
+        uRiverRapids: { value: 0 },
         uFlowDirection: { value: new THREE.Vector2(1.0, 0.0) },
         uFlowSpeed: { value: 0.35 },
 
