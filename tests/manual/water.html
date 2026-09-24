@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="UTF-8"><style>html,body{margin:0;width:100%;height:100%;background:#080e10}canvas{display:block;width:100%;height:100%}#label{position:absolute;top:20px;left:24px;color:#ddd;font:16px sans-serif}</style></head><body><div id="label"></div><canvas id="view"></canvas><script type="module">
+import {createMapViewer} from '/src/client/mapViewer.ts';
+import {createRenderScheme} from '/src/shared/renderScheme.ts';
+const name=new URLSearchParams(location.search).get('map')||'before';
+const map=await fetch('/output/water-qa/'+name+'.json').then(r=>r.json());
+document.querySelector('#label').textContent=map.name;
+const viewer=await createMapViewer({canvas:document.querySelector('canvas'),map,pixelRatio:1,autoStart:false});
+viewer.setSize(innerWidth,innerHeight); viewer.camera.position.set(-75,58,92);viewer.camera.lookAt(0,2,0);viewer.camera.updateProjectionMatrix();
+const recipe=new URLSearchParams(location.search).get('recipe');
+if(['calm-lake','clear-river','stylized'].includes(recipe)) {
+  const scheme=createRenderScheme({name:'水材质验收 · '+recipe,
+    settings:{background:'#080e10',fogColor:'#111719',fogDensity:0,hemisphereSkyColor:'#eaf6ff',hemisphereGroundColor:'#30382f',hemisphereIntensity:1.6,sunColor:'#fff0ce',sunIntensity:2.5,exposure:1},
+    renderPlan:{version:1,baseSchemeId:'water-material-review',modules:[{id:'runtime.water-style',params:{recipe}}]}});
+  viewer.setRenderScheme(scheme); window.reviewScheme=scheme;
+}
+viewer.tick(0);window.viewer=viewer;window.ready=true;
+window.step=(dt=0.5)=>viewer.tick(dt);
+</script></body></html>

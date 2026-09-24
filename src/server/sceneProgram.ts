@@ -158,7 +158,7 @@ Available API:
 - scene.mountOn(selector, parentId, { side: "north"|"south"|"east"|"west", name?, scale?, yaw?, offset?: [horizontal,vertical], inset?, groupId?, layer?: 1|2|3|4 }) -> objectId
 - scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving", intensity?)
 - scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
-- scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, level?, depth?, shorelineSmoothness?, shorelineIrregularity? })
+- scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, widths?, level?, levels?, depth?, carveTerrain?, bankHeight?, bankWidth?, shorelineSmoothness?, shorelineIrregularity? })
 - scene.grass(id, region, { name?, preset?, density?, variation?, softness?, height? })
 - scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", align?: "forward"|"side", contact?: "seam", groupSize?, groupId?, layer?: 1|2|3|4 })
 - scene.scatter(assetSelector, { center: [x,z], radius }, { count?, density?, minSpacing?, avoidWater?, maxSlope?, scaleMin?, scaleMax?, clusterStrength?, edgeFalloff?, groupId?, layer?: 1|2|3|4 })
@@ -403,6 +403,11 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
           type,
           points: pointArray(options.points, 'invalid_water_points').slice(0, 64),
           width: optionalFiniteNumber(options.width),
+          levels: options.levels as number[] | undefined,
+          widths: options.widths as number[] | undefined,
+          carveTerrain: options.carveTerrain as boolean | undefined,
+          bankHeight: optionalFiniteNumber(options.bankHeight),
+          bankWidth: optionalFiniteNumber(options.bankWidth),
           level: optionalFiniteNumber(options.level),
           depth: optionalFiniteNumber(options.depth),
           shorelineSmoothness: optionalFiniteNumber(options.shorelineSmoothness),

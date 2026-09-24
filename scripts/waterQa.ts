@@ -1,0 +1,16 @@
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { applyMapOperations } from '../src/shared/mapOperations';
+import { MapStore } from '../src/server/mapStore';
+const trace = process.argv[2];
+if (!trace) throw new Error('Pass a generation trace path');
+const events = (await readFile(trace, 'utf8')).trim().split(/\r?\n/).map(line => JSON.parse(line));
+const base = events.find(e => e.type === 'generation.input').data.map;
+const assets = events.filter(e => e.type === 'asset.ready').map(e => e.data.asset);
+const ops = events.find(e => e.type === 'generation.result').data.suggestion.operations;
+const original = applyMapOperations({...base, assets}, ops);
+const store = new MapStore({rootDir:path.resolve('data/water-qa')});
+const imported = await store.importMap({...original, id:'water-qa-before', name:'水电站修复前'});
+await mkdir('output/water-qa', {recursive:true});
+await writeFile('output/water-qa/before.json', JSON.stringify(imported));
+console.log(JSON.stringify({mapId:imported.id, objects:imported.objects.length, waters:imported.waterBodies.length}));

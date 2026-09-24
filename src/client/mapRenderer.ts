@@ -45,7 +45,7 @@ import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights, resolvedMapObjectLight } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
-import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
+import { isPointInsideWaterBody, riverEdgePairs, riverPathSamples, sampleRiverProfile, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
 import { mapGuidePolyline } from '../shared/mapGuide';
 import type {
   SceneVisualZone,
@@ -1004,7 +1004,7 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
     const geometry = water.type === 'ocean'
       ? buildOceanGeometry(map)
       : isComposite
-      ? buildCompositeWaterGeometry(shore.size)
+      ? buildCompositeWaterGeometry(shore, waters)
       : water.type !== 'river'
         ? buildLakeGeometry(waterBoundaryPoints(water))
         : buildRiverGeometry(water);
@@ -1031,6 +1031,7 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
       ? water.type
       : 'mixed';
     mesh.userData.isWater = true;
+    mesh.userData.isSpillway = waters.some((candidate) => candidate.type === 'river' && candidate.carveTerrain === false);
     mesh.userData.skipShaderApply = true;
     mesh.userData.excludeFromPlanarReflection = true;
     mesh.userData.materialTags = [
@@ -1047,9 +1048,11 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
 
 interface WaterShoreBinding {
   texture: THREE.DataTexture;
+  depthTexture?: THREE.DataTexture;
   center: [number, number];
   size: number;
   worldSpace?: boolean;
+  distanceScale?: number;
 }
 
 function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBody[][] {
@@ -1065,9 +1068,13 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
   for (let left = 0; left < waters.length; left += 1) {
     for (let right = left + 1; right < waters.length; right += 1) {
       if (waters[left].type === 'ocean' || waters[right].type === 'ocean') continue;
-      if (hasSlopedRiver(waters[left]) || hasSlopedRiver(waters[right])) continue;
-      if (Math.abs(waters[left].level - waters[right].level) > 0.05) continue;
       if (!waterBoundariesTouch(boundaries[left], boundaries[right])) continue;
+      const candidates = [...boundaries[left], ...boundaries[right]];
+      const compatible = candidates.some(([x, z]) =>
+        boundaryDistance(x, z, boundaries[left]) < 0.08 && boundaryDistance(x, z, boundaries[right]) < 0.08
+        && Math.abs(waterSurfaceLevelAt(waters[left], x, z) - waterSurfaceLevelAt(waters[right], x, z)) < 0.08);
+      if (!compatible && (hasSlopedRiver(waters[left]) || hasSlopedRiver(waters[right])
+        || Math.abs(waters[left].level - waters[right].level) > 0.05)) continue;
       parents[find(right)] = find(left);
     }
   }
@@ -1079,6 +1086,18 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
     groups.set(root, group);
   }
   return [...groups.values()];
+}
+
+function boundaryDistance(x: number, z: number, boundary: Array<[number, number]>): number {
+  if (pointInPolygon(x, z, boundary)) return 0;
+  let distance = Infinity;
+  for (let i = 0; i < boundary.length; i += 1) {
+    const a = boundary[i], b = boundary[(i + 1) % boundary.length];
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const t = THREE.MathUtils.clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+    distance = Math.min(distance, Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t));
+  }
+  return distance;
 }
 
 function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly MapWaterBody[], coast: OceanCoastField | null = null): WaterShoreBinding {
@@ -1093,12 +1112,30 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   const resolution = THREE.MathUtils.clamp(THREE.MathUtils.ceilPowerOfTwo(size * 4), 128, 512);
   const inside = new Uint8Array(resolution * resolution);
   const data = new Uint8Array(resolution * resolution);
+  // Column depth is independent of shore distance. RG packs 0..64 metres;
+  // B marks valid terrain-backed water, including mixed lake/spillway surfaces.
+  const depthData = !coast && map.sceneMode !== 'indoor' && waters.some((water) => water.type !== 'ocean' && water.carveTerrain !== false)
+    ? new Uint8Array(resolution * resolution * 4) : null;
+  const depthOwners = waters.map((water, index) => ({ water, boundary: boundaries[index], samples: riverPathSamples(water) }))
+    .sort((a, b) => Number(a.water.type === 'river') - Number(b.water.type === 'river'));
   for (let row = 0; row < resolution; row += 1) {
     const v = (row + 0.5) / resolution;
     const z = center[1] + (0.5 - v) * size;
     for (let column = 0; column < resolution; column += 1) {
       const u = (column + 0.5) / resolution;
       const x = center[0] + (u - 0.5) * size;
+      if (depthData && Math.abs(x) <= map.box.size[0] / 2 && Math.abs(z) <= map.box.size[2] / 2) {
+        const owner = depthOwners.find((candidate) => pointInPolygon(x, z, candidate.boundary));
+        if (owner && owner.water.carveTerrain !== false) {
+          const level = owner.water.type === 'river' ? sampleRiverProfile(x, z, owner.samples).level : owner.water.level;
+          const encoded = Math.round(THREE.MathUtils.clamp((level - sampleTerrainHeight(map, x, z)) / 64, 0, 1) * 65535);
+          const offset = (row * resolution + column) * 4;
+          depthData[offset] = encoded >> 8;
+          depthData[offset + 1] = encoded & 255;
+          depthData[offset + 2] = 255;
+          depthData[offset + 3] = 255;
+        }
+      }
       // Outside the ocean plane is still water, so only raised terrain becomes a shoreline.
       if (coast) {
         const distance = sampleCoastGrid({ ...coast, heights: coast.distances }, x, z);
@@ -1109,6 +1146,7 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
         ? !pointInPolygon(x, z, boundaries[index]) || isPointInsideWaterBody(water, x, z, map)
         : pointInPolygon(x, z, boundaries[index]))) {
         inside[row * resolution + column] = 1;
+
       }
     }
   }
@@ -1127,13 +1165,45 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   texture.colorSpace = THREE.NoColorSpace;
   texture.flipY = false;
   texture.needsUpdate = true;
-  return { texture, center, size };
+  const depthTexture = depthData ? new THREE.DataTexture(depthData, resolution, resolution, THREE.RGBAFormat, THREE.UnsignedByteType) : undefined;
+  if (depthTexture) {
+    depthTexture.name = `water-depth:${waters[0].id}`;
+    depthTexture.minFilter = depthTexture.magFilter = THREE.LinearFilter;
+    depthTexture.colorSpace = THREE.NoColorSpace;
+    depthTexture.flipY = false;
+    depthTexture.needsUpdate = true;
+  }
+  return { texture, depthTexture, center, size, distanceScale: coast ? 1 : Math.max(0.01, maxDistance * size / resolution / 4) };
 }
 
-function buildCompositeWaterGeometry(size: number): THREE.BufferGeometry {
-  const segments = THREE.MathUtils.clamp(Math.ceil(size / 4), 8, 32);
-  const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+function buildCompositeWaterGeometry(shore: WaterShoreBinding, waters: readonly MapWaterBody[]): THREE.BufferGeometry {
+  const rivers = waters.filter((water) => water.type === 'river');
+  const cellSize = Math.min(1, ...rivers.map((water) => Math.max(0.3, Math.min(water.width, ...(water.widths ?? [])) / 4)));
+  const segments = THREE.MathUtils.clamp(Math.ceil(shore.size / cellSize), 8, 192);
+  const geometry = new THREE.PlaneGeometry(shore.size, shore.size, segments, segments);
   geometry.rotateX(-Math.PI / 2);
+  const prepared = waters.map((water) => ({water, boundary:waterBoundaryPoints(water), samples:riverPathSamples(water)}));
+  // A receiving lake owns overlap pixels. All connected water is rendered once.
+  prepared.sort((a,b) => Number(a.water.type === 'river') - Number(b.water.type === 'river'));
+  const base = waters.reduce((sum, water) => sum + water.level, 0) / waters.length;
+  const positions = geometry.getAttribute('position');
+  const flow = new Float32Array(positions.count * 2);
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i) + shore.center[0], z = positions.getZ(i) + shore.center[1];
+    let owner = prepared[0], nearest = Infinity;
+    for (const candidate of prepared) {
+      const distance = boundaryDistance(x, z, candidate.boundary);
+      if (distance < nearest) {owner = candidate; nearest = distance;}
+      if (distance === 0) break;
+    }
+    if (owner.water.type === 'river') {
+      const sample = sampleRiverProfile(x,z,owner.samples);
+      positions.setY(i, sample.level - base);
+      flow.set(sample.direction, i * 2);
+    } else positions.setY(i, owner.water.level - base);
+  }
+  geometry.setAttribute('riverFlow', new THREE.BufferAttribute(flow, 2));
+  geometry.computeVertexNormals();
   return geometry;
 }
 
@@ -1195,6 +1265,11 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap, c
       shore.texture.needsUpdate = true;
       nextShore.texture.dispose();
     }
+    if (shore?.depthTexture && nextShore.depthTexture) {
+      shore.depthTexture.image = nextShore.depthTexture.image;
+      shore.depthTexture.needsUpdate = true;
+      nextShore.depthTexture.dispose();
+    } else if (nextShore.depthTexture) nextShore.depthTexture.dispose();
     const ocean = mesh.userData.waterOceanTerrain as OceanTerrainBinding | undefined;
     if (ocean?.texture?.isDataTexture && coast) {
       const previous = ocean.texture.image as { width: number; height: number };
@@ -1311,47 +1386,41 @@ function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry 
 function buildRiverGeometry(water: MapWaterBody): THREE.BufferGeometry {
   const edges = riverEdgePairs(water);
   const vertices: number[] = [];
-  for (const edge of edges) {
-    const y = edge.level - water.level;
-    vertices.push(edge.left[0], y, edge.left[1], edge.right[0], y, edge.right[1]);
+  const directions: number[] = [];
+  const uvs: number[] = [];
+  const columns = 8;
+  let distance = 0;
+  for (let row = 0; row < edges.length; row += 1) {
+    const edge = edges[row];
+    if (row > 0) {
+      const previous = edges[row - 1];
+      distance += Math.hypot((edge.left[0] + edge.right[0] - previous.left[0] - previous.right[0]) / 2,
+        (edge.left[1] + edge.right[1] - previous.left[1] - previous.right[1]) / 2);
+    }
+    for (let column = 0; column <= columns; column += 1) {
+      const t = column / columns;
+      vertices.push(edge.left[0] + (edge.right[0] - edge.left[0]) * t,
+        edge.level - water.level, edge.left[1] + (edge.right[1] - edge.left[1]) * t);
+      directions.push(...edge.direction);
+      uvs.push(t, distance);
+    }
   }
   const indices: number[] = [];
-  for (let index = 0; index < edges.length - 1; index += 1) {
-    const left = index * 2;
-    const right = left + 1;
-    const nextLeft = left + 2;
-    const nextRight = left + 3;
-    pushUpwardTriangle(indices, vertices, left, nextLeft, right);
-    pushUpwardTriangle(indices, vertices, right, nextLeft, nextRight);
+  for (let row = 0; row < edges.length - 1; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const left = row * (columns + 1) + column;
+      const nextLeft = left + columns + 1;
+      pushUpwardTriangle(indices, vertices, left, nextLeft, left + 1);
+      pushUpwardTriangle(indices, vertices, left + 1, nextLeft, nextLeft + 1);
+    }
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('riverFlow', new THREE.Float32BufferAttribute(directions, 2));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
-}
-
-function riverEdgePairs(water: MapWaterBody): Array<{
-  left: [number, number];
-  right: [number, number];
-  level: number;
-}> {
-  const samples = riverPathSamples(water);
-  const halfWidth = water.width / 2;
-  return samples.map((sample, index) => {
-    const previous = samples[Math.max(0, index - 1)].point;
-    const next = samples[Math.min(samples.length - 1, index + 1)].point;
-    const dx = next[0] - previous[0];
-    const dz = next[1] - previous[1];
-    const length = Math.hypot(dx, dz) || 1;
-    const offsetX = -dz / length * halfWidth;
-    const offsetZ = dx / length * halfWidth;
-    return {
-      left: [sample.point[0] + offsetX, sample.point[1] + offsetZ],
-      right: [sample.point[0] - offsetX, sample.point[1] - offsetZ],
-      level: sample.level
-    };
-  });
 }
 
 function hasSlopedRiver(water: MapWaterBody): boolean {
@@ -3746,8 +3815,9 @@ function disposeObject(object: THREE.Object3D): void {
         if (texture) textures.add(texture);
       }
     }
-    const shore = mesh.userData.waterShore as { texture?: THREE.Texture } | undefined;
+    const shore = mesh.userData.waterShore as { texture?: THREE.Texture; depthTexture?: THREE.Texture } | undefined;
     if (shore?.texture?.isTexture) textures.add(shore.texture);
+    if (shore?.depthTexture?.isTexture) textures.add(shore.depthTexture);
     const ocean = mesh.userData.waterOceanTerrain as { texture?: THREE.Texture } | undefined;
     if (ocean?.texture?.isTexture) textures.add(ocean.texture);
   });

@@ -26,9 +26,11 @@ interface WaterOceanSurface {
 
 export interface WaterShoreBinding {
   texture: THREE.Texture;
+  depthTexture?: THREE.Texture;
   center: [number, number];
   size: number;
   worldSpace?: boolean;
+  distanceScale?: number;
 }
 
 export interface WaterOceanTerrainBinding {
@@ -119,4 +121,70 @@ export function configureWaterReflection(
     strength: settings.environmentStrength,
     exposure: settings.environmentExposure
   });
+}
+
+// One small, tileable normal field shared by the existing water-material bindings.
+export function createWaterDetailTexture(): THREE.DataTexture {
+  const size = 256, data = new Uint8Array(size * size * 4);
+  // A broad, wind-biased spectrum avoids the visible crosshatch from eight
+  // equal-strength sine waves. Integer frequencies keep the field seamless.
+  let seed = 1847;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const waves: number[][] = [];
+  while (waves.length < 64) {
+    const kx = 3 + Math.floor(random() * 22);
+    const ky = Math.round((random() - 0.5) * 24);
+    if (waves.some(wave => wave[0] === kx && wave[1] === ky)) continue;
+    waves.push([kx, ky, random() * Math.PI * 2, 0.012 + random() * 0.012]);
+  }
+  const slopesX = new Float64Array(size * size), slopesY = new Float64Array(size * size);
+  const cosX = new Float64Array(size), sinX = new Float64Array(size);
+  // cos(x+y) separates each periodic mode into rows/columns: the same field,
+  // with trig evaluated per row/column rather than for every pixel and mode.
+  for (const [kx, ky, phase, amplitude] of waves) {
+    const scale = amplitude / Math.hypot(kx, ky);
+    for (let x = 0; x < size; x++) {
+      const angle = 2 * Math.PI * kx * x / size;
+      cosX[x] = Math.cos(angle); sinX[x] = Math.sin(angle);
+    }
+    for (let y = 0; y < size; y++) {
+      const angle = 2 * Math.PI * ky * y / size + phase;
+      const cy = Math.cos(angle), sy = Math.sin(angle), row = y * size;
+      for (let x = 0; x < size; x++) {
+        const slope = (cosX[x] * cy - sinX[x] * sy) * scale;
+        slopesX[row + x] += kx * slope; slopesY[row + x] += ky * slope;
+      }
+    }
+  }
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const dx = slopesX[y * size + x], dy = slopesY[y * size + x];
+    const length = Math.hypot(dx, dy, 1), offset = (y * size + x) * 4;
+    data[offset] = Math.round((dx / length * 0.5 + 0.5) * 255);
+    data[offset + 1] = Math.round((dy / length * 0.5 + 0.5) * 255);
+    data[offset + 2] = Math.round((1 / length * 0.5 + 0.5) * 255);
+    data[offset + 3] = 255;
+  }
+  const texture = new THREE.DataTexture(data, size, size);
+  texture.name = 'water-detail-normal';
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+const waterLightTarget = new THREE.Vector3();
+export function syncWaterSurfaceLight(material: THREE.ShaderMaterial, light: THREE.DirectionalLight | null): void {
+  const uniforms = material.uniforms;
+  if (!uniforms.uUseSceneWaterLight) return;
+  uniforms.uUseSceneWaterLight.value = Boolean(light);
+  if (!light) return;
+  light.getWorldPosition(uniforms.uSceneWaterLightDirection.value);
+  light.target.getWorldPosition(waterLightTarget);
+  uniforms.uSceneWaterLightDirection.value.sub(waterLightTarget).normalize();
+  uniforms.uSceneWaterLightColor.value.copy(light.color).multiplyScalar(light.visible ? Math.min(2, light.intensity / 2.5) : 0);
 }

@@ -27,6 +27,15 @@ describe('WaterSurface shader', () => {
     surface.dispose();
   });
 
+  it('retains sloped geometry normals and advects river patterns downstream', () => {
+    const surface = new WaterSurface(new THREE.Scene(), {} as THREE.WebGLRenderer, new THREE.Group(), {size:1,segments:1});
+    expect(surface.material.uniforms.uUseRiverFlow.value).toBe(false);
+    expect(surface.material.vertexShader).toContain('normalize(normal + vec3((waveH - dx) / eps');
+    expect(surface.material.fragmentShader).toContain('uUseRiverFlow ? vRiverFlow : uFlowDirection');
+    expect(surface.material.fragmentShader).toContain('uUseRiverFlow ? -1.0 : 1.0');
+    surface.dispose();
+  });
+
   it('clips the submerged model-water body with the same shore mask as its top', () => {
     const source = readFileSync(
       new URL('../vendor/voxel-render-runtime/src/environment/water/ModelWaterInstances.js', import.meta.url),

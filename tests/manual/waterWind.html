@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Lake wind GPU regression</title></head>
+<body><pre id="output">Running...</pre><script type="module">
+import * as THREE from 'three';
+import { WaterSurface } from '/vendor/voxel-render-runtime/src/environment/water/WaterSurface.js';
+import { NOISE_UTILS_GLSL } from '/vendor/voxel-render-runtime/src/environment/water/chunks.js';
+const renderer=new THREE.WebGLRenderer();
+const surface=new WaterSurface(new THREE.Scene(),renderer,new THREE.Group(),{size:1,segments:1});
+const source=surface.material.fragmentShader;
+const start=source.indexOf('      float detailStrength = uWaterNormalStrength;');
+if(start<0)throw Error('Lake wind modulation is missing');
+const block=source.slice(start,source.indexOf('      finalWaterNormal =',start));
+const target=new THREE.WebGLRenderTarget(64,64);
+const material=new THREE.ShaderMaterial({
+  uniforms:{hasTerrainDepth:{value:true},uUseSceneWaterLight:{value:true},uWaterMode:{value:1},flowingDetail:{value:false},uTime:{value:0},uWaterNormalSpeedA:{value:-0.014},uWaterNormalStrength:{value:0.8}},
+  vertexShader:'void main(){gl_Position=vec4(position.xy,0.0,1.0);}',
+  fragmentShader:`${NOISE_UTILS_GLSL}
+    uniform bool hasTerrainDepth,uUseSceneWaterLight,flowingDetail;
+    uniform float uWaterMode,uTime,uWaterNormalSpeedA,uWaterNormalStrength;
+    void main(){vec2 waterUv=gl_FragCoord.xy-32.0;vec2 dirA=normalize(vec2(1.0,0.25));
+      ${block}
+      gl_FragColor=vec4(vec3(detailStrength),1.0);
+    }`
+});
+const scene=new THREE.Scene(),geometry=new THREE.PlaneGeometry(2,2);
+scene.add(new THREE.Mesh(geometry,material));
+const camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+function sample(){
+  renderer.setRenderTarget(target);renderer.render(scene,camera);
+  const pixels=new Uint8Array(64*64*4);renderer.readRenderTargetPixels(target,0,0,64,64,pixels);
+  return Array.from({length:64*64},(_,i)=>pixels[i*4]/255);
+}
+const lake=sample(),min=Math.min(...lake),max=Math.max(...lake);
+let bypass=true;
+for(const [key,value]of [['hasTerrainDepth',false],['uUseSceneWaterLight',false],['flowingDetail',true],['uWaterMode',0]]){
+  const old=material.uniforms[key].value;material.uniforms[key].value=value;
+  bypass &&= sample().every(v=>Math.abs(v-0.8)<0.005);material.uniforms[key].value=old;
+}
+material.uniforms.uTime.value=20;
+const moving=sample().some((v,i)=>v!==lake[i]);
+material.uniforms.uWaterNormalStrength.value=0;
+const disabled=sample().every(v=>v===0);
+window.result={passed:min>=0.515&&max<=0.965&&max-min>0.25&&bypass&&moving&&disabled,min,max,bypass,moving,disabled};
+document.querySelector('#output').textContent=JSON.stringify(window.result,null,2);
+surface.dispose();geometry.dispose();material.dispose();target.dispose();renderer.dispose();
+if(!window.result.passed)throw Error('Lake wind bounds, motion or compatibility failed');
+</script></body></html>

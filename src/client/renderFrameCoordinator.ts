@@ -14,6 +14,8 @@ export interface RenderFrameCoordinatorOptions {
   camera: THREE.PerspectiveCamera;
   composer: EffectComposer;
   needsPrePass(): boolean;
+  needsWaterSceneColor?(): boolean;
+  captureWaterSceneColor?(): void;
   producePrePass(): RenderPrePassResources | null;
   updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void;
 }
@@ -38,6 +40,17 @@ export class RenderFrameCoordinator {
       scene: options.scene,
       camera: options.camera,
       composer: options.composer
+    });
+    this.pipeline.graph.registerProducer({
+      id: 'worldforgeWaterColor',
+      phase: 'prePass',
+      writes: ['water:sceneColor'],
+      run: () => this.options.captureWaterSceneColor?.()
+    });
+    this.pipeline.graph.registerConsumer({
+      id: 'worldforgeWaterRefraction',
+      reads: ['water:sceneColor'],
+      enabled: () => this.options.needsWaterSceneColor?.() ?? false
     });
     this.pipeline.graph.registerProducer({
       id: 'worldforgePrePass',

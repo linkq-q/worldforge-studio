@@ -795,6 +795,10 @@ function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: Ma
       }
     }
     if (!exposed) continue;
+    if (water.carveTerrain === false) {
+      issues.push({code:'water.exposed-terrain', severity:'warning', message:'结构承托的水道与地形相交；请检查水道高程或局部开口。', repaired:false});
+      continue;
+    }
     repairs.push({ type: 'water.update', waterId: water.id, patch: {} });
     issues.push({
       code: 'water.exposed-terrain', severity: 'error', message: '水体盆地或河床已重新刻蚀，修复水面穿地。', repaired: true

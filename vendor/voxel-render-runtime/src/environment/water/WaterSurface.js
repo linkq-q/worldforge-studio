@@ -106,6 +106,8 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   ${WATER_NOISE_UTILS_GLSL}
   ${OCEAN_TERRAIN_GLSL}
 
+  attribute vec2 riverFlow;
+  varying vec2 vRiverFlow;
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
@@ -370,15 +372,13 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     float eps = 0.1;
     float dx = computeDisplacedWaveHeight(vec2(position.x + eps, position.z), vec3(position.x + eps, position.y, position.z));
     float dz = computeDisplacedWaveHeight(vec2(position.x, position.z + eps), vec3(position.x, position.y, position.z + eps));
-    vec3 posX = vec3(position.x + eps, dx, position.z);
-    vec3 posZ = vec3(position.x, dz, position.z + eps);
-    vec3 toX = normalize(posX - displaced);
-    vec3 toZ = normalize(posZ - displaced);
-    vec3 perturbedNormal = normalize(cross(toZ, toX));
+    // Keep the authored river slope; wave derivatives are only a perturbation.
+    vec3 perturbedNormal = normalize(normal + vec3((waveH - dx) / eps, 0.0, (waveH - dz) / eps) * normal.y);
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
     vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);
 
+    vRiverFlow = (modelMatrix * vec4(riverFlow.x, 0.0, riverFlow.y, 0.0)).xz;
     vWorldPosition = worldPos.xyz;
     vReflectionWorldPosition = reflectionWorldPos.xyz;
     vWorldNormal = normalize(mat3(modelMatrix) * perturbedNormal);
@@ -407,6 +407,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   ${WATER_RING_STRIPE_GLSL}
   ${OCEAN_TERRAIN_GLSL}
 
+  varying vec2 vRiverFlow;
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
@@ -489,6 +490,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform sampler2D tFoamNoise;
   uniform bool uUseFoamNoise;
   uniform bool uFlowEnabled;
+  uniform bool uUseRiverFlow;
+  uniform float uRiverRapids;
   uniform vec2 uFlowDirection;
   uniform float uFlowSpeed;
 
@@ -630,6 +633,14 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uToonReflectionFresnelStep;// Phase 3: fresnel 硬边阈值
 
   // === v3 Step 3: Dual Normal Maps（Realistic/Hybrid 表面细节法线）===
+  uniform bool uUseSceneWaterLight;
+  uniform vec3 uSceneWaterLightDirection;
+  uniform vec3 uSceneWaterLightColor;
+  uniform sampler2D tWaterSceneColor;
+  uniform sampler2D tWaterSceneDepth;
+  uniform bool uHasWaterSceneColor;
+  uniform sampler2D tTerrainWaterDepth;
+  uniform bool uHasTerrainWaterDepth;
   uniform sampler2D tWaterNormalA;
   uniform sampler2D tWaterNormalB;
   uniform bool uUseWaterNormalMaps;
@@ -649,9 +660,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   }
 
   vec2 computeWaterFlowOffset() {
-    if (!uFlowEnabled) return vec2(0.0);
-    vec2 flowDir = normalizeDirection(uFlowDirection, uPrimaryWaveDirection);
-    return flowDir * uTime * uFlowSpeed;
+    if (!uFlowEnabled || (uUseRiverFlow && length(vRiverFlow) < 0.01)) return vec2(0.0);
+    vec2 flowDir = normalizeDirection(uUseRiverFlow ? vRiverFlow : uFlowDirection, uPrimaryWaveDirection);
+    return flowDir * uTime * uFlowSpeed * (uUseRiverFlow ? -1.0 : 1.0);
   }
 
   float directionalWavePhase(
@@ -736,6 +747,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   // Fresnel：基于传入法线与 vViewDir（指向摄像机），uRealisticFresnelBias 避免菲涅尔恰好为 0
   float computeWaterFresnel(vec3 normal, vec3 viewDir) {
     float ndotv = clamp(dot(normalize(normal), normalize(viewDir)), 0.0, 1.0);
+    if (uUseSceneWaterLight) return 0.02 + 0.98 * pow(1.0 - ndotv, 5.0);
     float fresnel = uRealisticFresnelBias
       + pow(1.0 - ndotv, uRealisticFresnelPower) * uRealisticFresnelStrength;
     return clamp(fresnel, 0.0, 1.0);
@@ -746,6 +758,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     vec3 halfDir = normalize(viewDir + lightDir);
     float spec = pow(max(dot(normalize(normal), halfDir), 0.0), uRealisticSpecularPower);
     return spec * uRealisticSpecularStrength;
+  }
+
+  // Blend independent slope fields without losing half their variance mid-cycle.
+  vec3 blendWaterFlowNormals(vec3 a, vec3 b, float weight) {
+    vec2 slope = mix(a.xy / max(a.z, 0.001), b.xy / max(b.z, 0.001), weight);
+    slope *= inversesqrt(weight * weight + (1.0 - weight) * (1.0 - weight));
+    return normalize(vec3(slope, 1.0));
   }
 
   float computeWaterAbsorptionFactor(vec3 worldPos, float viewDistance, float depthDiff, float shoreDist) {
@@ -784,6 +803,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float waterDepth = abs(waterViewPos.z);
     float depthDiff = max(sceneLinearDepth - waterDepth, 0.0);
 
+    vec2 terrainDepthUv = (vWorldPosition.xz - uShoreWorldCenter) / max(uShoreWorldSize, 0.0001);
+    terrainDepthUv = vec2(terrainDepthUv.x, -terrainDepthUv.y) + 0.5;
+    vec4 terrainDepthSample = uHasTerrainWaterDepth ? texture2D(tTerrainWaterDepth, terrainDepthUv) : vec4(0.0);
+    bool hasTerrainDepth = uHasTerrainWaterDepth && terrainDepthSample.b > 0.5
+      && all(greaterThanEqual(terrainDepthUv, vec2(0.0))) && all(lessThanEqual(terrainDepthUv, vec2(1.0)));
+    float terrainWaterDepth = dot(terrainDepthSample.rg, vec2(65280.0, 255.0)) * (64.0 / 65535.0)
+      / max(terrainDepthSample.b, 0.001);
     float hasDepth = uHasDepthTexture ? 1.0 : 0.0;
     float oceanWaterDepth = 1000000.0;
     if (uUseOceanTerrain) {
@@ -1016,6 +1042,14 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);
     }
     float foam = foamCoverage;
+    if (uUseRiverFlow && uRiverRapids > 0.0) {
+      vec2 dir = normalizeDirection(vRiverFlow, vec2(0.0, 1.0));
+      vec2 rapidsUv = vec2(dot(vWorldPosition.xz, vec2(-dir.y, dir.x)) * 2.0,
+        dot(vWorldPosition.xz, dir) * 0.65 - uTime * uFlowSpeed * 2.0);
+      float rapids = smoothstep(0.28, 0.72, fbmNoise(rapidsUv, uTime * 0.1));
+      float slope = smoothstep(0.02, 0.16, 1.0 - abs(normalize(vWorldNormal).y));
+      foam = max(foam, rapids * slope * uRiverRapids);
+    }
     // v4 Phase 2.3: cartoon foam 硬切（噪声/岸线已提供不规则轮廓，step 出手绘白边）
     if (uWaterMode < 0.5 && uToonFoamHardCut) {
       if (uUseOceanTerrain) {
@@ -1032,6 +1066,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     if (uUseShoreDistance) {
       colorFactor = shoreDist;
     }
+    if (hasTerrainDepth) colorFactor = 1.0 - exp(-terrainWaterDepth * uDepthStrength * 0.35);
     if (uUseCartoonBands) {
       if (uWaterMode < 0.5) {
         // Cartoon：完整色阶量化
@@ -1052,13 +1087,16 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       absorb = uHasDepthTexture
         ? 1.0 - exp(-depthDiff * uRealisticAbsorptionStrength)
         : (uUseShoreDistance ? shoreDist : 0.0);
+      if (hasTerrainDepth) absorb = 1.0 - exp(-terrainWaterDepth * uRealisticAbsorptionStrength * 0.4);
       waterColor = mix(waterColor, uDepthColor, absorb * uRealisticDepthTintStrength);
     }
 
     float viewDistance = length(cameraPosition - vWorldPosition);
     float absorption = 0.0;
     if (uWaterMode > 0.5 && uUseWaterAbsorption) {
-      absorption = computeWaterAbsorptionFactor(vWorldPosition, viewDistance, depthDiff, shoreDist);
+      absorption = hasTerrainDepth
+        ? 1.0 - exp(-terrainWaterDepth * uAbsorptionStrength * 0.35)
+        : computeWaterAbsorptionFactor(vWorldPosition, viewDistance, depthDiff, shoreDist);
       vec3 absorptionTint = mix(uShallowTint, uDeepTint, absorption);
       waterColor = mix(waterColor, absorptionTint, absorption * uAbsorptionTintStrength);
     }
@@ -1081,11 +1119,36 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
 
       vec3 nA = unpackNormalMap(texture2D(tWaterNormalA, uvA).rgb);
       vec3 nB = unpackNormalMap(texture2D(tWaterNormalB, uvB).rgb);
-      vec3 detailNormal = normalize(mix(nA, nB, uWaterNormalMix));
+      float normalMix = uWaterNormalMix;
+      bool flowingDetail = uUseSceneWaterLight && uUseRiverFlow && length(vRiverFlow) > 0.05;
+      if (flowingDetail) {
+        // Two short, staggered flow cycles prevent unbounded UV stretching in bends.
+        float phase = fract(uTime * 0.14 + noise2D(waterUv * 0.12) * 0.8);
+        float phaseB = fract(phase + 0.5);
+        nA = unpackNormalMap(texture2D(tWaterNormalA, (waterUv - vRiverFlow * phase * uFlowSpeed / 0.14) * uWaterNormalScaleA).rgb);
+        nB = unpackNormalMap(texture2D(tWaterNormalB, (waterUv - vRiverFlow * phaseB * uFlowSpeed / 0.14) * uWaterNormalScaleA + vec2(0.37, 0.61)).rgb);
+        normalMix = smoothstep(0.0, 1.0, abs(phase * 2.0 - 1.0));
+      }
+      vec3 detailNormal = flowingDetail
+        ? blendWaterFlowNormals(nA, nB, normalMix)
+        : normalize(mix(nA, nB, normalMix));
 
       // Y-up water plane: normal-map XY contributes detail slope on world XZ.
       vec3 detailNormalWorld = normalize(baseNormal + vec3(detailNormal.x, 0.0, detailNormal.y) * uWaveNormalBlend);
-      finalWaterNormal = normalize(mix(baseNormal, detailNormalWorld, uWaterNormalStrength));
+      if (uUseSceneWaterLight) {
+        // The texture is sampled on world +X/+Z. Add height-field slopes in
+        // those axes; a cross-product frame mirrored X and collapsed on vertical faces.
+        vec2 detailSlope = detailNormal.xy / max(detailNormal.z, 0.001);
+        detailNormalWorld = normalize(baseNormal + vec3(detailSlope.x, 0.0, detailSlope.y) * baseNormal.y * uWaveNormalBlend);
+      }
+      float detailStrength = uWaterNormalStrength;
+      if (hasTerrainDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
+        // Broad, slowly advecting wind patches break up uniform lake roughness.
+        // Keep a nonzero lower bound so calm patches never turn into flat mirrors.
+        float windPatch = noise2D(waterUv * 0.09 + dirA * uTime * uWaterNormalSpeedA * 0.25);
+        detailStrength *= mix(0.65, 1.2, smoothstep(0.15, 0.85, windPatch));
+      }
+      finalWaterNormal = normalize(mix(baseNormal, detailNormalWorld, detailStrength));
     }
     vec3 normalForHighlight = (uWaterMode > 0.5 && uUseWaterNormalMaps) ? finalWaterNormal : baseNormal;
     // 6c+：ripple decal 法线扰动，同时喂给主法线与高光法线——卡通/写实两种模式都要反光
@@ -1097,7 +1160,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     }
 
     // v3 Step 4: 简化平行光方向（与下方 Specular 及 Step 3 高光 lightMask 共用，避免出现两套光照方向）
-    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+    vec3 lightDir = uUseSceneWaterLight ? normalize(uSceneWaterLightDirection) : normalize(vec3(0.5, 1.0, 0.3));
+    vec3 directLightColor = uUseSceneWaterLight ? uSceneWaterLightColor : vec3(1.0);
 
     // === 3. 菲涅尔反射 ===
     float NdotV = max(dot(baseNormal, normalize(vViewDir)), 0.0);
@@ -1115,7 +1179,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       fresnel = pow(1.0 - realNdotV, uRealisticFresnelPower) * uRealisticFresnelStrength;
       reflectColor = mix(vec3(1.0), uWaterColor * 1.4, uRealisticRoughness);
     }
-    waterColor = mix(waterColor, reflectColor, fresnel);
+    // Terrain-backed water receives one environment reflection below; avoid layering
+    // the older painted white Fresnel over it and washing out the water colour.
+    if (!uUseSceneWaterLight) waterColor = mix(waterColor, reflectColor, fresnel);
 
     // === v3 Step 4: Realistic Fresnel / Specular highlight（基于 finalWaterNormal，无 envMap 骨架）===
     float waterFresnel = 0.0;
@@ -1131,8 +1197,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       vec3 fresnelTint = uRealisticFresnelColor * waterFresnel;
       vec3 specularTint = uRealisticSpecularColor * waterSpecular;
 
-      waterColor = mix(waterColor, fresnelTint, waterFresnel * uRealisticFresnelOpacity);
-      waterColor += specularTint;
+      if (!uUseSceneWaterLight) waterColor = mix(waterColor, fresnelTint, waterFresnel * uRealisticFresnelOpacity);
+      waterColor += specularTint * directLightColor;
     }
 
     // === v3 Step 5: Environment Reflection（Realistic/Hybrid，基于 finalWaterNormal 采样 scene.environment）===
@@ -1155,7 +1221,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       vec3 R = reflect(-V, reflectionNormal);
       vec3 envColor = uHasWaterEnvMap
         ? texture2D(tWaterEnvMap, equirectUv(R)).rgb
-        : vec3(0.5, 0.65, 0.85);
+        : (uUseSceneWaterLight
+          ? mix(vec3(0.72, 0.80, 0.86), vec3(0.20, 0.42, 0.64), smoothstep(0.0, 0.85, R.y))
+          : vec3(0.5, 0.65, 0.85));
 
       float reflFresnel = computeWaterFresnel(reflectionNormal, V);
       reflectionWeight = uWaterReflectionStrength
@@ -1309,7 +1377,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       highlight = highlightMask * highlightNoise * uHighlightIntensity;
       highlight = min(highlight, uHighlightMax);
 
-      waterColor += uHighlightColor * highlight;
+      waterColor += uHighlightColor * highlight * directLightColor;
     }
 
     // === v4 Phase 2.1: Cartoon sparkle（Wind Waker 式白色流线高光，仅 mode 0）===
@@ -1341,7 +1409,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         uToonSparkleThreshold + sparkleAa,
         glint
       ) * uToonSparkleIntensity * sparkleDetail;
-      waterColor += uToonSparkleColor * toonSparkle;
+      waterColor += uToonSparkleColor * toonSparkle * directLightColor;
     }
 
     // === v4: Cartoon surface pattern（全水面手绘 foam 等高线，仅 mode 0）===
@@ -1450,6 +1518,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     // (shoreDist→1) stays at base opacity. uShoreTransparency=0 → unchanged.
     float shoreOpacity = mix(baseOpacity, baseOpacity * uShoreEdgeAlpha, clamp((1.0 - shoreDist) * uShoreTransparency, 0.0, 1.0));
     float alpha = shoreOpacity + foam * 0.08;
+    if (hasTerrainDepth) {
+      float transmission = exp(-terrainWaterDepth * (0.18 + uOpacity * 0.35));
+      float terrainOpacity = mix(0.08, 1.0, 1.0 - transmission);
+      alpha = mix(terrainOpacity, 1.0, foam * 0.65);
+    }
     if (uUseOceanTerrain) {
       float edgeOpacity = uWaterMode < 0.5 ? 0.58 : 0.42;
       alpha = mix(baseOpacity * edgeOpacity, baseOpacity, smoothstep(0.02, 0.65, oceanWaterDepth));
@@ -1459,6 +1532,16 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float oceanDeepOcclusion = smoothstep(0.2, 0.8, oceanDepthFraction);
       alpha = mix(alpha, 1.0, oceanDeepOcclusion);
       alpha = mix(alpha, 1.0, foam * 0.65);
+    }
+    if (hasTerrainDepth && uHasWaterSceneColor) {
+      vec3 detailView = mat3(viewMatrix) * (finalWaterNormal - baseNormal);
+      vec2 refractedUv = clamp(screenUV + detailView.xy * 0.018 * min(terrainWaterDepth, 2.0), vec2(0.001), vec2(0.999));
+      float backgroundDepth = linearizeDepth(texture2D(tWaterSceneDepth, refractedUv).r, uCameraNear, uCameraFar);
+      // Never pull a foreground bank or dam over the water. Fade distortion at shore.
+      if (backgroundDepth < waterDepth + 0.02) refractedUv = screenUV;
+      vec3 transmittedColor = texture2D(tWaterSceneColor, refractedUv).rgb;
+      finalColor = mix(transmittedColor, finalColor, clamp(alpha, 0.0, 1.0));
+      alpha = 1.0;
     }
     gl_FragColor = vec4(finalColor, alpha);
   }
@@ -1517,6 +1600,14 @@ export class WaterSurface {
       extensions: { derivatives: true },
       uniforms: {
         tDepth: { value: null },
+        uUseSceneWaterLight: { value: false },
+        uSceneWaterLightDirection: { value: new THREE.Vector3(0.5, 1.0, 0.3).normalize() },
+        uSceneWaterLightColor: { value: new THREE.Color(1, 1, 1) },
+        tWaterSceneColor: { value: null },
+        tWaterSceneDepth: { value: null },
+        uHasWaterSceneColor: { value: false },
+        tTerrainWaterDepth: { value: null },
+        uHasTerrainWaterDepth: { value: false },
         uTime: { value: 0 },
         uCameraNear: { value: 0.1 },
         uCameraFar: { value: 1000 },
@@ -1591,6 +1682,8 @@ export class WaterSurface {
         tFoamNoise:    { value: null },
         uUseFoamNoise:    { value: false },
         uFlowEnabled: { value: false },
+        uUseRiverFlow: { value: false },
+        uRiverRapids: { value: 0 },
         uFlowDirection: { value: new THREE.Vector2(1.0, 0.0) },
         uFlowSpeed: { value: 0.35 },
 
@@ -2515,6 +2608,12 @@ export class WaterSurface {
    * @param {'A'|'B'} slot - 槽位
    * @param {THREE.Texture|null} texture - 法线贴图，传 null 或非法 slot 时回退到中性法线，不抛错
    */
+  // Host-owned, optional column-depth field. Existing model/no-terrain water keeps its fallback.
+  setTerrainDepthTexture(texture) {
+    this.material.uniforms.tTerrainWaterDepth.value = texture;
+    this.material.uniforms.uHasTerrainWaterDepth.value = Boolean(texture);
+  }
+
   setWaterNormalTexture(slot, texture) {
     const map = { A: 'tWaterNormalA', B: 'tWaterNormalB' };
     const uniformName = map[slot];

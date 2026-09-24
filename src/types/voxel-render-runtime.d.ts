@@ -346,6 +346,13 @@ declare module '@voxel-studio/render-runtime/environment' {
     removeFromParent(): void;
     dispose(disposeTexture?: boolean): void;
   }
+  export class WaterSceneCapture {
+    constructor(renderer: import('three').WebGLRenderer, scene: import('three').Scene, options?: { scale?: number });
+    target: import('three').WebGLRenderTarget;
+    readonly texture: import('three').Texture;
+    render(camera: import('three').Camera): boolean;
+    dispose(): void;
+  }
   export class WaterSurface {
     mesh: import('three').Mesh;
     material: import('three').ShaderMaterial;
@@ -367,6 +374,8 @@ declare module '@voxel-studio/render-runtime/environment' {
     setPlanarReflectionParams(params: Record<string, unknown>): void;
     setPlanarReflectionTexture(texture: import('three').Texture | null): void;
     setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
+    setWaterNormalTexture(slot: 'A' | 'B', texture: import('three').Texture | null): void;
+    setTerrainDepthTexture(texture: import('three').Texture | null): void;
     setShoreDistanceTexture(texture: import('three').Texture | null): void;
     setShoreWorldRegion(centerXZ: { x: number; y: number } | null, size?: number): void;
     setOceanTerrainTexture(
