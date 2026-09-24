@@ -17,7 +17,7 @@ describe('map AI controls', () => {
   it('renders, persists and sends independent Scene Code modes', () => {
     expect(source).toContain("private mapAiCodePromptMode: MapCodePromptMode = 'standard';");
     expect(source).toContain("private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';");
-    expect(source).toContain("private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'repair';");
+    expect(source).toContain("private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'diagnose';");
     expect(source).toContain('id="map-ai-code-prompt-mode"');
     expect(source).toContain('id="map-ai-code-revision-mode"');
     expect(source).toContain('id="map-ai-code-spatial-policy"');
@@ -26,10 +26,10 @@ describe('map AI controls', () => {
     expect(source.match(/codeSpatialPolicy: this\.mapAiCodeSpatialPolicy/g)).toHaveLength(3);
     expect(source).toContain("plan.options.codePromptMode ?? 'standard'");
     expect(source).toContain("plan.options.codeRevisionMode ?? 'repair'");
-    expect(source).toContain("plan.options.codeSpatialPolicy ?? 'repair'");
+    expect(source).toContain("plan.options.codeSpatialPolicy ?? 'diagnose'");
     expect(httpSource).toContain("body.codePromptMode === 'minimal' ? 'minimal' : 'standard'");
     expect(httpSource).toContain("body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair'");
-    expect(httpSource).toContain("body.codeSpatialPolicy === 'diagnose' ? 'diagnose' : 'repair'");
+    expect(httpSource).toContain("body.codeSpatialPolicy === 'repair' ? 'repair' : 'diagnose'");
     expect(mapAiSource).toContain('promptMode: options.codePromptMode');
     expect(mapAiSource).toContain('revisionMode: options.codeRevisionMode');
     expect(mapAiSource).toContain('spatialPolicy: options.codeSpatialPolicy');

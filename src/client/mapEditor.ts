@@ -455,7 +455,7 @@ class MapEditor {
   private mapAiPaletteId = '';
   private mapAiCodePromptMode: MapCodePromptMode = 'standard';
   private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';
-  private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'repair';
+  private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'diagnose';
   private mapAiUseSceneAgent = true;
   private mapAiReuseExistingAssets = false;
   private mapAiConfirmCompositionPlan = false;
@@ -1278,7 +1278,7 @@ class MapEditor {
           this.mapAiAssetProvider = plan.options.assetProvider ?? '';
           this.mapAiCodePromptMode = plan.options.codePromptMode ?? 'standard';
           this.mapAiCodeRevisionMode = plan.options.codeRevisionMode ?? 'repair';
-          this.mapAiCodeSpatialPolicy = plan.options.codeSpatialPolicy ?? 'repair';
+          this.mapAiCodeSpatialPolicy = plan.options.codeSpatialPolicy ?? 'diagnose';
           this.pendingCodeSuggestion = plan.suggestion;
           this.codePlanSaved = true;
           if (plan.preview) this.showCodePlanPreview(plan.preview);
@@ -1857,7 +1857,7 @@ class MapEditor {
       this.mapAiCodeRevisionMode = (event.target as HTMLSelectElement).value === 'first-pass' ? 'first-pass' : 'repair';
     });
     host.querySelector<HTMLSelectElement>('#map-ai-code-spatial-policy')?.addEventListener('change', (event) => {
-      this.mapAiCodeSpatialPolicy = (event.target as HTMLSelectElement).value === 'diagnose' ? 'diagnose' : 'repair';
+      this.mapAiCodeSpatialPolicy = (event.target as HTMLSelectElement).value === 'repair' ? 'repair' : 'diagnose';
     });
     host.querySelector<HTMLInputElement>('#map-ai-confirm-plan')?.addEventListener('change', (event) => {
       this.mapAiConfirmCompositionPlan = (event.target as HTMLInputElement).checked;

@@ -671,7 +671,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             focusPrompt: body.focusPrompt,
             codePromptMode: body.codePromptMode === 'minimal' ? 'minimal' : 'standard',
             codeRevisionMode: body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair',
-            codeSpatialPolicy: body.codeSpatialPolicy === 'diagnose' ? 'diagnose' : 'repair',
+            codeSpatialPolicy: body.codeSpatialPolicy === 'repair' ? 'repair' : 'diagnose',
             sceneAgent: body.sceneAgent === true,
             discoveryOnly: true,
             onProgress,
@@ -724,7 +724,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           focusPrompt: body.focusPrompt,
           codePromptMode: body.codePromptMode === 'minimal' ? 'minimal' : 'standard',
           codeRevisionMode: body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair',
-          codeSpatialPolicy: body.codeSpatialPolicy === 'diagnose' ? 'diagnose' : 'repair',
+          codeSpatialPolicy: body.codeSpatialPolicy === 'repair' ? 'repair' : 'diagnose',
           refinableObjectIds,
           selectedObjectIds: Array.isArray(body.selectedObjectIds)
             ? body.selectedObjectIds.filter((id): id is string => typeof id === 'string').slice(0, 64)

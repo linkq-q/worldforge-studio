@@ -136,13 +136,15 @@ describe('map code planner', () => {
     map.terrain.heights.fill(1);
     const code = "function plan(api) { api.place({name:'树',position:[8,8],role:'environment'}); }";
 
-    const repaired = executeMapCodePlan(code, map, [], { scope: 'scene' });
+    const repaired = executeMapCodePlan(code, map, [], { scope: 'scene', spatialPolicy: 'repair' });
+    const byDefault = executeMapCodePlan(code, map, [], { scope: 'scene' });
     const diagnosed = executeMapCodePlan(code, map, [], { scope: 'scene', spatialPolicy: 'diagnose' });
 
     expect(repaired.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'water.update', waterId: 'lake-1' })
     ]));
     expect(diagnosed.operations.some((operation) => operation.type === 'water.update')).toBe(false);
+    expect(byDefault.operations.some((operation) => operation.type === 'water.update')).toBe(false);
     expect(diagnosed.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'water.exposed-terrain', repaired: false })
     ]));
@@ -2167,7 +2169,7 @@ describe('map code planner', () => {
         dimensions:[4,4,1], spanAxis:'x', gapRatio:0,
         role:'structure', groupId:'arena', layer:1
       });
-    }`, createEmptyMap(), [wall]);
+    }`, createEmptyMap(), [wall], { spatialPolicy: 'repair' });
     const objects = suggestion.operations
       .filter((operation) => operation.type === 'object.add')
       .map((operation) => operation.object);
@@ -2188,7 +2190,7 @@ describe('map code planner', () => {
       api.water('pond',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
       api.place({assetId:'asset-dry-wall',name:'园林围墙',position:[0,0],role:'structure'});
       api.place({assetId:'asset-dry-tree',name:'造型松',position:api.keepDry([2,2],1),role:'environment'});
-    }`, map, [wall, tree]);
+    }`, map, [wall, tree], { spatialPolicy: 'repair' });
     const applied = applyMapOperations({ ...map, assets: [wall, tree] }, suggestion.operations);
     const water = applied.waterBodies[0];
 
@@ -2208,7 +2210,7 @@ describe('map code planner', () => {
       api.design({groups:[{id:'island',name:'岛上建筑',substrate:'dry',layers:[]} ]});
       api.water('lagoon',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
       api.place({assetId:'asset-dry-wall',name:'园林围墙',position:[0,0],role:'structure',groupId:'island',layer:1});
-    }`, map, [wall], { scope: 'scene' });
+    }`, map, [wall], { scope: 'scene', spatialPolicy: 'repair' });
     const applied = applyMapOperations({ ...map, assets: [wall] }, suggestion.operations);
 
     expect(applied.objects[0].transform.position[0]).toBeCloseTo(0);
@@ -2228,7 +2230,7 @@ describe('map code planner', () => {
       api.design({groups:[{id:'shore',name:'岸边林',substrate:'dry',layers:[]} ]});
       api.water('lagoon',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
       api.place({assetId:'asset-shore-tree',name:'岸边松树',position:[9.5,0],role:'environment',groupId:'shore',layer:3});
-    }`, map, [tree], { scope: 'scene' });
+    }`, map, [tree], { scope: 'scene', spatialPolicy: 'repair' });
     const applied = applyMapOperations({ ...map, assets: [tree] }, suggestion.operations);
     const position = applied.objects[0].transform.position;
 
@@ -2284,7 +2286,7 @@ describe('map code planner', () => {
 
     const suggestion = await generateMapCodeSuggestion('生成水下遗迹', createEmptyMap(), [], {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
-      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true, spatialPolicy: 'repair'
     });
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
@@ -2331,7 +2333,7 @@ describe('map code planner', () => {
         assetId:'asset-arc-wall', name:'竞技场外墙', position:point,
         role:'structure', groupId:'outer-ring', layer:1
       });
-    }`, createEmptyMap(), [wall]);
+    }`, createEmptyMap(), [wall], { spatialPolicy: 'repair' });
     const objects = suggestion.operations
       .filter((operation) => operation.type === 'object.add')
       .map((operation) => operation.object);
@@ -2892,7 +2894,7 @@ describe('map code planner', () => {
       api.place({assetId:'asset-clear-tree',name:'道路树',position:[0,0],role:'environment',groupId:'grounds',layer:3});
       api.place({assetId:'asset-clear-rock',name:'场内景石',position:[0,10],role:'environment',groupId:'grounds',layer:4});
       api.place({assetId:'asset-clear-tree',name:'保留树',position:[20,20],role:'environment',groupId:'grounds',layer:3});
-    }`, createEmptyMap(), [tree, rock]);
+    }`, createEmptyMap(), [tree, rock], { spatialPolicy: 'repair' });
     const applied = applyMapOperations({ ...createEmptyMap(), assets: [tree, rock] }, suggestion.operations);
 
     expect(applied.objects.map((object) => object.name)).toEqual(['保留树']);
@@ -3031,7 +3033,7 @@ describe('map code planner', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.place({ assetId:'asset-town-house', name:'民居 A', position:[0,0], dimensions:[8,5,8], role:'structure' });
       api.place({ assetId:'asset-town-house', name:'民居 B', position:[2,1], dimensions:[8,5,8], role:'structure' });
-    }`, map, [house]);
+    }`, map, [house], { spatialPolicy: 'repair' });
     const applied = applyMapOperations(map, suggestion.operations);
     const [left, right] = applied.objects;
 

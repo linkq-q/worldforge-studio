@@ -219,7 +219,8 @@ describe('map AI adapter', () => {
       maxNewAssets: 0,
       reuseExistingAssets: true,
       reusableAssetIds: [gate.id, tree.id],
-      sceneAgent: true
+      sceneAgent: true,
+      codeSpatialPolicy: 'repair'
     });
     const gateOperation = suggestion.operations.find((operation) => (
       operation.type === 'object.add' && operation.object.assetId === gate.id

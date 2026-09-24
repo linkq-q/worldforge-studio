@@ -3240,7 +3240,7 @@ function executeMapCodePlanInternal(
     ...map,
     assets: [...new Map([...(map.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
   };
-  const repairSpatialIssues = options.spatialPolicy !== 'diagnose';
+  const repairSpatialIssues = options.spatialPolicy === 'repair';
   if (repairSpatialIssues && mode === 'final' && map.sceneMode === 'outdoor') {
     fitConnectedPlacementRuns(placements, planningMap.assets ?? []);
   }
