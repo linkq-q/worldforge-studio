@@ -17,9 +17,17 @@ export const CODE_PLAN_MODE_OPTIONS = [
 ] as const;
 
 /**
+ * Outdoor dropdown: the landform vocabularies plus the grammar-and-fields
+ * hybrid. `program-anchor` is the indoor hybrid and is not offered outdoors.
+ */
+export const CODE_PLAN_OUTDOOR_MODE_OPTIONS = CODE_PLAN_MODE_OPTIONS.filter(
+  (option) => option.key !== 'program-anchor'
+);
+
+/**
  * Indoor dropdown uses the same mode keys (identical request plumbing) but
- * room-native labels: the indoor vocabularies are mental models drawn from
- * furniture-layout research, not the outdoor landform techniques.
+ * room-native labels and its own hybrid: `program-anchor` replaces the
+ * grammar-and-fields hybrid indoors.
  */
 export const CODE_PLAN_INDOOR_MODE_OPTIONS = [
   { key: 'minimal', label: '默认 · 极简基线' },

@@ -196,7 +196,7 @@ import {
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
 import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
-import { CODE_PLAN_MODE_OPTIONS, CODE_PLAN_INDOOR_MODE_OPTIONS, DEFAULT_CODE_PLAN_MODE, normalizeCodePlanMode, type CodePlanMode } from '../shared/codePlanModes';
+import { CODE_PLAN_MODE_OPTIONS, CODE_PLAN_OUTDOOR_MODE_OPTIONS, CODE_PLAN_INDOOR_MODE_OPTIONS, DEFAULT_CODE_PLAN_MODE, normalizeCodePlanMode, type CodePlanMode } from '../shared/codePlanModes';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import {
   VISUAL_ZONE_FIELDS,
@@ -1620,7 +1620,7 @@ class MapEditor {
           ${map.sceneMode === 'indoor' || (map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent) ? `<label class="field compact">
             <span>构图模式</span>
             <select id="map-ai-plan-mode" ${this.state.busy ? 'disabled' : ''}>
-              ${(map.sceneMode === 'indoor' ? CODE_PLAN_INDOOR_MODE_OPTIONS : CODE_PLAN_MODE_OPTIONS).map((option) => `<option value="${option.key}" ${option.key === this.mapAiPlanMode ? 'selected' : ''}>${option.label}</option>`).join('')}
+              ${(map.sceneMode === 'indoor' ? CODE_PLAN_INDOOR_MODE_OPTIONS : CODE_PLAN_OUTDOOR_MODE_OPTIONS).map((option) => `<option value="${option.key}" ${option.key === this.mapAiPlanMode ? 'selected' : ''}>${option.label}</option>`).join('')}
             </select>
           </label>` : ''}
         </div>
