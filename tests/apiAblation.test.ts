@@ -24,6 +24,8 @@ describe('API ablation experiment contract', () => {
     const base = experimentPrompt(map, 'core10');
     for (const profile of PROFILES.slice(1)) expect(experimentPrompt(map, profile).startsWith(base)).toBe(true);
     expect(base).not.toContain('api.design(');
+    expect(base).toContain('Call api.surface with one object containing id and surface');
+    expect(base).toContain('every generated placement must use assetId:api.asset(key)');
   });
   it('rejects hidden and aliased API access, while permitting model-authored helpers', () => {
     expect(auditApiUse('function plan(api){ function wave(x){return Math.sin(x);} api.place({position:[wave(2),0]}); }', 'core10')).toEqual(['place']);
