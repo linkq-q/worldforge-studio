@@ -609,6 +609,7 @@ export class RenderRuntimeAdapter {
           uShoreFoamWidth: style?.shoreFoamWidth,
           uShoreWaveEnabled: !riverFlow,
           uShoreWaveStrength: Math.min(2.5, waveStrength * 2),
+          uShoreWaveCrestHeight: DEFAULT_WATER_STATE.uShoreWaveCrestHeight * Math.min(1, waveStrength),
           uShoreWaveSpeed: waveSpeed,
           uShoreWaveRange: style?.shoreWaveRange,
           uShoreWaveFrequency: style?.shoreWaveFrequency,

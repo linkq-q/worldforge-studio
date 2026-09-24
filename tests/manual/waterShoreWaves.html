@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Water shore cycle regression</title></head><body><pre id="output">Running</pre><script type="module">
+import * as THREE from 'three';
+import {WaterSurface} from '/vendor/voxel-render-runtime/src/environment/water/WaterSurface.js';
+const renderer=new THREE.WebGLRenderer(), surface=new WaterSurface(new THREE.Scene(),renderer,new THREE.Group(),{size:1,segments:1});
+const source=surface.material.vertexShader,start=source.indexOf('  float computeShoreWaveCrestHeight(');
+const block=source.slice(start,source.indexOf('  float computeDisplacedWaveHeight',start));
+const material=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uWaterMode:{value:1}},vertexShader:'void main(){gl_Position=vec4(position.xy,0.0,1.0);}',fragmentShader:`
+uniform float uTime,uWaterMode;
+const bool uUseShoreDistance=true,uShoreWaveEnabled=true;
+const float uShoreWaveRange=0.44,uShoreWaveNoiseScale=0.7,uShoreWaveNoiseStrength=0.3,uShoreWaveFrequency=1.0,uShoreWaveSpeed=1.0,uShoreWaveWidth=0.5,uShoreWaveBreakup=0.39,uShoreWaveCrestHeight=0.035;
+const mat4 modelMatrix=mat4(1.0);
+float sampleShoreDistanceForVertex(vec3 p){return 0.01;}
+float fbmNoise(vec2 p,float t){return 0.5;}
+${block}
+void main(){float h=computeShoreWaveCrestHeight(vec3(0.0))/uShoreWaveCrestHeight;gl_FragColor=vec4(h,h,h,1.0);}`});
+const scene=new THREE.Scene(),geometry=new THREE.PlaneGeometry(2,2),target=new THREE.WebGLRenderTarget(1,1),camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+scene.add(new THREE.Mesh(geometry,material));
+function sample(time){material.uniforms.uTime.value=time;renderer.setRenderTarget(target);renderer.render(scene,camera);const p=new Uint8Array(4);renderer.readRenderTargetPixels(target,0,0,1,1,p);return p[0]/255;}
+const modes=[0,1].map(mode=>{material.uniforms.uWaterMode.value=mode;return {mode,left:sample(0.01-0.0001),right:sample(0.01+0.0001),peak:sample(0.01-0.1)};});
+const passed=modes.every(m=>Math.abs(m.left-m.right)<=1/255&&m.peak>0.5);
+window.result={passed,modes};document.querySelector('#output').textContent=JSON.stringify(window.result,null,2);
+surface.dispose();geometry.dispose();material.dispose();target.dispose();renderer.dispose();if(!passed)throw Error('Shore crest height jumps across its periodic seam');
+</script></body></html>
