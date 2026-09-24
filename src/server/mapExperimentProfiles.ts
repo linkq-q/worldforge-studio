@@ -32,6 +32,19 @@ export function trialMatrix(): Trial[] {
   }));
 }
 
+export function hillsideReviewTrials(): Trial[] {
+  return [1, 2, 3, 4].flatMap(repeat => {
+    const order = repeat % 2 === 1 ? PROFILES : [...PROFILES].reverse();
+    return order.map(profile => ({
+      key: `hillside-${profile}-r${repeat}`,
+      scene: 'hillside' as const,
+      profile,
+      repeat,
+      seed: 92410 + repeat
+    }));
+  });
+}
+
 export function experimentPrompt(map: EditableMap, profile: Profile, minAssets = MIN_ASSETS, maxAssets = MAX_ASSETS): string {
   const base = buildMapCodePlannerSystemPrompt(map, [], minAssets, maxAssets, 'scene', 'generate', '', [], 'minimal')
     .replace("minimal outdoor scene composer", 'outdoor scene composer')

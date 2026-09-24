@@ -6,7 +6,7 @@ import { MapStore } from '../src/server/mapStore';
 import { llmChat } from '../src/server/modelApi';
 import {
   ASSET_PROVIDER, MAX_ASSETS, MIN_ASSETS, PLANNER_PROVIDER, SCENES,
-  assertModelRoute, assertRoundAvailable, auditApiUse, experimentPrompt, trialMatrix
+  assertModelRoute, assertRoundAvailable, auditApiUse, experimentPrompt, hillsideReviewTrials
 } from './apiAblationConfig';
 
 const output = process.argv[2];
@@ -73,9 +73,7 @@ async function consumeSuggestion(response: Response, round: Record<string, unkno
 }
 
 await store.ensureReady();
-const trials = trialMatrix();
-const correctedBaseline = { ...trials[0], key: 'airport-core10-r1-coordinate-contract' };
-for (const trial of [correctedBaseline, ...trials]) {
+for (const trial of hillsideReviewTrials()) {
   let round = ledger.rounds.find(item => item.key === trial.key);
   if (round && round.status !== 'reserved') continue;
   if (!round) assertRoundAvailable(ledger.rounds.map(item => String(item.key)), trial.key);

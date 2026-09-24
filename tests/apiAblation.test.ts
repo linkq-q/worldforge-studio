@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertModelRoute, assertRoundAvailable, auditApiUse, experimentPrompt, PROFILES, trialMatrix } from '../scripts/apiAblationConfig';
+import { assertModelRoute, assertRoundAvailable, auditApiUse, experimentPrompt, hillsideReviewTrials, PROFILES, trialMatrix } from '../scripts/apiAblationConfig';
 import { createEmptyMap } from '../src/shared/map';
 
 describe('API ablation experiment contract', () => {
@@ -11,6 +11,16 @@ describe('API ablation experiment contract', () => {
       const group = trials.filter(other => other.scene === trial.scene && other.repeat === trial.repeat);
       expect(new Set(group.map(item => item.profile)).size).toBe(6);
       expect(new Set(group.map(item => item.seed)).size).toBe(1);
+    }
+  });
+  it('stops the review batch after four matched hillside repeats without entering hydro or wetland', () => {
+    const trials = hillsideReviewTrials();
+    expect(trials).toHaveLength(24);
+    expect(trials.slice(0, 12)).toEqual(trialMatrix().filter(trial => trial.scene === 'hillside'));
+    for (const repeat of [1, 2, 3, 4]) {
+      const group = trials.filter(trial => trial.repeat === repeat);
+      expect(new Set(group.map(trial => trial.profile)).size).toBe(6);
+      expect(new Set(group.map(trial => trial.seed))).toEqual(new Set([92410 + repeat]));
     }
   });
   it('reserves failed/interrupted attempts too and never admits attempt 51', () => {

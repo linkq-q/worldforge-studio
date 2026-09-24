@@ -86,4 +86,3 @@ function mapAssetVariantSeed(mapSeed: number, familyKey: string, variantIndex: n
   }
   return hash;
 }
-
