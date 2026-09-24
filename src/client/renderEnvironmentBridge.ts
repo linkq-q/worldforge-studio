@@ -122,3 +122,41 @@ export function configureWaterReflection(
     exposure: settings.environmentExposure
   });
 }
+
+// One small, tileable normal field shared by the existing water-material bindings.
+export function createWaterDetailTexture(): THREE.DataTexture {
+  const size = 128, data = new Uint8Array(size * size * 4);
+  const waves = [[2,3],[5,-2],[-3,7],[8,5],[-7,-4],[11,-3],[-5,9],[3,-11]];
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    let dx = 0, dy = 0;
+    waves.forEach(([kx, ky], i) => {
+      const slope = Math.cos(2 * Math.PI * (kx * x + ky * y) / size + i * 2.39996) * 0.075 / Math.hypot(kx, ky);
+      dx += kx * slope; dy += ky * slope;
+    });
+    const length = Math.hypot(dx, dy, 1), offset = (y * size + x) * 4;
+    data[offset] = Math.round((dx / length * 0.5 + 0.5) * 255);
+    data[offset + 1] = Math.round((dy / length * 0.5 + 0.5) * 255);
+    data[offset + 2] = Math.round((1 / length * 0.5 + 0.5) * 255);
+    data[offset + 3] = 255;
+  }
+  const texture = new THREE.DataTexture(data, size, size);
+  texture.name = 'water-detail-normal';
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+const waterLightTarget = new THREE.Vector3();
+export function syncWaterSurfaceLight(material: THREE.ShaderMaterial, light: THREE.DirectionalLight | null): void {
+  const uniforms = material.uniforms;
+  if (!uniforms.uUseSceneWaterLight) return;
+  uniforms.uUseSceneWaterLight.value = Boolean(light);
+  if (!light) return;
+  light.getWorldPosition(uniforms.uSceneWaterLightDirection.value);
+  light.target.getWorldPosition(waterLightTarget);
+  uniforms.uSceneWaterLightDirection.value.sub(waterLightTarget).normalize();
+  uniforms.uSceneWaterLightColor.value.copy(light.color).multiplyScalar(light.visible ? Math.min(2, light.intensity / 2.5) : 0);
+}

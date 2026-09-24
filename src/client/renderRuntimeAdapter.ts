@@ -26,6 +26,8 @@ import { compileEffectRecipeLayers } from './effectRecipeCompiler';
 import {
   bindDistanceFogDepth,
   configureWaterReflection,
+  createWaterDetailTexture,
+  syncWaterSurfaceLight,
   configureDistanceFogPass,
   distanceAtFogOpacity,
   shouldUseSceneDepthForWater,
@@ -92,6 +94,7 @@ export class RenderRuntimeAdapter {
   private fogDensity = 0;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
+  private waterDetailTexture: THREE.DataTexture | null = null;
   private readonly waterInteractionAt = new Map<string, number>();
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
@@ -359,6 +362,8 @@ export class RenderRuntimeAdapter {
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
     }
+    this.waterDetailTexture?.dispose();
+    this.waterDetailTexture = null;
     for (const baseline of this.materialBaselines.values()) {
       const material = baseline.material as THREE.MeshStandardMaterial;
       if (baseline.color && material.color) material.color.copy(baseline.color);
@@ -645,6 +650,25 @@ export class RenderRuntimeAdapter {
           surface.material.uniforms.uShoreWorldCenter.value.set(...shore.center);
           surface.material.uniforms.uShoreWorldSize.value = shore.size;
           surface.material.uniforms.uShoreDistanceScale.value = shore.distanceScale ?? 1;
+          if (shore.depthTexture) {
+            this.waterDetailTexture ??= createWaterDetailTexture();
+            surface.setWaterNormalTexture('A', this.waterDetailTexture);
+            surface.setWaterNormalTexture('B', this.waterDetailTexture);
+            surface.importState({
+              waterNormals: { enabled: true, strength: 0.65, scaleA: 0.17, scaleB: 0.31,
+                speedA: 0.018, speedB: 0.012, directionA: [1, 0.25], directionB: [-0.35, 1], mix: 0.5 },
+              uRealisticFresnelBias: 0.02,
+              uRealisticFresnelColor: '#ffffff',
+              uRealisticSpecularNormalInfluence: 1,
+              uRealisticSpecularStrength: 0.65,
+              uRealisticSpecularPower: 110,
+              uHighlightIntensity: 0.06,
+              uHighlightMax: 0.12,
+              uToonPatternIntensity: 0.18,
+              uToonSparkleIntensity: 0.12,
+              uUseCartoonBands: recipe.mode === 'cartoon'
+            });
+          }
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
@@ -821,6 +845,9 @@ export class RenderRuntimeAdapter {
 
   private updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void {
     for (const binding of this.waterBindings) {
+      if (binding.mesh.userData.waterShore?.depthTexture) {
+        syncWaterSurfaceLight(binding.surface.material, this.scene.userData.directionalLight ?? null);
+      }
       binding.surface.update(deltaTime, this.camera, binding.usesSceneDepth ? depthTexture : null);
     }
   }
