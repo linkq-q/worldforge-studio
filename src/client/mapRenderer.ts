@@ -45,7 +45,7 @@ import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights, resolvedMapObjectLight } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
-import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
+import { isPointInsideWaterBody, riverEdgePairs, waterBoundaryPoints } from '../shared/mapWater';
 import { mapGuidePolyline } from '../shared/mapGuide';
 import type {
   SceneVisualZone,
@@ -1329,29 +1329,6 @@ function buildRiverGeometry(water: MapWaterBody): THREE.BufferGeometry {
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
-}
-
-function riverEdgePairs(water: MapWaterBody): Array<{
-  left: [number, number];
-  right: [number, number];
-  level: number;
-}> {
-  const samples = riverPathSamples(water);
-  const halfWidth = water.width / 2;
-  return samples.map((sample, index) => {
-    const previous = samples[Math.max(0, index - 1)].point;
-    const next = samples[Math.min(samples.length - 1, index + 1)].point;
-    const dx = next[0] - previous[0];
-    const dz = next[1] - previous[1];
-    const length = Math.hypot(dx, dz) || 1;
-    const offsetX = -dz / length * halfWidth;
-    const offsetZ = dx / length * halfWidth;
-    return {
-      left: [sample.point[0] + offsetX, sample.point[1] + offsetZ],
-      right: [sample.point[0] - offsetX, sample.point[1] - offsetZ],
-      level: sample.level
-    };
-  });
 }
 
 function hasSlopedRiver(water: MapWaterBody): boolean {

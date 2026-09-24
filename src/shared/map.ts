@@ -133,6 +133,13 @@ export interface MapWaterBody {
   points: Array<[number, number]>;
   /** Optional river surface elevation at each control point, ordered upstream to downstream. */
   levels?: number[];
+  /** River width at each control point; omitted keeps the legacy constant width. */
+  widths?: number[];
+  /** False for water carried by an authored structure, such as a spillway. */
+  carveTerrain?: boolean;
+  /** Explicit reservoir bank freeboard and outward blend width in metres. */
+  bankHeight?: number;
+  bankWidth?: number;
   /** 0 keeps control-point corners; 1 produces rounded arc segments. */
   shorelineSmoothness?: number;
   /** Deterministic shoreline displacement relative to the local radius. */
@@ -865,6 +872,13 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
       width: clamp(finiteNumber(input.width, 1.2), 0.3, maxRiverWidth),
       points,
       ...(levels ? { levels } : {}),
+      ...(type === 'river' && Array.isArray(input.widths) && input.widths.length === points.length
+        ? { widths: input.widths.map((width) => clamp(finiteNumber(width, input.width ?? 1.2), 0.3, maxRiverWidth)) } : {}),
+      ...(input.carveTerrain === false ? { carveTerrain: false } : {}),
+      ...(type === 'lake' && input.bankHeight !== undefined ? {
+        bankHeight: clamp(finiteNumber(input.bankHeight, 0.5), 0.1, 3),
+        bankWidth: clamp(finiteNumber(input.bankWidth, 5), 1, maxRiverWidth)
+      } : {}),
       ...(input.shorelineSmoothness === undefined ? {} : {
         shorelineSmoothness: clamp(finiteNumber(input.shorelineSmoothness, 0), 0, 1)
       }),

@@ -16,11 +16,12 @@ const MAX_CURVE_POINTS = 128;
 export interface RiverPathSample {
   point: [number, number];
   level: number;
+  width: number;
 }
 
 export function waterBoundaryPoints(water: MapWaterBody): Array<[number, number]> {
   if (water.type === 'river') {
-    const edges = riverEdgePairs(riverPathSamples(water), water.width);
+    const edges = riverEdgePairs(water);
     return [
       ...edges.map((edge) => edge.left),
       ...edges.slice().reverse().map((edge) => edge.right)
@@ -56,7 +57,7 @@ export function riverPathSamples(water: MapWaterBody): RiverPathSample[] {
   const levels = water.levels?.length === water.points.length
     ? water.levels
     : water.points.map(() => water.level);
-  let samples = cleanRiverSamples(water.points.map((point, index) => ({ point, level: levels[index] })));
+  let samples = cleanRiverSamples(water.points.map((point, index) => ({ point, level: levels[index], width: water.widths?.[index] ?? water.width })));
   const smoothness = clamp(water.shorelineSmoothness ?? 0, 0, 1);
   const rounds = smoothness >= 0.7 ? 2 : smoothness > 0 ? 1 : 0;
   for (let round = 0; round < rounds; round += 1) samples = chaikinOpen(samples);
@@ -109,6 +110,7 @@ export function waterSurfaceLevelAt(water: MapWaterBody, x: number, z: number): 
  * grid point is clamped to a ceiling derived from persisted water geometry.
  */
 export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): void {
+  if (water.carveTerrain === false) return;
   if (water.type === 'river') {
     carveRiverChannelInPlace(map, water);
     return;
@@ -121,22 +123,32 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
   const bottom = Math.max(TERRAIN_MIN_HEIGHT, water.level - water.depth);
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
 
+  const bankWidth = water.bankHeight === undefined ? 0 : (water.bankWidth ?? 5);
   const boundary = waterBoundaryPoints(water);
   const xs = boundary.map((point) => point[0]);
   const zs = boundary.map((point) => point[1]);
-  const minX = gridFloor(Math.min(...xs), boxWidth, terrain.resolutionX);
-  const maxX = gridCeil(Math.max(...xs), boxWidth, terrain.resolutionX);
-  const minZ = gridFloor(Math.min(...zs), boxDepth, terrain.resolutionZ);
-  const maxZ = gridCeil(Math.max(...zs), boxDepth, terrain.resolutionZ);
+  const minX = gridFloor(Math.min(...xs) - bankWidth, boxWidth, terrain.resolutionX);
+  const maxX = gridCeil(Math.max(...xs) + bankWidth, boxWidth, terrain.resolutionX);
+  const minZ = gridFloor(Math.min(...zs) - bankWidth, boxDepth, terrain.resolutionZ);
+  const maxZ = gridCeil(Math.max(...zs) + bankWidth, boxDepth, terrain.resolutionZ);
 
   for (let zIndex = minZ; zIndex <= maxZ; zIndex += 1) {
     for (let xIndex = minX; xIndex <= maxX; xIndex += 1) {
       const world = terrainPointAt(map, xIndex, zIndex);
-      if (!pointInPolygon(world[0], world[2], boundary)) continue;
-      const t = Math.min(1, polygonEdgeDistance(world[0], world[2], boundary) / shore);
-      const ceiling = top + (bottom - top) * (t * t * (3 - 2 * t));
+      const distance = polygonEdgeDistance(world[0], world[2], boundary);
       const index = terrainIndex(terrain, xIndex, zIndex);
-      terrain.heights[index] = Math.min(terrain.heights[index] ?? 0, ceiling);
+      if (!pointInPolygon(world[0], world[2], boundary)) {
+        if (bankWidth > 0 && distance < bankWidth) {
+          const t = smoothstep(distance / bankWidth);
+          const rim = Math.min(map.box.size[1], water.level + water.bankHeight!);
+          terrain.heights[index] = Math.max(terrain.heights[index] ?? 0, rim + (bottom - rim) * t);
+        }
+        continue;
+      }
+      const t = Math.min(1, distance / shore);
+      const ceiling = top + (bottom - top) * (t * t * (3 - 2 * t));
+      terrain.heights[index] = bankWidth > 0 && distance < shore
+        ? ceiling : Math.min(terrain.heights[index] ?? 0, ceiling);
     }
   }
 }
@@ -147,10 +159,9 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
   const samples = riverPathSamples(water);
   const terrain = map.terrain;
   const [boxWidth, , boxDepth] = map.box.size;
-  const halfWidth = Math.max(0.15, water.width / 2);
-  const bedHalfWidth = halfWidth * 0.5;
+  const maxHalfWidth = Math.max(0.15, ...samples.map((sample) => sample.width / 2));
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
-  const reach = halfWidth + shore;
+  const reach = maxHalfWidth + shore;
   const xs = samples.map((sample) => sample.point[0]);
   const zs = samples.map((sample) => sample.point[1]);
   const minX = gridFloor(Math.min(...xs) - reach, boxWidth, terrain.resolutionX);
@@ -162,7 +173,9 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
     for (let xIndex = minX; xIndex <= maxX; xIndex += 1) {
       const world = terrainPointAt(map, xIndex, zIndex);
       const closest = closestRiverPoint(world[0], world[2], samples);
-      if (closest.distance > reach) continue;
+      const halfWidth = closest.width / 2;
+      const bedHalfWidth = halfWidth * 0.5;
+      if (closest.distance > halfWidth + shore) continue;
       const top = closest.level - SHORE_RIM;
       const bottom = Math.max(TERRAIN_MIN_HEIGHT, closest.level - water.depth);
       let ceiling: number;
@@ -186,13 +199,6 @@ export function isNearWater(map: EditableMap, x: number, z: number, padding: num
     if (water.type === 'ocean') {
       return sampleTerrainHeight(map, x, z) <= water.level + Math.max(0, padding);
     }
-    if (water.type === 'river') {
-      const safeDistance = Math.max(0, water.width / 2 + padding);
-      const samples = riverPathSamples(water);
-      return samples.slice(1).some((sample, index) =>
-        distanceToSegment(x, z, samples[index].point, sample.point) <= safeDistance
-      );
-    }
     const boundary = waterBoundaryPoints(water);
     if (pointInPolygon(x, z, boundary)) return true;
     return polygonEdgeDistance(x, z, boundary) <= padding;
@@ -206,16 +212,6 @@ export function distanceToWater(map: EditableMap, x: number, z: number): number 
       if (sampleTerrainHeight(map, x, z) <= water.level) return 0;
       continue;
     }
-    if (water.type === 'river') {
-      const samples = riverPathSamples(water);
-      for (let index = 1; index < samples.length; index += 1) {
-        closest = Math.min(
-          closest,
-          Math.max(0, distanceToSegment(x, z, samples[index - 1].point, samples[index].point) - water.width / 2)
-        );
-      }
-      continue;
-    }
     const boundary = waterBoundaryPoints(water);
     if (pointInPolygon(x, z, boundary)) return 0;
     closest = Math.min(closest, polygonEdgeDistance(x, z, boundary));
@@ -225,31 +221,30 @@ export function distanceToWater(map: EditableMap, x: number, z: number): number 
 
 export function isPointInsideWaterBody(water: MapWaterBody, x: number, z: number, map?: EditableMap): boolean {
   if (water.type === 'ocean') return map ? sampleTerrainHeight(map, x, z) <= water.level + 0.02 : false;
-  if (water.type === 'river') {
-    const samples = riverPathSamples(water);
-    return samples.slice(1).some((sample, index) =>
-      distanceToSegment(x, z, samples[index].point, sample.point) <= water.width / 2
-    );
-  }
   return pointInPolygon(x, z, waterBoundaryPoints(water));
 }
 
-function riverEdgePairs(samples: readonly RiverPathSample[], width: number): Array<{
+export function riverEdgePairs(water: MapWaterBody): Array<{
   left: [number, number];
   right: [number, number];
+  level: number;
+  direction: [number, number];
 }> {
-  const halfWidth = width / 2;
+  const samples = riverPathSamples(water);
   return samples.map((sample, index) => {
     const previous = samples[Math.max(0, index - 1)].point;
     const next = samples[Math.min(samples.length - 1, index + 1)].point;
     const dx = next[0] - previous[0];
     const dz = next[1] - previous[1];
     const length = Math.hypot(dx, dz) || 1;
+    const halfWidth = sample.width / 2;
     const offsetX = -dz / length * halfWidth;
     const offsetZ = dx / length * halfWidth;
     return {
       left: [sample.point[0] + offsetX, sample.point[1] + offsetZ],
-      right: [sample.point[0] - offsetX, sample.point[1] - offsetZ]
+      right: [sample.point[0] - offsetX, sample.point[1] - offsetZ],
+      level: sample.level,
+      direction: [dx / length, dz / length]
     };
   });
 }
@@ -258,8 +253,8 @@ function closestRiverPoint(
   x: number,
   z: number,
   samples: readonly RiverPathSample[]
-): { distance: number; level: number } {
-  let closest = { distance: Number.POSITIVE_INFINITY, level: samples[0]?.level ?? 0 };
+): { distance: number; level: number; width: number } {
+  let closest = { distance: Number.POSITIVE_INFINITY, level: samples[0]?.level ?? 0, width: samples[0]?.width ?? 1 };
   for (let index = 1; index < samples.length; index += 1) {
     const start = samples[index - 1];
     const end = samples[index];
@@ -274,7 +269,7 @@ function closestRiverPoint(
       z - (start.point[1] + dz * t)
     );
     if (distance < closest.distance) {
-      closest = { distance, level: start.level + (end.level - start.level) * t };
+      closest = { distance, level: start.level + (end.level - start.level) * t, width: start.width + (end.width - start.width) * t };
     }
   }
   return closest;
@@ -288,19 +283,20 @@ function chaikinClosed(points: readonly [number, number][]): Array<[number, numb
 }
 
 function chaikinOpen(samples: readonly RiverPathSample[]): RiverPathSample[] {
-  const result: RiverPathSample[] = [{ point: [...samples[0].point], level: samples[0].level }];
+  const result: RiverPathSample[] = [{ point: [...samples[0].point], level: samples[0].level, width: samples[0].width }];
   for (let index = 0; index < samples.length - 1; index += 1) {
     result.push(mixRiverSample(samples[index], samples[index + 1], 0.25));
     result.push(mixRiverSample(samples[index], samples[index + 1], 0.75));
   }
-  result.push({ point: [...samples.at(-1)!.point], level: samples.at(-1)!.level });
+  result.push({ point: [...samples.at(-1)!.point], level: samples.at(-1)!.level, width: samples.at(-1)!.width });
   return result;
 }
 
 function mixRiverSample(start: RiverPathSample, end: RiverPathSample, t: number): RiverPathSample {
   return {
     point: mixPoint(start.point, end.point, t),
-    level: start.level + (end.level - start.level) * t
+    level: start.level + (end.level - start.level) * t,
+    width: start.width + (end.width - start.width) * t
   };
 }
 
@@ -319,7 +315,7 @@ function cleanRiverSamples(samples: readonly RiverPathSample[]): RiverPathSample
     .filter((sample, index) => index === 0
       || sample.point[0] !== samples[index - 1].point[0]
       || sample.point[1] !== samples[index - 1].point[1])
-    .map((sample) => ({ point: [...sample.point], level: sample.level }));
+    .map((sample) => ({ point: [...sample.point], level: sample.level, width: sample.width }));
 }
 
 function capPoints(points: readonly [number, number][]): Array<[number, number]> {
@@ -330,10 +326,10 @@ function capPoints(points: readonly [number, number][]): Array<[number, number]>
 }
 
 function capRiverSamples(samples: readonly RiverPathSample[]): RiverPathSample[] {
-  if (samples.length <= MAX_CURVE_POINTS) return samples.map((sample) => ({ point: [...sample.point], level: sample.level }));
+  if (samples.length <= MAX_CURVE_POINTS) return samples.map((sample) => ({ point: [...sample.point], level: sample.level, width: sample.width }));
   return Array.from({ length: MAX_CURVE_POINTS }, (_, index) => {
     const source = samples[Math.round(index * (samples.length - 1) / (MAX_CURVE_POINTS - 1))];
-    return { point: [...source.point], level: source.level };
+    return { point: [...source.point], level: source.level, width: source.width };
   });
 }
 

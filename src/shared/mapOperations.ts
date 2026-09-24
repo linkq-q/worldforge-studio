@@ -483,6 +483,10 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           width: operation.water.width ?? 1.2,
           points: operation.water.points,
           levels: operation.water.levels,
+          widths: operation.water.widths,
+          carveTerrain: operation.water.carveTerrain,
+          bankHeight: operation.water.bankHeight,
+          bankWidth: operation.water.bankWidth,
           shorelineSmoothness: operation.water.shorelineSmoothness
             ?? (operation.water.type === 'ocean' ? 0 : 0.82),
           shorelineIrregularity: operation.water.shorelineIrregularity
@@ -559,6 +563,14 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
     throw new Error('invalid_water_body');
   }
   if (water.name !== undefined && typeof water.name !== 'string') throw new Error('invalid_water_body');
+  if (water.carveTerrain !== undefined && typeof water.carveTerrain !== 'boolean') throw new Error('invalid_water_body');
+  for (const value of [water.bankHeight, water.bankWidth]) {
+    if (value !== undefined && (!Number.isFinite(value) || value <= 0)) throw new Error('invalid_water_body');
+  }
+  if (water.widths !== undefined && (water.type !== 'river' || !Array.isArray(water.widths)
+    || water.widths.length !== water.points.length || water.widths.some((width) => !Number.isFinite(width) || width < 0.3))) {
+    throw new Error('invalid_water_body');
+  }
   if (water.level !== undefined && !Number.isFinite(Number(water.level))) throw new Error('invalid_water_body');
   if (water.depth !== undefined && !Number.isFinite(Number(water.depth))) throw new Error('invalid_water_body');
   if (water.width !== undefined && !Number.isFinite(Number(water.width))) throw new Error('invalid_water_body');

@@ -1991,6 +1991,11 @@ function executeMapCodePlanInternal(
           type,
           points,
           width: optionalFinite(options.width),
+          levels: options.levels as number[] | undefined,
+          widths: options.widths as number[] | undefined,
+          carveTerrain: options.carveTerrain as boolean | undefined,
+          bankHeight: optionalFinite(options.bankHeight),
+          bankWidth: optionalFinite(options.bankWidth),
           level: requestedLevel,
           depth: requestedDepth,
           shorelineSmoothness: optionalFinite(options.shorelineSmoothness),
@@ -3895,7 +3900,7 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,direction?,variation?,layers?,layout?,access?,seed?}).
 3. api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?,clearNatural?}).
-4. api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}).
+4. api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?,levels?,widths?,carveTerrain?,bankHeight?,bankWidth?}). River levels/widths have one value per control point. Use carveTerrain:false only for structure-supported spillways; join their endpoints to the actual source and receiving water elevations. High reservoirs need containing terrain/structures; explicit bankHeight (freeboard) and bankWidth raise a bounded shoreline bank. Omit banks when existing terrain or a retaining structure already contains the water. Keep architectural shorelines straight with shorelineSmoothness:0, shorelineIrregularity:0.
 5. api.route({id,name?,points,curve?,closed?,width?,surface?,material?,intensity?,tags?}) returns the route ID string.
 6. api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?,habitat?,seed?}).
 7. api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth],role:'structure'|'environment',optional?}) returns key.
