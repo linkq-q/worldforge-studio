@@ -2507,3 +2507,19 @@ button.danger:disabled,
     box-shadow: -12px 0 36px rgba(0, 0, 0, 0.35);
   }
 }
+
+/* Library and experiments share the editor page and keep the scene visible. */
+.app.editor-active { display:flex; flex-direction:column; }
+.app.editor-active > .editor-shell { flex:1; min-height:0; }
+.editor-workspace-dock { flex:0 0 46%; min-height:0; display:flex; flex-direction:column; border-top:2px solid var(--line); overflow:hidden; }
+.editor-workspace-dock[hidden] { display:none; }
+.app[data-workspace-expanded="true"] .editor-workspace-dock { flex-basis:66%; }
+.workspace-dock-tools { display:flex; justify-content:flex-end; gap:6px; padding:3px 12px; background:var(--panel); }
+.workspace-dock-tools button { min-height:26px; padding:2px 10px; font-size:12px; }
+#editor-workspace-content { flex:1; min-height:0; }
+
+.app[data-workspace-open="true"] { --workspace-height:46%; }
+.app[data-workspace-open="true"][data-workspace-expanded="true"] { --workspace-height:66%; }
+@media (max-width:980px) {
+  .app[data-workspace-open="true"] .editor-sidebar.right { bottom:var(--workspace-height); }
+}

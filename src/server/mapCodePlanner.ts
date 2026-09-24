@@ -177,6 +177,9 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   discoveryOnly?: boolean;
   /** Reuse a user-approved Code candidate without asking the model to redesign it. */
   approvedCode?: string;
+  /** Local experiment overrides; never applied to regular editor requests. */
+  systemPromptOverride?: string;
+  validateCode?: (code: string) => unknown;
   /** Optional user-authored preference for focal assets; the model still owns the composition. */
   focusPrompt?: string;
   promptMode?: MapCodePromptMode;
@@ -684,7 +687,7 @@ export async function generateMapCodeSuggestion(
         && asset.libraryMetadata?.enabled !== false
       ))
     : [];
-  const systemPrompt = buildMapCodePlannerSystemPrompt(
+  const systemPrompt = options.systemPromptOverride ?? buildMapCodePlannerSystemPrompt(
     map,
     reusableAssets,
     assetRange.min,
@@ -719,6 +722,7 @@ export async function generateMapCodeSuggestion(
         signal: options.signal,
         onProgress: options.onProgress
       }));
+  options.validateCode?.(code);
   const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
   const execution = options.revisionMode === 'first-pass'
     ? runFirstPassMapCodeDiscovery(code, map, executionAssets, maxNewAssets, options)

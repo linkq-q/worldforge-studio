@@ -40,8 +40,10 @@ import { replayGeneratedMapCode } from './mapCodePlanner';
 import { reviewMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
-import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
-import { generateModel, mountModel, replayModel } from './modelApi';
+import { createMapAssetGenerator } from './mapAssetGenerator';
+import { mapCatalog } from './mapCatalog';
+import { handleExperimentRoute } from './experimentHttp';
+import { generateModel } from './modelApi';
 import {
   normalizeModelGenerationMode,
   type ModelGenerationMode
@@ -172,6 +174,8 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     sendJson(res, 200, { capabilities: worldCapabilitySummary() });
     return;
   }
+
+  if (await handleExperimentRoute(req, res, store, parts)) return;
 
   if (parts[2] === 'maps') {
     await handleEditorMaps(req, res, store, parts);
@@ -357,8 +361,12 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       assetGenerationMode?: ModelGenerationMode;
       playerHeight?: number;
       worldScaleProfile?: EditableMap['worldScaleProfile'];
+      folderId?: string;
     }>(req);
-    sendJson(res, 201, { map: await store.createMap(body) });
+    if (body.folderId) await mapCatalog(store).requireFolder(body.folderId);
+    const map = await store.createMap(body);
+    if (body.folderId) await mapCatalog(store).move([map.id], body.folderId);
+    sendJson(res, 201, { map });
     return;
   }
 
@@ -376,7 +384,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
 
   if (parts[4] === 'duplicate' && req.method === 'POST' && parts.length === 5) {
     const body = await readJson<{ name?: string }>(req);
-    sendJson(res, 201, { map: await store.duplicateMap(mapId, body.name) });
+    const map = await store.duplicateMap(mapId, body.name);
+    const folderId = (await mapCatalog(store).read()).membership[mapId];
+    if (folderId) await mapCatalog(store).move([map.id], folderId);
+    sendJson(res, 201, { map });
     return;
   }
 
@@ -696,7 +707,6 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         }
         return;
       }
-      const seededModelSources = new Map<string, Promise<unknown>>();
       const suggestion = await runMapAgent(directedPrompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
@@ -723,73 +733,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           onPreview,
           onPlanPreview,
           onAssetReady,
-          createAsset: async (request, report) => {
-            recordGenerationTrace('asset.request', request);
-            const generationPrompt = request.prompt;
-            const retryOptions = {
-              attempts: 3,
-              signal: controller.signal,
-              onProgress: (event: AgentProgressEvent) => report({
-                status: event.phase === 'asset-retrying' ? 'retrying' as const : 'running' as const,
-                detail: event.detail ?? event.label
-              })
-            };
-            const variantIndex = request.variantIndex ?? 0;
-            const seededFamily = request.seedFamilyKey && (request.variantCount ?? 0) > 1;
-            let generatedModelJson: unknown;
-            if (request.mountOnAssetId) {
-              const primary = assets.find((asset) => asset.id === request.mountOnAssetId);
-              if (!primary) throw new Error('map_asset_generation_failed:mount_source_missing');
-              report({ status: 'running', detail: '通过现有 Mount 接口添加固定配件（一次装配请求）' });
-              recordGenerationTrace('asset.mount.request', { sourceAssetId: primary.id, name: request.name });
-              generatedModelJson = await mountModel(primary.modelJson, request.prompt, request.prompt, {
-                providers: [modelProvider], signal: controller.signal
-              });
-            } else if (seededFamily) {
-              let source = seededModelSources.get(request.seedFamilyKey!);
-              if (!source) {
-                source = generateMapAssetWithRetry(request.name, () => generateModel(generationPrompt, {
-                  mode: request.mode,
-                  providers: [modelProvider],
-                  seeded: true,
-                  seed: mapAssetVariantSeed(planningMap.seed, request.seedFamilyKey!, 0),
-                  signal: controller.signal,
-                  onStage: (stage) => report({ status: 'running', detail: stage.stage })
-                }), retryOptions);
-                seededModelSources.set(request.seedFamilyKey!, source);
-              }
-              generatedModelJson = variantIndex === 0
-                ? await source
-                : await generateMapAssetWithRetry(
-                    request.name,
-                    async () => replayModel(
-                      await source,
-                      mapAssetVariantSeed(planningMap.seed, request.seedFamilyKey!, variantIndex),
-                      { signal: controller.signal }
-                    ),
-                    retryOptions
-                  );
-            } else {
-              generatedModelJson = await generateMapAssetWithRetry(request.name, () => generateModel(generationPrompt, {
-                mode: request.mode,
-                providers: [modelProvider],
-                signal: controller.signal,
-                onStage: (stage) => report({ status: 'running', detail: stage.stage })
-              }), retryOptions);
-            }
-            const modelJson = colorPalette
-              ? applyPaletteToModelJson(generatedModelJson, colorPalette)
-              : generatedModelJson;
-            return store.saveAsset({
-              name: request.name,
-              prompt: request.prompt,
-              tags: request.tags,
-              light: request.light,
-              modelJson,
-              mode: request.mode,
-              provider: modelProvider
-            });
-          }
+          createAsset: createMapAssetGenerator(store, planningMap, assets, modelProvider, colorPalette, controller.signal)
         });
       suggestion.generationTraceId = generationTraceId();
       recordGenerationTrace('generation.result', { suggestion });
@@ -1287,13 +1231,6 @@ function dedupeAssets(assets: readonly MapAsset[]): MapAsset[] {
   return [...new Map(assets.map((asset) => [asset.id, asset])).values()];
 }
 
-function mapAssetVariantSeed(mapSeed: number, familyKey: string, variantIndex: number): number {
-  let hash = Math.trunc(mapSeed) >>> 0;
-  for (const character of `${familyKey}:${variantIndex}`) {
-    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0;
-  }
-  return hash;
-}
 
 async function readBody(req: Req, maxBytes: number): Promise<Buffer> {
   const chunks: Buffer[] = [];

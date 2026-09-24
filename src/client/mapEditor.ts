@@ -1,3 +1,4 @@
+import type { MapCatalog } from '../shared/experiments';
 import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -466,6 +467,10 @@ class MapEditor {
   private selectedLibraryAssetId = '';
   private projectExportProfiles: ProjectExportProfile[] = [];
   private deletedMaps: DeletedMapSummary[] = [];
+  private experimentWorkspace?: import('./experimentWorkspace').ExperimentWorkspace;
+  private workspaceReady?: Promise<void>;
+  private mapCatalog: MapCatalog = { folders: [], membership: {} };
+  private mapFolder = localStorage.getItem('worldforge.mapFolder') ?? 'unfiled';
   private selectedProjectExportProfileId = '';
   private pendingBrowserProjectDirectory: FileSystemDirectoryHandle | null = null;
   private previewingLibraryAsset = false;
@@ -521,8 +526,55 @@ class MapEditor {
     this.setupViewport();
     this.setupAssetPreview();
     await this.reloadLists();
+    const requestedMap = new URLSearchParams(location.search).get('map');
+    if (requestedMap && this.state.maps.some(map => map.id === requestedMap)) {
+      this.mapFolder = this.mapCatalog.membership[requestedMap] ?? 'unfiled';
+      await this.loadMap(requestedMap);
+    }
     this.renderPanels();
     this.animate();
+    const workspace = new URLSearchParams(location.search).get('workspace');
+    if (workspace) await this.openWorkspace(workspace === 'experiments' ? 'experiments' : 'maps');
+  }
+
+  private async openWorkspace(view: 'maps' | 'experiments'): Promise<void> {
+    const dock = this.app.querySelector<HTMLElement>('#editor-workspace-dock')!;
+    dock.hidden = false;
+    this.app.dataset.workspaceOpen = 'true';
+    if (!this.workspaceReady) {
+      this.workspaceReady = import('./experimentWorkspace').then(async ({ ExperimentWorkspace }) => {
+        this.experimentWorkspace = new ExperimentWorkspace(this.app.querySelector('#editor-workspace-content')!, {
+          openMap: async id => {
+            if (this.state.busy) throw new Error('当前编辑器正在生成，请完成后再切换地图。');
+            if (!await this.loadMap(id)) return false;
+            this.mapFolder = this.mapCatalog.membership[id] ?? 'unfiled';
+            localStorage.setItem('worldforge.mapFolder', this.mapFolder);
+            this.renderMapSelector();
+            return true;
+          },
+          catalogChanged: (catalog, maps) => {
+            this.mapCatalog = catalog;
+            this.state.maps = maps;
+            this.renderMapSelector();
+          }
+        });
+        await this.experimentWorkspace.start();
+      }).catch(error => { this.workspaceReady = undefined; throw error; });
+    }
+    try {
+      await this.workspaceReady;
+      this.experimentWorkspace!.open(view);
+      this.experimentWorkspace!.setVisible(!dock.hidden);
+    } catch (error) {
+      this.state.message = '无法打开地图库与实验：' + String(error);
+      this.renderPanels();
+    }
+  }
+
+  private closeWorkspace(): void {
+    this.app.querySelector<HTMLElement>('#editor-workspace-dock')!.hidden = true;
+    this.app.dataset.workspaceOpen = 'false';
+    this.experimentWorkspace?.setVisible(false);
   }
 
   private renderShell(): void {
@@ -551,6 +603,7 @@ class MapEditor {
               <details class="toolbar-transfer toolbar-project-menu">
                 <summary><span id="toolbar-map-name">选择地图</span></summary>
                 <div class="toolbar-transfer-menu">
+                  <label><span>文件夹（新地图自动归入）</span><select id="editor-map-folder" aria-label="地图文件夹"></select></label>
                   <label><span>当前地图</span><select id="editor-map-select" aria-label="当前地图"></select></label>
                   <label><span>重命名当前地图</span><input id="rename-current-map-input" maxlength="80" aria-label="重命名当前地图" placeholder="输入地图名称"></label>
                   <button id="rename-current-map" class="secondary" type="button">重命名</button>
@@ -599,6 +652,10 @@ class MapEditor {
             <div class="stage-switcher segmented compact toolbar-workspace" aria-label="制作阶段">
               <button data-stage="map">地图</button>
               <button data-stage="render">渲染</button>
+            </div>
+            <div class="toolbar-group toolbar-library">
+              <button type="button" data-open-workspace="maps" title="整理地图文件夹与批量归档">地图库</button>
+              <button type="button" data-open-workspace="experiments" title="批量生成与结果审查">实验</button>
             </div>
             <div class="toolbar-group toolbar-tools" data-map-only>
               <span class="toolbar-label">工具</span>
@@ -702,6 +759,10 @@ class MapEditor {
           <div id="render-inspector"></div>
         </aside>
       </main>
+      <section id="editor-workspace-dock" class="editor-workspace-dock" aria-label="地图库与实验面板" hidden>
+        <div class="workspace-dock-tools"><button id="workspace-size" type="button" aria-expanded="false">放大面板</button><button id="workspace-close" type="button">收起</button></div>
+        <div id="editor-workspace-content"></div>
+      </section>
       <dialog id="project-export-dialog" class="project-export-dialog">
         <div class="project-export-dialog-body">
           <header><div><h2>项目导出配置</h2><p>保存项目根目录，并把地图与公共资产写入相对子目录。</p></div></header>
@@ -763,6 +824,17 @@ class MapEditor {
       </dialog>
     `;
 
+    this.app.querySelectorAll<HTMLElement>('[data-open-workspace]').forEach(button => {
+      button.onclick = () => void this.openWorkspace(button.dataset.openWorkspace as 'maps' | 'experiments');
+    });
+    this.app.querySelector<HTMLElement>('#workspace-close')!.onclick = () => this.closeWorkspace();
+    this.app.querySelector<HTMLElement>('#workspace-size')!.onclick = event => {
+      const expanded = this.app.dataset.workspaceExpanded !== 'true';
+      this.app.dataset.workspaceExpanded = String(expanded);
+      const button = event.currentTarget as HTMLElement;
+      button.textContent = expanded ? '还原面板' : '放大面板';
+      button.setAttribute('aria-expanded', String(expanded));
+    };
     this.updateHierarchyLayout();
     this.app.querySelector('#toggle-hierarchy')?.addEventListener('click', () => {
       this.hierarchyOpen = !this.hierarchyOpen;
@@ -906,6 +978,11 @@ class MapEditor {
       const file = importInput.files?.[0];
       importInput.value = '';
       if (file) void this.importTransfer(file);
+    });
+    this.app.querySelector('#editor-map-folder')?.addEventListener('change', (event) => {
+      this.mapFolder = (event.target as HTMLSelectElement).value;
+      localStorage.setItem('worldforge.mapFolder', this.mapFolder);
+      this.renderMapSelector();
     });
     this.app.querySelector('#editor-map-select')?.addEventListener('change', async (event) => {
       const select = event.currentTarget as HTMLSelectElement;
@@ -1090,6 +1167,8 @@ class MapEditor {
 
   private async reloadLists(): Promise<void> {
     const reloadStartedAt = performance.now();
+    this.mapCatalog = await editorFetch<MapCatalog>('/api/editor/map-folders');
+    if (!['all', 'unfiled'].includes(this.mapFolder) && !this.mapCatalog.folders.some(folder => folder.id === this.mapFolder)) this.mapFolder = 'unfiled';
     const [maps, deletedMaps, assets, renderSchemes, colorPalettes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ maps: DeletedMapSummary[] }>('/api/editor/maps/trash'),
@@ -1119,8 +1198,12 @@ class MapEditor {
     if (!this.state.libraryAssets.some((asset) => asset.id === this.selectedLibraryAssetId)) {
       this.selectedLibraryAssetId = this.state.libraryAssets[0]?.id ?? '';
     }
-    if (!this.state.map && this.state.maps[0]) {
-      await this.loadMap(this.state.maps[0].id);
+    const initialMap = this.state.maps.find(map => this.mapFolder === 'all' || (this.mapCatalog.membership[map.id] ?? 'unfiled') === this.mapFolder);
+    if (!this.state.map && !initialMap && this.state.maps.length) {
+      this.mapFolder = this.mapCatalog.membership[this.state.maps[0].id] ?? 'unfiled';
+    }
+    if (!this.state.map && (initialMap || this.state.maps[0])) {
+      await this.loadMap((initialMap ?? this.state.maps[0]).id);
       return;
     }
     const reloadMs = performance.now() - reloadStartedAt;
@@ -1229,7 +1312,8 @@ class MapEditor {
         roomSize: this.newMapSceneMode === 'outdoor' ? undefined : this.newRoomSize,
         assetGenerationMode: this.newMapAssetGenerationMode,
         playerHeight: this.newPlayerHeight,
-        worldScaleProfile: this.newWorldScaleProfile
+        worldScaleProfile: this.newWorldScaleProfile,
+        folderId: ['all', 'unfiled'].includes(this.mapFolder) ? undefined : this.mapFolder
       })
     });
     await this.reloadLists();
@@ -3224,9 +3308,17 @@ class MapEditor {
   private renderMapSelector(): void {
     const select = this.app.querySelector<HTMLSelectElement>('#editor-map-select');
     if (!select) return;
-    select.innerHTML = this.state.maps.length
-      ? this.state.maps.map((map) => `<option value="${map.id}" ${this.state.map?.id === map.id ? 'selected' : ''}>${escapeHtml(map.id === this.state.map?.id ? this.state.map.name : map.name)}</option>`).join('')
-      : '<option value="">暂无地图</option>';
+    const folderSelect = this.app.querySelector<HTMLSelectElement>('#editor-map-folder');
+    if (folderSelect) {
+      const folderPath = (id: string): string => { const folder = this.mapCatalog.folders.find(item => item.id === id); return folder ? (folder.parentId ? folderPath(folder.parentId) + ' / ' : '') + folder.name : ''; };
+      folderSelect.innerHTML = '<option value="unfiled">未归档</option><option value="all">全部地图</option>' + this.mapCatalog.folders.map(folder => '<option value="' + folder.id + '">' + escapeHtml(folderPath(folder.id)) + '</option>').join('');
+      folderSelect.value = this.mapFolder;
+    }
+    const visibleMaps = this.state.maps.filter(map => this.mapFolder === 'all' || (this.mapCatalog.membership[map.id] ?? 'unfiled') === this.mapFolder);
+    select.innerHTML = visibleMaps.length
+      ? visibleMaps.map((map) => `<option value="${map.id}" ${this.state.map?.id === map.id ? 'selected' : ''}>${escapeHtml(map.id === this.state.map?.id ? this.state.map.name : map.name)}</option>`).join('')
+      : '<option value="">此文件夹暂无地图</option>';
+    if (!visibleMaps.some(map => map.id === this.state.map?.id)) select.value = '';
     const name = this.app.querySelector<HTMLElement>('#toolbar-map-name');
     if (name) name.textContent = this.state.map?.name ?? '选择地图';
     const renameInput = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
@@ -7115,7 +7207,7 @@ class MapEditor {
 
   private handleKeyDown = (event: KeyboardEvent): void => {
     if (this.playMode?.isActive) return;
-    if (isEditableTarget(event.target)) return;
+    if (isEditableTarget(event.target) || (event.target instanceof Element && event.target.closest('#editor-workspace-dock'))) return;
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ') {
       void (event.shiftKey ? this.redoManualEdit() : this.undoManualEdit());
       event.preventDefault();

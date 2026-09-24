@@ -21,7 +21,8 @@
     "backup:data": "tsx scripts/backupMapData.ts",
     "test": "vitest run",
     "server": "tsx src/server/index.ts -- --release",
-    "map": "tsx src/server/mapCli.ts"
+    "map": "tsx src/server/mapCli.ts",
+    "experiment": "tsx scripts/experiments.ts"
   },
   "dependencies": {
     "@voxel-studio/render-runtime": "file:vendor/voxel-render-runtime",
