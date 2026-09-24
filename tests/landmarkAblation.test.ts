@@ -4,7 +4,7 @@ import { assertRoundAvailable } from '../scripts/apiAblationConfig';
 
 describe('fixed-kit landmark comparison', () => {
   it('allows the editor reference emitted by the executor without admitting terrain changes', () => {
-    expect(() => assertLandmarkOperations([{ type: 'object.add' }, { type: 'reference.set' }])).not.toThrow();
+    expect(() => assertLandmarkOperations([{ type: 'object.add' }, { type: 'object.update' }, { type: 'reference.set' }])).not.toThrow();
     expect(() => assertLandmarkOperations([{ type: 'terrain.generate' }])).toThrow('unexpected_environment_mutation');
   });
   it('fits the remaining twelve attempts including failures, and rejects attempt 51', () => {

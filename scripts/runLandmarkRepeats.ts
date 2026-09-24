@@ -90,9 +90,9 @@ for (const trial of calibratedTrials()) {
     const options = { mode: 'final' as const, scope: 'scene' as const, minNewAssets: 0, maxNewAssets: 0 };
     const before = executeMapCodePlan(code, map, assets, { ...options, spatialPolicy: 'diagnose' });
     const after = executeMapCodePlan(code, map, assets, options);
-    assertLandmarkOperations(after.operations);
     write(`${trial.key}-before-repair.json`, before);
     write(`${trial.key}-suggestion.json`, after);
+    assertLandmarkOperations(after.operations);
     const beforeObjects = before.operations.filter(o => o.type === 'object.add').map(o => o.object);
     const afterObjects = after.operations.filter(o => o.type === 'object.add').map(o => o.object);
     round.repairComparison = { beforeCount: beforeObjects.length, afterCount: afterObjects.length,

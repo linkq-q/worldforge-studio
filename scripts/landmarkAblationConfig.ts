@@ -41,8 +41,8 @@ export function auditLandmarkCode(code: string, profile: Profile) {
 }
 
 export function assertLandmarkOperations(operations: readonly { type: string }[]) {
-  // The executor appends the editor reference point even for placement-only code.
-  for (const op of operations) if (!['object.add', 'map.update', 'reference.set'].includes(op.type)) {
+  // Spatial repair may update objects added earlier in the same transaction.
+  for (const op of operations) if (!['object.add', 'object.update', 'map.update', 'reference.set'].includes(op.type)) {
     throw new Error(`landmark_unexpected_environment_mutation:${op.type}`);
   }
 }
