@@ -252,8 +252,13 @@ describe('map code planner', () => {
     const map = createEmptyMap('scene', 'activity', [24, 8, 24], 'voxel', sceneMode);
     const prompt = buildMapCodePlannerSystemPrompt(map, [], 0, 12, 'scene');
     expect(prompt).toContain('Object composition mechanics');
-    expect(prompt).toContain("evidence:'unavailable'");
-    expect(prompt).toContain('keeps a separate child');
+    if (sceneMode === 'indoor') {
+      expect(prompt).toContain("evidence:'unavailable'");
+      expect(prompt).toContain('keeps a separate child');
+    } else {
+      expect(prompt).not.toContain('api.assetSpace');
+      expect(prompt).not.toContain('api.placeRelative');
+    }
     expect(prompt).toContain('Only route-derived objects should set sourceGuideId');
     expect(prompt).toContain("Choose activity props, building variants, visible interiors and detail density from the user's request");
     expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
@@ -623,29 +628,29 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('This is a 2D environment layout API');
     expect(prompt).toContain('asset orientation remains yaw-only');
     expect(prompt).toContain('Every generated point supports both point[0]/point[1] and point.x/point.z.');
-    expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
-    expect(prompt).toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
+    expect(prompt).not.toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
+    expect(prompt).not.toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
     expect(prompt).toContain('api.placeBetween({assetId?,name?,start:[x,z],end:[x,z]');
     expect(prompt).toContain('frontTarget?:[x,z]');
     expect(prompt).toContain("api.attach({assetId?,name?,parentId,kind:'supported'|'mounted'");
     expect(prompt).toContain("Entrances default to anchorY:'bottom'");
     expect(prompt).toContain('Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament');
-    expect(prompt).toContain("api.mirrorPoint(point,'x'|'z',coordinate?)");
-    expect(prompt).toContain('api.localToWorld3D(local:[right,up,forward]');
+    expect(prompt).not.toContain("api.mirrorPoint(point,'x'|'z',coordinate?)");
+    expect(prompt).not.toContain('api.localToWorld3D(local:[right,up,forward]');
     expect(prompt).toContain('named APIs are conveniences, not a closed vocabulary');
-    expect(prompt).toContain('api.keepDry([x,z],clearance?)');
+    expect(prompt).not.toContain('api.keepDry([x,z],clearance?)');
     expect(prompt).toContain('api.waterPoint(waterId,[x,z],draft?)');
     expect(prompt).toContain('api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:');
     expect(prompt).toContain('clearNatural:true');
-    expect(prompt).toContain('api.ellipsePoint(index,count,radiusX,radiusZ');
+    expect(prompt).not.toContain('api.ellipsePoint(index,count,radiusX,radiusZ');
     expect(prompt).toContain('mix?:{short?,tall?,flowers?}');
     expect(prompt).toContain('api.poissonDisk({bounds?');
-    expect(prompt).toContain('api.gridPoints({center?');
+    expect(prompt).not.toContain('api.gridPoints({center?');
     expect(prompt).toContain('api.subdividePathBySpan');
-    expect(prompt).toContain('api.offsetPolygon');
-    expect(prompt).toContain('api.insetPolygon');
-    expect(prompt).toContain('api.gridInsideRegion');
-    expect(prompt).toContain('footprint -> offset/inset depth layers -> massing tiers/stories');
+    expect(prompt).not.toContain('api.offsetPolygon');
+    expect(prompt).not.toContain('api.insetPolygon');
+    expect(prompt).not.toContain('api.gridInsideRegion');
+    expect(prompt).not.toContain('footprint -> offset/inset depth layers -> massing tiers/stories');
     expect(prompt).toContain('## Generative architecture compression');
     expect(prompt).toContain('function placeTier(outline, elevation, spec)');
     expect(prompt).toContain('function transformFootprint(localPoints, origin, yaw, scale)');
@@ -743,7 +748,7 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('api.placeStreetFrontage');
     expect(prompt).toContain('api.sightline({from:[x,y,z]');
     expect(prompt).toContain('api.passage({points:[[x,z]|[x,y,z],...]');
-    expect(prompt).toContain('api.connectionGap({a:placementReferenceOrExistingObjectId');
+    expect(prompt).not.toContain('api.connectionGap({a:placementReferenceOrExistingObjectId');
     expect(prompt).toContain('never move objects, optimize an aesthetic score, or impose symmetry');
     expect(prompt).toContain('returns the route ID string, not an object');
     expect(prompt).toContain('api.routeNetwork returns a string[] of route IDs in edge order');
@@ -789,7 +794,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('guideDistance and signed regionDistance');
     expect(prompt).toContain('marks?:[{id,minDistance?,maxPoints?,cluster?}]');
     expect(prompt).toContain('Cross-mark spacing uses the global minDistance');
-    expect(prompt).toContain('api.optimizeLayout');
+    expect(prompt).not.toContain('api.optimizeLayout');
     expect(prompt).toContain("substrate?:'dry'|'water'|'amphibious'|'underwater'");
     expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
     expect(prompt).toContain("footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon'");
@@ -1479,10 +1484,10 @@ describe('map code planner', () => {
   it('reports sparse settlement metrics without requesting a full code rewrite', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'紧凑小镇' });
-      api.streetGrid({
-        id:'town', region:[[-24,-24],[24,-24],[24,24],[-24,24]],
-        blockWidth:12, blockDepth:12, roadWidth:3, surface:'paving'
-      });
+      for (let i = -18; i <= 18; i += 12) {
+        api.route({id:'town-x-'+i,points:[[-24,i],[24,i]],width:3,surface:'paving',tags:['street','settlement']});
+        api.route({id:'town-z-'+i,points:[[i,-24],[i,24]],width:3,surface:'paving',tags:['street','settlement']});
+      }
       api.place({ name:'镇门', position:[0,-22], size:[8,5,3], role:'structure' });
     }`;
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
@@ -3871,7 +3876,8 @@ describe('map code planner', () => {
   it('asks the AI to repair non-finite code once before failing the plan', async () => {
     const brokenCode = `
       function plan(api) {
-        const points = api.sampleBezier([-5, 0], [-2, 3], [2, -3], [5, 0], 4);
+        const points = [];
+        for (let i = 0; i <= 4; i++) points.push(api.bezierPoint(i / 4, [-5,0], [-2,3], [2,-3], [5,0]).point);
         for (let index = 0; index < points.length; index += 1) {
           api.place({ position: [points[index][0], points[index + 1][1]] });
         }
@@ -3910,7 +3916,7 @@ describe('map code planner', () => {
     `;
     const repairedCode = JSON.stringify({ edits: [{
       old: 'let total = 0;\n        for (let index = 0; index < 1_000_000_000; index += 1) total += index % 2;\n        api.place({ name: \'marker\', position: [total, 0] });',
-      new: 'for (const point of api.gridPoints({ columns: 4, rows: 4, spacing: 6 })) {\n          api.place({ name: \'marker\', position: point });\n        }'
+      new: 'for (let i = 0; i < 16; i++) {\n          api.place({ name: \'marker\', position: [(i % 4) * 6 - 9, Math.floor(i / 4) * 6 - 9] });\n        }'
     }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,

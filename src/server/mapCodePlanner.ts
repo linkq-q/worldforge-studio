@@ -124,6 +124,14 @@ const MINIMAL_MAP_CODE_API_KEYS = [
   'terrain', 'modifyTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
 ] as const;
+// Unused in all 32 full-planning maps in the 64-map audit. Keep implementations for historical replay.
+const RETIRED_OUTDOOR_MAP_CODE_API_KEYS = new Set([
+  'refineTerrain', 'streetGrid', 'placeStreetFrontage', 'grassField',
+  'clamp', 'lerp', 'remap', 'smoothstep', 'rotate2D', 'mirrorPoint', 'linePoint',
+  'sampleBezier', 'sampleBezierFrames', 'sampleBezierFramesBySpacing', 'ellipsePoint',
+  'keepDry', 'gridPoints', 'offsetPolygon', 'insetPolygon', 'gridInsideRegion',
+  'localToWorld3D', 'noise2D', 'fbm2D', 'optimizeLayout', 'assetSpace', 'connectionGap', 'placeRelative'
+]);
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
@@ -141,7 +149,6 @@ const MAP_CODE_SPATIAL_FEEDBACK_CONTRACT = `## Explicit spatial feedback
 After placing the relevant objects, use these only for sightlines, access paths or joints that your design explicitly depends on:
 - api.sightline({from:[x,y,z],to:[x,y,z],ignoreIds?,required?,label?}) returns {clear,distance,blockers:[{id,distance}],approximation:'collider-aabb'}.
 - api.passage({points:[[x,z]|[x,y,z],...],width?,height?,ignoreIds?,required?,label?}) sweeps a practical body envelope and returns the same blocker evidence plus path distance, width and height.
-- api.connectionGap({a:placementReferenceOrExistingObjectId,b:placementReferenceOrExistingObjectId,tolerance?,required?,label?}) returns connected, 3D and horizontal gap distances, axisGaps and approximation.
 Set required:true only when failure should appear in diagnostics. These bounded AABB checks never move objects, optimize an aesthetic score, or impose symmetry; use returned measurements in your own authored rule and ignore intended endpoint objects explicitly.`;
 const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
 const ENVIRONMENT_ASSET = /\b(?:tree|forest|plant|vegetation|grass|shrub|bush|flower|fern|moss|rock|stone|boulder|crystal|mushroom|cactus|reed|coral|animal|creature|wildlife|bird|fish|deer|horse|insect|nature|flora|fauna)s?\b|树|森林|植物|植被|草|灌木|花|蕨|苔藓|岩石|石头|巨石|水晶|蘑菇|仙人掌|芦苇|珊瑚|动物|生物|野生|鸟|鱼|鹿|马|昆虫|自然|生态/i;
@@ -492,9 +499,9 @@ interface BezierFrame {
 
 const CODE_ASSET_LIGHT_CONTRACT = 'For functional lamps, lanterns, ceiling fixtures or neon emitters, requireAsset also accepts light:{kind:"point"|"spot",color:"#RRGGBB",intensity:0.5..12,range:1..20,offset:[localX,localY,localZ],direction?:[x,y,z],coneAngleDegrees?:10..90,penumbra?:0..1}. Declare this physical emitter metadata explicitly; bright geometry or emissive tags alone do not illuminate neighbors. Preserve it through asset adaptation. Do not light unrelated decorative objects. Final mood/exposure still belongs to the separately confirmed render stage.';
 
-const CODE_ACTIVITY_CONTRACT = `## Object composition mechanics
-api.assetSpace(assetId) reports measured local bounds and support surfaces when geometry exists; evidence:'unavailable' and interior:'unknown' mean no interior or support surface may be inferred from the bounding box.
-api.placeRelative({parentId,assetId,name?,localPosition:[x,y,z],supportNodeId?,rotationY?,scale?,role?,groupId?,layer?}) keeps a separate child in the host's centered-XZ, floor-aligned local frame. Use a measured supportNodeId for exact support; otherwise keep independently usable props as ordinary world placements. Use api.attach for whole-host top or facade contact.
+const CODE_ACTIVITY_CONTRACT = (indoor = false) => `## Object composition mechanics
+${indoor ? `api.assetSpace(assetId) reports measured local bounds and support surfaces when geometry exists; evidence:'unavailable' and interior:'unknown' mean no interior or support surface may be inferred from the bounding box.
+api.placeRelative({parentId,assetId,name?,localPosition:[x,y,z],supportNodeId?,rotationY?,scale?,role?,groupId?,layer?}) keeps a separate child in the host's centered-XZ, floor-aligned local frame. Use a measured supportNodeId for exact support; otherwise keep independently usable props as ordinary world placements. Use api.attach for whole-host top or facade contact.` : 'Use api.attach for whole-host top or facade contact.'}
 requireAsset may use mountOnAssetId only for a fixed non-interactive accessory on an existing catalog asset. It creates a new combined asset, consumes the normal asset budget, and never mutates the source.
 Only route-derived objects should set sourceGuideId. Freely composed scenery keeps its authored position. Choose activity props, building variants, visible interiors and detail density from the user's request and the available asset budget rather than a fixed checklist.`;
 
@@ -513,13 +520,14 @@ function placeTier(outline, elevation, spec) {
     api.placeBetween(placement);
   }
 }
-An authored tier list can repeatedly call that rule while changing the outline, elevation, module family or exception predicate. Derive a new outline with api.insetPolygon or api.offsetPolygon only when the requested form calls for setback, expansion, courtyard depth or a crown; tiers need not be uniform or concentric.
+An authored tier list can repeatedly call that rule while changing the outline, elevation, module family or exception predicate. Author a new outline only when the requested form calls for setback, expansion, courtyard depth or a crown; tiers need not be uniform or concentric.
 The same local building rule can serve several parent masses without copying world coordinates:
 function transformFootprint(localPoints, origin, yaw, scale) {
   const world = [];
   for (const point of localPoints) {
     const unrotated = [origin[0] + point[0] * scale, origin[1] + point[1] * scale];
-    world.push(api.rotate2D(unrotated, yaw, origin));
+    const dx = unrotated[0] - origin[0], dz = unrotated[1] - origin[1];
+    world.push([origin[0] + dx * Math.cos(yaw) - dz * Math.sin(yaw), origin[1] + dx * Math.sin(yaw) + dz * Math.cos(yaw)]);
   }
   return world;
 }
@@ -553,6 +561,8 @@ interface CodeAssetRequirementInput {
 }
 
 interface CodeExecutionOptions {
+  /** Standalone historical scripts only; newly generated code never enables this. */
+  legacyApis?: boolean;
   refineScope?: MapRefineScope;
   mode?: 'discovery' | 'final';
   requestMode?: MapCodeRequestMode;
@@ -1136,7 +1146,8 @@ export function executeMapCodePlan(
   assets: readonly MapAsset[] = [],
   options: CodeExecutionOptions = {}
 ): MapAiSuggestion {
-  return runMapCodePlan(code, map, assets, options).suggestion;
+  // This standalone entry point also replays historical scripts; generation calls runMapCodePlan directly.
+  return runMapCodePlan(code, map, assets, { legacyApis: true, ...options }).suggestion;
 }
 
 export function discoverMapCodeAssets(
@@ -1147,6 +1158,7 @@ export function discoverMapCodeAssets(
 ): CodeAssetRequirement[] {
   return runMapCodePlan(code, map, assets, {
     mode: 'discovery',
+    legacyApis: true,
     maxNewAssets: normalizeMapAiMaxNewAssets(maxNewAssets)
   }).requirements;
 }
@@ -3097,7 +3109,9 @@ function executeMapCodePlanInternal(
 
   const sandboxApi = minimalMode
     ? Object.freeze(Object.fromEntries(MINIMAL_MAP_CODE_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
-    : api;
+    : map.sceneMode === 'outdoor' && !options.legacyApis
+      ? Object.freeze(Object.fromEntries(Object.entries(api).filter(([key]) => !RETIRED_OUTDOOR_MAP_CODE_API_KEYS.has(key))))
+      : api;
   const script = new vm.Script(`${cleanCode}\n;if (typeof plan !== 'function') throw new Error('missing_plan_function');\nplan(api);`, {
     filename: 'worldforge-map-plan.js'
   });
@@ -3950,7 +3964,7 @@ export function buildMapCodePlannerSystemPrompt(
     : '';
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
-${CODE_ACTIVITY_CONTRACT}
+${CODE_ACTIVITY_CONTRACT()}
 
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
@@ -3982,20 +3996,18 @@ Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Optional: use it when the natural/authored distinction materially clarifies the plan; otherwise it is inferred from executable content.'}
 Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',substrate?:'dry'|'water'|'amphibious'|'underwater',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). Optional: call once only when these persistent labels clarify real spatial responsibilities. The runtime preserves declared semantics and explicit relations as metadata but does not move, add, prune, or fill objects merely to satisfy them. Make any declared focus, arrival, axis and boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Declare substrate for every group affected by water: dry means its primary forms need dry ground, water means surface/floating composition, amphibious deliberately spans shore and water, and underwater remains below the water surface. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
 Compound architecture: api.design may declare assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[],spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network',footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon',massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings',structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation',functionalSequence?:string[]}]. Use an assembly only when a building benefits from reusable placed modules. Members share assemblyId and groupId; an actual entrance member may use assemblyRole:'opening'. Use bounded loops, canonical module spans and explicit story elevations for connected multi-part construction. Whole reusable assets remain valid for buildings that do not benefit from decomposition.
-Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
+Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?).
+Rendering handoff: api.renderSuggestion(text) records a hint for the later, separately confirmed render stage only. Grass color/blade shape/wind, water shading/reflections, material effects, lighting mood and post-processing belong to that stage; do not encode them as terrain or layout changes.
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records an editable guide and lays terrain paving unless surface:'none'. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,groupId?,guideRole?,curve?,width?,surface?,material?,tags?}]}) creates a free-form connected graph. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?,startInset?,endInset?,facing?,role?,groupId?,layer?}) distributes route-owned objects. Use bridge for water crossings.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
 ${MAP_CODE_TOPOLOGY_CONTRACT}
-Design relations are declarative metadata only; attract, repel and support never move objects or create physical parentId links. Use api.optimizeLayout with a model-authored cost when a relationship should calculate positions. Physical mounting or resting on a named host must use api.attach with an explicit parentId.
+Design relations are declarative metadata only; attract, repel and support never move objects or create physical parentId links. Physical mounting or resting on a named host must use api.attach with an explicit parentId.
 Regions: {kind:'circle',x,z,radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}.
-Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).
-Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coordinate?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to). mirrorPoint with 'x' mirrors left/right around x=coordinate; 'z' mirrors front/back around z=coordinate.
-3D local frames: api.localToWorld3D(local:[right,up,forward],origin:[x,y,z],forward:[x,y,z],up?:[x,y,z]) -> [x,y,z]. It builds an orthonormal frame and rejects zero or parallel axes. Use it when one compact local rule should drive elevated, tilted or repeated positions; it does not rotate asset geometry beyond the existing rotationY/facing contract.
-Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
-Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
-Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,guideIds?,region?,cluster?:{strength,scale,seed},marks?:[{id,minDistance?,maxPoints?,cluster?}]}, (sample,index) => weightOrMarkWeights) returns points with optional point.mark. sample uses the same environment values as environmentSample. A scalar callback preserves ordinary custom fields; with marks, return {[markId]:weight} and give each mark its own spacing, quota and optional cluster parameters. Cross-mark spacing uses the global minDistance, so trees, flowers or any other labels remain model-authored rather than hard-coded. Omitted seeds default to api.seed. Weights are clamped to [0,1], candidates to 4096 and results to 512.
-Relationships: api.optimizeLayout({items:[{id,position:[x,z],rotationY?,fixed?}],bounds?,iterations?,translationStep?,rotationStep?,temperature?,seed?}, items => cost) returns optimized items. The model owns the finite cost function: combine attraction, repulsion, target distance, alignment, access or other scene-specific terms. The solver only performs a bounded search over at most 64 items and 512 iterations; it does not place objects or impose a composition. Mark anchors fixed, then place the returned positions yourself.
-Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
+Scalar math: api.random(min?,max?). Use plain JavaScript and Math for other scalar calculations.
+Transforms: api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to).
+Curves: api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
+Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,guideIds?,region?,cluster?:{strength,scale,seed},marks?:[{id,minDistance?,maxPoints?,cluster?}]}, (sample,index) => weightOrMarkWeights) returns points with optional point.mark. sample uses the same environment values as environmentSample. A scalar callback preserves ordinary custom fields; with marks, return {[markId]:weight} and give each mark its own spacing, quota and optional cluster parameters. Cross-mark spacing uses the global minDistance, so trees, flowers or any other labels remain model-authored rather than hard-coded. Omitted seeds default to api.seed. Weights are clamped to [0,1], candidates to 4096 and results to 512.
+Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. This helper returns geometry only; you still own entrances, structural roles and connected placements.
 ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
 ${MAP_CODE_SPATIAL_FEEDBACK_CONTRACT}
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
@@ -4049,7 +4061,7 @@ function buildIndoorMapCodePlannerSystemPrompt(
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 ${CODE_ASSET_LIGHT_CONTRACT}
-${CODE_ACTIVITY_CONTRACT}
+${CODE_ACTIVITY_CONTRACT(true)}
 
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
@@ -4381,7 +4393,7 @@ async function discoverMapCodeWithRepairs(
       recordGenerationTrace('code.repair.required', { error: executionError, code, executionRepairAttempts, repairAttempts });
       if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
       const timeoutRepairGuidance = /script execution timed out/i.test(executionError)
-        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, api.sampleProbabilityField, api.optimizeLayout, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_MAP_CODE_PLACEMENTS}.`
+        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.poissonDisk or api.sampleProbabilityField results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_MAP_CODE_PLACEMENTS}.`
         : '';
       const lockedObjectRepairGuidance = /locked_map_code_object:([^\s]+)/i.exec(executionError)
         ? `\n\nThe referenced object is locked and not refinable. Leave it unchanged. Do not replace api.move with api.removeObject for the same ID; instead adjust only objects whose catalog entry has refinable:true, or add unlocked supporting content elsewhere.`
