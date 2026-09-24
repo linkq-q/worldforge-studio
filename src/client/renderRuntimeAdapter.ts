@@ -641,6 +641,9 @@ export class RenderRuntimeAdapter {
         const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
         if (shore?.texture?.isTexture && Array.isArray(shore.center) && shore.size > 0) {
           syncWaterSurfaceShore(surface, shore);
+          surface.setTerrainDepthTexture(shore.depthTexture ?? null);
+          surface.material.uniforms.uShoreWorldCenter.value.set(...shore.center);
+          surface.material.uniforms.uShoreWorldSize.value = shore.size;
           surface.material.uniforms.uShoreDistanceScale.value = shore.distanceScale ?? 1;
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;

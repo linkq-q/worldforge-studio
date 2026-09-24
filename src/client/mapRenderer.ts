@@ -1048,6 +1048,7 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
 
 interface WaterShoreBinding {
   texture: THREE.DataTexture;
+  depthTexture?: THREE.DataTexture;
   center: [number, number];
   size: number;
   worldSpace?: boolean;
@@ -1111,12 +1112,30 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   const resolution = THREE.MathUtils.clamp(THREE.MathUtils.ceilPowerOfTwo(size * 4), 128, 512);
   const inside = new Uint8Array(resolution * resolution);
   const data = new Uint8Array(resolution * resolution);
+  // Column depth is independent of shore distance. RG packs 0..64 metres;
+  // B marks valid terrain-backed water, including mixed lake/spillway surfaces.
+  const depthData = !coast && map.sceneMode !== 'indoor' && waters.some((water) => water.type !== 'ocean' && water.carveTerrain !== false)
+    ? new Uint8Array(resolution * resolution * 4) : null;
+  const depthOwners = waters.map((water, index) => ({ water, boundary: boundaries[index], samples: riverPathSamples(water) }))
+    .sort((a, b) => Number(a.water.type === 'river') - Number(b.water.type === 'river'));
   for (let row = 0; row < resolution; row += 1) {
     const v = (row + 0.5) / resolution;
     const z = center[1] + (0.5 - v) * size;
     for (let column = 0; column < resolution; column += 1) {
       const u = (column + 0.5) / resolution;
       const x = center[0] + (u - 0.5) * size;
+      if (depthData && Math.abs(x) <= map.box.size[0] / 2 && Math.abs(z) <= map.box.size[2] / 2) {
+        const owner = depthOwners.find((candidate) => pointInPolygon(x, z, candidate.boundary));
+        if (owner && owner.water.carveTerrain !== false) {
+          const level = owner.water.type === 'river' ? sampleRiverProfile(x, z, owner.samples).level : owner.water.level;
+          const encoded = Math.round(THREE.MathUtils.clamp((level - sampleTerrainHeight(map, x, z)) / 64, 0, 1) * 65535);
+          const offset = (row * resolution + column) * 4;
+          depthData[offset] = encoded >> 8;
+          depthData[offset + 1] = encoded & 255;
+          depthData[offset + 2] = 255;
+          depthData[offset + 3] = 255;
+        }
+      }
       // Outside the ocean plane is still water, so only raised terrain becomes a shoreline.
       if (coast) {
         const distance = sampleCoastGrid({ ...coast, heights: coast.distances }, x, z);
@@ -1146,7 +1165,15 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   texture.colorSpace = THREE.NoColorSpace;
   texture.flipY = false;
   texture.needsUpdate = true;
-  return { texture, center, size, distanceScale: coast ? 1 : Math.max(0.01, maxDistance * size / resolution / 4) };
+  const depthTexture = depthData ? new THREE.DataTexture(depthData, resolution, resolution, THREE.RGBAFormat, THREE.UnsignedByteType) : undefined;
+  if (depthTexture) {
+    depthTexture.name = `water-depth:${waters[0].id}`;
+    depthTexture.minFilter = depthTexture.magFilter = THREE.LinearFilter;
+    depthTexture.colorSpace = THREE.NoColorSpace;
+    depthTexture.flipY = false;
+    depthTexture.needsUpdate = true;
+  }
+  return { texture, depthTexture, center, size, distanceScale: coast ? 1 : Math.max(0.01, maxDistance * size / resolution / 4) };
 }
 
 function buildCompositeWaterGeometry(shore: WaterShoreBinding, waters: readonly MapWaterBody[]): THREE.BufferGeometry {
@@ -1238,6 +1265,11 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap, c
       shore.texture.needsUpdate = true;
       nextShore.texture.dispose();
     }
+    if (shore?.depthTexture && nextShore.depthTexture) {
+      shore.depthTexture.image = nextShore.depthTexture.image;
+      shore.depthTexture.needsUpdate = true;
+      nextShore.depthTexture.dispose();
+    } else if (nextShore.depthTexture) nextShore.depthTexture.dispose();
     const ocean = mesh.userData.waterOceanTerrain as OceanTerrainBinding | undefined;
     if (ocean?.texture?.isDataTexture && coast) {
       const previous = ocean.texture.image as { width: number; height: number };
@@ -3783,8 +3815,9 @@ function disposeObject(object: THREE.Object3D): void {
         if (texture) textures.add(texture);
       }
     }
-    const shore = mesh.userData.waterShore as { texture?: THREE.Texture } | undefined;
+    const shore = mesh.userData.waterShore as { texture?: THREE.Texture; depthTexture?: THREE.Texture } | undefined;
     if (shore?.texture?.isTexture) textures.add(shore.texture);
+    if (shore?.depthTexture?.isTexture) textures.add(shore.depthTexture);
     const ocean = mesh.userData.waterOceanTerrain as { texture?: THREE.Texture } | undefined;
     if (ocean?.texture?.isTexture) textures.add(ocean.texture);
   });

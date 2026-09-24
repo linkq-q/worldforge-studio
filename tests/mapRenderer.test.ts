@@ -1039,6 +1039,22 @@ describe('structured map water rendering', () => {
 });
 
 describe('terrain-only refresh', () => {
+  it('updates water column depth in place after brushing and releases its texture on dispose', async () => {
+    const map = createEmptyMap();
+    map.waterBodies = [{id:'lake',name:'lake',type:'lake',points:[[-8,-8],[8,-8],[8,8],[-8,8]],level:2,width:1,depth:2,shorelineSmoothness:0}];
+    const rendered = await buildEditableMapGroup(map);
+    const water = rendered.modelsRoot.getObjectByName('water:lake') as THREE.Mesh;
+    const texture = water.userData.waterShore.depthTexture as THREE.DataTexture;
+    const before = Array.from(texture.image.data as Uint8Array);
+    const disposed = vi.fn(); texture.addEventListener('dispose', disposed);
+    map.terrain.heights.fill(-3);
+    rendered.refreshTerrain(map);
+    expect(water.userData.waterShore.depthTexture).toBe(texture);
+    expect(Array.from(texture.image.data as Uint8Array)).not.toEqual(before);
+    rendered.dispose();
+    expect(disposed).toHaveBeenCalledOnce();
+  });
+
   it('rebuilds terrain geometry and surface texture in place, leaving asset batches alone', async () => {
     const map = createEmptyMap('terrain', 'map-terrain-refresh');
     const rendered = await buildEditableMapGroup(map);

@@ -26,6 +26,7 @@ interface WaterOceanSurface {
 
 export interface WaterShoreBinding {
   texture: THREE.Texture;
+  depthTexture?: THREE.Texture;
   center: [number, number];
   size: number;
   worldSpace?: boolean;

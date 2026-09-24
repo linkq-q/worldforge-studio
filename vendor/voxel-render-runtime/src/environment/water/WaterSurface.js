@@ -633,6 +633,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uToonReflectionFresnelStep;// Phase 3: fresnel 硬边阈值
 
   // === v3 Step 3: Dual Normal Maps（Realistic/Hybrid 表面细节法线）===
+  uniform sampler2D tTerrainWaterDepth;
+  uniform bool uHasTerrainWaterDepth;
   uniform sampler2D tWaterNormalA;
   uniform sampler2D tWaterNormalB;
   uniform bool uUseWaterNormalMaps;
@@ -787,6 +789,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float waterDepth = abs(waterViewPos.z);
     float depthDiff = max(sceneLinearDepth - waterDepth, 0.0);
 
+    vec2 terrainDepthUv = (vWorldPosition.xz - uShoreWorldCenter) / max(uShoreWorldSize, 0.0001);
+    terrainDepthUv = vec2(terrainDepthUv.x, -terrainDepthUv.y) + 0.5;
+    vec4 terrainDepthSample = uHasTerrainWaterDepth ? texture2D(tTerrainWaterDepth, terrainDepthUv) : vec4(0.0);
+    bool hasTerrainDepth = uHasTerrainWaterDepth && terrainDepthSample.b > 0.5
+      && all(greaterThanEqual(terrainDepthUv, vec2(0.0))) && all(lessThanEqual(terrainDepthUv, vec2(1.0)));
+    float terrainWaterDepth = dot(terrainDepthSample.rg, vec2(65280.0, 255.0)) * (64.0 / 65535.0)
+      / max(terrainDepthSample.b, 0.001);
     float hasDepth = uHasDepthTexture ? 1.0 : 0.0;
     float oceanWaterDepth = 1000000.0;
     if (uUseOceanTerrain) {
@@ -1043,6 +1052,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     if (uUseShoreDistance) {
       colorFactor = shoreDist;
     }
+    if (hasTerrainDepth) colorFactor = 1.0 - exp(-terrainWaterDepth * uDepthStrength * 0.35);
     if (uUseCartoonBands) {
       if (uWaterMode < 0.5) {
         // Cartoon：完整色阶量化
@@ -1063,13 +1073,16 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       absorb = uHasDepthTexture
         ? 1.0 - exp(-depthDiff * uRealisticAbsorptionStrength)
         : (uUseShoreDistance ? shoreDist : 0.0);
+      if (hasTerrainDepth) absorb = 1.0 - exp(-terrainWaterDepth * uRealisticAbsorptionStrength * 0.4);
       waterColor = mix(waterColor, uDepthColor, absorb * uRealisticDepthTintStrength);
     }
 
     float viewDistance = length(cameraPosition - vWorldPosition);
     float absorption = 0.0;
     if (uWaterMode > 0.5 && uUseWaterAbsorption) {
-      absorption = computeWaterAbsorptionFactor(vWorldPosition, viewDistance, depthDiff, shoreDist);
+      absorption = hasTerrainDepth
+        ? 1.0 - exp(-terrainWaterDepth * uAbsorptionStrength * 0.35)
+        : computeWaterAbsorptionFactor(vWorldPosition, viewDistance, depthDiff, shoreDist);
       vec3 absorptionTint = mix(uShallowTint, uDeepTint, absorption);
       waterColor = mix(waterColor, absorptionTint, absorption * uAbsorptionTintStrength);
     }
@@ -1461,6 +1474,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     // (shoreDist→1) stays at base opacity. uShoreTransparency=0 → unchanged.
     float shoreOpacity = mix(baseOpacity, baseOpacity * uShoreEdgeAlpha, clamp((1.0 - shoreDist) * uShoreTransparency, 0.0, 1.0));
     float alpha = shoreOpacity + foam * 0.08;
+    if (hasTerrainDepth) {
+      float transmission = exp(-terrainWaterDepth * (0.35 + uOpacity));
+      float terrainOpacity = mix(0.08, 1.0, 1.0 - transmission);
+      alpha = mix(terrainOpacity, 1.0, foam * 0.65);
+    }
     if (uUseOceanTerrain) {
       float edgeOpacity = uWaterMode < 0.5 ? 0.58 : 0.42;
       alpha = mix(baseOpacity * edgeOpacity, baseOpacity, smoothstep(0.02, 0.65, oceanWaterDepth));
@@ -1528,6 +1546,8 @@ export class WaterSurface {
       extensions: { derivatives: true },
       uniforms: {
         tDepth: { value: null },
+        tTerrainWaterDepth: { value: null },
+        uHasTerrainWaterDepth: { value: false },
         uTime: { value: 0 },
         uCameraNear: { value: 0.1 },
         uCameraFar: { value: 1000 },
@@ -2528,6 +2548,12 @@ export class WaterSurface {
    * @param {'A'|'B'} slot - 槽位
    * @param {THREE.Texture|null} texture - 法线贴图，传 null 或非法 slot 时回退到中性法线，不抛错
    */
+  // Host-owned, optional column-depth field. Existing model/no-terrain water keeps its fallback.
+  setTerrainDepthTexture(texture) {
+    this.material.uniforms.tTerrainWaterDepth.value = texture;
+    this.material.uniforms.uHasTerrainWaterDepth.value = Boolean(texture);
+  }
+
   setWaterNormalTexture(slot, texture) {
     const map = { A: 'tWaterNormalA', B: 'tWaterNormalB' };
     const uniformName = map[slot];
