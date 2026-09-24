@@ -125,14 +125,27 @@ export function configureWaterReflection(
 
 // One small, tileable normal field shared by the existing water-material bindings.
 export function createWaterDetailTexture(): THREE.DataTexture {
-  const size = 128, data = new Uint8Array(size * size * 4);
-  const waves = [[2,3],[5,-2],[-3,7],[8,5],[-7,-4],[11,-3],[-5,9],[3,-11]];
+  const size = 256, data = new Uint8Array(size * size * 4);
+  // A broad, wind-biased spectrum avoids the visible crosshatch from eight
+  // equal-strength sine waves. Integer frequencies keep the field seamless.
+  let seed = 1847;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const waves: number[][] = [];
+  while (waves.length < 64) {
+    const kx = 3 + Math.floor(random() * 22);
+    const ky = Math.round((random() - 0.5) * 24);
+    if (waves.some(wave => wave[0] === kx && wave[1] === ky)) continue;
+    waves.push([kx, ky, random() * Math.PI * 2, 0.012 + random() * 0.012]);
+  }
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     let dx = 0, dy = 0;
-    waves.forEach(([kx, ky], i) => {
-      const slope = Math.cos(2 * Math.PI * (kx * x + ky * y) / size + i * 2.39996) * 0.075 / Math.hypot(kx, ky);
+    for (const [kx, ky, phase, amplitude] of waves) {
+      const slope = Math.cos(2 * Math.PI * (kx * x + ky * y) / size + phase) * amplitude / Math.hypot(kx, ky);
       dx += kx * slope; dy += ky * slope;
-    });
+    }
     const length = Math.hypot(dx, dy, 1), offset = (y * size + x) * 4;
     data[offset] = Math.round((dx / length * 0.5 + 0.5) * 255);
     data[offset + 1] = Math.round((dy / length * 0.5 + 0.5) * 255);

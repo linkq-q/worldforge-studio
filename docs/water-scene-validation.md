@@ -44,3 +44,18 @@ Validated on 2026-09-24: 944 tests across 119 files and the production build pas
 Remaining artistic scope: no volumetric spray/mist, no geometric obstacle-aware fluid simulation, and no new planar reflections. The depth field describes terrain, not arbitrary submerged mesh surfaces. Final visual preference remains human acceptance.
 
 Final material validation: 952 tests across 121 files and the production build passed. The isolated production editor loaded the 61-object hydropower scene and selected the saved calm-lake scheme. Scheme IDs: render-43b8a181-e340-420d (calm-lake), render-b3385422-7fe3-475c (stylized).
+
+
+## Crosshatch correction (2026-09-24)
+
+The earlier material screenshots did not establish natural surface motion. In the same backlit camera, disabling vertex displacement left the crosshatch intact; disabling detail normals removed it. The primary cause was the eight equal-amplitude periodic modes in the newly generated detail texture, amplified by a broad specular lobe. This correction does not change terrain depth, water colour, geometry or vertex displacement.
+
+- Keep the existing dual-normal material inputs; bake one shared 256-square normal field with 64 deterministic, wind-biased modes. The broader spectrum and unequal phases/amplitudes remove the dominant crossed stripes. Two nonmatching scales drift in broadly aligned directions rather than crossing as rigid sheets.
+- Narrow the direct sun highlight and use untinted, Fresnel-weighted environment reflection with unit normal influence. No new reflection capture or renderer was added. The unchanged vertex waves remain a separate, subtle displacement layer.
+- The spectrum regression rejects the previous normal field (one mode contributed 12.52% of its slope energy; limit 8%) and passes the replacement. This numeric test guards repetition, not artistic realism.
+- Compare identical camera/light/time at [38,25,-50] looking at [0,3,-2], plus front and low angles. Record 48 frames at 8 fps with shader time 0..5.875 seconds. The GIF loop resets time; the loop boundary is an artifact of the review recording, not a runtime animation reset.
+- References studied: [NVIDIA GPU Gems, geometric waves versus texture waves](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models), [Alex Tardif, scrolling normals and specular breakup](https://alextardif.com/Water.html), and [Catlike Coding, wavelength versus mesh resolution](https://catlikecoding.com/unity/tutorials/flow/waves/). These inform the changes; no external shader source/assets were copied. ShaderToy Ms2SD1 and llsXD2 could not be retrieved and are not claimed as inspected references.
+
+Remaining visual limits: the neutral fixture has no HDRI and uses the existing sky-gradient fallback; it does not provide dam/tree reflections. Spillway spray and impact turbulence are also not addressed by this normal-field fix. A regression pass is not human visual acceptance.
+
+Validation: 953 tests across 121 files passed; production typecheck/build passed. Local API health returned OK. The production viewer compiled the updated water shader without errors in hydropower, stylized water and curved-river fixtures.

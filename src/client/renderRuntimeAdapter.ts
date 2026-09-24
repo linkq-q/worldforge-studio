@@ -669,13 +669,14 @@ export class RenderRuntimeAdapter {
             surface.setWaterNormalTexture('A', this.waterDetailTexture);
             surface.setWaterNormalTexture('B', this.waterDetailTexture);
             surface.importState({
-              waterNormals: { enabled: true, strength: 0.65, scaleA: 0.17, scaleB: 0.31,
-                speedA: 0.018, speedB: 0.012, directionA: [1, 0.25], directionB: [-0.35, 1], mix: 0.5 },
+              waterNormals: { enabled: true, strength: 0.8, scaleA: 0.075, scaleB: 0.113,
+                speedA: -0.014, speedB: -0.009, directionA: [1, 0.25], directionB: [0.8, -0.3], mix: 0.5 },
               uRealisticFresnelBias: 0.02,
               uRealisticFresnelColor: '#ffffff',
               uRealisticSpecularNormalInfluence: 1,
-              uRealisticSpecularStrength: 0.65,
-              uRealisticSpecularPower: 110,
+              uRealisticSpecularStrength: 0.85,
+              uRealisticSpecularPower: 320,
+              reflection: { fresnelInfluence: 1, tint: '#ffffff', normalInfluence: 1 },
               uHighlightIntensity: 0.06,
               uHighlightMax: 0.12,
               uToonPatternEnabled: false,

@@ -23,6 +23,37 @@ describe('water material lighting', () => {
     expect(u.uUseSceneWaterLight.value).toBe(false);
     surface.dispose();
   });
+  it('does not concentrate the detail field into a few repeating stripe directions', () => {
+    const texture = createWaterDetailTexture();
+    const { width } = texture.image;
+    const data = texture.image.data as Uint8Array;
+    const size = 64, samples: number[][] = [];
+    let energy = 0;
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const index = (y * width / size * width + x * width / size) * 4;
+      const nz = data[index + 2] / 255 * 2 - 1;
+      const sx = (data[index] / 255 * 2 - 1) / nz;
+      const sy = (data[index + 1] / 255 * 2 - 1) / nz;
+      samples.push([x, y, sx, sy]);
+      energy += sx * sx + sy * sy;
+    }
+    let peak = 0;
+    // Inspect the resolved ripple band, including the old crossed-stripe modes.
+    for (let kx = 0; kx <= 26; kx++) for (let ky = -26; ky <= 26; ky++) {
+      if (kx === 0 && ky <= 0) continue;
+      let xr = 0, xi = 0, yr = 0, yi = 0;
+      for (const [x, y, sx, sy] of samples) {
+        const phase = 2 * Math.PI * (kx * x + ky * y) / size;
+        const c = Math.cos(phase), s = Math.sin(phase);
+        xr += sx * c; xi += sx * s; yr += sy * c; yi += sy * s;
+      }
+      peak = Math.max(peak, 2 * (xr * xr + xi * xi + yr * yr + yi * yi) / (samples.length * energy));
+    }
+    // A single periodic mode must not visibly dominate the normal field.
+    expect(peak).toBeLessThan(0.08);
+    texture.dispose();
+  });
+
   it('creates reusable filtered detail with unit normals and bounded slope', () => {
     const texture=createWaterDetailTexture();
     const data=texture.image.data as Uint8Array;
