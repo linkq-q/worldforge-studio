@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { createWaterDetailTexture, syncWaterSurfaceLight } from '../src/client/renderEnvironmentBridge';
@@ -57,6 +58,8 @@ describe('water material lighting', () => {
   it('creates reusable filtered detail with unit normals and bounded slope', () => {
     const texture=createWaterDetailTexture();
     const data=texture.image.data as Uint8Array;
+    // The faster bake must preserve every byte of the accepted normal field.
+    expect(createHash('sha256').update(data).digest('hex')).toBe('811fc0c3cbae1fbc1b8698b3836f826a164ef5935e37b4bd1d6f33772bb1b321');
     let maxSlope=0;
     for(let i=0;i<data.length;i+=4) {
       const x=data[i]/255*2-1,y=data[i+1]/255*2-1,z=data[i+2]/255*2-1;

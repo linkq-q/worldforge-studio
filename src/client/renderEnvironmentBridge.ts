@@ -140,12 +140,27 @@ export function createWaterDetailTexture(): THREE.DataTexture {
     if (waves.some(wave => wave[0] === kx && wave[1] === ky)) continue;
     waves.push([kx, ky, random() * Math.PI * 2, 0.012 + random() * 0.012]);
   }
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    let dx = 0, dy = 0;
-    for (const [kx, ky, phase, amplitude] of waves) {
-      const slope = Math.cos(2 * Math.PI * (kx * x + ky * y) / size + phase) * amplitude / Math.hypot(kx, ky);
-      dx += kx * slope; dy += ky * slope;
+  const slopesX = new Float64Array(size * size), slopesY = new Float64Array(size * size);
+  const cosX = new Float64Array(size), sinX = new Float64Array(size);
+  // cos(x+y) separates each periodic mode into rows/columns: the same field,
+  // with trig evaluated per row/column rather than for every pixel and mode.
+  for (const [kx, ky, phase, amplitude] of waves) {
+    const scale = amplitude / Math.hypot(kx, ky);
+    for (let x = 0; x < size; x++) {
+      const angle = 2 * Math.PI * kx * x / size;
+      cosX[x] = Math.cos(angle); sinX[x] = Math.sin(angle);
     }
+    for (let y = 0; y < size; y++) {
+      const angle = 2 * Math.PI * ky * y / size + phase;
+      const cy = Math.cos(angle), sy = Math.sin(angle), row = y * size;
+      for (let x = 0; x < size; x++) {
+        const slope = (cosX[x] * cy - sinX[x] * sy) * scale;
+        slopesX[row + x] += kx * slope; slopesY[row + x] += ky * slope;
+      }
+    }
+  }
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const dx = slopesX[y * size + x], dy = slopesY[y * size + x];
     const length = Math.hypot(dx, dy, 1), offset = (y * size + x) * 4;
     data[offset] = Math.round((dx / length * 0.5 + 0.5) * 255);
     data[offset + 1] = Math.round((dy / length * 0.5 + 0.5) * 255);

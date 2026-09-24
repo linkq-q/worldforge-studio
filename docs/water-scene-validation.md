@@ -90,3 +90,12 @@ Replace that frame with world-X/Z height-gradient composition, scaled by the bas
 `/tests/manual/waterNormals.html` compiles the actual material block on the GPU. Before the fix, a positive-X test normal returned X=-0.192 and the vertical case rendered invalid black values. After the fix, X=+0.192, positive-Z also stays positive, a vertical surface retains [0,0,1] within byte readback precision, and an unperturbed sloped surface remains unchanged. The test was observed failing before the fix and passing afterwards.
 
 Reviewed 48 matched frames of the reservoir plus a close spillway view. This corrects the orientation of glints; it does not add missing spray or scene-object reflections. Full tests (953 across 121 files) and the production build passed.
+
+
+## Self-audit: normal texture bake cost (2026-09-24)
+
+The 256-square/64-mode bake previously called trigonometric functions and recomputed mode normalization inside every pixel/mode pair. The replacement evaluates sine/cosine per row/column and applies the cosine addition identity while accumulating the same modes. About 1 MiB of temporary Float64 slope buffers is used per bake; there is no persistent texture cache or extra per-frame work.
+
+Same-machine browser timings for five successive bakes: before [158.6,148.8,147.9,139.4,138.4] ms; after [14.3,11.7,11.5,11.9,11.4] ms. Median falls from 147.9 to 11.7 ms. This measures texture initialization only, not frame time or a cross-device performance guarantee.
+
+All texture bytes retain SHA-256 `811fc0c3cbae1fbc1b8698b3836f826a164ef5935e37b4bd1d6f33772bb1b321`; the accepted texture hash is now guarded in the existing unit test. Full tests/build passed, all three manual GPU regressions passed, lake/river/cartoon browser fixtures compiled without shader failures, and local API health returned OK. Existing shader compiler warnings and missing scene-object reflection/spray remain outside these two fixes.
