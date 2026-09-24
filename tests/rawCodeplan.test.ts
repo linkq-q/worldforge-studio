@@ -58,6 +58,10 @@ describe('raw codeplan mode', () => {
     }
     expect(prompt).toContain('CIRCULATION');
     expect(prompt).toContain('wallThickness');
+    // Recurring failure patterns from the experiments, taught as cautions.
+    expect(prompt).toContain('Declare-before-use');
+    expect(prompt).toContain('never a descriptive string');
+    expect(prompt).toContain('one NaN or Infinity discards the whole plan');
     // Interior partitions are buildable; only the four-shell boundary is map-owned.
     expect(prompt).toContain('Interior partition walls, door leaves and freestanding panels are yours');
     expect(prompt).not.toContain('api.terrain');

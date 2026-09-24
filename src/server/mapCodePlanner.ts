@@ -3912,6 +3912,10 @@ The sandbox exposes exactly these eleven APIs. Everything else is yours to build
 
 Rules:
 - Declare ${minNewAssets}..${maxNewAssets} requireAsset families; place every declared variant at least once.
+- Declare-before-use: every requireAsset family must be declared before the first api.asset(key) that reads it. The sandbox has exactly the eleven keys above — a misspelled or invented api.x is undefined, and undefined × number = NaN.
+- Enumerated values are literal and closed: side 'north'|'south'|'east'|'west' (shell walls only), kind 'door'|'window'|'pass', wallType 'solid'|'glass', role 'functional'|'decor' — never a descriptive string.
+- Guard every computed number: check divisions and lookups so only finite values reach the api — one NaN or Infinity discards the whole plan.
+- Describe assets concretely; avoid finish phrasings like "wall finish" or "ceiling plane" — say what the object is, not what it is coated with.
 - Return only the function body: no markdown, imports, async, eval, timers, network, or global state. Synchronous code, finite numbers only.
 - There are no hard caps in this mode — your output is applied verbatim — so keep loops sane on your own: seconds of computation, not minutes.
 - Keep every object inside the room; wall-mounted objects use api.wallFrame, ceiling objects use api.ceilingPoint, floor furniture uses api.roomPoint with height 0; never use terrain-following placement.`;
