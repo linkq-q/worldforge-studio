@@ -1310,6 +1310,7 @@ function executeMapCodePlanInternal(
   const emitPlacement = (input: PlacementInput): string => {
     if (placements.length >= MAX_MAP_CODE_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
     if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
+    if (input.terrain !== undefined && typeof input.terrain !== 'boolean') throw new Error('invalid_map_code_terrain_mode');
     const referenceId = codePlacementReference(placements.length);
     const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
     if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return referenceId;
@@ -3902,6 +3903,8 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 8. api.asset(key,index?) returns the generated asset ID; never invent asset IDs.
 9. api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,dimensions?,terrain?,role?}) returns a placement reference.
 10. api.random(min?,max?) is deterministic for this map seed.
+
+Ground objects should use position:[x,z], for example [-21,20] means x=-21,z=20 and samples terrain Y. In [x,y,z], y is vertical height, not z; terrain accepts only boolean true or false, never 'ground'. Use terrain:true with [x,0,z] only when you need an explicit terrain-relative Y offset.
 
 Declare ${minNewAssets}..${maxNewAssets} requireAsset families and place every declared variant at least once. Each asset prompt describes one standalone reusable object and follows this orientation contract: Y+ up, Z+ front/entrance, X+ right. Keep all coordinates inside the map bounds and return the complete function plan(api).`;
 }

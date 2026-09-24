@@ -90,6 +90,8 @@ describe('map code planner', () => {
     expect(prompt).toContain("'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'");
     expect(prompt).toContain("Region objects use kind, never type");
     expect(prompt).toContain("surface:'paving', material:'concrete'");
+    expect(prompt).toContain('[-21,20] means x=-21,z=20 and samples terrain Y');
+    expect(prompt).toContain("terrain accepts only boolean true or false, never 'ground'");
     expect(prompt).toContain('Return only one complete synchronous JavaScript function: function plan(api) { ... }.');
     expect(prompt).not.toContain("'mountainous'");
     expect(prompt).not.toContain("'dunes'");
@@ -377,6 +379,13 @@ describe('map code planner', () => {
     expect(additions[1].object.transform?.position).toEqual([-3, 3.75, 4]);
     expect(additions[2].object.heightMode).toBe('fixed');
     expect(additions[2].object.transform?.position).toEqual([0, 0, -4]);
+  });
+
+  it('rejects a string terrain mode before accepting a misplaced object', () => {
+    const code = "function plan(api) { api.place({ name:'机库', position:[-34,24,0], terrain:'ground' }); }";
+
+    expect(() => discoverMapCodeAssets(code, createEmptyMap(), [], 0)).toThrow('invalid_map_code_terrain_mode');
+    expect(() => executeMapCodePlan(code, createEmptyMap())).toThrow('invalid_map_code_terrain_mode');
   });
 
   it('surfaces a fixed-Y object hidden below the final terrain', () => {
