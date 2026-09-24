@@ -70,3 +70,12 @@ Based on accepted commit `e7596e0`, this round only changes the terrain river's 
 - `/tests/manual/waterFlow.html` runs the actual material helper on the GPU. With two orthogonal 0.2 slopes, the old crossfade falls from 0.195 to 0.140 at equal weights; the new decoded slope stays between 0.195 and 0.198 across nine weights (8-bit readback). It tests both the old failure and the corrected behavior.
 - Recorded 64 frames at 8 fps, 0..7.875 seconds, spanning a complete flow cycle. Compare the curved-river fixture at [26,16,-26] looking at [0,0,0], and recheck the accepted hydropower reservoir view. Recording loops reset time; the runtime does not reset on that GIF boundary.
 - `npm.cmd test`: 953 tests / 121 files passed. Production build passed. Browser GPU regression passed. Final human visual acceptance is separate from these checks.
+
+
+## Lake wind patch polish (2026-09-24)
+
+Based on accepted commit `b61554a`, terrain-backed realistic/hybrid lakes now vary detail-normal strength gently across broad, slowly advecting wind patches. The multiplier stays between 0.65 and 1.2, preserving visible ripples in calm patches. This is an artistic roughness variation within the existing material, not a wind or fluid simulation. No texture, capture pass, authoring API, geometry, water colour or depth changes were added. Flowing river samples and cartoon/legacy surfaces retain their prior path.
+
+`/tests/manual/waterWind.html` compiles the actual material block and noise chunk on the GPU. With base strength 0.8, sampled strength is 0.522..0.961 (8-bit readback), remains spatially varied, moves over time, and is zero when strength is zero. Terrain-invalid, non-scene-lit, river and cartoon cases all preserve the original constant strength.
+
+Validation: 953 tests across 121 files and the production build passed. Captured 64 frames at 8 fps with identical camera/light/time for both variants; inspected nonadjacent frames plus close, distant and grazing views. The GIF wraps time at its end; this is only a recording boundary. This is a subtle artistic adjustment awaiting user acceptance, not a claim of complete photorealism.

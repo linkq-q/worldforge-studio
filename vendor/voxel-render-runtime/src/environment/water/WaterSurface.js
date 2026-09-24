@@ -1140,7 +1140,14 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         vec3 bitangent = normalize(cross(baseNormal, tangent));
         detailNormalWorld = normalize(baseNormal + (tangent * detailNormal.x + bitangent * detailNormal.y) * uWaveNormalBlend);
       }
-      finalWaterNormal = normalize(mix(baseNormal, detailNormalWorld, uWaterNormalStrength));
+      float detailStrength = uWaterNormalStrength;
+      if (hasTerrainDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
+        // Broad, slowly advecting wind patches break up uniform lake roughness.
+        // Keep a nonzero lower bound so calm patches never turn into flat mirrors.
+        float windPatch = noise2D(waterUv * 0.09 + dirA * uTime * uWaterNormalSpeedA * 0.25);
+        detailStrength *= mix(0.65, 1.2, smoothstep(0.15, 0.85, windPatch));
+      }
+      finalWaterNormal = normalize(mix(baseNormal, detailNormalWorld, detailStrength));
     }
     vec3 normalForHighlight = (uWaterMode > 0.5 && uUseWaterNormalMaps) ? finalWaterNormal : baseNormal;
     // 6c+：ripple decal 法线扰动，同时喂给主法线与高光法线——卡通/写实两种模式都要反光
