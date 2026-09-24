@@ -59,3 +59,14 @@ The earlier material screenshots did not establish natural surface motion. In th
 Remaining visual limits: the neutral fixture has no HDRI and uses the existing sky-gradient fallback; it does not provide dam/tree reflections. Spillway spray and impact turbulence are also not addressed by this normal-field fix. A regression pass is not human visual acceptance.
 
 Validation: 953 tests across 121 files passed; production typecheck/build passed. Local API health returned OK. The production viewer compiled the updated water shader without errors in hydropower, stylized water and curved-river fixtures.
+
+
+## Flow continuity polish (2026-09-24)
+
+Based on accepted commit `e7596e0`, this round only changes the terrain river's dual-normal crossfade. Lake normals, water colours, geometry and reflection tuning remain on the accepted path.
+
+- A smooth spatial phase offset prevents the entire river from crossfading at the same instant. Smoothstep weights keep the derivative continuous when a hidden flow layer resets.
+- Blend normal slopes with a variance correction: independent fields otherwise lose half their variance at equal weights, making the whole river alternately flatten and roughen. This is a statistical correction, not a fluid simulation; correlated samples can still vary naturally.
+- `/tests/manual/waterFlow.html` runs the actual material helper on the GPU. With two orthogonal 0.2 slopes, the old crossfade falls from 0.195 to 0.140 at equal weights; the new decoded slope stays between 0.195 and 0.198 across nine weights (8-bit readback). It tests both the old failure and the corrected behavior.
+- Recorded 64 frames at 8 fps, 0..7.875 seconds, spanning a complete flow cycle. Compare the curved-river fixture at [26,16,-26] looking at [0,0,0], and recheck the accepted hydropower reservoir view. Recording loops reset time; the runtime does not reset on that GIF boundary.
+- `npm.cmd test`: 953 tests / 121 files passed. Production build passed. Browser GPU regression passed. Final human visual acceptance is separate from these checks.

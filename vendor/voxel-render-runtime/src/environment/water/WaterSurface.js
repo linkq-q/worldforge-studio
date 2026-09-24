@@ -760,6 +760,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     return spec * uRealisticSpecularStrength;
   }
 
+  // Blend independent slope fields without losing half their variance mid-cycle.
+  vec3 blendWaterFlowNormals(vec3 a, vec3 b, float weight) {
+    vec2 slope = mix(a.xy / max(a.z, 0.001), b.xy / max(b.z, 0.001), weight);
+    slope *= inversesqrt(weight * weight + (1.0 - weight) * (1.0 - weight));
+    return normalize(vec3(slope, 1.0));
+  }
+
   float computeWaterAbsorptionFactor(vec3 worldPos, float viewDistance, float depthDiff, float shoreDist) {
     float factor = 0.0;
 
@@ -1113,15 +1120,18 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       vec3 nA = unpackNormalMap(texture2D(tWaterNormalA, uvA).rgb);
       vec3 nB = unpackNormalMap(texture2D(tWaterNormalB, uvB).rgb);
       float normalMix = uWaterNormalMix;
-      if (uUseSceneWaterLight && uUseRiverFlow && length(vRiverFlow) > 0.05) {
+      bool flowingDetail = uUseSceneWaterLight && uUseRiverFlow && length(vRiverFlow) > 0.05;
+      if (flowingDetail) {
         // Two short, staggered flow cycles prevent unbounded UV stretching in bends.
-        float phase = fract(uTime * 0.14);
+        float phase = fract(uTime * 0.14 + noise2D(waterUv * 0.12) * 0.8);
         float phaseB = fract(phase + 0.5);
         nA = unpackNormalMap(texture2D(tWaterNormalA, (waterUv - vRiverFlow * phase * uFlowSpeed / 0.14) * uWaterNormalScaleA).rgb);
         nB = unpackNormalMap(texture2D(tWaterNormalB, (waterUv - vRiverFlow * phaseB * uFlowSpeed / 0.14) * uWaterNormalScaleA + vec2(0.37, 0.61)).rgb);
-        normalMix = abs(phase * 2.0 - 1.0);
+        normalMix = smoothstep(0.0, 1.0, abs(phase * 2.0 - 1.0));
       }
-      vec3 detailNormal = normalize(mix(nA, nB, normalMix));
+      vec3 detailNormal = flowingDetail
+        ? blendWaterFlowNormals(nA, nB, normalMix)
+        : normalize(mix(nA, nB, normalMix));
 
       // Y-up water plane: normal-map XY contributes detail slope on world XZ.
       vec3 detailNormalWorld = normalize(baseNormal + vec3(detailNormal.x, 0.0, detailNormal.y) * uWaveNormalBlend);
