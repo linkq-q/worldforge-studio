@@ -24,7 +24,7 @@ import {
   type TerrainRampParams,
   type Transform3D
 } from './map';
-import { carveWaterBasinInPlace, ensureRiverSurfaceLevels } from './mapWater';
+import { carveWaterBasinInPlace, ensureRiverSurfaceLevels, naturalShorelineProfile } from './mapWater';
 import {
   applyTerrainModifierInPlace,
   applyTerrainSurfaceInPlace,
@@ -490,12 +490,20 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         break;
       case 'water.add': {
         requireWaterBody(operation.water);
+        const shorelineProfile = operation.water.shorelineProfile
+          ?? (operation.water.type === 'ocean' || operation.water.depth !== undefined
+            || operation.water.bankHeight !== undefined
+            || operation.water.shorelineSmoothness === 0
+            ? undefined
+            : naturalShorelineProfile(operation.water.seed ?? next.seed, operation.water.type,
+              next.waterBodies.filter((item) => item.type === operation.water.type).length));
         let water: MapWaterBody = {
           id: operation.water.id || createId('water'),
           name: operation.water.name ?? (operation.water.type === 'lake' ? '湖泊' : operation.water.type === 'ocean' ? '海面' : '河流'),
           type: operation.water.type,
           level: operation.water.level ?? 0.2,
-          depth: operation.water.depth ?? DEFAULT_WATER_DEPTH,
+          depth: operation.water.depth ?? (shorelineProfile === 'gentle' ? 1.25
+            : shorelineProfile === 'steep' ? 3.5 : DEFAULT_WATER_DEPTH),
           width: operation.water.width ?? 1.2,
           points: operation.water.points,
           levels: operation.water.levels,
@@ -507,6 +515,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
             ?? (operation.water.type === 'ocean' ? 0 : 0.82),
           shorelineIrregularity: operation.water.shorelineIrregularity
             ?? (operation.water.type === 'lake' ? 0.16 : 0),
+          shorelineProfile,
           seed: operation.water.seed ?? next.seed,
           generation: operation.water.generation
         };
@@ -600,6 +609,11 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
     throw new Error('invalid_water_body');
   }
   if (water.shorelineIrregularity !== undefined && !Number.isFinite(Number(water.shorelineIrregularity))) {
+    throw new Error('invalid_water_body');
+  }
+  if (water.shorelineProfile !== undefined
+    && (water.type === 'ocean'
+      || (water.shorelineProfile !== 'steep' && water.shorelineProfile !== 'gentle'))) {
     throw new Error('invalid_water_body');
   }
   if (water.seed !== undefined && !Number.isFinite(Number(water.seed))) throw new Error('invalid_water_body');

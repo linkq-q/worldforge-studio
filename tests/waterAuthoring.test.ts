@@ -41,6 +41,55 @@ describe('water authoring contracts', () => {
       expect(sampleTerrainHeight(map, 0, 0)).toBeLessThan(2);
     }
   });
+  it('keeps steep lake walls clean and lets shallow lakes and rivers use wider shores', () => {
+    const deep: MapWaterBody = { id: 'deep', name: 'Deep lake', type: 'lake', points: [[-10,-10],[10,-10],[10,10],[-10,10]], level: 2, depth: 4, width: 1, shorelineSmoothness: 0.82, shorelineProfile: 'steep' };
+    const shallow: MapWaterBody = { ...deep, id: 'shallow', depth: 1, shorelineProfile: 'gentle' };
+    const carve = (water: MapWaterBody) => {
+      const map = createEmptyMap('shore profile', 'shore-profile', [96, 48, 96]);
+      map.terrain = { ...map.terrain, resolutionX: 129, resolutionZ: 129, heights: Array(129 * 129).fill(5) };
+      carveWaterBasinInPlace(map, water);
+      return map;
+    };
+    const steepMap = carve(deep);
+    const gentleMap = carve(shallow);
+    expect(sampleTerrainHeight(steepMap, 0, 0)).toBeLessThan(-1.9);
+    expect(sampleTerrainHeight(gentleMap, 0, 0)).toBeGreaterThan(0.9);
+    expect(sampleTerrainHeight(gentleMap, 11.5, 0)).toBeLessThan(sampleTerrainHeight(steepMap, 11.5, 0) - 0.5);
+    expect(sampleTerrainHeight(carve({ ...deep, points: [[-4,-4],[4,-4],[4,4],[-4,4]], depth: 2, shorelineProfile: 'gentle' }), 0, 0))
+      .toBeCloseTo(0, 4);
+    expect(maximumNeighborDelta(steepMap)).toBeLessThan(2.5);
+    const once = [...steepMap.terrain.heights];
+    carveWaterBasinInPlace(steepMap, deep);
+    expect(steepMap.terrain.heights).toEqual(once);
+
+    const channel: MapWaterBody = { id: 'channel', name: 'Channel', type: 'river', points: [[0,-20],[0,20]], level: 2, levels: [2,2], width: 8, depth: 2, shorelineSmoothness: 0.8 };
+    const steepRiver = carve({ ...channel, shorelineProfile: 'steep' });
+    const gentleRiver = carve({ ...channel, shorelineProfile: 'gentle' });
+    expect(sampleTerrainHeight(gentleRiver, 6, 0)).toBeLessThan(sampleTerrainHeight(steepRiver, 6, 0) - 0.5);
+    const riverOnce = [...gentleRiver.terrain.heights];
+    carveWaterBasinInPlace(gentleRiver, { ...channel, shorelineProfile: 'gentle' });
+    expect(gentleRiver.terrain.heights).toEqual(riverOnce);
+  });
+  it('chooses and persists repeatable natural shore profiles while respecting explicit styles', () => {
+    const map = createEmptyMap('two lakes', 'two-lakes');
+    const shape: MapWaterBody = { id: 'one', name: 'Lake', type: 'lake', points: [[-10,-10],[10,-10],[10,10],[-10,10]], level: 2, depth: 2, width: 1, shorelineSmoothness: 0.82 };
+    const operations = [
+      { type: 'water.add' as const, water: { ...shape, depth: undefined } },
+      { type: 'water.add' as const, water: { ...shape, id: 'two', depth: undefined } }
+    ];
+    const first = applyMapOperations(map, operations);
+    const second = applyMapOperations(map, operations);
+    expect(first.waterBodies.map((water) => [water.shorelineProfile, water.depth]))
+      .toEqual(second.waterBodies.map((water) => [water.shorelineProfile, water.depth]));
+    expect(first.waterBodies.every((water) => water.shorelineProfile === 'steep' || water.shorelineProfile === 'gentle')).toBe(true);
+    expect(first.waterBodies[0].shorelineProfile).not.toBe(first.waterBodies[1].shorelineProfile);
+    expect(first.waterBodies[0].depth).not.toBe(first.waterBodies[1].depth);
+    const authored = applyMapOperations(map, [{ type: 'water.add', water: { ...shape, shorelineProfile: 'steep' } }]);
+    expect(authored.waterBodies[0].shorelineProfile).toBe('steep');
+    expect(authored.waterBodies[0].depth).toBe(2);
+    expect(() => applyMapOperations(map, [{ type: 'water.add', water: { ...shape, shorelineProfile: 'flat' as 'steep' } }]))
+      .toThrow('invalid_water_body');
+  });
   it('creates explicitly requested reservoir banks without changing unrequested terrain, and is idempotent', () => {
     const map = createEmptyMap();
     const lake: MapWaterBody = { id:'lake', name:'Lake', type:'lake', points:[[-8,-8],[8,-8],[8,8],[-8,8]], level:6, depth:3, width:1, shorelineSmoothness:0, bankHeight:0.5, bankWidth:5 };
@@ -117,3 +166,14 @@ describe('water authoring contracts', () => {
   });
 
 });
+
+function maximumNeighborDelta(map: ReturnType<typeof createEmptyMap>): number {
+  const { heights, resolutionX: width, resolutionZ: depth } = map.terrain;
+  let maximum = 0;
+  for (let z = 0; z < depth; z += 1) for (let x = 0; x < width; x += 1) {
+    const index = z * width + x;
+    if (x + 1 < width) maximum = Math.max(maximum, Math.abs(heights[index] - heights[index + 1]));
+    if (z + 1 < depth) maximum = Math.max(maximum, Math.abs(heights[index] - heights[index + width]));
+  }
+  return maximum;
+}

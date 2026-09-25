@@ -4,6 +4,7 @@ import {
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
+  type MapWaterBody,
   type MapWaterBodyType
 } from '../shared/map';
 import {
@@ -160,7 +161,7 @@ Available API:
 - scene.mountOn(selector, parentId, { side: "north"|"south"|"east"|"west", name?, scale?, yaw?, offset?: [horizontal,vertical], inset?, groupId?, layer?: 1|2|3|4 }) -> objectId
 - scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving", intensity?)
 - scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
-- scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, widths?, level?, levels?, depth?, carveTerrain?, bankHeight?, bankWidth?, shorelineSmoothness?, shorelineIrregularity? })
+- scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, widths?, level?, levels?, depth?, shorelineProfile?: "steep"|"gentle", carveTerrain?, bankHeight?, bankWidth?, shorelineSmoothness?, shorelineIrregularity? })
 - scene.grass(id, region, { name?, preset?, density?, variation?, softness?, height? })
 - scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", align?: "forward"|"side", contact?: "seam", groupSize?, groupId?, layer?: 1|2|3|4 })
 - scene.scatter(assetSelector, { center: [x,z], radius }, { count?, density?, minSpacing?, avoidWater?, maxSlope?, scaleMin?, scaleMax?, clusterStrength?, edgeFalloff?, groupId?, layer?: 1|2|3|4 })
@@ -432,6 +433,7 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
           depth: optionalFiniteNumber(options.depth),
           shorelineSmoothness: optionalFiniteNumber(options.shorelineSmoothness),
           shorelineIrregularity: optionalFiniteNumber(options.shorelineIrregularity),
+          shorelineProfile: optionalString(options.shorelineProfile) as MapWaterBody['shorelineProfile'],
           seed: finiteNumber(options.seed, context.map.seed + context.operations.length)
         }
       });

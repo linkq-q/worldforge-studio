@@ -144,6 +144,8 @@ export interface MapWaterBody {
   shorelineSmoothness?: number;
   /** Deterministic shoreline displacement relative to the local radius. */
   shorelineIrregularity?: number;
+  /** Terrain cross-section: sharp banks or a broad shallow approach. */
+  shorelineProfile?: 'steep' | 'gentle';
   seed?: number;
   generation?: MapGenerationOwner;
 }
@@ -885,6 +887,8 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
       ...(input.shorelineIrregularity === undefined ? {} : {
         shorelineIrregularity: clamp(finiteNumber(input.shorelineIrregularity, 0), 0, 0.4)
       }),
+      ...((input.shorelineProfile === 'steep' || input.shorelineProfile === 'gentle')
+        ? { shorelineProfile: input.shorelineProfile } : {}),
       ...(input.seed === undefined ? {} : { seed: Math.trunc(finiteNumber(input.seed, 0)) }),
       generation: normalizeGenerationOwner(input.generation)
     });

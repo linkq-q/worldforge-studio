@@ -893,6 +893,10 @@ function normalizeWaterRefineOperations(
           water.type === 'lake' ? 0.4 : 0
         );
       }
+      if (input.shorelineProfile !== undefined) {
+        if (input.shorelineProfile !== 'steep' && input.shorelineProfile !== 'gentle') throw new Error('invalid_water_refine_plan');
+        patch.shorelineProfile = input.shorelineProfile;
+      }
       if (input.seed !== undefined) {
         patch.seed = Math.trunc(requiredNumber(input.seed, 'invalid_water_refine_plan'));
       }
@@ -923,6 +927,10 @@ function normalizeWaterOperations(
     const input = item as Record<string, unknown>;
     const type = input.type;
     if (type !== 'lake' && type !== 'river') throw new Error('invalid_water_plan');
+    const shorelineProfile = input.shorelineProfile;
+    if (shorelineProfile !== undefined && shorelineProfile !== 'steep' && shorelineProfile !== 'gentle') {
+      throw new Error('invalid_water_plan');
+    }
     if (!Array.isArray(input.points)) throw new Error('invalid_water_plan');
     const points = input.points.slice(0, 64).map((raw): [number, number] => {
       if (!raw || typeof raw !== 'object') throw new Error('invalid_water_plan');
@@ -950,12 +958,13 @@ function normalizeWaterOperations(
         name: cleanText(input.name, type === 'lake' ? '湖泊' : '河流', 48),
         type,
         level: clamp(optionalNumber(input.level, 0.2), 0.02, bounds.maxY - 0.05),
-        depth: clamp(optionalNumber(input.depth, DEFAULT_WATER_DEPTH), 0.1, MAX_WATER_DEPTH),
+        ...(input.depth === undefined ? {} : { depth: clamp(requiredNumber(input.depth, 'invalid_water_plan'), 0.1, MAX_WATER_DEPTH) }),
         width: clamp(optionalNumber(input.width, 1.2), 0.3, Math.min(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) / 2),
         points,
         ...(levels ? { levels } : {}),
         shorelineSmoothness: clamp(optionalNumber(input.shorelineSmoothness, type === 'lake' ? 0.85 : 0.8), 0, 1),
         shorelineIrregularity: clamp(optionalNumber(input.shorelineIrregularity, type === 'lake' ? 0.16 : 0), 0, 0.4),
+        ...(shorelineProfile ? { shorelineProfile } : {}),
         seed: Math.trunc(optionalNumber(input.seed, mapSeed))
       }
     };
@@ -1301,7 +1310,7 @@ function buildSystemPrompt(
         'Keep spawn null unless the user explicitly asks to move the existing spawn point.',
         'To reduce repeated objects, use objectRemovals: [{"assetId":"existing asset id","count":3,"seed":1}]. You may instead provide exact objectIds.',
         'To move, rotate, or scale an existing object, use objectUpdates: [{"objectId":"existing object id","x":0,"z":0,"rotationYDeg":0,"scale":1}].',
-        'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7}]. River updates may also include levels matching the existing centerline point count. To delete water, use waterRemovals: ["existing water id"].',
+        'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2,"shorelineProfile":"steep|gentle","shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7}]. River updates may also include levels matching the existing centerline point count. To delete water, use waterRemovals: ["existing water id"].',
         `Current object groups: ${JSON.stringify(currentObjects)}`,
         `Current waters: ${JSON.stringify(map.waterBodies)}`,
         `Current visual zones: ${JSON.stringify(map.visualSemantics.zones)}`,
@@ -1371,7 +1380,7 @@ function buildSystemPrompt(
     'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"mountain|ridge|valley|basin|cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":18},"amplitude":5,"softness":0.3,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces","access":"walkable|scenic"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。山脉必须有宽阔连续的山地区域；walkable 使用低矮宽坡或 terraces 跳跃平台，scenic 才能使用更陡的装饰山。只有宽度足够时才生成 ridge，否则自动降级为山丘；cliff 只用于真正的峭壁、断崖和峡谷墙。',
     'terrainRefinement 在所有地形塑形后执行，格式：{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46}。新地图通常应提供一次，用轻量坡面松弛和汇流雕刻消除规则刀切感；不要对局部区域重做全图 refinement。',
     'terrainSurfaces 用于局部地表语义，每项格式：{"surface":"grass|sand|rock","region":{"kind":"circle","x":0,"z":0,"radius":8},"intensity":1,"zoneId":"stable-zone-id"}。沙漠或沙丘区域应同时选择 sand。',
-    `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7,"points":[{"x":0,"z":0}],"levels":[1.2,0.8]}。`,
+    `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"shorelineProfile":"steep|gentle","shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7,"points":[{"x":0,"z":0}],"levels":[1.2,0.8]}。省略 depth 和 shorelineProfile 时按地图种子确定深陡岸或浅缓岸；显式数值优先。`,
     '湖泊用 5-10 个粗略边界控制点组合出多个圆弧岸湾，shorelineSmoothness 建议 0.7-0.95，shorelineIrregularity 建议 0.08-0.28；代码会用 seed 生成连续噪声并平滑成不规则圆弧，不要手写密集锯齿点。',
     `河流用 4-10 个从上游到下游排列的中心线控制点，width 是完整河宽，shorelineSmoothness 建议 0.65-0.9。可选 levels 必须与 points 等长并从上游到下游逐渐降低；省略时代码会根据源头地形与终点 level 自动生成沿程水位。河床会按 depth（0.1 到 ${MAX_WATER_DEPTH}）自动开槽并生成平滑河岸。`,
     `湖泊的 depth 是水面以下的盆地深度，代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低水区。小水塘用 0.6 左右，深湖用 3 以上。`,
