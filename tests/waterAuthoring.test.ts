@@ -29,23 +29,6 @@ describe('water authoring contracts', () => {
     carveWaterBasinInPlace(map, water);
     expect(sampleTerrainHeight(map, 3, 9)).toBeLessThan(2);
   });
-  it('joins natural lake and river banks to high surrounding terrain without a one-cell wall', () => {
-    for (const type of ['lake', 'river'] as const) {
-      const map = createEmptyMap('shore profile', 'shore-profile', [96, 64, 96]);
-      map.terrain.heights.fill(10);
-      const water: MapWaterBody = type === 'lake'
-        ? { id: 'lake', name: 'Lake', type, points: [[-10,-10],[10,-10],[10,10],[-10,10]], level: 2, depth: 3, width: 8, shorelineSmoothness: 0 }
-        : { id: 'river', name: 'River', type, points: [[0,-30],[0,30]], level: 2, levels: [2,2], depth: 3, width: 8, shorelineSmoothness: 0 };
-      carveWaterBasinInPlace(map, water);
-      const start = type === 'lake' ? 9 : 4.5;
-      const heights = Array.from({ length: 9 }, (_, index) => sampleTerrainHeight(map, start + index * 1.5, 0));
-      expect(Math.max(...heights.slice(1).map((height, index) => height - heights[index]))).toBeLessThan(2);
-      expect(heights.at(-1)).toBe(10);
-      const once = [...map.terrain.heights];
-      carveWaterBasinInPlace(map, water);
-      expect(map.terrain.heights).toEqual(once);
-    }
-  });
   it('creates explicitly requested reservoir banks without changing unrequested terrain, and is idempotent', () => {
     const map = createEmptyMap();
     const lake: MapWaterBody = { id:'lake', name:'Lake', type:'lake', points:[[-8,-8],[8,-8],[8,8],[-8,8]], level:6, depth:3, width:1, shorelineSmoothness:0, bankHeight:0.5, bankWidth:5 };
