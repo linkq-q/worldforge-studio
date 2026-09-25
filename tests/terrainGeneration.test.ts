@@ -159,13 +159,23 @@ describe('deterministic terrain generation', () => {
     const { resolutionX: width, resolutionZ: depth, heights } = map.terrain;
     const cut = heights.map((height, index) => original[index] - height);
     let isolatedCuts = 0;
+    let middleCut = 0;
+    let middleDetail = 0;
+    let middleSamples = 0;
     for (let z = 1; z < depth - 1; z += 1) for (let x = 1; x < width - 1; x += 1) {
       const index = z * width + x;
       const adjacent = (cut[index - 1] + cut[index + 1] + cut[index - width] + cut[index + width]) / 4;
       if (cut[index] - adjacent > 0.2) isolatedCuts += 1;
+      if (original[index] >= 8 && original[index] < 20) {
+        middleCut += cut[index];
+        middleDetail += Math.abs(cut[index] - adjacent);
+        middleSamples += 1;
+      }
     }
     expect(Math.max(...cut)).toBeLessThan(6);
     expect(isolatedCuts).toBeLessThan(500);
+    expect(middleCut / middleSamples).toBeGreaterThan(2.4);
+    expect(middleDetail / middleSamples).toBeGreaterThan(0.07);
     expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(20);
   });
 

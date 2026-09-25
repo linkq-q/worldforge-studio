@@ -789,7 +789,19 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
   const spreadCuts = width >= 5 && depth >= 5;
   const before = Float64Array.from(terrain.heights);
   const cuts = new Float64Array(cellCount);
-  const maximumCut = spreadCuts ? Math.min(stepX, stepZ) * strength * 0.45 : Number.POSITIVE_INFINITY;
+  const channelMask = new Float64Array(cellCount);
+  const cellArea = stepX * stepZ;
+  const rawChannelMask = accumulation.map((area) => smoothstep(2, 24, area / cellArea));
+  for (let z = 1; z < depth - 1; z += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const index = z * width + x;
+      channelMask[index] = (rawChannelMask[index] * 8
+        + (rawChannelMask[index - 1] + rawChannelMask[index + 1]
+          + rawChannelMask[index - width] + rawChannelMask[index + width]) * 2
+        + rawChannelMask[index - width - 1] + rawChannelMask[index - width + 1]
+        + rawChannelMask[index + width - 1] + rawChannelMask[index + width + 1]) / 20;
+    }
+  }
   let floor = Number.POSITIVE_INFINITY;
   for (const height of before) floor = Math.min(floor, height);
   for (let order = descending.length - 1; order >= 0; order -= 1) {
@@ -804,14 +816,19 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
     }
     const incision = strength * 0.35 * Math.sqrt(accumulation[index]) / flowDistance[index];
     const target = (height + incision * receiver) / (1 + incision);
+    // Sparse headwaters need a shallow, broad cut; established channels can
+    // retain the deeper folds that shape the mountain's middle and lower slopes.
+    const maximumCut = spreadCuts
+      ? Math.min(stepX, stepZ) * strength * (0.45 + 1.15 * channelMask[index])
+      : Number.POSITIVE_INFINITY;
     cuts[index] = Math.min(maximumCut, Math.max(0, height - target));
     terrain.heights[index] = height - cuts[index];
   }
   if (!spreadCuts) return;
 
-  // Erosion features narrower than a few height samples produce comb-like
-  // channels. Spread the bounded cut, not the terrain heights, so broad ridges
-  // and intentionally steep slopes keep their shape.
+  // Widen deeper channels over several samples so their banks do not turn
+  // into a one-cell comb. Only cuts are filtered; the original relief stays.
+  const wideWeights = [1, 6, 15, 20, 15, 6, 1];
   for (let z = 1; z < depth - 1; z += 1) {
     for (let x = 1; x < width - 1; x += 1) {
       const index = z * width + x;
@@ -823,7 +840,18 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
         + (cuts[index - 1] + cuts[index + 1] + cuts[index - width] + cuts[index + width]) * 2
         + cuts[index - width - 1] + cuts[index - width + 1]
         + cuts[index + width - 1] + cuts[index + width + 1]) / 20;
-      terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT, floor, before[index] - spread);
+      let wide = spread;
+      if (x >= 3 && x < width - 3 && z >= 3 && z < depth - 3) {
+        wide = 0;
+        for (let dz = -3; dz <= 3; dz += 1) {
+          for (let dx = -3; dx <= 3; dx += 1) {
+            wide += cuts[index + dz * width + dx] * wideWeights[dz + 3] * wideWeights[dx + 3];
+          }
+        }
+        wide /= 4096;
+      }
+      const cut = lerp(spread, wide, channelMask[index]);
+      terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT, floor, before[index] - cut);
     }
   }
 }
