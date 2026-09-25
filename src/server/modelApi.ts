@@ -362,9 +362,9 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     }
     const error = new Error(data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`));
     trace('chat.attempt.rejected', { attempt, error });
-    if (!isRetryableEmptyChatResponse(data) || attempt === 3) throw error;
+    if (!isRetryableChatResponse(data, response.status) || attempt === 3) throw error;
     lastError = error;
-    await abortableDelay(300, options.signal);
+    await abortableDelay(/overload|rate.?limit|server busy/i.test(data.error ?? '') ? attempt * 1000 : 300, options.signal);
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError ?? 'chat_fetch_failed'));
 }
@@ -538,8 +538,10 @@ async function appendReasoningLog(filePath: string, record: Record<string, unkno
   await appendFile(filePath, `${JSON.stringify(record)}\n`, 'utf8');
 }
 
-function isRetryableEmptyChatResponse(data: { ok?: boolean; content?: string; error?: string }): boolean {
-  return /empty ai response/i.test(data.error ?? '')
+function isRetryableChatResponse(data: { ok?: boolean; content?: string; error?: string }, status: number): boolean {
+  return status === 429 || status === 502 || status === 503 || status === 504
+    || /overload|rate.?limit|server busy/i.test(data.error ?? '')
+    || /empty ai response/i.test(data.error ?? '')
     || /terminated/i.test(data.error ?? '')
     || (data.ok === true && typeof data.content === 'string' && !data.content.trim());
 }

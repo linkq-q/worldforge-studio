@@ -202,6 +202,8 @@ describe('map code planner', () => {
       approvedCode: `function plan(api) {
         api.grass('alpine-north', {kind:'circle',center:[0,0],radius:48},
           {preset:'alpine-moss',density:0.62,variation:0.65,height:[0,0,0,0]});
+        api.grass('lakeside', {kind:'circle',center:[30,0],radius:12},
+          {preset:'wetland',density:0.6,height:[0,1,2,4]});
       }`,
       revisionMode: 'first-pass',
       fetchImpl,
@@ -213,7 +215,8 @@ describe('map code planner', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'grass.layer.add', layer: expect.objectContaining({ height: 0.42 }) }),
-      expect.objectContaining({ type: 'grass.generate', habitat: { height: [0, 0, 0, 0] } })
+      expect.objectContaining({ type: 'grass.generate', layerId: 'alpine-north', habitat: undefined }),
+      expect.objectContaining({ type: 'grass.generate', layerId: 'lakeside', habitat: { height: [0, 1, 2, 4] } })
     ]));
   });
 

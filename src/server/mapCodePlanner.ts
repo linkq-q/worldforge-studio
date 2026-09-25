@@ -2075,14 +2075,17 @@ function executeMapCodePlanInternal(
         : inferGrassPreset(`${presetValue ?? ''} ${name ?? ''}`);
       const presetDefinition = GRASS_PRESET_DEFINITIONS.find((item) => item.id === preset) ?? GRASS_PRESET_DEFINITIONS[0];
       // A four-value height band describes terrain habitat, not grass blade height.
-      // Accept this common model slip without losing the authored distribution.
+      // Accept this common model slip; a zero-width band is no useful habitat filter.
       const misplacedHeightBand = normalizeHabitatBand(options.height);
+      const inferredHabitatBand = misplacedHeightBand && misplacedHeightBand[0] < misplacedHeightBand[3]
+        ? misplacedHeightBand
+        : undefined;
       const requestedHeight = misplacedHeightBand
         ? presetDefinition.defaultHeight
         : optionalFinite(options.height) ?? presetDefinition.defaultHeight;
       const authoredHabitat = normalizeGrassHabitat(options.habitat);
-      const habitat = misplacedHeightBand
-        ? { ...authoredHabitat, height: authoredHabitat?.height ?? misplacedHeightBand }
+      const habitat = inferredHabitatBand
+        ? { ...authoredHabitat, height: authoredHabitat?.height ?? inferredHabitatBand }
         : authoredHabitat;
       const requestedMix = options.mix && typeof options.mix === 'object' && !Array.isArray(options.mix)
         ? options.mix as Record<string, unknown>

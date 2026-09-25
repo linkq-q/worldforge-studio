@@ -402,6 +402,18 @@ describe('model API adapter', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it('retries a temporarily overloaded planning provider', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: 'Our servers are currently overloaded. Please try again later.' }), { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: 'function plan(api) {}' }), { status: 200 }));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a botanical garden' }], {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).resolves.toBe('function plan(api) {}');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it('does not retry a non-transient chat error', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ ok: false, error: 'provider_unavailable' }), { status: 400 })
