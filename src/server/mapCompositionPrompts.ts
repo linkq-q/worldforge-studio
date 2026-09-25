@@ -149,7 +149,7 @@ export function buildSceneDirectorPrompt(
           rugs: [{ id: 'main-rug', shape: 'rectangle', center: [0, 0], size: [0.55, 0.42], rotation: 0, pattern: 'border', palette: ['#9f7652', '#e7dfce'], seed: map.seed }]
         },
         focalZoneId: 'zone-id',
-        terrainBase: { preset: 'plain|hills|valley|island|archipelago|canyon|cliff-plateau|dune-desert', seed: map.seed, amplitude: 4, roughness: 0.5, direction: 90 },
+        terrainBase: { preset: 'plain|hills|mountains|valley|island|archipelago|canyon|cliff-plateau|dune-desert', seed: map.seed, amplitude: 4, roughness: 0.5, direction: 90 },
         terrainRefinement: { erosion: 0.22, drainage: 0.08, iterations: 3, talus: 46 }
       },
       intentRequirements: [

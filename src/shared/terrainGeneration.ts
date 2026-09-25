@@ -17,6 +17,7 @@ export { TERRAIN_SURFACE_RECIPES, type TerrainSurfaceRecipe } from './visualDire
 export const TERRAIN_GENERATION_PRESETS = [
   'plain',
   'hills',
+  'mountains',
   'valley',
   'island',
   'archipelago',
@@ -99,6 +100,7 @@ export const TERRAIN_CAPABILITIES: readonly TerrainCapabilityDefinition[] = Obje
   ...[
     ['plain', '平原'],
     ['hills', '丘陵'],
+    ['mountains', '自然山脉'],
     ['valley', '山谷'],
     ['island', '小岛'],
     ['archipelago', '群岛'],
@@ -223,6 +225,19 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
         case 'hills':
           height = params.amplitude * (0.12 + detail * 0.78);
           break;
+        case 'mountains': {
+          // Warp the sampling coordinates, then taper fine ridges in valleys.
+          const u = axis * 1.8;
+          const v = crossAxis * 1.8;
+          const warpX = fbm(u * 0.6 + 17, v * 0.6, params.seed + 401, 0.35);
+          const warpZ = fbm(u * 0.6, v * 0.6 + 31, params.seed + 809, 0.35);
+          const ridge = mountainRidges(u + warpX * 0.65, v + warpZ * 0.65, params.seed, params.roughness,
+            Math.min(terrain.resolutionX, terrain.resolutionZ));
+          const foothills = smoothstep(-0.65, 0.55,
+            fbm(u * 0.38 + 7, v * 0.38 - 11, params.seed + 2039, 0.3));
+          height = params.amplitude * (0.025 + ridge * (0.3 + foothills * 0.65));
+          break;
+        }
         case 'valley': {
           const valleyAxis = Math.abs(axis + noise * 0.16);
           height = params.amplitude * (0.08 + Math.pow(valleyAxis, 1.55) * 0.72 + detail * 0.12);
@@ -495,7 +510,9 @@ export function refineTerrainInPlace(map: EditableMap, value: unknown): TerrainR
     thermalErodeInPlace(map, params.iterations, params.talus, params.erosion);
   }
   if (params.drainage > 0) {
-    carveDrainageInPlace(map, params.drainage);
+    for (let iteration = 0; iteration < params.iterations; iteration += 1) {
+      carveDrainageInPlace(map, params.drainage);
+    }
     thermalErodeInPlace(map, 1, Math.min(70, params.talus + 8), params.erosion * 0.25);
   }
   return params;
@@ -718,8 +735,11 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
   const width = terrain.resolutionX;
   const depth = terrain.resolutionZ;
   const cellCount = width * depth;
+  const stepX = map.box.size[0] / Math.max(1, width - 1);
+  const stepZ = map.box.size[2] / Math.max(1, depth - 1);
   const flowTo = new Int32Array(cellCount).fill(-1);
-  const accumulation = new Float64Array(cellCount).fill(1);
+  const flowDistance = new Float64Array(cellCount);
+  const accumulation = new Float64Array(cellCount).fill(stepX * stepZ);
   const neighbors = [
     [-1, 0], [1, 0], [0, -1], [0, 1],
     [-1, -1], [1, -1], [-1, 1], [1, 1]
@@ -729,13 +749,16 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
     for (let x = 1; x < width - 1; x += 1) {
       const index = z * width + x;
       const height = terrain.heights[index] ?? 0;
-      let lowest = height;
+      let steepest = 0;
       for (const [dx, dz] of neighbors) {
         const other = (z + dz) * width + x + dx;
         const otherHeight = terrain.heights[other] ?? 0;
-        if (otherHeight < lowest) {
-          lowest = otherHeight;
+        const distance = Math.hypot(dx * stepX, dz * stepZ);
+        const slope = (height - otherHeight) / distance;
+        if (slope > steepest) {
+          steepest = slope;
           flowTo[index] = other;
+          flowDistance[index] = distance;
         }
       }
     }
@@ -748,18 +771,18 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
     if (target >= 0) accumulation[target] += accumulation[index];
   }
 
-  const cellSize = Math.min(
-    map.box.size[0] / Math.max(1, width - 1),
-    map.box.size[2] / Math.max(1, depth - 1)
-  );
-  const threshold = Math.max(10, Math.sqrt(cellCount) * 0.45);
-  for (let index = 0; index < cellCount; index += 1) {
-    if (accumulation[index] <= threshold) continue;
-    const carve = Math.min(
-      cellSize * 0.32,
-      Math.log1p(accumulation[index] / threshold) * cellSize * strength * 0.16
-    );
-    terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT, (terrain.heights[index] ?? 0) - carve);
+  // Stream-power incision: drainage area increases erosion; flat sinks and
+  // open boundaries remain outlets. This is not a sediment-transport solver.
+  // Solve downstream first so an upstream sample cannot cut below its receiver.
+  for (let order = descending.length - 1; order >= 0; order -= 1) {
+    const index = descending[order];
+    const target = flowTo[index];
+    const height = terrain.heights[index] ?? 0;
+    if (target < 0 || height <= 0) continue;
+    const receiver = Math.max(0, terrain.heights[target] ?? 0);
+    const incision = strength * 0.35 * Math.sqrt(accumulation[index]) / flowDistance[index];
+    terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT,
+      (height + incision * receiver) / (1 + incision));
   }
 }
 
@@ -810,6 +833,28 @@ function cleanZoneId(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback;
   const clean = value.trim().replace(/[^a-zA-Z0-9:_-]/g, '-').slice(0, 80);
   return clean || fallback;
+}
+
+function mountainRidges(x: number, z: number, seed: number, roughness: number, resolution: number): number {
+  let value = 0;
+  let total = 0;
+  let amplitude = 1;
+  let frequency = 1;
+  let weight = 1;
+  for (let octave = 0; octave < 2; octave += 1) {
+    // Keep at least four grid samples per octave wavelength to avoid aliasing.
+    if (octave > 0 && frequency * 4.8 > (resolution - 1) / 4) break;
+    const noise = valueNoise(x * frequency, z * frequency, seed + octave * 1013);
+    // A rounded crest has a zero slope at its top; abs(noise) made repeated knife-edge peaks.
+    const ridge = Math.cos(noise * Math.PI / 2) ** 2;
+    const signal = ridge * weight;
+    value += signal * amplitude;
+    total += amplitude;
+    weight = clamp(signal * 1.8, 0, 1);
+    amplitude *= 0.16 + roughness * 0.12;
+    frequency *= 2;
+  }
+  return value / total;
 }
 
 function fbm(x: number, z: number, seed: number, roughness: number): number {

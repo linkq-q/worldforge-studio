@@ -42,6 +42,23 @@ describe('deterministic terrain generation', () => {
     expect(sampleTerrainHeight(map, 23, 23)).toBeLessThan(sampleTerrainHeight(map, 23, 0));
   });
 
+  it('generates reproducible mountain relief without changing the stored grid', () => {
+    const first = createEmptyMap('mountains', 'mountains', [192, 64, 144]);
+    const second = structuredClone(first);
+    const resolution = [first.terrain.resolutionX, first.terrain.resolutionZ];
+    const options = { preset: 'mountains', seed: 42, amplitude: 40, roughness: 0.65, direction: 25 };
+    generateTerrainInPlace(first, options);
+    generateTerrainInPlace(second, options);
+    expect(first.terrain.heights).toEqual(second.terrain.heights);
+    expect([first.terrain.resolutionX, first.terrain.resolutionZ]).toEqual(resolution);
+    expect(first.terrain.heights.every((height) => Number.isFinite(height) && height >= 0 && height <= 40)).toBe(true);
+    expect(Math.max(...first.terrain.heights) - Math.min(...first.terrain.heights)).toBeGreaterThan(20);
+    generateTerrainInPlace(second, { ...options, seed: 43 });
+    expect(first.terrain.heights).not.toEqual(second.terrain.heights);
+    generateTerrainInPlace(second, { ...options, direction: 115 });
+    expect(first.terrain.heights).not.toEqual(second.terrain.heights);
+  });
+
   it('smooths a local spike without moving distant terrain, and grades a path in one transaction', () => {
     const map = createEmptyMap('village', 'village', [24, 12, 24]);
     const center = Math.floor(map.terrain.resolutionZ / 2) * map.terrain.resolutionX
@@ -64,6 +81,51 @@ describe('deterministic terrain generation', () => {
     expect(() => applyMapOperations(map, [
       { type: 'terrain.ramp', start: [0, 0], end: [0, 0], width: 3 }
     ])).toThrow('invalid_terrain_ramp_length');
+  });
+
+  it('lets drainage iterations develop channels without excavating terminal basins', () => {
+    const map = createEmptyMap('drainage', 'drainage', [96, 32, 48]);
+    const { resolutionX: width, resolutionZ: depth } = map.terrain;
+    for (let z = 0; z < depth; z += 1) {
+      for (let x = 0; x < width; x += 1) {
+        map.terrain.heights[z * width + x] = 2 + Math.abs(x / (width - 1) - 0.5) * 20 + z / (depth - 1) * 8;
+      }
+    }
+    const once = structuredClone(map);
+    const repeated = structuredClone(map);
+    refineTerrainInPlace(once, { erosion: 0, drainage: 0.8, iterations: 1 });
+    refineTerrainInPlace(repeated, { erosion: 0, drainage: 0.8, iterations: 6 });
+    const removed = (heights: number[]) => heights.reduce((sum, height, i) => sum + map.terrain.heights[i] - height, 0);
+    expect(removed(once.terrain.heights)).toBeGreaterThan(0);
+    expect(removed(repeated.terrain.heights)).toBeGreaterThan(removed(once.terrain.heights));
+    expect(Math.min(...repeated.terrain.heights)).toBeGreaterThanOrEqual(Math.min(...map.terrain.heights));
+    const replay = structuredClone(map);
+    refineTerrainInPlace(replay, { erosion: 0, drainage: 0.8, iterations: 6 });
+    expect(replay.terrain.heights).toEqual(repeated.terrain.heights);
+  });
+
+  it('does not invent drainage on flat or submerged terrain', () => {
+    for (const height of [0, 3, -2]) {
+      const map = createEmptyMap('flat');
+      map.terrain.heights.fill(height);
+      const before = [...map.terrain.heights];
+      refineTerrainInPlace(map, { erosion: 0, drainage: 1, iterations: 12 });
+      expect(map.terrain.heights).toEqual(before);
+    }
+  });
+
+  it('routes drainage by physical slope rather than the lowest neighboring sample', () => {
+    const wide = createEmptyMap('wide', 'wide', [12, 20, 4]);
+    wide.terrain = { resolutionX: 3, resolutionZ: 3, heights: [10, 7, 10, 6, 10, 10, 10, 10, 10] };
+    const tall = structuredClone(wide);
+    tall.box.size = [4, 20, 12];
+    const options = { erosion: 0, drainage: 1, iterations: 1 };
+    refineTerrainInPlace(wide, options);
+    refineTerrainInPlace(tall, options);
+    // In the wide grid north (7m) is steeper; in the tall grid west (6m) is steeper.
+    expect(wide.terrain.heights[4]).toBeGreaterThan(tall.terrain.heights[4] + 0.3);
+    expect(wide.terrain.heights[1]).toBe(7);
+    expect(tall.terrain.heights[3]).toBe(6);
   });
 
   it('applies local brushes after the generated base inside one transaction', () => {

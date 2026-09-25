@@ -100,7 +100,7 @@ describe('map code planner', () => {
     for (const name of ['terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route', 'grass', 'requireAsset', 'asset', 'place', 'random']) {
       expect(prompt).toContain(`api.${name}`);
     }
-    expect(prompt).toContain("'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'");
+    expect(prompt).toContain("'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'");
     expect(prompt).toContain("Region objects use kind, never type");
     expect(prompt).toContain("surface:'paving', material:'concrete'");
     expect(prompt).toContain('[-21,20] means x=-21,z=20 and samples terrain Y');
@@ -1256,6 +1256,21 @@ describe('map code planner', () => {
       expect.objectContaining({ code: 'code.route-unresolved', repaired: false })
     ]));
     expect(progress).not.toContain('新资产布局调整未通过校验，继续使用原布局');
+  });
+
+  it('compiles natural mountains and channel refinement through the shared operation contract', () => {
+    const map = createEmptyMap('mountain study', 'mountain-study', [192, 64, 192]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.terrain('自然山脉', { amplitude: 48, roughness: 0.65, seed: 42, direction: 25 });
+      api.refineTerrain({ erosion: 0.3, drainage: 0.55, iterations: 8, talus: 38 });
+    }`, map);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.generate', preset: 'mountains', seed: 42 }),
+      expect.objectContaining({ type: 'terrain.refine', drainage: 0.55, iterations: 8 })
+    ]));
+    const result = applyMapOperations(map, suggestion.operations);
+    expect(Math.max(...result.terrain.heights) - Math.min(...result.terrain.heights)).toBeGreaterThan(20);
+    expect(map.terrain.heights.every((height) => height === 0)).toBe(true);
   });
 
   it('accepts structured terrain forms and normalizes common semantic enum labels', () => {

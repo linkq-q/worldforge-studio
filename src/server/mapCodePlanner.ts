@@ -138,7 +138,7 @@ const RETIRED_OUTDOOR_MAP_CODE_API_KEYS = new Set([
   'routeNetwork', 'passage', 'sightline', 'distance2D', 'bezierPoint', 'circlePoint', 'tangentYaw', 'faceYaw', 'waterPoint'
 ]);
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
-api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
+api.terrain({preset:'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
 api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); Use smooth to soften a local peak or transition.
 api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); Omitted endpoint heights sample the current terrain; use for paths between different elevations.
@@ -3971,7 +3971,7 @@ Compose the requested terrain, circulation, focal forms, repeated structure and 
 
 The sandbox exposes exactly these 12 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
 Region objects use kind, never type, and must be exactly {kind:'circle',center:[x,z],radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}. Enum fields are closed choices. For concrete or asphalt ground, use surface:'paving', material:'concrete' or material:'asphalt'.
-1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
+1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,direction?,variation?,layers?,layout?,access?,seed?}).
 3. api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?,clearNatural?}).
 4. api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?,levels?,widths?,carveTerrain?,bankHeight?,bankWidth?}). River levels/widths have one value per control point. Use carveTerrain:false only for structure-supported spillways; join their endpoints to the actual source and receiving water elevations. End the sloped mesh at the receiving surface; do not extend a coplanar tail over another water body. High reservoirs need containing terrain/structures; explicit bankHeight (freeboard) and bankWidth raise a bounded shoreline bank. Omit banks when existing terrain or a retaining structure already contains the water. Keep architectural shorelines straight with shorelineSmoothness:0, shorelineIrregularity:0.
@@ -4065,6 +4065,7 @@ Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Optional: use it when the natural/authored distinction materially clarifies the plan; otherwise it is inferred from executable content.'}
 Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?:number,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); top-level height is one grass blade height, while habitat.height is a four-number terrain elevation band; api.spawn([x,z],yawDegrees?).
 Rendering handoff: api.renderSuggestion(text) records a hint for the later, separately confirmed render stage only. Grass color/blade shape/wind, water shading/reflections, material effects, lighting mood and post-processing belong to that stage; do not encode them as terrain or layout changes.
+Natural mountain relief: 'mountains' forms broad ridges; 'hills' stays rounded. Keep routes walkable.
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records an editable guide and lays terrain paving unless surface:'none'. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?,startInset?,endInset?,facing?,role?,groupId?,layer?}) distributes route-owned objects. Use bridge for water crossings.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
 ${MAP_CODE_TOPOLOGY_CONTRACT}
@@ -5184,6 +5185,7 @@ function normalizeCodeTerrainPreset(value: string): TerrainGenerationPreset | un
   const aliases: Array<[RegExp, TerrainGenerationPreset]> = [
     [/\b(?:plain|flat|level)\b|平原|平地|平坦/, 'plain'],
     [/\b(?:rolling|undulating|hilly|hill)\b|丘陵|起伏/, 'hills'],
+    [/\b(?:mountain|mountainous|alpine)\b|山脉|高山/, 'mountains'],
     [/\b(?:valley|basin)\b|山谷|谷地|盆地/, 'valley'],
     [/\b(?:archipelago|island chain)\b|群岛/, 'archipelago'],
     [/\b(?:island|isle)\b|岛屿|小岛/, 'island'],

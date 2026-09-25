@@ -7570,7 +7570,7 @@ function renderObjectTree(objects: MapObject[], parentId: string | null, selecte
 
 function terrainPresetLabel(value: TerrainGenerationPreset): string {
   return ({
-    plain: '平原', hills: '丘陵', valley: '山谷', island: '小岛', archipelago: '群岛', canyon: '峡谷',
+    plain: '平原', hills: '丘陵', mountains: '自然山脉', valley: '山谷', island: '小岛', archipelago: '群岛', canyon: '峡谷',
     'cliff-plateau': '峭壁高原', 'dune-desert': '沙丘荒漠'
   } as const)[value];
 }
