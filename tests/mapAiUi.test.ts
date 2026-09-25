@@ -15,10 +15,11 @@ describe('map AI controls', () => {
   });
 
   it('renders, persists and sends independent Scene Code modes', () => {
-    expect(source).toContain("private mapAiCodePromptMode: MapCodePromptMode = 'coupled';");
+    expect(source).toContain("private mapAiCodePromptMode: MapCodePromptMode = 'main';");
     expect(source).toContain("private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';");
     expect(source).toContain("private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'diagnose';");
     expect(source).toContain('id="map-ai-code-prompt-mode"');
+    expect(source).toContain('value="main"');
     expect(source).toContain('value="coupled"');
     expect(source).toContain('id="map-ai-code-revision-mode"');
     expect(source).toContain('id="map-ai-code-spatial-policy"');

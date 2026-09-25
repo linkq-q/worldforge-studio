@@ -457,7 +457,7 @@ class MapEditor {
   private mapAiProvider: ChatProvider = 'gpt';
   private mapAiAssetProvider: ModelProvider | '' = '';
   private mapAiPaletteId = '';
-  private mapAiCodePromptMode: MapCodePromptMode = 'coupled';
+  private mapAiCodePromptMode: MapCodePromptMode = 'main';
   private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';
   private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'diagnose';
   private mapAiUseSceneAgent = true;
@@ -1682,6 +1682,7 @@ class MapEditor {
           <label class="field compact">
             <span>Scene Code 规划提示</span>
             <select id="map-ai-code-prompt-mode" ${this.state.busy ? 'disabled' : ''}>
+              <option value="main" ${this.mapAiCodePromptMode === 'main' ? 'selected' : ''}>主模式</option>
               <option value="coupled" ${this.mapAiCodePromptMode === 'coupled' ? 'selected' : ''}>共享关系与连续场（大地图）</option>
               <option value="standard" ${this.mapAiCodePromptMode === 'standard' ? 'selected' : ''}>标准完整能力</option>
               <option value="minimal" ${this.mapAiCodePromptMode === 'minimal' ? 'selected' : ''}>极简 12 API（仅室外首轮）</option>
