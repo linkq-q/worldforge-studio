@@ -640,7 +640,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('named APIs are conveniences, not a closed vocabulary');
     expect(prompt).not.toContain('api.keepDry([x,z],clearance?)');
     expect(prompt).toContain('api.waterPoint(waterId,[x,z],draft?)');
-    expect(prompt).toContain('api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:');
+    expect(prompt).not.toContain('api.routeNetwork');
+    expect(prompt).not.toContain('api.distance2D');
     expect(prompt).toContain('clearNatural:true');
     expect(prompt).not.toContain('api.ellipsePoint(index,count,radiusX,radiusZ');
     expect(prompt).toContain('mix?:{short?,tall?,flowers?}');
@@ -742,12 +743,15 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('api.streetGrid');
     expect(prompt).toContain('api.placeAlongRoute({routeId');
     expect(prompt).not.toContain('api.placeStreetFrontage');
-    expect(prompt).toContain('api.sightline({from:[x,y,z]');
-    expect(prompt).toContain('api.passage({points:[[x,z]|[x,y,z],...]');
+    expect(prompt).not.toContain('api.sightline');
+    expect(prompt).not.toContain('api.passage');
     expect(prompt).not.toContain('api.connectionGap({a:placementReferenceOrExistingObjectId');
-    expect(prompt).toContain('never move objects, optimize an aesthetic score, or impose symmetry');
     expect(prompt).toContain('returns the route ID string, not an object');
-    expect(prompt).toContain('api.routeNetwork returns a string[] of route IDs in edge order');
+    for (const name of ['routeNetwork', 'passage', 'sightline', 'distance2D']) {
+      expect(() => executeMapCodePlan(`function plan(api) { api.${name}(); }`, createEmptyMap(), [], {
+        scope: 'scene', legacyApis: false
+      })).toThrow(`api.${name} is not a function`);
+    }
     expect(prompt).not.toContain('ordinary building fabric');
     expect(prompt).not.toContain('## Callable capability manifest');
     expect(prompt).not.toContain('## Scene pattern guide');
@@ -1925,7 +1929,7 @@ describe('map code planner', () => {
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(repairRequest.messages.at(-1).content).toContain('api.route(...) returns the route ID string, not an object');
     expect(repairRequest.messages.at(-1).content).toContain('Never use mainRoute.id');
-    expect(repairRequest.messages.at(-1).content).toContain('api.routeNetwork returns a string[]');
+    expect(repairRequest.messages.at(-1).content).not.toContain('api.routeNetwork');
   });
 
   it('keeps a usable scene when the model still misses the requested asset minimum after one repair', async () => {
