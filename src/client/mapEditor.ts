@@ -6236,6 +6236,10 @@ class MapEditor {
       return;
     }
     const hoverOnly = !first && event.buttons === 0;
+    if (hoverOnly && this.state.tool === 'select' && !this.aimingLightTargetId && !this.placingAssetId) {
+      this.renderer.domElement.style.cursor = 'default';
+      return;
+    }
     if (hoverOnly) {
       const hits = this.raycast(event);
       if (this.aimingLightTargetId) {
@@ -6253,9 +6257,6 @@ class MapEditor {
         this.updateBrushPreview(surfaceHit(hits));
         return;
       }
-      const objectHit = selectableObjectHit(hits);
-      this.renderer.domElement.style.cursor = objectHit ? 'pointer' : 'default';
-      return;
     }
     if (!first && (!this.painting || (event.buttons & 1) === 0)) return;
     if (this.isTransformControlPointerActive()) {
