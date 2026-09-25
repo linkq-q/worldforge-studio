@@ -128,9 +128,8 @@ describe('map AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(composerRequest.messages[0].content).toContain('Unified scene ownership');
-    expect(composerRequest.messages[0].content).toContain('Natural or single-focus scenes may omit api.design');
-    expect(composerRequest.messages[0].content).toContain('multiple functional areas must call api.design once');
-    expect(composerRequest.messages[0].content).toContain('api.design({experienceMode');
+    expect(composerRequest.messages[0].content).toContain('For scenes with multiple functional areas');
+    expect(composerRequest.messages[0].content).not.toContain('api.design');
     expect(composerRequest.messages[1].content).toBe('Create a compact ceremonial arena');
     expect(suggestion.codePlan?.sceneIntent).toBe('authored');
     expect(suggestion.codePlan?.functions).toContain('circlePoint');

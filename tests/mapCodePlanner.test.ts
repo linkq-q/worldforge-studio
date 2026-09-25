@@ -264,9 +264,8 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
   });
 
-  it('exposes viewpoints without prescribing one camera or spatial archetype', () => {
+  it('keeps viewpoint choice open without prescribing one camera or spatial archetype', () => {
     const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 12, 'scene');
-    expect(prompt).toContain("role:'entry'|'route'|'node'|'overview'");
     expect(prompt).toContain('Inspect the scene from the viewpoints that matter to the request');
     expect(prompt).not.toContain('45-degree oblique overview');
     expect(prompt).not.toContain('street-and-block fabric');
@@ -659,11 +658,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('not a scene recipe, minimum layer count or requirement to decompose every building');
     expect(prompt).toContain('api.circlePoint(index,count,radius,center?)');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
-    expect(prompt).toContain("spatialOrganization?:'centralized'");
-    expect(prompt).toContain("footprintFamily?:'bar'");
-    expect(prompt).toContain("massingProfile?:'monolith'");
-    expect(prompt).toContain("structuralRhythm?:'wall-bays'");
-    expect(prompt).toContain('functionalSequence?:string[]');
+    expect(prompt).not.toContain('api.design');
     expect(prompt).not.toContain('Two-tier arena shell with a ground gateway');
     expect(prompt).not.toContain('generateChineseArena');
     expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
@@ -743,7 +738,7 @@ describe('map code planner', () => {
       '生成一座紧凑、可游玩的中世纪小镇'
     );
 
-    expect(prompt).toContain("spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape'");
+    expect(prompt).not.toContain('api.design');
     expect(prompt).not.toContain('api.streetGrid');
     expect(prompt).toContain('api.placeAlongRoute({routeId');
     expect(prompt).not.toContain('api.placeStreetFrontage');
@@ -777,18 +772,19 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('Structural anchors are mandatory');
   });
 
-  it('gives unified outdoor Code semantic intent and complete scene ownership', () => {
+  it('gives unified outdoor Code complete scene ownership without design declarations', () => {
     const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 6, 'scene');
 
     expect(prompt).toContain('Unified scene ownership');
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
-    expect(prompt).toContain('Natural or single-focus scenes may omit api.design');
-    expect(prompt).toContain('multiple functional areas must call api.design once');
+    expect(prompt).not.toContain('api.design');
+    expect(() => executeMapCodePlan(
+      'function plan(api) { api.design({}); }', createEmptyMap(), [], { scope: 'scene', legacyApis: false }
+    )).toThrow('api.design is not a function');
+    expect(prompt).toContain('For scenes with multiple functional areas');
     expect(prompt).toContain('one purposeful repeat family');
     expect(prompt).toContain('Perimeter fences, edge vegetation and scattered rocks do not satisfy core-area density');
     expect(prompt).toContain('Asset-family count is not object count');
-    expect(prompt).toContain('api.design({experienceMode');
-    expect(prompt).toContain('does not move, add, prune, or fill objects');
     expect(prompt).toContain('api.sampleProbabilityField');
     expect(prompt).not.toContain('api.grassField');
     expect(prompt).toContain('api.environmentSample');
@@ -796,18 +792,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('marks?:[{id,minDistance?,maxPoints?,cluster?}]');
     expect(prompt).toContain('Cross-mark spacing uses the global minDistance');
     expect(prompt).not.toContain('api.optimizeLayout');
-    expect(prompt).toContain("substrate?:'dry'|'water'|'amphibious'|'underwater'");
-    expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
-    expect(prompt).toContain("footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon'");
-    expect(prompt).toContain("massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings'");
-    expect(prompt).toContain("structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation'");
-    expect(prompt).toContain('functionalSequence?:string[]');
-    expect(prompt).toContain("assemblyId?:string and assemblyRole?:'opening'");
     expect(prompt).toContain('canonical module spans');
-    expect(prompt).toContain('Use an assembly only when a building benefits from reusable placed modules');
-    expect(prompt).toContain('moduleKeys');
     expect(prompt).toContain('elevation?:number');
-    expect(prompt).toContain('minCount?:1..64');
     expect(prompt).toContain('api.bridge({waterId');
     expect(prompt).toContain('api.terrain');
     expect(prompt).toContain('api.modifyTerrain');
@@ -870,6 +856,7 @@ describe('map code planner', () => {
     }));
 
     await generateMapCodeSuggestion('生成大学校园', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       scope: 'scene', minNewAssets: 0, maxNewAssets: 0, focusPrompt: '图书馆主楼'
     });
@@ -962,10 +949,9 @@ describe('map code planner', () => {
     };
 
     const prompt=buildMapCodePlannerSystemPrompt(map,[],0,8,'scene','refine');
-    expect(prompt).toContain('api.design is an optional semantic patch');
+    expect(prompt).not.toContain('api.design');
     expect(prompt).toContain('do not repair unrelated density, layer or composition findings');
     expect(prompt).toContain('"totalObjects":315');
-    expect(prompt).toContain('"id":"new-district"');
     expect(prompt).toContain('object-314');
     expect(prompt).toContain('Representative existing objects sampled across the whole map');
   });
@@ -1466,6 +1452,7 @@ describe('map code planner', () => {
       .mockResolvedValueOnce(response(repaired));
 
     const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
@@ -1528,6 +1515,7 @@ describe('map code planner', () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(response(sparse)).mockResolvedValueOnce(response(repaired));
 
     const suggestion = await generateMapCodeSuggestion('生成道路两侧紧凑的建筑街区', createEmptyMap('District','district',[64,12,64]), [], {
+      legacyApis: true,
       apiBase:'https://example.test',provider:'gpt',fetchImpl,minNewAssets:0,maxNewAssets:0,scope:'scene'
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
@@ -1563,6 +1551,7 @@ describe('map code planner', () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(response(incomplete)).mockResolvedValueOnce(response(repaired));
     const map = createEmptyMap('Entry');
     const suggestion = await generateMapCodeSuggestion('生成有连续门廊的仪式入口', map, [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
@@ -1610,6 +1599,7 @@ describe('map code planner', () => {
     ));
 
     const suggestion = await generateMapCodeSuggestion('亚特兰蒂斯', createEmptyMap('亚特兰蒂斯'), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
@@ -1667,6 +1657,7 @@ describe('map code planner', () => {
     const progress: string[] = [];
 
     const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene',
       onProgress: (event) => progress.push(event.label)
@@ -1703,6 +1694,7 @@ describe('map code planner', () => {
       .mockResolvedValueOnce(response(rewritten));
 
     const suggestion = await generateMapCodeSuggestion('花园', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
@@ -1735,6 +1727,7 @@ describe('map code planner', () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(response(original)).mockResolvedValueOnce(response(repair));
 
     const suggestion = await generateMapCodeSuggestion('花园', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
@@ -1774,6 +1767,7 @@ describe('map code planner', () => {
       .mockResolvedValueOnce(response(timedOutEdit));
 
     const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
@@ -2291,6 +2285,7 @@ describe('map code planner', () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(response(original)).mockResolvedValueOnce(response(repair));
 
     const suggestion = await generateMapCodeSuggestion('生成水下遗迹', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true, spatialPolicy: 'repair'
     });
@@ -2874,6 +2869,7 @@ describe('map code planner', () => {
       headers: { 'Content-Type': 'application/json' }
     }));
     const suggestion = await generateMapCodeSuggestion('两处建筑沿路展开', createEmptyMap(), [], {
+      legacyApis: true,
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl, scope: 'scene', discoveryOnly: true
     });
 
@@ -2885,6 +2881,7 @@ describe('map code planner', () => {
       .replace('relations:[]', "relations:[{id:'main-side',kind:'support',sourceSelector:'主殿',sourceGroupId:'main',targetGroupId:'side',strength:'normal'}]")
       .replace("size:[2,2,2]", "size:[12,8,8]");
     const connected = await generateMapCodeSuggestion('两处建筑沿路展开', createEmptyMap(), [], {
+      legacyApis: true,
       approvedCode: connectedCode, scope: 'scene', discoveryOnly: true
     });
     expect(connected.diagnostics?.some((issue) => issue.code === 'scene.group-relations-unclear'

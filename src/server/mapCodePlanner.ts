@@ -130,7 +130,7 @@ const RETIRED_OUTDOOR_MAP_CODE_API_KEYS = new Set([
   'clamp', 'lerp', 'remap', 'smoothstep', 'rotate2D', 'mirrorPoint', 'linePoint',
   'sampleBezier', 'sampleBezierFrames', 'sampleBezierFramesBySpacing', 'ellipsePoint',
   'keepDry', 'gridPoints', 'offsetPolygon', 'insetPolygon', 'gridInsideRegion',
-  'localToWorld3D', 'noise2D', 'fbm2D', 'optimizeLayout', 'assetSpace', 'connectionGap', 'placeRelative', 'attach'
+  'localToWorld3D', 'noise2D', 'fbm2D', 'optimizeLayout', 'assetSpace', 'connectionGap', 'placeRelative', 'attach', 'design'
 ]);
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
@@ -184,6 +184,8 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   discoveryOnly?: boolean;
   /** Reuse a user-approved Code candidate without asking the model to redesign it. */
   approvedCode?: string;
+  /** Replay historical plans in diagnostics; regular editor generation never enables this. */
+  legacyApis?: boolean;
   /** Local experiment overrides; never applied to regular editor requests. */
   systemPromptOverride?: string;
   validateCode?: (code: string) => unknown;
@@ -594,6 +596,7 @@ interface CodeExecutionIssue {
 }
 
 interface MapCodeReplayContext {
+  legacyApis?: boolean;
   refineScope?: MapRefineScope;
   mapId: string;
   mapVersion: number;
@@ -845,6 +848,7 @@ export async function generateMapCodeSuggestion(
     requestMode,
     scope: options.scope,
     promptMode: options.promptMode,
+    legacyApis: options.legacyApis,
     spatialPolicy: options.spatialPolicy,
     refineScope,
     maxNewAssets,
@@ -932,6 +936,7 @@ async function adaptMapCodeToGeneratedAssets(
       maxNewAssets,
       scope: options.scope,
       promptMode: options.promptMode,
+      legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       executionTimeoutMs: clampInteger(
         options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
@@ -963,6 +968,7 @@ async function adaptMapCodeToGeneratedAssets(
       maxNewAssets,
       scope: options.scope,
       promptMode: options.promptMode,
+      legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? MAP_CODE_FINAL_TIMEOUT_MS, 1, MAP_CODE_FINAL_TIMEOUT_MS),
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
@@ -1072,6 +1078,7 @@ function executeFinalMapCodeReplay(
     maxNewAssets: context.maxNewAssets,
     scope: context.scope,
     promptMode: context.promptMode,
+    legacyApis: context.legacyApis,
     spatialPolicy: context.spatialPolicy,
     executionTimeoutMs,
     refinableObjectIds: new Set(context.refinableObjectIds)
@@ -3955,12 +3962,12 @@ export function buildMapCodePlannerSystemPrompt(
   const refineObjects = compactRefineObjectContext(map, refinableObjectIds);
   const refineSpatialSummary = mapRefineSpatialSummary(map);
   const refineContext = requestMode === 'refine'
-    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent or regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. If the map already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true; refinable objects belong to the current unapplied AI preview. To replace a bridge, call api.bridge with replaceObjectId. api.design is an optional semantic patch: declare only entries intentionally changed; omitted entries are preserved. Use the spatial summary as context, but do not repair unrelated density, layer or composition findings. Existing design semantics: ${JSON.stringify(map.designSemantics)}. Existing guides: ${JSON.stringify(map.guides)}. Full-map spatial summary: ${JSON.stringify(refineSpatialSummary)}. Representative existing objects sampled across the whole map (all refinable objects are retained): ${JSON.stringify(refineObjects)}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
+    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent or regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. If the map already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true; refinable objects belong to the current unapplied AI preview. To replace a bridge, call api.bridge with replaceObjectId. Use the spatial summary as context, but do not repair unrelated density, layer or composition findings. Existing guides: ${JSON.stringify(map.guides)}. Full-map spatial summary: ${JSON.stringify(refineSpatialSummary)}. Representative existing objects sampled across the whole map (all refinable objects are retained): ${JSON.stringify(refineObjects)}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
     : '';
   const scopeContract = requestMode === 'refine'
     ? refineContext
     : scope === 'scene'
-    ? `\n## Unified scene ownership\nYou author the complete outdoor scene in one coordinate system: terrain, water, surfaces, vegetation, constructed forms, circulation and their relationships.\nNatural or single-focus scenes may omit api.design when persistent labels add no value. Authored scenes with multiple functional areas must call api.design once, give every major area a real region and spatial role, and assign its core placements groupId and layer. Each major built group needs a meaningful ensemble of related primary, support and detail objects plus one purposeful repeat family with multiple placements where real-world use calls for repetition. Perimeter fences, edge vegetation and scattered rocks do not satisfy core-area density.\nLet the user's request determine landform, ecology, architectural language, density, hierarchy, rhythm and negative space. Use the spatial APIs to keep entrances, routes, footprints, adjacency and compound structures coherent, not to force a template or optimize a diagnostic score. Intentional open space is valid and is never auto-filled merely to satisfy metadata.\n`
+    ? `\n## Unified scene ownership\nYou author the complete outdoor scene in one coordinate system: terrain, water, surfaces, vegetation, constructed forms, circulation and their relationships.\nFor scenes with multiple functional areas, give every major area a concrete route and related primary, support and detail placements. Each major built group needs a meaningful ensemble of related primary, support and detail objects plus one purposeful repeat family with multiple placements where real-world use calls for repetition. Perimeter fences, edge vegetation and scattered rocks do not satisfy core-area density.\nLet the user's request determine landform, ecology, architectural language, density, hierarchy, rhythm and negative space. Use the spatial APIs to keep entrances, routes, footprints, adjacency and compound structures coherent, not to force a template or optimize a diagnostic score. Intentional open space is valid and is never auto-filled merely to satisfy metadata.\n`
     : '';
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
@@ -3988,14 +3995,12 @@ Do not randomize the rotation of directional assets unless the requested composi
 
 ## Spatial planning boundary
 Use spatial contracts where calculation helps: connected entrances and routes, believable footprints and setbacks, explicit water/ground substrate, and connected module geometry. The model remains free to choose the scene's form, terrain, ecology, density, style and detail language.
-Inspect the scene from the viewpoints that matter to the request. Use api.design groups and assemblies for multi-area authored scenes so each functional area has executable spatial ownership; do not invent groups for a natural or genuinely single-focus scene.
+Inspect the scene from the viewpoints that matter to the request. For multi-area authored scenes, make each functional area concrete through terrain, routes and placements.
 Keep generated coordinates inside bounds, important circulation usable, and repeated geometry deterministic from api.seed. Visible prompt-specific content should use real assets; proxies are for abstract markers or unavailable visuals.
 
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Optional: use it when the natural/authored distinction materially clarifies the plan; otherwise it is inferred from executable content.'}
-Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',substrate?:'dry'|'water'|'amphibious'|'underwater',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). Optional: call once only when these persistent labels clarify real spatial responsibilities. The runtime preserves declared semantics and explicit relations as metadata but does not move, add, prune, or fill objects merely to satisfy them. Make any declared focus, arrival, axis and boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Declare substrate for every group affected by water: dry means its primary forms need dry ground, water means surface/floating composition, amphibious deliberately spans shore and water, and underwater remains below the water surface. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
-Compound architecture: api.design may declare assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[],spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network',footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon',massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings',structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation',functionalSequence?:string[]}]. Use an assembly only when a building benefits from reusable placed modules. Members share assemblyId and groupId; an actual entrance member may use assemblyRole:'opening'. Use bounded loops, canonical module spans and explicit story elevations for connected multi-part construction. Whole reusable assets remain valid for buildings that do not benefit from decomposition.
 Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?).
 Rendering handoff: api.renderSuggestion(text) records a hint for the later, separately confirmed render stage only. Grass color/blade shape/wind, water shading/reflections, material effects, lighting mood and post-processing belong to that stage; do not encode them as terrain or layout changes.
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records an editable guide and lays terrain paving unless surface:'none'. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,groupId?,guideRole?,curve?,width?,surface?,material?,tags?}]}) creates a free-form connected graph. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?,startInset?,endInset?,facing?,role?,groupId?,layer?}) distributes route-owned objects. Use bridge for water crossings.
@@ -4012,7 +4017,6 @@ ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
 ${MAP_CODE_SPATIAL_FEEDBACK_CONTRACT}
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); terrain:true makes a three-component position terrain-relative, with y as its elevation offset. api.placeAlongRoute(...) uses existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
-api.place and api.placeBetween also accept assemblyId?:string and assemblyRole?:'opening'. These labels persist on objects; they do not generate geometry or change coordinates by themselves.
 Include doors, windows, banners, signs and facade ornaments in their host asset when they must remain physically joined to it.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId); api.noChange(reason). These APIs are available only during refinement. noChange is exclusive: use it only when no operation is needed.
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
@@ -4033,7 +4037,7 @@ Append this orientation instruction to every generated asset prompt: "Coordinate
 
 ## Final self-check before returning
 1. Exactly one function named plan and no markdown.
-2. ${requestMode === 'refine' ? 'Refine code does not call sceneIntent, preserves unrelated content, and either emits at least one delta operation or calls noChange exactly once.' : 'Unified scene code emits the relevant environment and recognizable content with bounded calculations; sceneIntent/design appear only when their labels are useful.'}
+2. ${requestMode === 'refine' ? 'Refine code does not call sceneIntent, preserves unrelated content, and either emits at least one delta operation or calls noChange exactly once.' : 'Unified scene code emits the relevant environment and recognizable content with bounded calculations; sceneIntent appears only when its label is useful.'}
 3. All positions are inside the stated bounds or intentionally clamped.
 4. No undefined point, invalid array index, direct array arithmetic, division by zero, invented asset ID, or unbounded placement loop.
 5. Generated assets are declared with requireAsset and bound only through api.asset.
@@ -4241,6 +4245,7 @@ function runFirstPassMapCodeDiscovery(
       maxNewAssets,
       scope: options.scope,
       promptMode: options.promptMode,
+      legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       executionTimeoutMs: clampInteger(
         options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
@@ -4286,6 +4291,7 @@ async function discoverMapCodeWithRepairs(
         maxNewAssets,
         scope: options.scope,
         promptMode: options.promptMode,
+        legacyApis: options.legacyApis,
         spatialPolicy: options.spatialPolicy,
         executionTimeoutMs: clampInteger(
           options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
