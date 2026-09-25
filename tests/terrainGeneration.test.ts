@@ -42,6 +42,30 @@ describe('deterministic terrain generation', () => {
     expect(sampleTerrainHeight(map, 23, 23)).toBeLessThan(sampleTerrainHeight(map, 23, 0));
   });
 
+  it('smooths a local spike without moving distant terrain, and grades a path in one transaction', () => {
+    const map = createEmptyMap('village', 'village', [24, 12, 24]);
+    const center = Math.floor(map.terrain.resolutionZ / 2) * map.terrain.resolutionX
+      + Math.floor(map.terrain.resolutionX / 2);
+    map.terrain.heights[center] = 8;
+    const smoothed = applyMapOperations(map, [
+      { type: 'terrain.brush', mode: 'smooth', point: [0, 0, 0], size: 4, strength: 1 }
+    ]);
+    expect(smoothed.terrain.heights[center]).toBeGreaterThan(0);
+    expect(smoothed.terrain.heights[center]).toBeLessThan(8);
+    expect(smoothed.terrain.heights[0]).toBe(0);
+
+    const graded = applyMapOperations(smoothed, [
+      { type: 'terrain.ramp', start: [-8, 0], end: [8, 0], width: 3,
+        startHeight: 1, endHeight: 5, softness: 0.5 }
+    ]);
+    expect(sampleTerrainHeight(graded, -7, 0)).toBeLessThan(sampleTerrainHeight(graded, 7, 0));
+    expect(sampleTerrainHeight(graded, 0, 8)).toBe(0);
+    expect(graded.terrain.heights[0]).toBe(0);
+    expect(() => applyMapOperations(map, [
+      { type: 'terrain.ramp', start: [0, 0], end: [0, 0], width: 3 }
+    ])).toThrow('invalid_terrain_ramp_length');
+  });
+
   it('applies local brushes after the generated base inside one transaction', () => {
     const map = createEmptyMap('ordered', 'terrain-ordered');
     const base = applyMapOperations(map, [

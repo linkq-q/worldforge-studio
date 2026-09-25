@@ -145,6 +145,8 @@ Write only a bounded Scene Program in TypeScript-like syntax. No imports, functi
 Available API:
 - scene.terrain(preset, { amplitude?, roughness?, seed?, direction? })
 - scene.modifyTerrain(modifier, region, { amplitude?, softness?, direction?, variation?, layers?, layout?, access? })
+- scene.sculptTerrain({ mode: "raise"|"lower"|"flatten"|"smooth", point:[x,z], radius?, strength?, targetHeight? })
+- scene.rampTerrain({ start:[x,z], end:[x,z], width, startHeight?, endHeight?, softness?, strength? })
 - scene.refineTerrain({ erosion?, drainage?, iterations?, talus? })
 - scene.guide(id, { name?, points: [[x,z],...], curve?: "polyline"|"catmull-rom", closed?: boolean, width?: number, tags?: string[] }) -> Guide
 - scene.parallelGuides(idPrefix, polygon, { direction, spacing, inset?, width?, tags? }) -> Guide[]
@@ -303,6 +305,24 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
         access
       });
       return modifier;
+    },
+    sculptTerrain: (optionsValue) => {
+      const options = objectValue(optionsValue, 'invalid_terrain_sculpt');
+      const mode = stringValue(options.mode, 'invalid_terrain_sculpt_mode');
+      if (mode !== 'raise' && mode !== 'lower' && mode !== 'flatten' && mode !== 'smooth') throw new Error('invalid_terrain_sculpt_mode');
+      const [x, z] = point2(options.point, 'invalid_terrain_sculpt_point');
+      emit(context, { type: 'terrain.brush', mode, point: [x, finiteNumber(options.targetHeight, 0), z],
+        size: finiteNumber(options.radius, 3), strength: finiteNumber(options.strength, 0.5),
+        targetHeight: optionalFiniteNumber(options.targetHeight) });
+      return null;
+    },
+    rampTerrain: (optionsValue) => {
+      const options = objectValue(optionsValue, 'invalid_terrain_ramp');
+      emit(context, { type: 'terrain.ramp', start: point2(options.start, 'invalid_terrain_ramp_start'),
+        end: point2(options.end, 'invalid_terrain_ramp_end'), width: finiteNumber(options.width, 3),
+        startHeight: optionalFiniteNumber(options.startHeight), endHeight: optionalFiniteNumber(options.endHeight),
+        softness: optionalFiniteNumber(options.softness), strength: optionalFiniteNumber(options.strength) });
+      return null;
     },
     refineTerrain: (optionsValue = {}) => {
       const options = objectValue(optionsValue, 'invalid_terrain_refinement_options');

@@ -16,6 +16,16 @@ function scopedMap() {
 }
 
 describe('scoped Scene Code refinement', () => {
+  it('keeps local smooth and ramp shaping inside the selected visual zone', () => {
+    const map = scopedMap();
+    const result = scopeMapRefinement(map, [
+      { type: 'terrain.brush', mode: 'smooth', point: [10, 0, 0], size: 2, strength: 0.8 },
+      { type: 'terrain.ramp', start: [8, 0], end: [12, 0], width: 2, softness: 0.5 },
+      { type: 'terrain.ramp', start: [8, 0], end: [-8, 0], width: 2, softness: 0.5 }
+    ], { targetVisualZoneId: 'work' });
+    expect(result.map(operation => operation.type)).toEqual(['terrain.brush', 'terrain.ramp']);
+  });
+
   it('resolves child edits in world space and prevents parent edits from taking children out of scope', () => {
     const map = scopedMap();
     const result = scopeMapRefinement(map, [

@@ -1,5 +1,6 @@
 import {
   applyTerrainBrushInPlace,
+  applyTerrainRampInPlace,
   createId,
   DEFAULT_WATER_DEPTH,
   createMapObject,
@@ -20,6 +21,7 @@ import {
   type MapWaterBody,
   type WorldScaleProfile,
   type TerrainBrushMode,
+  type TerrainRampParams,
   type Transform3D
 } from './map';
 import { carveWaterBasinInPlace, ensureRiverSurfaceLevels } from './mapWater';
@@ -189,6 +191,7 @@ export type MapOperation =
   | ({ type: 'terrain.refine' } & Partial<TerrainRefinementParams>)
   | ({ type: 'terrain.surface' } & Partial<TerrainSurfaceParams> & Pick<TerrainSurfaceParams, 'surface' | 'region'>)
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
+  | ({ type: 'terrain.ramp' } & TerrainRampParams)
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
   | { type: 'grass.layer.add'; layer: GrassLayerInput }
   | { type: 'grass.layer.update'; layerId: string; patch: GrassLayerPatch }
@@ -249,7 +252,7 @@ export interface MapAiSuggestion {
 }
 
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);
-const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten']);
+const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten', 'smooth']);
 const GRASS_BRUSH_MODES = new Set<GrassBrushMode>(['add', 'erase', 'density', 'smooth']);
 export function applyMapOperations(map: EditableMap, operations: readonly MapOperation[]): EditableMap {
   if (!Array.isArray(operations) || operations.length === 0) throw new Error('empty_operations');
@@ -356,6 +359,19 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           operation.strength ?? 0.3,
           operation.targetHeight
         );
+        terrainChanged = true;
+        break;
+      case 'terrain.ramp':
+        if (!Array.isArray(operation.start) || !Array.isArray(operation.end)
+          || operation.start.length !== 2 || operation.end.length !== 2
+          || [...operation.start, ...operation.end, operation.width, operation.softness ?? 0.5, operation.strength ?? 1,
+            operation.startHeight ?? 0, operation.endHeight ?? 0].some((value) => typeof value !== 'number' || !Number.isFinite(value))
+          || operation.width <= 0 || operation.width > Math.max(next.box.size[0], next.box.size[2])
+          || (operation.softness !== undefined && (operation.softness < 0 || operation.softness > 1))
+          || (operation.strength !== undefined && (operation.strength < 0 || operation.strength > 1))) {
+          throw new Error('invalid_terrain_ramp');
+        }
+        applyTerrainRampInPlace(next, operation);
         terrainChanged = true;
         break;
       case 'paint.add':

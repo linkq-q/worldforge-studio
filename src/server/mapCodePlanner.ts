@@ -121,7 +121,7 @@ const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
 const ASSET_CATALOG_SNAPSHOT_CONTEXT_MAX_CHARS = 12_000;
 const GENERATED_ASSET_CONTEXT_MAX_CHARS = 12_000;
 const MINIMAL_MAP_CODE_API_KEYS = [
-  'terrain', 'modifyTerrain', 'surface', 'water', 'route',
+  'terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
 ] as const;
 // Hide retired outdoor APIs from new plans; keep implementations for historical replay.
@@ -136,6 +136,8 @@ const RETIRED_OUTDOOR_MAP_CODE_API_KEYS = new Set([
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
+api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); Use smooth to soften a local peak or transition.
+api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); Omitted endpoint heights sample the current terrain; use for paths between different elevations.
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true only when the authored area must exclude loose natural objects. Route surfaces are clear automatically.
 api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge, height is terrain Y; choose each layer's band from the intended ecology, not from a scene-name keyword.
 api.environmentSample([x,z],{guideIds?:string[],region?:circle|path|polygon,waterId?:string}) returns x,z,height,slope,waterDistance,guideDistance and signed regionDistance when region is requested; negative regionDistance is inside. With waterId, water is {id,inside,surfaceHeight,depth}; surfaceHeight is null outside that water body. Use the sampled surfaceHeight for floating assets after checking inside.
@@ -1688,6 +1690,33 @@ function executeMapCodePlanInternal(
         ...params
       });
       return modifier;
+    },
+    sculptTerrain(optionsValue: Record<string, unknown>): void {
+      record('sculptTerrain');
+      const options = codeObject(optionsValue, 'invalid_map_code_terrain_sculpt');
+      const mode = String(options.mode ?? '');
+      if (mode !== 'raise' && mode !== 'lower' && mode !== 'flatten' && mode !== 'smooth') {
+        throw new Error('invalid_map_code_terrain_sculpt_mode');
+      }
+      const [x, z] = point2(options.point);
+      emitSceneOperation({
+        type: 'terrain.brush', mode, point: [x, options.targetHeight === undefined ? 0 : finite(options.targetHeight), z],
+        size: options.radius === undefined ? 3 : finite(options.radius),
+        strength: options.strength === undefined ? 0.5 : finite(options.strength),
+        ...(options.targetHeight === undefined ? {} : { targetHeight: finite(options.targetHeight) })
+      });
+    },
+    rampTerrain(optionsValue: Record<string, unknown>): void {
+      record('rampTerrain');
+      const options = codeObject(optionsValue, 'invalid_map_code_terrain_ramp');
+      emitSceneOperation({
+        type: 'terrain.ramp', start: point2(options.start), end: point2(options.end),
+        width: finite(options.width),
+        ...(options.startHeight === undefined ? {} : { startHeight: finite(options.startHeight) }),
+        ...(options.endHeight === undefined ? {} : { endHeight: finite(options.endHeight) }),
+        ...(options.softness === undefined ? {} : { softness: finite(options.softness) }),
+        ...(options.strength === undefined ? {} : { strength: finite(options.strength) })
+      });
     },
     refineTerrain(optionsValue: Record<string, unknown> = {}): void {
       record('refineTerrain');
@@ -3590,6 +3619,7 @@ const SCENE_PREVIEW_OPERATION_TYPES = new Set([
   'terrain.set',
   'terrain.generate',
   'terrain.brush',
+  'terrain.ramp',
   'terrain.modify',
   'terrain.refine',
   'terrain.surface',
@@ -3916,7 +3946,7 @@ Use finite numbers and bounded loops. Map bounds are x=${bounds.minX}..${bounds.
 Map height is ${map.box.size[1]}m: terrain and water levels cap at ${map.box.size[1] - 0.05}m, water depth caps at ${MAX_WATER_DEPTH}m. Mountain, ridge and terrace relief shrinks in narrow regions; a narrow ridge becomes a mountain. Elevated lakes need surrounding terrain or a retaining structure.
 Compose the requested terrain, circulation, focal forms, repeated structure and natural detail directly. Preserve intentional open space and vary density, height and rhythm instead of filling a uniform grid.
 
-The sandbox exposes exactly these 10 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
+The sandbox exposes exactly these 12 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
 Region objects use kind, never type, and must be exactly {kind:'circle',center:[x,z],radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}. Enum fields are closed choices. For concrete or asphalt ground, use surface:'paving', material:'concrete' or material:'asphalt'.
 1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,direction?,variation?,layers?,layout?,access?,seed?}).
@@ -3928,6 +3958,8 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 8. api.asset(key,index?) returns the generated asset ID; never invent asset IDs.
 9. api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,dimensions?,terrain?,role?}) returns a placement reference.
 10. api.random(min?,max?) is deterministic for this map seed.
+11. api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}) locally shapes or smooths terrain.
+12. api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}) makes a graded path; omitted heights sample terrain.
 
 Ground objects should use position:[x,z], for example [-21,20] means x=-21,z=20 and samples terrain Y. In [x,y,z], y is vertical height, not z; terrain accepts only boolean true or false, never 'ground'. Use terrain:true with [x,0,z] only when you need an explicit terrain-relative Y offset.
 
@@ -3996,7 +4028,7 @@ Keep generated coordinates inside bounds, important circulation usable, and repe
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Optional: use it when the natural/authored distinction materially clarifies the plan; otherwise it is inferred from executable content.'}
-Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.spawn([x,z],yawDegrees?).
+Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.spawn([x,z],yawDegrees?).
 Rendering handoff: api.renderSuggestion(text) records a hint for the later, separately confirmed render stage only. Grass color/blade shape/wind, water shading/reflections, material effects, lighting mood and post-processing belong to that stage; do not encode them as terrain or layout changes.
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records an editable guide and lays terrain paving unless surface:'none'. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?,startInset?,endInset?,facing?,role?,groupId?,layer?}) distributes route-owned objects. Use bridge for water crossings.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}

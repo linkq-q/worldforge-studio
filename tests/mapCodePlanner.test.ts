@@ -17,6 +17,19 @@ import {
 } from '../src/shared/mapLimits';
 
 describe('map code planner', () => {
+  it('lets AI sculpt, smooth and grade terrain through ordered map operations', () => {
+    const map = createEmptyMap('village', 'village', [48, 12, 48]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.terrain('hills',{seed:42,amplitude:3});
+      api.sculptTerrain({mode:'smooth',point:[0,0],radius:5,strength:0.8});
+      api.rampTerrain({start:[-12,0],end:[12,0],width:4,startHeight:1,endHeight:3,softness:0.6});
+    }`, map);
+    expect(suggestion.operations.map((operation) => operation.type)).toEqual([
+      'terrain.generate', 'terrain.brush', 'terrain.ramp'
+    ]);
+    expect(() => applyMapOperations(map, suggestion.operations)).not.toThrow();
+  });
+
   it('uses the shared expanded engine limits', () => {
     expect(MAX_MAP_CODE_LENGTH).toBe(400_000);
     expect(MAX_MAP_CODE_SCENE_OPERATIONS).toBe(50_000);
@@ -78,13 +91,13 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('offers the outdoor first-pass planner exactly the supported minimal 10-API contract', () => {
+  it('offers the outdoor first-pass planner the supported 12-API contract', () => {
     const prompt = buildMapCodePlannerSystemPrompt(
       createEmptyMap(), [], 1, 4, 'scene', 'generate', '', [], 'minimal'
     );
 
-    expect(prompt).toContain('exactly these 10 WorldForge APIs');
-    for (const name of ['terrain', 'modifyTerrain', 'surface', 'water', 'route', 'grass', 'requireAsset', 'asset', 'place', 'random']) {
+    expect(prompt).toContain('exactly these 12 WorldForge APIs');
+    for (const name of ['terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route', 'grass', 'requireAsset', 'asset', 'place', 'random']) {
       expect(prompt).toContain(`api.${name}`);
     }
     expect(prompt).toContain("'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'");
@@ -107,11 +120,11 @@ describe('map code planner', () => {
 
     expect(indoorPrompt).toContain('procedural indoor-scene planner');
     expect(refinePrompt).toContain('Outdoor Scene Code refinement');
-    expect(indoorPrompt).not.toContain('exactly these 10 WorldForge APIs');
-    expect(refinePrompt).not.toContain('exactly these 10 WorldForge APIs');
+    expect(indoorPrompt).not.toContain('exactly these 12 WorldForge APIs');
+    expect(refinePrompt).not.toContain('exactly these 12 WorldForge APIs');
   });
 
-  it('restricts minimal execution to the documented 10 APIs', () => {
+  it('restricts minimal execution to the documented 12 APIs', () => {
     const allowed = executeMapCodePlan(
       "function plan(api) { api.place({name:'树',position:[api.random(-1,1),0],role:'environment'}); }",
       createEmptyMap(),
@@ -119,6 +132,11 @@ describe('map code planner', () => {
       { scope: 'scene', promptMode: 'minimal' }
     );
     expect(allowed.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    const terrain = executeMapCodePlan(
+      "function plan(api) { api.sculptTerrain({mode:'smooth',point:[0,0]}); api.rampTerrain({start:[-5,0],end:[5,0],width:3}); }",
+      createEmptyMap(), [], { scope: 'scene', promptMode: 'minimal' }
+    );
+    expect(terrain.operations.slice(0, 2).map((operation) => operation.type)).toEqual(['terrain.brush', 'terrain.ramp']);
     expect(() => executeMapCodePlan(
       "function plan(api) { api.renderSuggestion('not available'); }",
       createEmptyMap(),

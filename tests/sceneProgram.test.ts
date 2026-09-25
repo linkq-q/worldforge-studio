@@ -32,6 +32,17 @@ const assets = [
 ];
 
 describe('bounded scene program', () => {
+  it('exposes local smoothing and ramp grading to the alternate AI scene language', () => {
+    const map = createEmptyMap('village');
+    const result = executeSceneProgram(`
+      scene.sculptTerrain({ mode: "smooth", point: [0,0], radius: 5, strength: 0.8 });
+      scene.rampTerrain({ start: [-8,0], end: [8,0], width: 3 });
+    `, map, []);
+    expect(result.operations.map((operation) => operation.type)).toEqual(['terrain.brush', 'terrain.ramp']);
+    expect(() => applyMapOperations(map, result.operations)).not.toThrow();
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.rampTerrain');
+  });
+
   it('lets AI express a curved seaside park with path-relative furniture', () => {
     const result = executeSceneProgram(`
       const loop = scene.guide("seaside-loop", {

@@ -38,7 +38,7 @@ import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSe
 import { foundationLocalColliderBoxes, normalizeMapFoundation, type MapFoundation } from './mapFoundation';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
-export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
+export type TerrainBrushMode = 'raise' | 'lower' | 'flatten' | 'smooth';
 
 export interface Transform3D {
   position: Vec3;
@@ -1020,6 +1020,7 @@ export function applyTerrainBrushInPlace(
   const brushRadius = clamp(Math.abs(radius), 0.15, Math.max(width, depth));
   const amount = clamp(Math.abs(strength), 0.01, height);
   const target = clamp(finiteNumber(targetHeight, point[1]), TERRAIN_MIN_HEIGHT, height - 0.1);
+  const sourceHeights = mode === 'smooth' ? [...terrain.heights] : terrain.heights;
   const minX = clamp(Math.floor(worldToTerrainIndex(point[0] - brushRadius, width, terrain.resolutionX)), 0, terrain.resolutionX - 1);
   const maxX = clamp(Math.ceil(worldToTerrainIndex(point[0] + brushRadius, width, terrain.resolutionX)), 0, terrain.resolutionX - 1);
   const minZ = clamp(Math.floor(worldToTerrainIndex(point[2] - brushRadius, depth, terrain.resolutionZ)), 0, terrain.resolutionZ - 1);
@@ -1035,12 +1036,66 @@ export function applyTerrainBrushInPlace(
       const current = terrain.heights[index] ?? 0;
       if (mode === 'raise') terrain.heights[index] = clamp(current + amount * weight, TERRAIN_MIN_HEIGHT, height - 0.1);
       else if (mode === 'lower') terrain.heights[index] = clamp(current - amount * weight, TERRAIN_MIN_HEIGHT, height - 0.1);
-      else terrain.heights[index] = lerp(current, target, clamp(weight * amount, 0, 1));
+      else if (mode === 'flatten') terrain.heights[index] = lerp(current, target, clamp(weight * amount, 0, 1));
+      else {
+        let sum = 0;
+        let total = 0;
+        for (let dz = -1; dz <= 1; dz += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            const sx = clamp(xIndex + dx, 0, terrain.resolutionX - 1);
+            const sz = clamp(zIndex + dz, 0, terrain.resolutionZ - 1);
+            const neighborWeight = dx === 0 && dz === 0 ? 4 : dx === 0 || dz === 0 ? 2 : 1;
+            sum += (sourceHeights[terrainIndex(terrain, sx, sz)] ?? 0) * neighborWeight;
+            total += neighborWeight;
+          }
+        }
+        terrain.heights[index] = lerp(current, sum / total, clamp(weight * amount, 0, 1));
+      }
     }
   }
 
   next.updatedAt = Date.now();
   next.version += 1;
+}
+
+export interface TerrainRampParams {
+  start: [number, number];
+  end: [number, number];
+  width: number;
+  startHeight?: number;
+  endHeight?: number;
+  softness?: number;
+  strength?: number;
+}
+
+export function applyTerrainRampInPlace(map: EditableMap, params: TerrainRampParams): void {
+  const { terrain } = map;
+  const [mapWidth, mapHeight, mapDepth] = map.box.size;
+  const [ax, az] = params.start;
+  const [bx, bz] = params.end;
+  const dx = bx - ax;
+  const dz = bz - az;
+  const lengthSquared = dx * dx + dz * dz;
+  if (lengthSquared < 0.01) throw new Error('invalid_terrain_ramp_length');
+  const halfWidth = params.width / 2;
+  const feather = halfWidth * clamp(params.softness ?? 0.5, 0, 1);
+  const strength = clamp(params.strength ?? 1, 0, 1);
+  const fromHeight = clamp(params.startHeight ?? sampleTerrainHeight(map, ax, az), TERRAIN_MIN_HEIGHT, mapHeight - 0.1);
+  const toHeight = clamp(params.endHeight ?? sampleTerrainHeight(map, bx, bz), TERRAIN_MIN_HEIGHT, mapHeight - 0.1);
+  for (let z = 0; z < terrain.resolutionZ; z += 1) {
+    for (let x = 0; x < terrain.resolutionX; x += 1) {
+      const wx = x / (terrain.resolutionX - 1) * mapWidth - mapWidth / 2;
+      const wz = z / (terrain.resolutionZ - 1) * mapDepth - mapDepth / 2;
+      const t = clamp(((wx - ax) * dx + (wz - az) * dz) / lengthSquared, 0, 1);
+      const distance = Math.hypot(wx - (ax + dx * t), wz - (az + dz * t));
+      if (distance >= halfWidth + feather) continue;
+      const blend = feather === 0 || distance <= halfWidth ? 1 : terrainBrushFalloff((distance - halfWidth) / feather);
+      const index = terrainIndex(terrain, x, z);
+      terrain.heights[index] = lerp(terrain.heights[index] ?? 0, lerp(fromHeight, toHeight, t), blend * strength);
+    }
+  }
+  map.updatedAt = Date.now();
+  map.version += 1;
 }
 
 function worldToTerrainIndex(value: number, extent: number, resolution: number): number {

@@ -61,6 +61,12 @@ export function scopeMapRefinement(
       }
       case 'map.update': accepted = operation.renderPromptSuggestions !== undefined; break;
       case 'terrain.brush': accepted = circleInside(operation.point[0], operation.point[2], operation.size ?? 1); break;
+      case 'terrain.ramp': accepted = Array.from({ length: 17 }, (_, index) => index / 16)
+        .every(t => circleInside(
+          operation.start[0] + (operation.end[0] - operation.start[0]) * t,
+          operation.start[1] + (operation.end[1] - operation.start[1]) * t,
+          operation.width * (1 + (operation.softness ?? 0.5)) / 2
+        )); break;
       case 'terrain.modify':
       case 'terrain.surface': accepted = shapeInside(operation.region); break;
       case 'paint.add': accepted = circleInside(operation.stroke.point[0], operation.stroke.point[2], operation.stroke.size ?? 1); break;

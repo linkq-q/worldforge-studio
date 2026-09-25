@@ -94,7 +94,7 @@ export interface MapAiOptions {
   sceneAgent?: boolean;
   /** Optional user-authored preference for focal assets. */
   focusPrompt?: string;
-  /** Select the standard planner contract or the outdoor 10-API minimal contract. */
+  /** Select the standard planner contract or the outdoor 12-API minimal contract. */
   codePromptMode?: MapCodePromptMode;
   /** Keep the first executable program or allow LLM repair and asset-aware adjustment. */
   codeRevisionMode?: MapCodeRevisionMode;
@@ -493,6 +493,7 @@ export function normalizeMapSuggestion(
     operation.type === 'room.set'
     || operation.type === 'terrain.generate'
     || operation.type === 'terrain.brush'
+    || operation.type === 'terrain.ramp'
     || operation.type === 'terrain.modify'
     || operation.type === 'terrain.refine'
     || operation.type === 'terrain.surface'
@@ -674,6 +675,13 @@ function scopeMapOperationsToVisualZone(
       case 'terrain.brush': return strictFootprints && !allowTerrainOverlap
         ? circleInside(operation.point[0], operation.point[2], operation.size ?? 1, contains)
         : contains(operation.point[0], operation.point[2]);
+      case 'terrain.ramp': return Array.from({ length: 17 }, (_, index) => index / 16).every(t => {
+        const x = operation.start[0] + (operation.end[0] - operation.start[0]) * t;
+        const z = operation.start[1] + (operation.end[1] - operation.start[1]) * t;
+        return strictFootprints && !allowTerrainOverlap
+          ? circleInside(x, z, operation.width * (1 + (operation.softness ?? 0.5)) / 2, contains)
+          : contains(x, z);
+      });
       case 'terrain.modify': return regionInside(operation.region, allowTerrainOverlap);
       case 'terrain.surface': return regionInside(operation.region);
       case 'paint.add': return contains(operation.stroke.point[0], operation.stroke.point[2]);
@@ -964,7 +972,7 @@ function normalizeTerrainOperations(
     if (!item || typeof item !== 'object') throw new Error('invalid_terrain_plan');
     const input = item as Record<string, unknown>;
     const mode = input.mode;
-    if (mode !== 'raise' && mode !== 'lower' && mode !== 'flatten') throw new Error('invalid_terrain_plan');
+    if (mode !== 'raise' && mode !== 'lower' && mode !== 'flatten' && mode !== 'smooth') throw new Error('invalid_terrain_plan');
     const x = requiredNumber(input.x, 'invalid_terrain_plan');
     const z = requiredNumber(input.z, 'invalid_terrain_plan');
     const operation: MapOperation = {
@@ -1359,7 +1367,7 @@ function buildSystemPrompt(
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
     `terrainGeneration 是整体地形基底；可用能力：${JSON.stringify(terrainCapabilitySummary())}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。`,
-    'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}，只用于地形基底之后的局部微调。',
+    'terrain 每项格式：{"mode":"raise|lower|flatten|smooth","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}，只用于地形基底之后的局部微调。',
     'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"mountain|ridge|valley|basin|cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":18},"amplitude":5,"softness":0.3,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces","access":"walkable|scenic"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。山脉必须有宽阔连续的山地区域；walkable 使用低矮宽坡或 terraces 跳跃平台，scenic 才能使用更陡的装饰山。只有宽度足够时才生成 ridge，否则自动降级为山丘；cliff 只用于真正的峭壁、断崖和峡谷墙。',
     'terrainRefinement 在所有地形塑形后执行，格式：{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46}。新地图通常应提供一次，用轻量坡面松弛和汇流雕刻消除规则刀切感；不要对局部区域重做全图 refinement。',
     'terrainSurfaces 用于局部地表语义，每项格式：{"surface":"grass|sand|rock","region":{"kind":"circle","x":0,"z":0,"radius":8},"intensity":1,"zoneId":"stable-zone-id"}。沙漠或沙丘区域应同时选择 sand。',
@@ -1417,6 +1425,7 @@ function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
     (operation.type === 'map.update' && operation.visualSemantics !== undefined)
     || operation.type === 'room.set'
     || operation.type === 'terrain.brush'
+    || operation.type === 'terrain.ramp'
     || operation.type === 'terrain.modify'
     || operation.type === 'terrain.refine'
     || operation.type === 'terrain.surface'

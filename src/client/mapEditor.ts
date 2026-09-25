@@ -1679,7 +1679,7 @@ class MapEditor {
             <span>Scene Code 规划提示</span>
             <select id="map-ai-code-prompt-mode" ${this.state.busy ? 'disabled' : ''}>
               <option value="standard" ${this.mapAiCodePromptMode === 'standard' ? 'selected' : ''}>标准完整能力</option>
-              <option value="minimal" ${this.mapAiCodePromptMode === 'minimal' ? 'selected' : ''}>极简 10 API（仅室外首轮）</option>
+              <option value="minimal" ${this.mapAiCodePromptMode === 'minimal' ? 'selected' : ''}>极简 12 API（仅室外首轮）</option>
             </select>
           </label>
           <label class="field compact">
@@ -3588,6 +3588,7 @@ class MapEditor {
           <option value="raise" ${this.state.terrainMode === 'raise' ? 'selected' : ''}>抬高</option>
           <option value="lower" ${this.state.terrainMode === 'lower' ? 'selected' : ''}>降低</option>
           <option value="flatten" ${this.state.terrainMode === 'flatten' ? 'selected' : ''}>平整</option>
+          <option value="smooth" ${this.state.terrainMode === 'smooth' ? 'selected' : ''}>平滑</option>
         </select>` : ''}
         ${this.state.terrainAction === 'modifier' ? `
           <label class="field compact"><span>修改器</span><select data-terrain-modifier>
