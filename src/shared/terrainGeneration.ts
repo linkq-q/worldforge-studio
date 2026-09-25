@@ -737,29 +737,38 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
   const cellCount = width * depth;
   const stepX = map.box.size[0] / Math.max(1, width - 1);
   const stepZ = map.box.size[2] / Math.max(1, depth - 1);
-  const flowTo = new Int32Array(cellCount).fill(-1);
+  const flowTo = new Int32Array(cellCount * 8).fill(-1);
+  const flowFraction = new Float32Array(cellCount * 8);
   const flowDistance = new Float64Array(cellCount);
   const accumulation = new Float64Array(cellCount).fill(stepX * stepZ);
   const neighbors = [
-    [-1, 0], [1, 0], [0, -1], [0, 1],
-    [-1, -1], [1, -1], [-1, 1], [1, 1]
+    [-1, 0, stepX], [1, 0, stepX], [0, -1, stepZ], [0, 1, stepZ],
+    [-1, -1, Math.hypot(stepX, stepZ)], [1, -1, Math.hypot(stepX, stepZ)],
+    [-1, 1, Math.hypot(stepX, stepZ)], [1, 1, Math.hypot(stepX, stepZ)]
   ] as const;
 
   for (let z = 1; z < depth - 1; z += 1) {
     for (let x = 1; x < width - 1; x += 1) {
       const index = z * width + x;
       const height = terrain.heights[index] ?? 0;
-      let steepest = 0;
-      for (const [dx, dz] of neighbors) {
+      let total = 0;
+      for (let direction = 0; direction < neighbors.length; direction += 1) {
+        const [dx, dz, distance] = neighbors[direction];
         const other = (z + dz) * width + x + dx;
         const otherHeight = terrain.heights[other] ?? 0;
-        const distance = Math.hypot(dx * stepX, dz * stepZ);
         const slope = (height - otherHeight) / distance;
-        if (slope > steepest) {
-          steepest = slope;
-          flowTo[index] = other;
-          flowDistance[index] = distance;
-        }
+        if (slope <= 0) continue;
+        const slot = index * 8 + direction;
+        flowTo[slot] = other;
+        flowFraction[slot] = slope ** 4;
+        total += flowFraction[slot];
+      }
+      if (total <= 0) continue;
+      for (let direction = 0; direction < neighbors.length; direction += 1) {
+        const slot = index * 8 + direction;
+        if (flowTo[slot] < 0) continue;
+        flowFraction[slot] /= total;
+        flowDistance[index] += flowFraction[slot] * neighbors[direction][2];
       }
     }
   }
@@ -767,8 +776,11 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
   const descending = Array.from({ length: cellCount }, (_, index) => index)
     .sort((left, right) => (terrain.heights[right] ?? 0) - (terrain.heights[left] ?? 0) || left - right);
   for (const index of descending) {
-    const target = flowTo[index];
-    if (target >= 0) accumulation[target] += accumulation[index];
+    for (let direction = 0; direction < neighbors.length; direction += 1) {
+      const slot = index * 8 + direction;
+      const target = flowTo[slot];
+      if (target >= 0) accumulation[target] += accumulation[index] * flowFraction[slot];
+    }
   }
 
   // Stream-power incision: drainage area increases erosion; flat sinks and
@@ -776,10 +788,14 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
   // Solve downstream first so an upstream sample cannot cut below its receiver.
   for (let order = descending.length - 1; order >= 0; order -= 1) {
     const index = descending[order];
-    const target = flowTo[index];
     const height = terrain.heights[index] ?? 0;
-    if (target < 0 || height <= 0) continue;
-    const receiver = Math.max(0, terrain.heights[target] ?? 0);
+    if (flowDistance[index] <= 0 || height <= 0) continue;
+    let receiver = 0;
+    for (let direction = 0; direction < neighbors.length; direction += 1) {
+      const slot = index * 8 + direction;
+      const target = flowTo[slot];
+      if (target >= 0) receiver += flowFraction[slot] * Math.max(0, terrain.heights[target] ?? 0);
+    }
     const incision = strength * 0.35 * Math.sqrt(accumulation[index]) / flowDistance[index];
     terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT,
       (height + incision * receiver) / (1 + incision));

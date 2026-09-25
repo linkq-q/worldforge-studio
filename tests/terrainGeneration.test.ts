@@ -128,6 +128,27 @@ describe('deterministic terrain generation', () => {
     expect(tall.terrain.heights[3]).toBe(6);
   });
 
+  it('avoids strong axis bias when carving a rotationally symmetric mountain', () => {
+    const map = createEmptyMap('radial drainage', 'radial-drainage', [96, 48, 96]);
+    const width = map.terrain.resolutionX;
+    const step = 96 / (width - 1);
+    for (let z = 0; z < width; z += 1) {
+      for (let x = 0; x < width; x += 1) {
+        map.terrain.heights[z * width + x] = Math.max(0, 40 - Math.hypot((x - 32) * step, (z - 32) * step) * 0.7);
+      }
+    }
+    const original = structuredClone(map);
+    refineTerrainInPlace(map, { erosion: 0, drainage: 0.5, iterations: 1 });
+    const incision = [0, 11.25, 22.5, 33.75, 45].map((degrees) => {
+      const angle = degrees * Math.PI / 180;
+      const x = 22 * Math.cos(angle);
+      const z = 22 * Math.sin(angle);
+      return sampleTerrainHeight(original, x, z) - sampleTerrainHeight(map, x, z);
+    });
+    expect(Math.max(...incision) - Math.min(...incision)).toBeLessThan(0.15);
+    expect(Math.min(...incision)).toBeGreaterThan(0.2);
+  });
+
   it('applies local brushes after the generated base inside one transaction', () => {
     const map = createEmptyMap('ordered', 'terrain-ordered');
     const base = applyMapOperations(map, [
