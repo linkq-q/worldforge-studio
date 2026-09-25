@@ -182,6 +182,28 @@ describe('map code planner', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it('recovers a model-written grass elevation band on a large map without an LLM call', async () => {
+    const map = createEmptyMap('botanical garden', 'botanical-garden', [192, 24, 192]);
+    const fetchImpl = vi.fn();
+    const suggestion = await generateMapCodeSuggestion('生成大型植物园', map, [], {
+      approvedCode: `function plan(api) {
+        api.grass('alpine-north', {kind:'circle',center:[0,0],radius:48},
+          {preset:'alpine-moss',density:0.62,variation:0.65,height:[0,0,0,0]});
+      }`,
+      revisionMode: 'first-pass',
+      fetchImpl,
+      scope: 'scene',
+      minNewAssets: 0,
+      maxNewAssets: 0
+    });
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'grass.layer.add', layer: expect.objectContaining({ height: 0.42 }) }),
+      expect.objectContaining({ type: 'grass.generate', habitat: { height: [0, 0, 0, 0] } })
+    ]));
+  });
+
   it('skips asset-aware LLM code adjustment while retaining final local replay in first-pass mode', async () => {
     const generated = {
       ...testAsset('generated-tree', 'Generated tree'),

@@ -34,6 +34,7 @@ import {
   type MapEnvironmentSampleOptions
 } from '../shared/mapTerrainAnalysis';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
+import { normalizeHabitatBand } from '../shared/mapHabitat';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import { calculateModelVisualBounds, inspectModelSpace, type Aabb } from '../shared/modelBounds';
 import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from '../shared/mapDesign';
@@ -139,7 +140,7 @@ api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace
 api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); Use smooth to soften a local peak or transition.
 api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); Omitted endpoint heights sample the current terrain; use for paths between different elevations.
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true only when the authored area must exclude loose natural objects. Route surfaces are clear automatically.
-api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge, height is terrain Y; choose each layer's band from the intended ecology, not from a scene-name keyword.
+api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?:number,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Top-level height is one finite grass blade height, never an array. habitat.height is the four-number terrain elevation band. Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge; choose each layer's band from the intended ecology, not from a scene-name keyword.
 api.environmentSample([x,z],{guideIds?:string[],region?:circle|path|polygon,waterId?:string}) returns x,z,height,slope,waterDistance,guideDistance and signed regionDistance when region is requested; negative regionDistance is inside. With waterId, water is {id,inside,surfaceHeight,depth}; surfaceHeight is null outside that water body. Use the sampled surfaceHeight for floating assets after checking inside.
 api.foundation({name?,shape:'capsule'|'rounded-rectangle'|'polygon'|'path',under?:[objectReferenceOrExistingId,...],position?:[x,z]|[x,y,z],width?,depth?,margin?,cornerRadius?,points?:[[localX,localZ],...],curve?:'polyline'|'catmull-rom',closed?,top?:'level'|'slope'|'steps',thickness?,maxThickness?,slope?,slopeDirection?:radians,stepHeight?,stepCount?,material?}); The top is walkable, the bottom follows terrain, and terrain is never flattened.
 Mechanical ownership: preset:'plain' always writes a zero-height field; amplitude and roughness do not change it. api.terrain and api.modifyTerrain create landform elevation. An island modifier raises its region and turns otherwise non-positive surrounding terrain into a sloped submerged seabed; do not add a rectangular ground shelf around it. layout:'coast' deterministically varies the shoreline; softness controls its transition width and variation controls contour and relief variation. api.surface only paints existing terrain and cannot create land, water or a shoreline. Water points define the actual water coverage. Island and archipelago terrain add a default map ocean only when this transaction defines no explicit ocean; an explicit ocean is authoritative. When one landmass boundary owns terrain, surface and optional design regions, declare one const landRegion={...} and reuse that exact region instead of redrawing nearly matching boundaries; use a rectangular boundary only when the intended landform is rectangular.
@@ -2073,7 +2074,16 @@ function executeMapCodePlanInternal(
         ? presetValue as GrassPresetId
         : inferGrassPreset(`${presetValue ?? ''} ${name ?? ''}`);
       const presetDefinition = GRASS_PRESET_DEFINITIONS.find((item) => item.id === preset) ?? GRASS_PRESET_DEFINITIONS[0];
-      const requestedHeight = optionalFinite(options.height) ?? presetDefinition.defaultHeight;
+      // A four-value height band describes terrain habitat, not grass blade height.
+      // Accept this common model slip without losing the authored distribution.
+      const misplacedHeightBand = normalizeHabitatBand(options.height);
+      const requestedHeight = misplacedHeightBand
+        ? presetDefinition.defaultHeight
+        : optionalFinite(options.height) ?? presetDefinition.defaultHeight;
+      const authoredHabitat = normalizeGrassHabitat(options.habitat);
+      const habitat = misplacedHeightBand
+        ? { ...authoredHabitat, height: authoredHabitat?.height ?? misplacedHeightBand }
+        : authoredHabitat;
       const requestedMix = options.mix && typeof options.mix === 'object' && !Array.isArray(options.mix)
         ? options.mix as Record<string, unknown>
         : undefined;
@@ -2109,7 +2119,7 @@ function executeMapCodePlanInternal(
         variation: optionalFinite(options.variation) ?? (sceneIntent === 'authored' ? 0.2 : 0.25),
         softness: optionalFinite(options.softness) ?? 0.2,
         seed: optionalFinite(options.seed) ?? map.seed + sceneOperations.length,
-        habitat: normalizeGrassHabitat(options.habitat)
+        habitat
       });
       return id;
     },
@@ -3953,7 +3963,7 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 3. api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?,clearNatural?}).
 4. api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?,levels?,widths?,carveTerrain?,bankHeight?,bankWidth?}). River levels/widths have one value per control point. Use carveTerrain:false only for structure-supported spillways; join their endpoints to the actual source and receiving water elevations. End the sloped mesh at the receiving surface; do not extend a coplanar tail over another water body. High reservoirs need containing terrain/structures; explicit bankHeight (freeboard) and bankWidth raise a bounded shoreline bank. Omit banks when existing terrain or a retaining structure already contains the water. Keep architectural shorelines straight with shorelineSmoothness:0, shorelineIrregularity:0.
 5. api.route({id,name?,points,curve?,closed?,width?,surface?,material?,intensity?,tags?}) returns the route ID string.
-6. api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?,habitat?,seed?}).
+6. api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?:number,mix?,habitat?:{height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}). Top-level height is grass blade height; the four-number terrain elevation band belongs in habitat.height.
 7. api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth],role:'structure'|'environment',optional?}) returns key.
 8. api.asset(key,index?) returns the generated asset ID; never invent asset IDs.
 9. api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,dimensions?,terrain?,role?}) returns a placement reference.
@@ -4028,7 +4038,7 @@ Keep generated coordinates inside bounds, important circulation usable, and repe
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Optional: use it when the natural/authored distinction materially clarifies the plan; otherwise it is inferred from executable content.'}
-Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.spawn([x,z],yawDegrees?).
+Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); api.water(id,{type:'lake'|'river'|'ocean',points,level?,levels?,width?,widths?,depth?,carveTerrain?,bankHeight?,bankWidth?}); levels/widths per point. Spillways: carveTerrain:false, end at receiving water without overlap. Banks contain raised water; preserve dams/openings; api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?:number,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); top-level height is one grass blade height, while habitat.height is a four-number terrain elevation band; api.spawn([x,z],yawDegrees?).
 Rendering handoff: api.renderSuggestion(text) records a hint for the later, separately confirmed render stage only. Grass color/blade shape/wind, water shading/reflections, material effects, lighting mood and post-processing belong to that stage; do not encode them as terrain or layout changes.
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records an editable guide and lays terrain paving unless surface:'none'. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?,startInset?,endInset?,facing?,role?,groupId?,layer?}) distributes route-owned objects. Use bridge for water crossings.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
