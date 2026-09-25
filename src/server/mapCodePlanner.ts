@@ -4001,6 +4001,27 @@ Ground objects should use position:[x,z], for example [-21,20] means x=-21,z=20 
 Declare ${minNewAssets}..${maxNewAssets} requireAsset families and place every declared variant at least once. Each asset prompt describes one standalone reusable object and follows this orientation contract: Y+ up, Z+ front/entrance, X+ right. Keep all coordinates inside the map bounds and return the complete function plan(api).`;
 }
 
+function buildMainMapCodePlannerSystemPrompt(map: EditableMap, minNewAssets: number, maxNewAssets: number): string {
+  const bounds = getMapBounds(map);
+  return `You are an outdoor 3D scene composer. Return one complete synchronous JavaScript function: function plan(api) { ... }. No Markdown, imports, async, eval, network, timers or global state. Local helpers, arrays, loops, branches and Math are available; Math.random is seeded. Use finite numbers and bounded work.
+
+Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}; seed=${map.seed}; map height=${map.box.size[1]}m. Y is up; horizontal planning uses [x,z]. Position [x,z] samples the current terrain; [x,y,z] is fixed height unless terrain:true, in which case y is an offset above terrain. The model's local Z+ is its front and rotationY is in radians.
+
+Compose the scene from the user's request and the actual terrain. Decide what connects and why: access, water, slope, work, shelter, views and neighboring structures may matter differently in each place. Roads may be regular, branching, curved or mixed when those relationships warrant them. Keep traversable routes connected, give buildings usable access and ground support, and preserve useful open space. Do not optimize a house-count score or force a fixed village pattern. If the user gives a density preference, honor it; otherwise infer density from the scene's use and viewpoint.
+
+Declare terrain and water before sampling candidate sites. Use api.environmentSample on the current map to compare plausible locations and elevations before committing roads and buildings; sample again after a local terrain change when it changes that decision. Plan in 3D: place structures on suitable terrain, use foundations or local grading where needed, and connect height differences with walkable ramps, steps or bridges when appropriate. Use shared local helper functions for repeated relations. Use api.sampleProbabilityField for vegetation or other things that vary continuously; do not use it as a mandatory road or building layout rule. A small generate-and-select comparison is optional when several real arrangements are plausible; write that comparison in JavaScript and choose for spatial reasons, not a generic numeric score.
+
+The sandbox exposes exactly these 19 keys; write your own other helpers:
+- Data: api.seed, api.bounds.
+- Land: api.terrain(preset,{amplitude?,roughness?,seed?}) with preset 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}). Keep ramp softness and strength between 0 and 1.
+- Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,height?,mix?}). Region uses kind:'circle' with center/radius, kind:'path' with points/width, or kind:'polygon' with points; never type.
+- Circulation: api.route({id,points:[[x,z],...],width?,curve?:'polyline'|'catmull-rom',surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?}) returns an ID string and paints the road unless surface:'none'. api.bridge({waterId,assetId?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth]}) crosses the actual water boundary; center must lie inside that water body and direction must cross opposite banks. api.spawn([x,z],yawDegrees?) marks the player start.
+- Observation and natural distribution: api.environmentSample([x,z],{waterId?,guideIds?,region?}) returns height, slope, waterDistance and other local relationships from terrain, water and routes already declared. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,region?,cluster?,marks?},(point,index)=>weight) returns sampled [x,z] points; use bounded candidates and nonnegative finite weights.
+- Assets and placement: api.requireAsset({key,name,prompt,dimensions:[width,height,depth],role:'structure'|'environment',variants?}); api.asset(key,index?) resolves a declared family; api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,dimensions?,terrain?,role?}) returns an object reference. api.foundation({under?:[objectReference],position?:[x,z],shape?:'rounded-rectangle'|'capsule'|'polygon'|'path',width?,depth?,top?:'level'|'slope'|'steps',stepHeight?,stepCount?,maxThickness?,material?}) gives a walkable top without flattening the whole terrain. api.placeBetween({assetId?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',elevation?,terrain?}) joins structural modules between endpoints.
+
+Declare ${minNewAssets}..${maxNewAssets} useful asset families and place every declared variant at least once. Asset prompts describe one standalone reusable object in English, with Y+ up, Z+ front/entrance and X+ right; names are short Simplified Chinese. Keep every placement inside bounds. Do not invent API names or asset IDs. Return the function only.`;
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -4020,6 +4041,9 @@ export function buildMapCodePlannerSystemPrompt(
   }
   if (map.sceneMode === 'indoor') {
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
+  }
+  if (promptMode === 'main' && requestMode === 'generate' && scope === 'scene') {
+    return buildMainMapCodePlannerSystemPrompt(map, minNewAssets, maxNewAssets);
   }
   if (promptMode === 'minimal' && requestMode === 'generate' && scope === 'scene') {
     return buildMinimalMapCodePlannerSystemPrompt(map, minNewAssets, maxNewAssets);

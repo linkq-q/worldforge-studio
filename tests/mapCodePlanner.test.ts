@@ -159,6 +159,27 @@ describe('map code planner', () => {
     expect(refinement).not.toContain('Composition style — continuous fields');
   });
 
+  it('guides the new main mode without fixing road geometry or imposing a field on buildings', () => {
+    const outdoor = createEmptyMap('village', 'village', [96, 16, 96]);
+    const main = buildMapCodePlannerSystemPrompt(outdoor, [], 2, 5, 'scene', 'generate', '', [], 'main');
+    const standard = buildMapCodePlannerSystemPrompt(outdoor, [], 2, 5, 'scene', 'generate', '', [], 'standard');
+    const refine = buildMapCodePlannerSystemPrompt(outdoor, [], 0, 2, 'scene', 'refine', '', [], 'main');
+    const indoor = buildMapCodePlannerSystemPrompt(createEmptyMap('room', 'room', [10, 3, 8], 'voxel', 'indoor'), [], 0, 2, 'scene', 'generate', '', [], 'main');
+
+    expect(main).toContain('Roads may be regular, branching, curved or mixed');
+    expect(main).toContain('sample again after a local terrain change');
+    expect(main).toContain('A small generate-and-select comparison is optional');
+    expect(main).toContain('Use api.sampleProbabilityField for vegetation');
+    expect(main).toContain('api.foundation');
+    expect(main).toContain('api.bridge');
+    expect(main).toContain('exactly these 19 keys');
+    expect(main).toContain('Declare 2..5 useful asset families');
+    expect(main.length).toBeLessThan(standard.length / 2);
+    expect(main).not.toContain('never uniform grids');
+    expect(refine).toContain('Outdoor Scene Code refinement');
+    expect(indoor).toContain('procedural indoor-scene planner');
+  });
+
   it('compiles a large repeated placement plan as one transaction', () => {
     const map = createEmptyMap('large garden', 'large-garden', [192, 24, 192]);
     const suggestion = executeMapCodePlan(`function plan(api) {
