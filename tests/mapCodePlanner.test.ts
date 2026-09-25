@@ -632,9 +632,10 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
     expect(prompt).toContain('api.placeBetween({assetId?,name?,start:[x,z],end:[x,z]');
     expect(prompt).toContain('frontTarget?:[x,z]');
-    expect(prompt).toContain("api.attach({assetId?,name?,parentId,kind:'supported'|'mounted'");
-    expect(prompt).toContain("Entrances default to anchorY:'bottom'");
-    expect(prompt).toContain('Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament');
+    expect(prompt).not.toContain('api.attach');
+    expect(() => executeMapCodePlan(
+      'function plan(api) { api.attach({}); }', createEmptyMap(), [], { scope: 'scene', legacyApis: false }
+    )).toThrow('api.attach is not a function');
     expect(prompt).not.toContain("api.mirrorPoint(point,'x'|'z',coordinate?)");
     expect(prompt).not.toContain('api.localToWorld3D(local:[right,up,forward]');
     expect(prompt).toContain('named APIs are conveniences, not a closed vocabulary');
