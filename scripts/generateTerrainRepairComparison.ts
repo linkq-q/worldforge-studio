@@ -36,8 +36,8 @@ try {
     cases: {
       mountain: { name: '自然山脉', description: '同一种子生成山体，再进行热侵蚀与排水；比较沟槽、山脊和网格细节。' },
       cone: { name: '圆锥诊断', description: '完全对称的坡面。方向差异只来自网格和排水算法，便于识别十字纹。' },
-      river: { name: '河道', description: '在 10 米平地雕刻弯曲河道，检查河岸是否平顺接回原地形。', boundary: waterBoundaryPoints(waters.river), level: 2 },
-      lake: { name: '湖岸', description: '在 10 米平地雕刻湖盆，比较岸坡和弯曲边缘的采样精度。', boundary: waterBoundaryPoints(waters.lake), level: 2 }
+      river: { name: '河道', description: '在 10 米平地雕刻弯曲河道，检查河岸是否平顺接回原地形。', boundary: waterBoundaryPoints(waters.river), water: waters.river, level: 2 },
+      lake: { name: '湖岸', description: '在 10 米平地雕刻湖盆，比较岸坡和弯曲边缘的采样精度。', boundary: waterBoundaryPoints(waters.lake), water: waters.lake, level: 2 }
     },
     data: {} as Record<string, unknown>
   };
@@ -91,14 +91,16 @@ try {
     }
   }
 
-  const target = path.join(root, 'scripts/terrainRepairComparison.html');
-  const html = readFileSync(target, 'utf8');
   const replacement = JSON.stringify(output);
-  const updated = html.replace(/(<script id="terrain-data" type="application\/json">)[\s\S]*?(<\/script>)/,
-    (_, open: string, close: string) => `${open}${replacement}${close}`);
-  if (!html.includes('<script id="terrain-data" type="application/json">')) throw new Error('comparison_data_marker_missing');
-  writeFileSync(target, updated, 'utf8');
-  console.log(`Wrote ${target}`);
+  for (const name of ['terrainRepairComparison.html', 'terrainRepair3D.html']) {
+    const target = path.join(root, 'scripts', name);
+    const html = readFileSync(target, 'utf8');
+    const updated = html.replace(/(<script id="terrain-data" type="application\/json">)[\s\S]*?(<\/script>)/,
+      (_, open: string, close: string) => `${open}${replacement}${close}`);
+    if (!html.includes('<script id="terrain-data" type="application/json">')) throw new Error(`comparison_data_marker_missing:${name}`);
+    writeFileSync(target, updated, 'utf8');
+    console.log(`Wrote ${target}`);
+  }
 } finally {
   for (const snapshot of snapshotPaths) rmSync(snapshot, { force: true });
 }
