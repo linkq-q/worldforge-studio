@@ -15,10 +15,11 @@ describe('map AI controls', () => {
   });
 
   it('renders, persists and sends independent Scene Code modes', () => {
-    expect(source).toContain("private mapAiCodePromptMode: MapCodePromptMode = 'standard';");
+    expect(source).toContain("private mapAiCodePromptMode: MapCodePromptMode = 'coupled';");
     expect(source).toContain("private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';");
     expect(source).toContain("private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'diagnose';");
     expect(source).toContain('id="map-ai-code-prompt-mode"');
+    expect(source).toContain('value="coupled"');
     expect(source).toContain('id="map-ai-code-revision-mode"');
     expect(source).toContain('id="map-ai-code-spatial-policy"');
     expect(source.match(/codePromptMode: this\.mapAiCodePromptMode/g)).toHaveLength(3);
@@ -27,7 +28,7 @@ describe('map AI controls', () => {
     expect(source).toContain("plan.options.codePromptMode ?? 'standard'");
     expect(source).toContain("plan.options.codeRevisionMode ?? 'repair'");
     expect(source).toContain("plan.options.codeSpatialPolicy ?? 'diagnose'");
-    expect(httpSource).toContain("body.codePromptMode === 'minimal' ? 'minimal' : 'standard'");
+    expect(httpSource).toContain("body.codePromptMode === 'coupled' ? 'coupled' : 'standard'");
     expect(httpSource).toContain("body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair'");
     expect(httpSource).toContain("body.codeSpatialPolicy === 'repair' ? 'repair' : 'diagnose'");
     expect(mapAiSource).toContain('promptMode: options.codePromptMode');

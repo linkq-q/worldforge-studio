@@ -37,7 +37,7 @@ export function validateExperimentConfig(value: ExperimentConfig): ExperimentCon
     || !['outdoor', 'indoor'].includes(value.sceneMode)
     || !MODEL_GENERATION_MODES.some(mode => mode.key === value.assetGenerationMode)
     || !integer(value.minNewAssets, 0, 64) || !integer(value.maxNewAssets, value.minNewAssets, 64)
-    || !['standard', 'minimal'].includes(value.promptMode)
+    || !['standard', 'minimal', 'coupled'].includes(value.promptMode)
     || !['first-pass', 'repair'].includes(value.revisionMode)
     || !['diagnose', 'repair'].includes(value.spatialPolicy)) throw new Error('invalid_experiment_config');
   if (value.cases.some(item => item.apiProfile !== 'editor') && (value.revisionMode !== 'first-pass' || value.sceneMode !== 'outdoor')) {

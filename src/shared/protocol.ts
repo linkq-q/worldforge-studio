@@ -29,7 +29,7 @@ export const CHAT_PROVIDER_OPTIONS = [
   { key: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', disabled: true }
 ] as const;
 export type ChatProvider = typeof CHAT_PROVIDER_OPTIONS[number]['key'];
-export type MapCodePromptMode = 'standard' | 'minimal';
+export type MapCodePromptMode = 'standard' | 'minimal' | 'coupled';
 export type MapCodeRevisionMode = 'repair' | 'first-pass';
 export type MapCodeSpatialPolicy = 'repair' | 'diagnose';
 

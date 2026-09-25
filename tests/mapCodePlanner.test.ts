@@ -124,6 +124,19 @@ describe('map code planner', () => {
     expect(refinePrompt).not.toContain('exactly these 12 WorldForge APIs');
   });
 
+  it('guides large outdoor scenes through shared dependencies and bounded fields without hard zoning', () => {
+    const map = createEmptyMap('botanical garden', 'botanical-garden', [192, 24, 192]);
+    const coupled = buildMapCodePlannerSystemPrompt(map, [], 0, 8, 'scene', 'generate', '', [], 'coupled');
+    const standard = buildMapCodePlannerSystemPrompt(map, [], 0, 8, 'scene', 'generate', '', [], 'standard');
+
+    expect(coupled).toContain('Shared generative relationships for a large scene');
+    expect(coupled).toContain('api.sampleProbabilityField');
+    expect(coupled).toContain('Call this after the terrain, water and routes it reads');
+    expect(coupled).toContain('Hard edges and named regions are appropriate only where');
+    expect(coupled).toContain('finite candidates, maxPoints and minDistance');
+    expect(standard).not.toContain('Shared generative relationships for a large scene');
+  });
+
   it('restricts minimal execution to the documented 12 APIs', () => {
     const allowed = executeMapCodePlan(
       "function plan(api) { api.place({name:'树',position:[api.random(-1,1),0],role:'environment'}); }",

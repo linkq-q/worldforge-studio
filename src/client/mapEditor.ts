@@ -453,7 +453,7 @@ class MapEditor {
   private mapAiProvider: ChatProvider = 'gpt';
   private mapAiAssetProvider: ModelProvider | '' = '';
   private mapAiPaletteId = '';
-  private mapAiCodePromptMode: MapCodePromptMode = 'standard';
+  private mapAiCodePromptMode: MapCodePromptMode = 'coupled';
   private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';
   private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'diagnose';
   private mapAiUseSceneAgent = true;
@@ -1678,6 +1678,7 @@ class MapEditor {
           <label class="field compact">
             <span>Scene Code 规划提示</span>
             <select id="map-ai-code-prompt-mode" ${this.state.busy ? 'disabled' : ''}>
+              <option value="coupled" ${this.mapAiCodePromptMode === 'coupled' ? 'selected' : ''}>共享关系与连续场（大地图）</option>
               <option value="standard" ${this.mapAiCodePromptMode === 'standard' ? 'selected' : ''}>标准完整能力</option>
               <option value="minimal" ${this.mapAiCodePromptMode === 'minimal' ? 'selected' : ''}>极简 12 API（仅室外首轮）</option>
             </select>
@@ -1686,7 +1687,7 @@ class MapEditor {
             <span>Scene Code 代码处理</span>
             <select id="map-ai-code-revision-mode" ${this.state.busy ? 'disabled' : ''}>
               <option value="repair" ${this.mapAiCodeRevisionMode === 'repair' ? 'selected' : ''}>自动修错并按真实资产调整</option>
-              <option value="first-pass" ${this.mapAiCodeRevisionMode === 'first-pass' ? 'selected' : ''}>保留首版代码</option>
+              <option value="first-pass" ${this.mapAiCodeRevisionMode === 'first-pass' ? 'selected' : ''}>保留首版代码（执行错误直接失败）</option>
             </select>
           </label>
           <label class="field compact">
@@ -1851,7 +1852,8 @@ class MapEditor {
       this.renderMapAiPanel();
     });
     host.querySelector<HTMLSelectElement>('#map-ai-code-prompt-mode')?.addEventListener('change', (event) => {
-      this.mapAiCodePromptMode = (event.target as HTMLSelectElement).value === 'minimal' ? 'minimal' : 'standard';
+      const mode = (event.target as HTMLSelectElement).value;
+      this.mapAiCodePromptMode = mode === 'minimal' || mode === 'coupled' ? mode : 'standard';
     });
     host.querySelector<HTMLSelectElement>('#map-ai-code-revision-mode')?.addEventListener('change', (event) => {
       this.mapAiCodeRevisionMode = (event.target as HTMLSelectElement).value === 'first-pass' ? 'first-pass' : 'repair';
