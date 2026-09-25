@@ -11,7 +11,8 @@ const baseline = 'cb213fe';
 const snapshots = [
   ['src/shared/terrainGeneration.ts', '.terrain-repair-baseline-generation.ts', baseline],
   ['src/shared/terrainGeneration.ts', '.terrain-repair-prior-flow.ts', 'f1425b9'],
-  ['src/shared/terrainGeneration.ts', '.terrain-repair-uniform-polish.ts', '80e4fe9']
+  ['src/shared/terrainGeneration.ts', '.terrain-repair-uniform-polish.ts', '80e4fe9'],
+  ['src/shared/mapWater.ts', '.terrain-repair-prior-water.ts', '4555edd']
 ] as const;
 const snapshotPaths = snapshots.map(([, name]) => path.join(root, 'src/shared', name));
 
@@ -23,30 +24,36 @@ try {
   const oldGeneration = await import(pathToFileURL(snapshotPaths[0]).href) as typeof import('../src/shared/terrainGeneration');
   const priorGeneration = await import(pathToFileURL(snapshotPaths[1]).href) as typeof import('../src/shared/terrainGeneration');
   const uniformPolish = await import(pathToFileURL(snapshotPaths[2]).href) as typeof import('../src/shared/terrainGeneration');
+  const priorWater = await import(pathToFileURL(snapshotPaths[3]).href) as typeof import('../src/shared/mapWater');
   const stages = [
     { id: 'baseline', name: '基线', commit: baseline, dense: false, drain: oldGeneration.refineTerrainInPlace },
     { id: 'grid', name: '① 网格加密', commit: '8405944', dense: true, drain: oldGeneration.refineTerrainInPlace },
     { id: 'flow', name: '② 排水分流', commit: 'f1425b9', dense: true, drain: priorGeneration.refineTerrainInPlace },
     { id: 'polish', name: '③ 山脉修型', commit: '80e4fe9', dense: true, drain: uniformPolish.refineTerrainInPlace },
-    { id: 'selective', name: '④ 分区修型', commit: '658e3b0', dense: true, drain: refineTerrainInPlace }
+    { id: 'selective', name: '④ 分区修型', commit: '658e3b0', dense: true, drain: refineTerrainInPlace },
+    { id: 'shore', name: '⑤ 岸型修整', commit: '2fc804a', dense: true, drain: refineTerrainInPlace }
   ];
   const waters: Record<string, MapWaterBody> = {
-    river: { id: 'river', name: 'River', type: 'river', points: [[0,-33],[-5,-16],[4,2],[0,18],[7,34]], level: 2, levels: [2,2,2,2,2], width: 8, depth: 3, shorelineSmoothness: 0.82 },
-    lake: { id: 'lake', name: 'Lake', type: 'lake', points: [[-14,-8],[-10,-16],[4,-18],[16,-9],[18,5],[8,15],[-8,14],[-17,5]], level: 2, width: 8, depth: 3, shorelineSmoothness: 0.82, shorelineIrregularity: 0.12, seed: 42 }
+    river: { id: 'river', name: 'River', type: 'river', points: [[0,-33],[-5,-16],[4,2],[0,18],[7,34]], level: 2, levels: [2,2,2,2,2], width: 8, depth: 3, shorelineSmoothness: 0.82, shorelineProfile: 'steep' },
+    lake: { id: 'lake', name: 'Lake', type: 'lake', points: [[-14,-8],[-10,-16],[4,-18],[16,-9],[18,5],[8,15],[-8,14],[-17,5]], level: 2, width: 8, depth: 3, shorelineSmoothness: 0.82, shorelineIrregularity: 0.12, shorelineProfile: 'steep', seed: 42 }
   };
+  waters.riverShallow = { ...waters.river, id: 'river-shallow', name: 'Shallow river', depth: 1.25, shorelineProfile: 'gentle' };
+  waters.lakeShallow = { ...waters.lake, id: 'lake-shallow', name: 'Shallow lake', depth: 1.25, shorelineProfile: 'gentle' };
   const output: Record<string, unknown> = {
     stages: stages.map(({ id, name, commit }) => ({ id, name, commit })),
     cases: {
       mountain: { name: '自然山脉', description: '同一种子生成山体，再进行热侵蚀与排水；比较沟槽、山脊和网格细节。' },
       cone: { name: '圆锥诊断', description: '完全对称的坡面。方向差异只来自网格和排水算法，便于识别十字纹。' },
-      river: { name: '河道', description: '在 5 米平地雕刻弯曲河道，保留原来的较陡岸坡。', boundary: waterBoundaryPoints(waters.river), water: waters.river, level: 2 },
-      lake: { name: '湖岸', description: '在 5 米平地雕刻湖盆，保留原来的较陡岸坡。', boundary: waterBoundaryPoints(waters.lake), water: waters.lake, level: 2 }
+      river: { name: '陡岸河道', description: '深河床与短岸坡，比较单格边缘是否尖锐。', boundary: waterBoundaryPoints(waters.river), water: waters.river, level: 2 },
+      lake: { name: '深湖陡岸', description: '深湖盆与短岸坡，比较湖岸三角尖角。', boundary: waterBoundaryPoints(waters.lake), water: waters.lake, level: 2 },
+      riverShallow: { name: '浅滩河道', description: '浅河床与较宽的岸边过渡。', boundary: waterBoundaryPoints(waters.riverShallow), water: waters.riverShallow, level: 2 },
+      lakeShallow: { name: '浅湖缓岸', description: '浅湖盆与较宽的岸边过渡。', boundary: waterBoundaryPoints(waters.lakeShallow), water: waters.lakeShallow, level: 2 }
     },
     data: {} as Record<string, unknown>
   };
   const data = output.data as Record<string, unknown[]>;
 
-  for (const kind of ['mountain', 'cone', 'river', 'lake'] as const) {
+  for (const kind of ['mountain', 'cone', 'river', 'lake', 'riverShallow', 'lakeShallow'] as const) {
     data[kind] = [];
     for (const stage of stages) {
       const map = createEmptyMap(`terrain-comparison-${kind}`, `comparison-${kind}`, [96, 48, 96]);
@@ -80,7 +87,7 @@ try {
       } else {
         map.terrain.heights.fill(5);
         before = structuredClone(map);
-        carveWaterBasinInPlace(map, waters[kind]);
+        (stage.id === 'shore' ? carveWaterBasinInPlace : priorWater.carveWaterBasinInPlace)(map, waters[kind]);
         metric = maxCrossSectionStep(map);
         metricLabel = '剖面最大单格落差';
       }
