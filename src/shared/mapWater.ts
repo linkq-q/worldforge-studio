@@ -11,6 +11,8 @@ import {
 const SHORE_SLOPE = 1.5;
 /** Keeps the carved shoreline just under the water plane so the rim has no seam. */
 const SHORE_RIM = 0.05;
+/** Maximum rise of a naturally carved bank, in metres per horizontal metre. */
+const NATURAL_BANK_SLOPE = 0.75;
 const MAX_CURVE_POINTS = 128;
 
 export interface RiverPathSample {
@@ -124,8 +126,9 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
 
   const bankWidth = water.bankHeight === undefined ? 0 : (water.bankWidth ?? 5);
-  const bankCrest = bankWidth > 0 ? Math.max(1, boxWidth / (terrain.resolutionX - 1), boxDepth / (terrain.resolutionZ - 1)) * 1.5 : 0;
-  const bankReach = bankWidth + bankCrest;
+  const cellSize = Math.max(boxWidth / (terrain.resolutionX - 1), boxDepth / (terrain.resolutionZ - 1));
+  const bankCrest = bankWidth > 0 ? Math.max(1, cellSize) * 1.5 : 0;
+  const bankReach = bankWidth > 0 ? bankWidth + bankCrest : naturalBankReach(map, top, shore, cellSize);
   const boundary = waterBoundaryPoints(water);
   const xs = boundary.map((point) => point[0]);
   const zs = boundary.map((point) => point[1]);
@@ -144,6 +147,8 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
           const t = smoothstep(Math.max(0, distance - bankCrest) / bankWidth);
           const rim = Math.min(map.box.size[1], water.level + water.bankHeight!);
           terrain.heights[index] = Math.max(terrain.heights[index] ?? 0, rim + (bottom - rim) * t);
+        } else if (bankWidth === 0 && distance < bankReach) {
+          terrain.heights[index] = Math.min(terrain.heights[index] ?? 0, naturalBankCeiling(top, distance, cellSize));
         }
         continue;
       }
@@ -164,8 +169,10 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
   const maxHalfWidth = Math.max(0.15, ...samples.map((sample) => sample.width / 2));
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
   const bankWidth = water.bankHeight === undefined ? 0 : (water.bankWidth ?? 5);
-  const bankCrest = bankWidth > 0 ? Math.max(1, boxWidth / (terrain.resolutionX - 1), boxDepth / (terrain.resolutionZ - 1)) * 1.5 : 0;
-  const reach = maxHalfWidth + (bankWidth > 0 ? bankCrest + bankWidth : shore);
+  const cellSize = Math.max(boxWidth / (terrain.resolutionX - 1), boxDepth / (terrain.resolutionZ - 1));
+  const bankCrest = bankWidth > 0 ? Math.max(1, cellSize) * 1.5 : 0;
+  const naturalReach = naturalBankReach(map, Math.min(...samples.map((sample) => sample.level)) - SHORE_RIM, shore, cellSize);
+  const reach = maxHalfWidth + (bankWidth > 0 ? bankCrest + bankWidth : naturalReach);
   const xs = samples.map((sample) => sample.point[0]);
   const zs = samples.map((sample) => sample.point[1]);
   const minX = gridFloor(Math.min(...xs) - reach, boxWidth, terrain.resolutionX);
@@ -179,7 +186,7 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
       const closest = sampleRiverProfile(world[0], world[2], samples);
       const halfWidth = closest.width / 2;
       const bedHalfWidth = halfWidth * 0.5;
-      if (closest.distance > halfWidth + (bankWidth > 0 ? bankCrest + bankWidth : shore)) continue;
+      if (closest.distance > halfWidth + (bankWidth > 0 ? bankCrest + bankWidth : naturalReach)) continue;
       const top = closest.level - SHORE_RIM;
       const bottom = Math.max(TERRAIN_MIN_HEIGHT, closest.level - water.depth);
       let ceiling: number;
@@ -196,7 +203,7 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
             ? top + (rim - top) * smoothstep(distance / bankCrest)
             : rim + (bottom - rim) * smoothstep((distance - bankCrest) / bankWidth);
         } else {
-          ceiling = top + water.depth * smoothstep(distance / shore);
+          ceiling = naturalBankCeiling(top, distance, cellSize);
         }
       }
       const index = terrainIndex(terrain, xIndex, zIndex);
@@ -205,6 +212,14 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
         : Math.min(terrain.heights[index] ?? 0, ceiling);
     }
   }
+}
+
+function naturalBankReach(map: EditableMap, waterTop: number, shore: number, cellSize: number): number {
+  return Math.max(shore, (map.box.size[1] - waterTop) / NATURAL_BANK_SLOPE + cellSize);
+}
+
+function naturalBankCeiling(waterTop: number, distance: number, cellSize: number): number {
+  return waterTop + NATURAL_BANK_SLOPE * distance * smoothstep(distance / cellSize);
 }
 
 export function isNearWater(map: EditableMap, x: number, z: number, padding: number): boolean {
