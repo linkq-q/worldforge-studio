@@ -186,6 +186,7 @@ declare module '@voxel-studio/render-runtime' {
     });
     setWaterSurfaces(surfaces: PlanarReflectionSurface[]): void;
     syncToRendererSize(): void;
+    forceUpdate(): void;
     render(): void;
     dispose(): void;
   }

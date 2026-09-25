@@ -301,13 +301,31 @@ export class PlanarReflectionPass {
       primary: true,
     };
 
-    this._renderWaterTarget(primaryTarget);
+    // A planar capture depends on the world plane, not the pool's X/Z location
+    // or footprint. Reuse it across coplanar model instances (e.g. lily ponds).
+    const capturedPlanes = [];
+    for (const target of [primaryTarget, ...this._extraWaterTargets.values()]) {
+      if (!target.waterSurface || !target.waterMesh) continue;
+      target.waterMesh.updateWorldMatrix(true, false);
+      const position = target.waterMesh.getWorldPosition(new THREE.Vector3());
+      const normal = new THREE.Vector3(0, 1, 0).transformDirection(target.waterMesh.matrixWorld);
+      const constant = -normal.dot(position);
+      const shared = capturedPlanes.find(entry =>
+        entry.normal.distanceToSquared(normal) < 1e-12 && Math.abs(entry.constant - constant) < 1e-4
+      );
+      if (shared) {
+        this._syncWaterSurface(target.waterSurface, shared.target.renderTarget, shared.target.textureMatrix);
+        // Its own target is stale while sampling the shared capture. Refresh it
+        // if this pool later moves onto a different plane or becomes the owner.
+        target.needsUpdate = true;
+        this._skipCount++;
+      } else {
+        this._renderWaterTarget(target);
+        capturedPlanes.push({ normal, constant, target });
+      }
+    }
     this._lastWaterLevel = primaryTarget.lastWaterLevel;
     this.needsUpdate = primaryTarget.needsUpdate;
-
-    for (const target of this._extraWaterTargets.values()) {
-      this._renderWaterTarget(target);
-    }
   }
 
   _renderWaterTarget(target) {
