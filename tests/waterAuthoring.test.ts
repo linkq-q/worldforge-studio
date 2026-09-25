@@ -29,6 +29,18 @@ describe('water authoring contracts', () => {
     carveWaterBasinInPlace(map, water);
     expect(sampleTerrainHeight(map, 3, 9)).toBeLessThan(2);
   });
+  it('keeps high ground outside an unrequested river or lake bank untouched', () => {
+    for (const water of [
+      { id: 'lake', name: 'Lake', type: 'lake', points: [[-10,-10],[10,-10],[10,10],[-10,10]], level: 2, depth: 3, width: 8, shorelineSmoothness: 0 },
+      { id: 'river', name: 'River', type: 'river', points: [[0,-30],[0,30]], level: 2, levels: [2,2], depth: 3, width: 8, shorelineSmoothness: 0 }
+    ] as MapWaterBody[]) {
+      const map = createEmptyMap('steep bank', 'steep-bank', [96, 64, 96]);
+      map.terrain.heights.fill(10);
+      carveWaterBasinInPlace(map, water);
+      expect(sampleTerrainHeight(map, water.type === 'river' ? 12 : 20, 0)).toBe(10);
+      expect(sampleTerrainHeight(map, 0, 0)).toBeLessThan(2);
+    }
+  });
   it('creates explicitly requested reservoir banks without changing unrequested terrain, and is idempotent', () => {
     const map = createEmptyMap();
     const lake: MapWaterBody = { id:'lake', name:'Lake', type:'lake', points:[[-8,-8],[8,-8],[8,8],[-8,8]], level:6, depth:3, width:1, shorelineSmoothness:0, bankHeight:0.5, bankWidth:5 };

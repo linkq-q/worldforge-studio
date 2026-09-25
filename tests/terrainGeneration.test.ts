@@ -5,6 +5,7 @@ import {
   deriveTerrainCliffSegments,
   getTerrainCliffAabbs,
   normalizeMap,
+  refineTerrainResolution,
   sampleTerrainHeight
 } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
@@ -147,6 +148,25 @@ describe('deterministic terrain generation', () => {
     });
     expect(Math.max(...incision) - Math.min(...incision)).toBeLessThan(0.15);
     expect(Math.min(...incision)).toBeGreaterThan(0.2);
+  });
+
+  it('keeps mountain drainage from cutting isolated grid-width spikes into ridges', () => {
+    const map = createEmptyMap('mountain drainage', 'mountain-drainage', [96, 48, 96]);
+    map.terrain = refineTerrainResolution(map.terrain, 2);
+    generateTerrainInPlace(map, { preset: 'mountains', seed: 42, amplitude: 35, roughness: 0.65, direction: 30 });
+    const original = [...map.terrain.heights];
+    refineTerrainInPlace(map, { erosion: 0.2, drainage: 0.55, iterations: 8, talus: 46 });
+    const { resolutionX: width, resolutionZ: depth, heights } = map.terrain;
+    const cut = heights.map((height, index) => original[index] - height);
+    let isolatedCuts = 0;
+    for (let z = 1; z < depth - 1; z += 1) for (let x = 1; x < width - 1; x += 1) {
+      const index = z * width + x;
+      const adjacent = (cut[index - 1] + cut[index + 1] + cut[index - width] + cut[index + width]) / 4;
+      if (cut[index] - adjacent > 0.2) isolatedCuts += 1;
+    }
+    expect(Math.max(...cut)).toBeLessThan(6);
+    expect(isolatedCuts).toBeLessThan(500);
+    expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(20);
   });
 
   it('applies local brushes after the generated base inside one transaction', () => {

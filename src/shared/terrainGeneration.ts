@@ -786,6 +786,12 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
   // Stream-power incision: drainage area increases erosion; flat sinks and
   // open boundaries remain outlets. This is not a sediment-transport solver.
   // Solve downstream first so an upstream sample cannot cut below its receiver.
+  const spreadCuts = width >= 5 && depth >= 5;
+  const before = Float64Array.from(terrain.heights);
+  const cuts = new Float64Array(cellCount);
+  const maximumCut = spreadCuts ? Math.min(stepX, stepZ) * strength * 0.45 : Number.POSITIVE_INFINITY;
+  let floor = Number.POSITIVE_INFINITY;
+  for (const height of before) floor = Math.min(floor, height);
   for (let order = descending.length - 1; order >= 0; order -= 1) {
     const index = descending[order];
     const height = terrain.heights[index] ?? 0;
@@ -797,8 +803,28 @@ function carveDrainageInPlace(map: EditableMap, strength: number): void {
       if (target >= 0) receiver += flowFraction[slot] * Math.max(0, terrain.heights[target] ?? 0);
     }
     const incision = strength * 0.35 * Math.sqrt(accumulation[index]) / flowDistance[index];
-    terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT,
-      (height + incision * receiver) / (1 + incision));
+    const target = (height + incision * receiver) / (1 + incision);
+    cuts[index] = Math.min(maximumCut, Math.max(0, height - target));
+    terrain.heights[index] = height - cuts[index];
+  }
+  if (!spreadCuts) return;
+
+  // Erosion features narrower than a few height samples produce comb-like
+  // channels. Spread the bounded cut, not the terrain heights, so broad ridges
+  // and intentionally steep slopes keep their shape.
+  for (let z = 1; z < depth - 1; z += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const index = z * width + x;
+      if (before[index] <= 0) {
+        terrain.heights[index] = before[index];
+        continue;
+      }
+      const spread = (cuts[index] * 8
+        + (cuts[index - 1] + cuts[index + 1] + cuts[index - width] + cuts[index + width]) * 2
+        + cuts[index - width - 1] + cuts[index - width + 1]
+        + cuts[index + width - 1] + cuts[index + width + 1]) / 20;
+      terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT, floor, before[index] - spread);
+    }
   }
 }
 
