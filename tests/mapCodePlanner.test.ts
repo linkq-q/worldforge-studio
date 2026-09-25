@@ -134,7 +134,11 @@ describe('map code planner', () => {
     expect(coupled).toContain('Call this after the terrain, water and routes it reads');
     expect(coupled).toContain('Hard edges and named regions are appropriate only where');
     expect(coupled).toContain('finite candidates, maxPoints and minDistance');
+    expect(coupled).toContain('The 128-point sampler default is not a whole-map target');
+    expect(coupled).toContain('500 or more purposeful placements');
+    expect(coupled).toContain("one call's 512-point limit");
     expect(standard).not.toContain('Shared generative relationships for a large scene');
+    expect(standard).not.toContain('Area-scaled placement budget');
   });
 
   it('restricts minimal execution to the documented 12 APIs', () => {

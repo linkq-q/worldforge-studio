@@ -12,7 +12,7 @@ export interface MapPlanLimits {
 
 export const DEFAULT_MAP_AI_MAX_NEW_ASSETS = 16;
 export const DEFAULT_MAP_AI_MIN_NEW_ASSETS = 0;
-export const MAP_AI_MAX_NEW_ASSETS = 32;
+export const MAP_AI_MAX_NEW_ASSETS = 64;
 
 export function normalizeMapAiMaxNewAssets(value: unknown): number {
   const parsed = Number(value);
