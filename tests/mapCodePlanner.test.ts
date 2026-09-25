@@ -191,6 +191,25 @@ describe('map code planner', () => {
     )).toThrow('api.renderSuggestion is not a function');
   });
 
+  it('exposes the merged main API without the layout templates', () => {
+    const map = createEmptyMap('main planner', 'main-planner', [96, 16, 96]);
+    const result = executeMapCodePlan(`function plan(api) {
+      if (typeof api.environmentSample !== 'function' || typeof api.foundation !== 'function'
+        || typeof api.sampleProbabilityField !== 'function' || typeof api.placeBetween !== 'function'
+        || typeof api.bridge !== 'function' || typeof api.spawn !== 'function') throw new Error('missing_main_api');
+      if (api.poissonDisk !== undefined || api.streetGrid !== undefined || api.random !== undefined) throw new Error('extra_main_api');
+      api.terrain('hills', {seed:42, amplitude:4});
+      const site = api.environmentSample([7,11]);
+      api.place({name:'site-' + site.height.toFixed(3), position:[7,11], role:'structure'});
+    }`, map, [], { scope:'scene', promptMode:'main', spatialPolicy:'diagnose' });
+    expect(result.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(result.codePlan?.functions).toContain('environmentSample');
+    expect(() => executeMapCodePlan(
+      "function plan(api) { api.poissonDisk({region:{kind:'circle',center:[0,0],radius:8}}); }",
+      map, [], { scope:'scene', promptMode:'main' }
+    )).toThrow('api.poissonDisk is not a function');
+  });
+
   it('reports lint findings without applying spatial repairs in diagnose mode', () => {
     const map = createEmptyMap('lake diagnostics', 'lake-diagnostics');
     map.waterBodies = [{

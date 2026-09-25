@@ -31,12 +31,12 @@ export const CHAT_PROVIDER_OPTIONS = [
   { key: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', disabled: true }
 ] as const;
 export type ChatProvider = typeof CHAT_PROVIDER_OPTIONS[number]['key'];
-export type MapCodePromptMode = 'standard' | 'minimal' | 'coupled' | `teacher-${CodePlanMode}`;
+export type MapCodePromptMode = 'main' | 'standard' | 'minimal' | 'coupled' | `teacher-${CodePlanMode}`;
 export type MapCodeRevisionMode = 'repair' | 'first-pass';
 export type MapCodeSpatialPolicy = 'repair' | 'diagnose';
 
 export function normalizeMapCodePromptMode(value: unknown): MapCodePromptMode {
-  if (value === 'standard' || value === 'minimal' || value === 'coupled') return value;
+  if (value === 'main' || value === 'standard' || value === 'minimal' || value === 'coupled') return value;
   if (typeof value === 'string' && value.startsWith('teacher-')
     && CODE_PLAN_MODE_OPTIONS.some((option) => option.key === value.slice(8))) {
     return value as MapCodePromptMode;

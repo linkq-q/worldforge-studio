@@ -128,6 +128,11 @@ const MINIMAL_MAP_CODE_API_KEYS = [
   'terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
 ] as const;
+const MAIN_MAP_CODE_API_KEYS = [
+  'seed', 'bounds', 'terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain',
+  'surface', 'water', 'route', 'grass', 'environmentSample', 'sampleProbabilityField',
+  'requireAsset', 'asset', 'place', 'foundation', 'bridge', 'placeBetween', 'spawn'
+] as const;
 // Hide retired outdoor APIs from new plans; keep implementations for historical replay.
 const RETIRED_OUTDOOR_MAP_CODE_API_KEYS = new Set([
   'refineTerrain', 'streetGrid', 'placeStreetFrontage', 'grassField',
@@ -1202,6 +1207,10 @@ function executeMapCodePlanInternal(
   const cleanCode = normalizeMapCodePlan(code);
   if (!cleanCode || cleanCode.length > MAX_MAP_CODE_LENGTH) throw new Error('invalid_map_code_plan');
   const minimalMode = (options.promptMode === 'minimal' || teacherCodePlanMode(options.promptMode ?? 'standard') !== null)
+    && map.sceneMode === 'outdoor'
+    && (options.requestMode ?? 'generate') === 'generate'
+    && options.scope === 'scene';
+  const mainMode = options.promptMode === 'main'
     && map.sceneMode === 'outdoor'
     && (options.requestMode ?? 'generate') === 'generate'
     && options.scope === 'scene';
@@ -3157,6 +3166,8 @@ function executeMapCodePlanInternal(
 
   const sandboxApi = minimalMode
     ? Object.freeze(Object.fromEntries(MINIMAL_MAP_CODE_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
+    : mainMode
+      ? Object.freeze(Object.fromEntries(MAIN_MAP_CODE_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
     : map.sceneMode === 'outdoor' && !options.legacyApis
       ? Object.freeze(Object.fromEntries(Object.entries(api).filter(([key]) => !RETIRED_OUTDOOR_MAP_CODE_API_KEYS.has(key))))
       : api;
