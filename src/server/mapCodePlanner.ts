@@ -131,7 +131,7 @@ const RETIRED_OUTDOOR_MAP_CODE_API_KEYS = new Set([
   'sampleBezier', 'sampleBezierFrames', 'sampleBezierFramesBySpacing', 'ellipsePoint',
   'keepDry', 'gridPoints', 'offsetPolygon', 'insetPolygon', 'gridInsideRegion',
   'localToWorld3D', 'noise2D', 'fbm2D', 'optimizeLayout', 'assetSpace', 'connectionGap', 'placeRelative', 'attach', 'design',
-  'routeNetwork', 'passage', 'sightline', 'distance2D'
+  'routeNetwork', 'passage', 'sightline', 'distance2D', 'bezierPoint', 'circlePoint', 'tangentYaw'
 ]);
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
@@ -144,7 +144,7 @@ Mechanical ownership: preset:'plain' always writes a zero-height field; amplitud
 Enum fields are closed choices, not descriptions. Put descriptive meaning in id/name or comments; never write phrases such as "gentle central basin" in modifier or "packed earth" in surface.`;
 const MAP_CODE_TOPOLOGY_CONTRACT = `Use these topology return and geometry contracts:
 - api.route(...) returns the route ID string, not an object. Use const mainRouteId=api.route(...), then routeId:mainRouteId; never read .id from that string. Never use mainRoute.id.
-- api.bridge accepts one object argument only: api.bridge({ waterId:'canal', assetId:api.asset(bridgeKey,0), crossingCenter:[x,z], direction:[dx,dz], dimensions:[width,height,depth] }). crossingCenter must lie inside the named water body and direction must cross two opposite shoreline boundaries. For a river, place the center on its centerline and use a direction perpendicular to the local river path. Do not distribute bridges with circlePoint.`;
+- api.bridge accepts one object argument only: api.bridge({ waterId:'canal', assetId:api.asset(bridgeKey,0), crossingCenter:[x,z], direction:[dx,dz], dimensions:[width,height,depth] }). crossingCenter must lie inside the named water body and direction must cross two opposite shoreline boundaries. For a river, place the center on its centerline and use a direction perpendicular to the local river path. Do not distribute bridges on a generic ring.`;
 const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
 const ENVIRONMENT_ASSET = /\b(?:tree|forest|plant|vegetation|grass|shrub|bush|flower|fern|moss|rock|stone|boulder|crystal|mushroom|cactus|reed|coral|animal|creature|wildlife|bird|fish|deer|horse|insect|nature|flora|fauna)s?\b|树|森林|植物|植被|草|灌木|花|蕨|苔藓|岩石|石头|巨石|水晶|蘑菇|仙人掌|芦苇|珊瑚|动物|生物|野生|鸟|鱼|鹿|马|昆虫|自然|生态/i;
 const ENTRANCE_ASSET = /\b(?:gate|entrance|door|portal|archway|moon gate)\b|入口|拱门|月洞门|传送门|门楼|城门|大门|主门|侧门|院门|园门|馆门|竞技场门/i;
@@ -3985,7 +3985,7 @@ Never add or subtract arrays directly. Use [a[0] - b[0], a[1] - b[1]]. Never rea
 ## Asset coordinate and orientation contract
 Every generated model uses local Y+ as up, local Z+ as its front/forward direction, and local X+ as its right side.
 For a building, gate, wall facade, stall, vehicle, or prop with a recognizable front, put its entrance, facade, opening, windshield, or nose toward local Z+ in the model-generation prompt.
-World rotationY rotates that local Z+ front on the map. api.tangentYaw(direction) makes local Z+ follow a path tangent; api.faceYaw(from,to) makes local Z+ face a target point; add api.TAU / 2 when the back should face the target.
+World rotationY rotates that local Z+ front on the map. Set facing:{tangent:[dx,dz]} to follow a path tangent, or facing:{target:[x,z]} to face a target point; add offsetY:api.TAU/2 inside facing when the back should face the target.
 Do not randomize the rotation of directional assets unless the requested composition calls for it.
 
 ## Spatial planning boundary
@@ -4003,9 +4003,8 @@ ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
 ${MAP_CODE_TOPOLOGY_CONTRACT}
 Regions: {kind:'circle',x,z,radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}.
 Scalar math: api.random(min?,max?). Use plain JavaScript and Math for other scalar calculations.
-Transforms: api.tangentYaw(tangent), api.faceYaw(from,to).
-Curves: api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
-Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,guideIds?,region?,cluster?:{strength,scale,seed},marks?:[{id,minDistance?,maxPoints?,cluster?}]}, (sample,index) => weightOrMarkWeights) returns points with optional point.mark. sample uses the same environment values as environmentSample. A scalar callback preserves ordinary custom fields; with marks, return {[markId]:weight} and give each mark its own spacing, quota and optional cluster parameters. Cross-mark spacing uses the global minDistance, so trees, flowers or any other labels remain model-authored rather than hard-coded. Omitted seeds default to api.seed. Weights are clamped to [0,1], candidates to 4096 and results to 512.
+Transforms: api.faceYaw(from,to).
+Layouts: api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,guideIds?,region?,cluster?:{strength,scale,seed},marks?:[{id,minDistance?,maxPoints?,cluster?}]}, (sample,index) => weightOrMarkWeights) returns points with optional point.mark. sample uses the same environment values as environmentSample. A scalar callback preserves ordinary custom fields; with marks, return {[markId]:weight} and give each mark its own spacing, quota and optional cluster parameters. Cross-mark spacing uses the global minDistance, so trees, flowers or any other labels remain model-authored rather than hard-coded. Omitted seeds default to api.seed. Weights are clamped to [0,1], candidates to 4096 and results to 512.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. This helper returns geometry only; you still own entrances, structural roles and connected placements.
 ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.

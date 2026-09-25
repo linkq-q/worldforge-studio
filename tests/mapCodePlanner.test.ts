@@ -657,7 +657,12 @@ describe('map code planner', () => {
     expect(prompt).toContain('function transformFootprint(localPoints, origin, yaw, scale)');
     expect(prompt).toContain('dependency graph, not a required order of reasoning');
     expect(prompt).toContain('not a scene recipe, minimum layer count or requirement to decompose every building');
-    expect(prompt).toContain('api.circlePoint(index,count,radius,center?)');
+    for (const name of ['bezierPoint', 'circlePoint', 'tangentYaw']) {
+      expect(prompt).not.toContain(`api.${name}`);
+      expect(() => executeMapCodePlan(`function plan(api) { api.${name}(); }`, createEmptyMap(), [], {
+        scope: 'scene', legacyApis: false
+      })).toThrow(`api.${name} is not a function`);
+    }
     expect(prompt).toContain('facing may be a direction [dx,dz]');
     expect(prompt).not.toContain('api.design');
     expect(prompt).not.toContain('Two-tier arena shell with a ground gateway');
@@ -1866,7 +1871,7 @@ describe('map code planner', () => {
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(repairRequest.messages.at(-1).content).toContain('crossingCenter must lie inside the named water body');
     expect(repairRequest.messages.at(-1).content).toContain('direction perpendicular to the local river path');
-    expect(repairRequest.messages.at(-1).content).toContain('Do not distribute bridges with circlePoint');
+    expect(repairRequest.messages.at(-1).content).toContain('Do not distribute bridges on a generic ring');
   });
 
   it('keeps valid scene content when a local bridge crossing remains unresolved', () => {
@@ -3879,7 +3884,10 @@ describe('map code planner', () => {
     const brokenCode = `
       function plan(api) {
         const points = [];
-        for (let i = 0; i <= 4; i++) points.push(api.bezierPoint(i / 4, [-5,0], [-2,3], [2,-3], [5,0]).point);
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          points.push([-5 + 10 * t, 3 * Math.sin(t * Math.PI)]);
+        }
         for (let index = 0; index < points.length; index += 1) {
           api.place({ position: [points[index][0], points[index + 1][1]] });
         }

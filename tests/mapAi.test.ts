@@ -107,7 +107,8 @@ describe('map AI adapter', () => {
         api.sceneIntent({ kind: 'authored', reason: 'A ceremonial arena is a purpose-built public place' });
         api.terrain('hills', { amplitude: 1.5, roughness: 0.2 });
         for (let index = 0; index < 8; index += 1) {
-          const point = api.circlePoint(index, 8, 12, [0, 0]);
+          const angle = index * api.TAU / 8;
+          const point = [Math.cos(angle) * 12, Math.sin(angle) * 12];
           api.place({ assetId: 'arena-segment', name: 'Arena Segment', role: 'structure', position: point, facing: { target: [0, 0] } });
         }
       }`));
@@ -132,7 +133,7 @@ describe('map AI adapter', () => {
     expect(composerRequest.messages[0].content).not.toContain('api.design');
     expect(composerRequest.messages[1].content).toBe('Create a compact ceremonial arena');
     expect(suggestion.codePlan?.sceneIntent).toBe('authored');
-    expect(suggestion.codePlan?.functions).toContain('circlePoint');
+    expect(suggestion.codePlan?.functions).not.toContain('circlePoint');
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')
       .every((operation) => operation.type === 'object.add' && operation.object.locked === true)).toBe(true);
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
@@ -283,7 +284,8 @@ describe('map AI adapter', () => {
         const rock = api.requireAsset({ key: 'rock', name: 'Garden Rock', prompt: 'Standalone garden rock', tags: ['rock'], role: 'environment' });
         const flower = api.requireAsset({ key: 'flower', name: 'Flower Bed', prompt: 'Standalone flower bed', tags: ['flower'], role: 'environment' });
         for (let index = 0; index < 6; index += 1) {
-          const point = api.circlePoint(index, 6, 10, [0, 0]);
+          const angle = index * api.TAU / 6;
+          const point = [Math.cos(angle) * 10, Math.sin(angle) * 10];
           api.place({ assetId: api.asset(shell, 0), position: point, facing: { target: [0, 0] } });
         }
         api.place({ assetId: api.asset(tree, 0), position: [-14, 0] });
