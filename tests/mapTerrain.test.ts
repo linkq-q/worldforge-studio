@@ -12,6 +12,7 @@ import {
   createEmptyMap,
   movePlayerPositionForMap,
   normalizeMap,
+  refineTerrainResolution,
   sampleTerrainHeight,
   superMapSizeFromMediumCount,
   stepPlayerVerticalMotionForMap,
@@ -19,6 +20,7 @@ import {
   PLAYER_RADIUS,
   type MapObjectAabb
 } from '../src/shared/map';
+import { applyMapOperations } from '../src/shared/mapOperations';
 import { MAP_ASSET_COLLIDER_PROFILE, buildModelColliderPlan } from '../src/shared/modelBounds';
 import { movementDelta, stepVerticalMotion } from '../src/shared/math';
 import {
@@ -90,6 +92,20 @@ describe('map terrain editing', () => {
 
     expect(map.terrain.resolutionX).toBe(existingResolution);
     expect(map.terrain.resolutionZ).toBe(existingResolution);
+  });
+  it('refines an existing grid through one terrain transaction and preserves its original samples', () => {
+    const map = createEmptyMap('fine terrain', 'fine-terrain', [96, 64, 96]);
+    const original = map.terrain;
+    original.heights[32 * 65 + 32] = 8;
+    const refined = refineTerrainResolution(original, 2);
+    expect([refined.resolutionX, refined.resolutionZ]).toEqual([129, 129]);
+    expect(refined.heights[64 * 129 + 64]).toBe(8);
+    expect(refined.heights[64 * 129 + 65]).toBe(4);
+    expect(map.terrain.resolutionX).toBe(65);
+    const updated = applyMapOperations(map, [{ type: 'terrain.set', terrain: refined }]);
+    expect(updated.terrain.resolutionX).toBe(129);
+    expect(updated.terrain.heights[64 * 129 + 64]).toBe(8);
+    expect(normalizeMap(updated).terrain.resolutionX).toBe(129);
   });
 
   it('flattens terrain toward a locked target height with brush strength', () => {

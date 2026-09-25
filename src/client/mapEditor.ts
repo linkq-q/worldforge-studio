@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import {
   MAP_SIZE_PRESETS,
+  MAX_TERRAIN_RESOLUTION,
   SUPER_MAP_MEDIUM_COUNT_MAX,
   SUPER_MAP_MEDIUM_COUNT_MIN,
   DEFAULT_PLAYER_HEIGHT,
@@ -30,6 +31,7 @@ import {
   normalizeWorldScaleProfile,
   placeRoomOpeningObjectInPlace,
   reassignRegionGenerationOwnersInPlace,
+  refineTerrainResolution,
   sampleTerrainHeight,
   roomSurfaceObjectId,
   syncRoomOpeningFromObjectInPlace,
@@ -3017,6 +3019,16 @@ class MapEditor {
     await this.previewTerrainOperations(`整体地貌：${terrainPresetLabel(this.state.terrainPreset)}`, [operation]);
   }
 
+  private async previewTerrainGrid(factor: 2 | 4): Promise<void> {
+    const map = this.state.map;
+    if (!map) return;
+    const terrain = refineTerrainResolution(map.terrain, factor);
+    if (terrain === map.terrain) return;
+    await this.previewTerrainOperations(`地形网格：${terrain.resolutionX} × ${terrain.resolutionZ}`, [
+      { type: 'terrain.set', terrain }
+    ]);
+  }
+
   private async previewTerrainGesture(): Promise<void> {
     const map = this.state.map;
     const points = this.terrainGesturePoints;
@@ -3584,6 +3596,10 @@ class MapEditor {
           <button type="button" class="secondary" data-terrain-reroll ${this.state.busy || Boolean(this.mapAiPreviewMap) ? 'disabled' : ''}>换一个种子</button>
         </div>
         <p class="empty">种子 ${this.terrainSeed ?? map.seed} · 岛屿自动生成海面；沙漠自动附加沙地与飞沙语义。</p>
+        <p class="empty">当前网格 ${map.terrain.resolutionX} × ${map.terrain.resolutionZ} · 间距 ${(map.box.size[0] / (map.terrain.resolutionX - 1)).toFixed(2)} × ${(map.box.size[2] / (map.terrain.resolutionZ - 1)).toFixed(2)} 米。加密后可更细地雕刻河岸；已有山形只会插值，需重新生成或细雕才会增加形状细节。</p>
+        <div class="map-ai-controls">
+          ${([2, 4] as const).map((factor) => `<button type="button" class="secondary" data-terrain-refine-grid="${factor}" ${this.state.dirty || this.state.busy || Boolean(this.mapAiPreviewMap) || (map.terrain.resolutionX >= MAX_TERRAIN_RESOLUTION && map.terrain.resolutionZ >= MAX_TERRAIN_RESOLUTION) ? 'disabled' : ''}>加密网格 ×${factor}（最高 ${MAX_TERRAIN_RESOLUTION}）</button>`).join('')}
+        </div>
         <label class="field compact"><span>局部工具</span><select data-terrain-action>
           <option value="brush" ${this.state.terrainAction === 'brush' ? 'selected' : ''}>基础画笔</option>
           <option value="modifier" ${this.state.terrainAction === 'modifier' ? 'selected' : ''}>地貌修改器</option>
@@ -3918,6 +3934,9 @@ class MapEditor {
       this.deleteRoadGuide(this.selectedRoadGuideId);
     });
     host.querySelector('[data-terrain-preview-base]')?.addEventListener('click', () => void this.previewTerrainBase());
+    host.querySelectorAll<HTMLButtonElement>('[data-terrain-refine-grid]').forEach((button) => {
+      button.addEventListener('click', () => void this.previewTerrainGrid(Number(button.dataset.terrainRefineGrid) as 2 | 4));
+    });
     host.querySelector('[data-terrain-reroll]')?.addEventListener('click', () => {
       this.terrainSeed = nextTerrainSeed(this.terrainSeed ?? map.seed);
       this.renderMapInspector();

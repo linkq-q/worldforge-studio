@@ -368,7 +368,7 @@ export const PLAYER_SPAWN_OBJECT_ID = '__player_spawn__';
 export const SUN_OBJECT_ID = '__sun__';
 export const DEFAULT_SUN_POSITION: Vec3 = [-18, 24, 14];
 export const DEFAULT_TERRAIN_RESOLUTION = 33;
-const MAX_TERRAIN_RESOLUTION = 513;
+export const MAX_TERRAIN_RESOLUTION = 513;
 /**
  * Terrain height 0 is sea level, not the floor. Lake basins are carved below it,
  * so the height field has to be allowed to go negative.
@@ -2025,6 +2025,17 @@ function normalizeTerrain(input: Partial<MapTerrain> | undefined, fallbackX: num
     ? sourceHeights
     : resampleTerrainHeights(sourceHeights, sourceX, sourceZ, resolutionX, resolutionZ);
   return { resolutionX, resolutionZ, heights };
+}
+
+export function refineTerrainResolution(terrain: MapTerrain, factor: 2 | 4): MapTerrain {
+  const resolutionX = Math.min(MAX_TERRAIN_RESOLUTION, (terrain.resolutionX - 1) * factor + 1);
+  const resolutionZ = Math.min(MAX_TERRAIN_RESOLUTION, (terrain.resolutionZ - 1) * factor + 1);
+  if (resolutionX === terrain.resolutionX && resolutionZ === terrain.resolutionZ) return terrain;
+  return {
+    resolutionX,
+    resolutionZ,
+    heights: resampleTerrainHeights(terrain.heights, terrain.resolutionX, terrain.resolutionZ, resolutionX, resolutionZ)
+  };
 }
 
 function resampleTerrainHeights(source: number[], sourceX: number, sourceZ: number, targetX: number, targetZ: number): number[] {
