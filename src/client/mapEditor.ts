@@ -174,6 +174,7 @@ import {
 import {
   CHAT_PROVIDER_OPTIONS,
   MODEL_PROVIDERS,
+  normalizeMapCodePromptMode,
   type AgentProgressEvent,
   type ChatProvider,
   type MapCodePromptMode,
@@ -181,6 +182,7 @@ import {
   type MapCodeSpatialPolicy,
   type ModelProvider
 } from '../shared/protocol';
+import { CODE_PLAN_INDOOR_MODE_OPTIONS, CODE_PLAN_OUTDOOR_MODE_OPTIONS } from '../shared/codePlanModes';
 import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
 import {
@@ -1276,7 +1278,7 @@ class MapEditor {
           this.mapAiPaletteId = plan.options.paletteId;
           this.mapAiProvider = plan.options.provider ?? 'gpt';
           this.mapAiAssetProvider = plan.options.assetProvider ?? '';
-          this.mapAiCodePromptMode = plan.options.codePromptMode ?? 'standard';
+          this.mapAiCodePromptMode = normalizeMapCodePromptMode(plan.options.codePromptMode);
           this.mapAiCodeRevisionMode = plan.options.codeRevisionMode ?? 'repair';
           this.mapAiCodeSpatialPolicy = plan.options.codeSpatialPolicy ?? 'diagnose';
           this.pendingCodeSuggestion = plan.suggestion;
@@ -1681,6 +1683,9 @@ class MapEditor {
               <option value="coupled" ${this.mapAiCodePromptMode === 'coupled' ? 'selected' : ''}>共享关系与连续场（大地图）</option>
               <option value="standard" ${this.mapAiCodePromptMode === 'standard' ? 'selected' : ''}>标准完整能力</option>
               <option value="minimal" ${this.mapAiCodePromptMode === 'minimal' ? 'selected' : ''}>极简 12 API（仅室外首轮）</option>
+              <optgroup label="老师分支 · 原始 Code 实验">
+                ${(map.sceneMode === 'indoor' ? CODE_PLAN_INDOOR_MODE_OPTIONS : CODE_PLAN_OUTDOOR_MODE_OPTIONS).map((option) => `<option value="teacher-${option.key}" ${this.mapAiCodePromptMode === `teacher-${option.key}` ? 'selected' : ''}>${option.label}</option>`).join('')}
+              </optgroup>
             </select>
           </label>
           <label class="field compact">
@@ -1852,8 +1857,7 @@ class MapEditor {
       this.renderMapAiPanel();
     });
     host.querySelector<HTMLSelectElement>('#map-ai-code-prompt-mode')?.addEventListener('change', (event) => {
-      const mode = (event.target as HTMLSelectElement).value;
-      this.mapAiCodePromptMode = mode === 'minimal' || mode === 'coupled' ? mode : 'standard';
+      this.mapAiCodePromptMode = normalizeMapCodePromptMode((event.target as HTMLSelectElement).value);
     });
     host.querySelector<HTMLSelectElement>('#map-ai-code-revision-mode')?.addEventListener('change', (event) => {
       this.mapAiCodeRevisionMode = (event.target as HTMLSelectElement).value === 'first-pass' ? 'first-pass' : 'repair';
@@ -6172,10 +6176,13 @@ class MapEditor {
     const rebuildMs = performance.now() - rebuildStartedAt;
     if (rebuildMs > 100) {
       const profile = next.buildProfile;
+      let sceneMeshes = 0;
+      next.group.traverse((object) => { if ('isMesh' in object && object.isMesh) sceneMeshes += 1; });
       console.info(
         `[perf] scene rebuild: ${this.mapWithEditorAssets().objects.length} objects in ${rebuildMs.toFixed(0)}ms `
         + `(setup ${profile.setupMs.toFixed(0)}, batches ${profile.primitiveBatchMs.toFixed(0)}, `
-        + `visuals ${profile.objectVisualMs.toFixed(0)}, finalize ${profile.finalizeMs.toFixed(0)})`
+        + `visuals ${profile.objectVisualMs.toFixed(0)}, finalize ${profile.finalizeMs.toFixed(0)}; meshes ${sceneMeshes}, `
+        + `batch meshes ${next.getRuntimeBatchMeshes().length})`
       );
     }
     if (previous) {

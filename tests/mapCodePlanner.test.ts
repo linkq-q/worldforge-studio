@@ -141,6 +141,35 @@ describe('map code planner', () => {
     expect(standard).not.toContain('Area-scaled placement budget');
   });
 
+  it('keeps the teacher branch raw composition modes separate from main prompts', () => {
+    const outdoor = createEmptyMap('garden');
+    const indoor = createEmptyMap('room', 'room', [10, 3, 8], 'voxel', 'indoor');
+    const baseline = buildMapCodePlannerSystemPrompt(outdoor, [], 0, 4, 'scene', 'generate', '', [], 'teacher-minimal');
+    const fields = buildMapCodePlannerSystemPrompt(outdoor, [], 0, 4, 'scene', 'generate', '', [], 'teacher-fields');
+    const room = buildMapCodePlannerSystemPrompt(indoor, [], 0, 4, 'scene', 'generate', '', [], 'teacher-program-anchor');
+    const refinement = buildMapCodePlannerSystemPrompt(outdoor, [], 0, 4, 'scene', 'refine', '', [], 'teacher-fields');
+
+    expect(baseline).toContain('exactly these 10 APIs');
+    expect(baseline).not.toContain('Composition style — continuous fields');
+    expect(fields).toContain('Composition style — continuous fields');
+    expect(fields).toContain('at least one master field');
+    expect(room).toContain('Composition style — program-and-anchor');
+    expect(room).toContain('exactly these eleven APIs');
+    expect(refinement).toContain('Outdoor Scene Code refinement');
+    expect(refinement).not.toContain('Composition style — continuous fields');
+  });
+
+  it('compiles a large repeated placement plan as one transaction', () => {
+    const map = createEmptyMap('large garden', 'large-garden', [192, 24, 192]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      for (let index = 0; index < 580; index += 1) {
+        api.place({ name:'plant', position:[index % 29 * 6 - 84, Math.floor(index / 29) * 6 - 57] });
+      }
+    }`, map, [], { scope: 'scene', promptMode: 'teacher-minimal', spatialPolicy: 'diagnose' });
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(580);
+    expect(applyMapOperations(map, suggestion.operations).objects).toHaveLength(580);
+  });
+
   it('restricts minimal execution to the documented 12 APIs', () => {
     const allowed = executeMapCodePlan(
       "function plan(api) { api.place({name:'树',position:[api.random(-1,1),0],role:'environment'}); }",

@@ -25,10 +25,11 @@ describe('map AI controls', () => {
     expect(source.match(/codePromptMode: this\.mapAiCodePromptMode/g)).toHaveLength(3);
     expect(source.match(/codeRevisionMode: this\.mapAiCodeRevisionMode/g)).toHaveLength(3);
     expect(source.match(/codeSpatialPolicy: this\.mapAiCodeSpatialPolicy/g)).toHaveLength(3);
-    expect(source).toContain("plan.options.codePromptMode ?? 'standard'");
+    expect(source).toContain('normalizeMapCodePromptMode(plan.options.codePromptMode)');
+    expect(source).toContain('老师分支 · 原始 Code 实验');
     expect(source).toContain("plan.options.codeRevisionMode ?? 'repair'");
     expect(source).toContain("plan.options.codeSpatialPolicy ?? 'diagnose'");
-    expect(httpSource).toContain("body.codePromptMode === 'coupled' ? 'coupled' : 'standard'");
+    expect(httpSource).toContain('normalizeMapCodePromptMode(body.codePromptMode)');
     expect(httpSource).toContain("body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair'");
     expect(httpSource).toContain("body.codeSpatialPolicy === 'repair' ? 'repair' : 'diagnose'");
     expect(mapAiSource).toContain('promptMode: options.codePromptMode');

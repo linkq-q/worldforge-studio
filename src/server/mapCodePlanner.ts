@@ -8,6 +8,7 @@ import {
   getMapPlayerMetrics,
   MAX_WATER_DEPTH,
   normalizeMapRoom,
+  placeRoomOpeningObjectInPlace,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
@@ -22,6 +23,7 @@ import { rayAabbIntersection } from '../shared/math';
 import { foundationBoundary, foundationTopHeight, normalizeMapFoundation, type MapFoundation } from '../shared/mapFoundation';
 import { assetFootprintRadius, normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import { planMapObjectAttachment } from '../shared/mapAttachment';
+import { buildRawIndoorSceneCodeSystemPrompt, buildRawSceneCodeSystemPrompt } from './teacherCodePlanPrompts';
 import {
   sampleMapProbabilityField,
   type MapProbabilityCluster,
@@ -49,6 +51,7 @@ import type {
   MapCodeRevisionMode,
   MapCodeSpatialPolicy
 } from '../shared/protocol';
+import { teacherCodePlanMode } from '../shared/protocol';
 import {
   applyMapOperations,
   isCodePlanPlaceholderAssetId,
@@ -1198,7 +1201,7 @@ function executeMapCodePlanInternal(
 ): CodeExecutionResult {
   const cleanCode = normalizeMapCodePlan(code);
   if (!cleanCode || cleanCode.length > MAX_MAP_CODE_LENGTH) throw new Error('invalid_map_code_plan');
-  const minimalMode = options.promptMode === 'minimal'
+  const minimalMode = (options.promptMode === 'minimal' || teacherCodePlanMode(options.promptMode ?? 'standard') !== null)
     && map.sceneMode === 'outdoor'
     && (options.requestMode ?? 'generate') === 'generate'
     && options.scope === 'scene';
@@ -3339,7 +3342,7 @@ function executeMapCodePlanInternal(
   const objectOperations: Extract<MapOperation, { type: 'object.add' }>[] = [];
   const objectIdByReference = new Map<string, string>();
   const fitToDimensionsObjectIds = new Set<string>();
-  let workingMap = terrainMap;
+  const workingMap = { ...terrainMap, objects: [...terrainMap.objects] };
   let attachmentFallbackCount = 0;
   for (const placement of placements) {
     const objectId = createId('obj-code');
@@ -3399,7 +3402,14 @@ function executeMapCodePlanInternal(
     objectOperations.push(operation);
     objectIdByReference.set(placement.referenceId, objectId);
     if (placement.fitToDimensions && placement.assetId) fitToDimensionsObjectIds.add(objectId);
-    workingMap = applyMapOperations(workingMap, [operation]);
+    const base = createMapObject(object.name, object.assetId ?? null);
+    const placedObject = {
+      ...base,
+      ...object,
+      transform: { ...base.transform, ...object.transform }
+    };
+    placeRoomOpeningObjectInPlace(workingMap, placedObject);
+    workingMap.objects.push(placedObject);
   }
   const linkedObjectUpdates: Extract<MapOperation, { type: 'object.update' }>[] = [];
   for (const operation of objectOperations) {
@@ -3990,6 +4000,12 @@ export function buildMapCodePlannerSystemPrompt(
   refinableIds: readonly string[] = [],
   promptMode: MapCodePromptMode = 'standard'
 ): string {
+  const teacherMode = teacherCodePlanMode(promptMode);
+  if (teacherMode && requestMode === 'generate' && scope === 'scene') {
+    return map.sceneMode === 'indoor'
+      ? buildRawIndoorSceneCodeSystemPrompt(map, minNewAssets, maxNewAssets, teacherMode)
+      : buildRawSceneCodeSystemPrompt(map, minNewAssets, maxNewAssets, teacherMode);
+  }
   if (map.sceneMode === 'indoor') {
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
   }
