@@ -10,7 +10,8 @@ const root = path.resolve(import.meta.dirname, '..');
 const baseline = 'cb213fe';
 const snapshots = [
   ['src/shared/terrainGeneration.ts', '.terrain-repair-baseline-generation.ts', baseline],
-  ['src/shared/terrainGeneration.ts', '.terrain-repair-prior-flow.ts', 'f1425b9']
+  ['src/shared/terrainGeneration.ts', '.terrain-repair-prior-flow.ts', 'f1425b9'],
+  ['src/shared/terrainGeneration.ts', '.terrain-repair-uniform-polish.ts', '80e4fe9']
 ] as const;
 const snapshotPaths = snapshots.map(([, name]) => path.join(root, 'src/shared', name));
 
@@ -21,11 +22,13 @@ for (const [[source, , ref], target] of snapshots.map((entry, index) => [entry, 
 try {
   const oldGeneration = await import(pathToFileURL(snapshotPaths[0]).href) as typeof import('../src/shared/terrainGeneration');
   const priorGeneration = await import(pathToFileURL(snapshotPaths[1]).href) as typeof import('../src/shared/terrainGeneration');
+  const uniformPolish = await import(pathToFileURL(snapshotPaths[2]).href) as typeof import('../src/shared/terrainGeneration');
   const stages = [
     { id: 'baseline', name: '基线', commit: baseline, dense: false, drain: oldGeneration.refineTerrainInPlace },
     { id: 'grid', name: '① 网格加密', commit: '8405944', dense: true, drain: oldGeneration.refineTerrainInPlace },
     { id: 'flow', name: '② 排水分流', commit: 'f1425b9', dense: true, drain: priorGeneration.refineTerrainInPlace },
-    { id: 'polish', name: '③ 山脉修型', commit: '80e4fe9', dense: true, drain: refineTerrainInPlace }
+    { id: 'polish', name: '③ 山脉修型', commit: '80e4fe9', dense: true, drain: uniformPolish.refineTerrainInPlace },
+    { id: 'selective', name: '④ 分区修型', commit: '658e3b0', dense: true, drain: refineTerrainInPlace }
   ];
   const waters: Record<string, MapWaterBody> = {
     river: { id: 'river', name: 'River', type: 'river', points: [[0,-33],[-5,-16],[4,2],[0,18],[7,34]], level: 2, levels: [2,2,2,2,2], width: 8, depth: 3, shorelineSmoothness: 0.82 },
