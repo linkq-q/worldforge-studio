@@ -152,7 +152,13 @@ export interface MapMotionAdapter {
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
   const buildStartedAt = performance.now();
-  const normalizedMap = normalizeMap(input);
+  // The editor catalogue can contain thousands of assets. A scene build only
+  // needs models referenced by objects in this map.
+  const usedAssetIds = new Set(input.objects.flatMap((object) => object.assetId ? [object.assetId] : []));
+  const normalizedMap = normalizeMap({
+    ...input,
+    assets: input.assets?.filter((asset) => usedAssetIds.has(asset.id))
+  });
   // Keep the persisted map/collider data untouched; only the render snapshot gets micro-offsets.
   const zFighting = resolveMapModelZFighting(normalizedMap);
   const map = zFighting.map;
@@ -589,15 +595,14 @@ function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
     gravel: { spacing: 0.72, width: 0.16, height: 0.08, kind: 'gravel' }
   };
   let placed = 0;
+  const instances = new Map<string, THREE.Matrix4[]>();
+  const transform = new THREE.Object3D();
   for (const zone of map.visualSemantics.zones) {
     if (zone.region?.kind !== 'path' || !zone.material || placed > 4500) continue;
     const recipe = detail[zone.material];
     if (!recipe) continue;
-    const material = new THREE.MeshStandardMaterial({
-      color: palette[zone.material] ?? palette.default,
-      roughness: zone.material === 'asphalt' ? 0.9 : 0.82,
-      flatShading: zone.material === 'cobblestone'
-    });
+    const matrices = instances.get(zone.material) ?? [];
+    instances.set(zone.material, matrices);
     const random = seededRandom(map.seed ^ stringSeed(`${zone.id}:bodies`));
     const points = zone.region.points;
     for (let i = 0; i < points.length - 1 && placed <= 4500; i += 1) {
@@ -608,40 +613,58 @@ function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
         const t = (j + 0.5) / count; const across = (random() - 0.5) * zone.region.width * (recipe.kind === 'dirt' || recipe.kind === 'mud' ? 0.72 : 0.82);
         const x = ax + dx * t - Math.sin(tangent) * across; const z = az + dz * t + Math.cos(tangent) * across;
         const terrainY = sampleTerrainHeight(map, x, z); const scale = 0.78 + random() * 0.42;
-        let mesh: THREE.Mesh;
-        if (recipe.kind === 'cobble' || recipe.kind === 'gravel') {
-          mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(recipe.width * scale, 0), material);
-        } else {
-          const length = recipe.spacing * 0.72 * scale;
-          const width = recipe.width * scale;
-          const cut = Math.min(length, width) * 0.2;
-          const shape = new THREE.Shape();
-          shape.moveTo(-length / 2 + cut, -width / 2);
-          shape.lineTo(length / 2 - cut, -width / 2);
-          shape.lineTo(length / 2, -width / 2 + cut);
-          shape.lineTo(length / 2, width / 2 - cut);
-          shape.lineTo(length / 2 - cut, width / 2);
-          shape.lineTo(-length / 2 + cut, width / 2);
-          shape.lineTo(-length / 2, width / 2 - cut);
-          shape.lineTo(-length / 2, -width / 2 + cut);
-          shape.closePath();
-          mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, {
-            depth: recipe.height * scale,
-            bevelEnabled: true,
-            bevelSegments: 1,
-            bevelSize: recipe.height * scale * 0.18,
-            bevelThickness: recipe.height * scale * 0.12
-          }), material);
-          mesh.rotation.x = -Math.PI / 2;
-        }
-        mesh.position.set(x, terrainY + recipe.height * scale * 0.18, z);
-        mesh.rotation.y = tangent + (random() - 0.5) * (recipe.kind === 'brick' ? 0.12 : 0.45);
-        if (recipe.kind === 'cobble' || recipe.kind === 'gravel') { mesh.rotation.x = random() * 0.45; mesh.rotation.z = random() * 0.45; }
-        mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); placed += 1;
+        transform.position.set(x, terrainY + recipe.height * scale * 0.18, z);
+        transform.rotation.set(recipe.kind === 'slab' ? -Math.PI / 2 : 0, tangent + (random() - 0.5) * (recipe.kind === 'brick' ? 0.12 : 0.45), 0);
+        if (recipe.kind === 'cobble' || recipe.kind === 'gravel') { transform.rotation.x = random() * 0.45; transform.rotation.z = random() * 0.45; }
+        transform.scale.setScalar(scale);
+        transform.updateMatrix();
+        matrices.push(transform.matrix.clone());
+        placed += 1;
       }
     }
   }
+  for (const [materialId, matrices] of instances) {
+    if (matrices.length === 0) continue;
+    const recipe = detail[materialId];
+    const geometry = recipe.kind === 'cobble' || recipe.kind === 'gravel'
+      ? new THREE.DodecahedronGeometry(recipe.width, 0)
+      : roadSlabGeometry(recipe);
+    const material = new THREE.MeshStandardMaterial({
+      color: palette[materialId] ?? palette.default,
+      roughness: materialId === 'asphalt' ? 0.9 : 0.82,
+      flatShading: materialId === 'cobblestone'
+    });
+    const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
+    mesh.name = `road-bodies:${materialId}`;
+    matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
   return group;
+}
+
+function roadSlabGeometry(recipe: { spacing: number; width: number; height: number }): THREE.ExtrudeGeometry {
+  const length = recipe.spacing * 0.72;
+  const cut = Math.min(length, recipe.width) * 0.2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-length / 2 + cut, -recipe.width / 2);
+  shape.lineTo(length / 2 - cut, -recipe.width / 2);
+  shape.lineTo(length / 2, -recipe.width / 2 + cut);
+  shape.lineTo(length / 2, recipe.width / 2 - cut);
+  shape.lineTo(length / 2 - cut, recipe.width / 2);
+  shape.lineTo(-length / 2 + cut, recipe.width / 2);
+  shape.lineTo(-length / 2, recipe.width / 2 - cut);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: recipe.height,
+    bevelEnabled: true,
+    bevelSegments: 1,
+    bevelSize: recipe.height * 0.18,
+    bevelThickness: recipe.height * 0.12
+  });
 }
 
 function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {

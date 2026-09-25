@@ -64,6 +64,31 @@ function terrainBoundaryPoints(geometry: THREE.BufferGeometry): THREE.Vector3[] 
 }
 
 describe('terrain normal generation', () => {
+  it('loads only assets referenced by scene objects', async () => {
+    const map = createEmptyMap('large catalogue');
+    const unused = { id: 'unused', name: 'unused', modelJson: null } as unknown as MapAsset;
+    Object.defineProperty(unused, 'modelJson', { get: () => { throw new Error('unused asset was processed'); } });
+    map.assets = [unused];
+    const rendered = await buildEditableMapGroup(map);
+    rendered.dispose();
+  });
+
+  it('renders repeated stone road details as one instanced mesh', async () => {
+    const map = applyMapOperations(createEmptyMap('stone road'), [{
+      type: 'terrain.surface', surface: 'paving', material: 'garden-stone', intensity: 1,
+      region: { kind: 'path', points: [[-20, 0], [20, 0]], width: 3 }, zoneId: 'stone-road'
+    }]);
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      const roadBodies = rendered.modelsRoot.getObjectByName('road-material-bodies');
+      expect(roadBodies?.children).toHaveLength(1);
+      expect((roadBodies?.children[0] as THREE.InstancedMesh).isInstancedMesh).toBe(true);
+      expect((roadBodies?.children[0] as THREE.InstancedMesh).count).toBeGreaterThan(20);
+    } finally {
+      rendered.dispose();
+    }
+  });
+
   it('classifies building parts locally and preserves their palette colors through the renderer', async () => {
     const map = createEmptyMap('palette regression');
     const asset: MapAsset = {
