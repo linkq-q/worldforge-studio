@@ -639,7 +639,8 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('api.localToWorld3D(local:[right,up,forward]');
     expect(prompt).toContain('named APIs are conveniences, not a closed vocabulary');
     expect(prompt).not.toContain('api.keepDry([x,z],clearance?)');
-    expect(prompt).toContain('api.waterPoint(waterId,[x,z],draft?)');
+    expect(prompt).not.toContain('api.waterPoint');
+    expect(prompt).toContain('waterId?:string');
     expect(prompt).not.toContain('api.routeNetwork');
     expect(prompt).not.toContain('api.distance2D');
     expect(prompt).toContain('clearNatural:true');
@@ -657,7 +658,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('function transformFootprint(localPoints, origin, yaw, scale)');
     expect(prompt).toContain('dependency graph, not a required order of reasoning');
     expect(prompt).toContain('not a scene recipe, minimum layer count or requirement to decompose every building');
-    for (const name of ['bezierPoint', 'circlePoint', 'tangentYaw']) {
+    for (const name of ['bezierPoint', 'circlePoint', 'tangentYaw', 'faceYaw', 'waterPoint']) {
       expect(prompt).not.toContain(`api.${name}`);
       expect(() => executeMapCodePlan(`function plan(api) { api.${name}(); }`, createEmptyMap(), [], {
         scope: 'scene', legacyApis: false
@@ -2322,6 +2323,30 @@ describe('map code planner', () => {
     expect(placedBoat.transform.position[1]).toBeCloseTo(0.2);
     expect(placedBoat.locked).toBe(false);
     expect(suggestion.codePlan?.functions).toContain('waterPoint');
+  });
+
+  it('samples a named water surface through the environment query in new outdoor plans', () => {
+    const map = createEmptyMap('river field', 'river-field', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.water('stream',{type:'river',points:[[-8,0],[8,0]],levels:[3,1],widths:[4,4],depth:1});
+      const upstream=api.environmentSample([-6,0],{waterId:'stream'});
+      const downstream=api.environmentSample([6,0],{waterId:'stream'});
+      const outside=api.environmentSample([0,10],{waterId:'stream'});
+      if (!upstream.water.inside || !downstream.water.inside || outside.water.inside || outside.water.surfaceHeight !== null) {
+        throw new Error('invalid_water_field');
+      }
+      api.place({name:'上游船',position:[-6,upstream.water.surfaceHeight-0.2,0],terrain:false});
+      api.place({name:'下游船',position:[6,downstream.water.surfaceHeight-0.2,0],terrain:false});
+    }`, map, [], { scope: 'scene', legacyApis: false });
+    const placed = applyMapOperations(map, suggestion.operations).objects;
+
+    expect(placed).toHaveLength(2);
+    expect(placed[0].transform.position[1]).toBeGreaterThan(placed[1].transform.position[1]);
+    expect(suggestion.codePlan?.functions).toContain('environmentSample');
+    expect(suggestion.codePlan?.functions).not.toContain('waterPoint');
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.environmentSample([0,0],{waterId:'missing'});
+    }`, createEmptyMap(), [], { scope: 'scene', legacyApis: false })).toThrow('unknown_map_environment_water:missing');
   });
 
   it('repairs repeated ordinary wall samples into shared-endpoint segments', () => {

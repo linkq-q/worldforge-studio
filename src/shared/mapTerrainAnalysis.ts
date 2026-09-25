@@ -1,6 +1,6 @@
 import { sampleTerrainHeight, type EditableMap } from './map';
 import { mapGuidePolyline } from './mapGuide';
-import { distanceToWater } from './mapWater';
+import { distanceToWater, isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
 import type { VisualZoneRegion } from './visualDirection';
 
 export interface MapEnvironmentSample {
@@ -12,11 +12,13 @@ export interface MapEnvironmentSample {
   guideDistance: number;
   /** Signed distance to the requested region boundary: negative inside, positive outside. */
   regionDistance?: number;
+  water?: { id: string; inside: boolean; surfaceHeight: number | null; depth: number };
 }
 
 export interface MapEnvironmentSampleOptions {
   guideIds?: readonly string[];
   region?: VisualZoneRegion;
+  waterId?: string;
 }
 
 export function createMapEnvironmentSampler(
@@ -30,15 +32,28 @@ export function createMapEnvironmentSampler(
     const points = mapGuidePolyline(guide);
     return points.slice(1).map((end, index) => ({ start: points[index], end, halfWidth: guide.width / 2 }));
   });
-  return (x, z) => ({
-    x,
-    z,
-    height: sampleTerrainHeight(map, x, z),
-    slope: terrainSlopeDegrees(map, x, z),
-    waterDistance: distanceToWater(map, x, z),
-    guideDistance: distanceToGuideSegments(x, z, guideSegments),
-    ...(options.region ? { regionDistance: signedDistanceToRegion(x, z, options.region) } : {})
-  });
+  const water = options.waterId === undefined
+    ? undefined
+    : map.waterBodies.find((candidate) => candidate.id === options.waterId);
+  if (options.waterId !== undefined && !water) throw new Error(`unknown_map_environment_water:${options.waterId}`);
+  return (x, z) => {
+    const insideWater = water ? isPointInsideWaterBody(water, x, z, map) : false;
+    return {
+      x,
+      z,
+      height: sampleTerrainHeight(map, x, z),
+      slope: terrainSlopeDegrees(map, x, z),
+      waterDistance: distanceToWater(map, x, z),
+      guideDistance: distanceToGuideSegments(x, z, guideSegments),
+      ...(options.region ? { regionDistance: signedDistanceToRegion(x, z, options.region) } : {}),
+      ...(water ? { water: {
+        id: water.id,
+        inside: insideWater,
+        surfaceHeight: insideWater ? waterSurfaceLevelAt(water, x, z) : null,
+        depth: water.depth
+      } } : {})
+    };
+  };
 }
 
 export function sampleMapEnvironment(
