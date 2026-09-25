@@ -9,23 +9,23 @@ import { carveWaterBasinInPlace, waterBoundaryPoints } from '../src/shared/mapWa
 const root = path.resolve(import.meta.dirname, '..');
 const baseline = 'cb213fe';
 const snapshots = [
-  ['src/shared/mapWater.ts', '.terrain-repair-baseline-water.ts'],
-  ['src/shared/terrainGeneration.ts', '.terrain-repair-baseline-generation.ts']
+  ['src/shared/terrainGeneration.ts', '.terrain-repair-baseline-generation.ts', baseline],
+  ['src/shared/terrainGeneration.ts', '.terrain-repair-prior-flow.ts', 'f1425b9']
 ] as const;
 const snapshotPaths = snapshots.map(([, name]) => path.join(root, 'src/shared', name));
 
-for (const [[source], target] of snapshots.map((entry, index) => [entry, snapshotPaths[index]] as const)) {
-  writeFileSync(target, execFileSync('git', ['show', `${baseline}:${source}`], { cwd: root }));
+for (const [[source, , ref], target] of snapshots.map((entry, index) => [entry, snapshotPaths[index]] as const)) {
+  writeFileSync(target, execFileSync('git', ['show', `${ref}:${source}`], { cwd: root }));
 }
 
 try {
-  const oldWater = await import(pathToFileURL(snapshotPaths[0]).href) as typeof import('../src/shared/mapWater');
-  const oldGeneration = await import(pathToFileURL(snapshotPaths[1]).href) as typeof import('../src/shared/terrainGeneration');
+  const oldGeneration = await import(pathToFileURL(snapshotPaths[0]).href) as typeof import('../src/shared/terrainGeneration');
+  const priorGeneration = await import(pathToFileURL(snapshotPaths[1]).href) as typeof import('../src/shared/terrainGeneration');
   const stages = [
-    { id: 'baseline', name: '基线', commit: baseline, dense: false, bank: oldWater.carveWaterBasinInPlace, drain: oldGeneration.refineTerrainInPlace },
-    { id: 'shore', name: '① 河湖接岸', commit: 'add738d', dense: false, bank: carveWaterBasinInPlace, drain: oldGeneration.refineTerrainInPlace },
-    { id: 'grid', name: '② 网格加密', commit: '8405944', dense: true, bank: carveWaterBasinInPlace, drain: oldGeneration.refineTerrainInPlace },
-    { id: 'flow', name: '③ 排水分流', commit: 'f1425b9', dense: true, bank: carveWaterBasinInPlace, drain: refineTerrainInPlace }
+    { id: 'baseline', name: '基线', commit: baseline, dense: false, drain: oldGeneration.refineTerrainInPlace },
+    { id: 'grid', name: '① 网格加密', commit: '8405944', dense: true, drain: oldGeneration.refineTerrainInPlace },
+    { id: 'flow', name: '② 排水分流', commit: 'f1425b9', dense: true, drain: priorGeneration.refineTerrainInPlace },
+    { id: 'polish', name: '③ 山脉修型', commit: '80e4fe9', dense: true, drain: refineTerrainInPlace }
   ];
   const waters: Record<string, MapWaterBody> = {
     river: { id: 'river', name: 'River', type: 'river', points: [[0,-33],[-5,-16],[4,2],[0,18],[7,34]], level: 2, levels: [2,2,2,2,2], width: 8, depth: 3, shorelineSmoothness: 0.82 },
@@ -36,8 +36,8 @@ try {
     cases: {
       mountain: { name: '自然山脉', description: '同一种子生成山体，再进行热侵蚀与排水；比较沟槽、山脊和网格细节。' },
       cone: { name: '圆锥诊断', description: '完全对称的坡面。方向差异只来自网格和排水算法，便于识别十字纹。' },
-      river: { name: '河道', description: '在 10 米平地雕刻弯曲河道，检查河岸是否平顺接回原地形。', boundary: waterBoundaryPoints(waters.river), water: waters.river, level: 2 },
-      lake: { name: '湖岸', description: '在 10 米平地雕刻湖盆，比较岸坡和弯曲边缘的采样精度。', boundary: waterBoundaryPoints(waters.lake), water: waters.lake, level: 2 }
+      river: { name: '河道', description: '在 5 米平地雕刻弯曲河道，保留原来的较陡岸坡。', boundary: waterBoundaryPoints(waters.river), water: waters.river, level: 2 },
+      lake: { name: '湖岸', description: '在 5 米平地雕刻湖盆，保留原来的较陡岸坡。', boundary: waterBoundaryPoints(waters.lake), water: waters.lake, level: 2 }
     },
     data: {} as Record<string, unknown>
   };
@@ -55,8 +55,8 @@ try {
         generateTerrainInPlace(map, { preset: 'mountains', seed: 42, amplitude: 35, roughness: 0.65, direction: 30 });
         before = structuredClone(map);
         stage.drain(map, { erosion: 0.2, drainage: 0.55, iterations: 8, talus: 46 });
-        metric = Math.max(...map.terrain.heights) - Math.min(...map.terrain.heights);
-        metricLabel = '山体高差';
+        metric = Math.max(...map.terrain.heights.map((height, index) => before.terrain.heights[index] - height));
+        metricLabel = '最深下切';
       } else if (kind === 'cone') {
         const n = map.terrain.resolutionX;
         const step = 96 / (n - 1);
@@ -75,9 +75,9 @@ try {
         metric = Math.max(...incision) - Math.min(...incision);
         metricLabel = '方向下切差';
       } else {
-        map.terrain.heights.fill(10);
+        map.terrain.heights.fill(5);
         before = structuredClone(map);
-        stage.bank(map, waters[kind]);
+        carveWaterBasinInPlace(map, waters[kind]);
         metric = maxCrossSectionStep(map);
         metricLabel = '剖面最大单格落差';
       }
