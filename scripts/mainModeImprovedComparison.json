@@ -1,0 +1,1986 @@
+{
+  "name": "建筑与聚落提示恢复后 · 新主模式首版对照",
+  "runs": [
+    {
+      "name": "拥挤的城中村",
+      "prompt": "拥挤的城中村",
+      "seed": 2721816274,
+      "full": "map-e178d341-f383-4353",
+      "minimal": "map-680ff29e-e159-47ae",
+      "minNewAssets": 22,
+      "maxNewAssets": 32,
+      "status": "saved",
+      "attempt": 1,
+      "interruptedBudgetAttempt": {
+        "mapId": "map-e6900ee6-bd32-4007",
+        "minNewAssets": 0,
+        "maxNewAssets": 16,
+        "stage": "GPT 规划完成；8 个 DeepSeek 资产任务中已有 7 个完成时中断，未提交地图。"
+      },
+      "mapId": "map-58c35a4b-a67d-4a0e",
+      "code": "function plan(api) {\n  api.terrain('plain', { amplitude: 2.4, roughness: 0.35, seed: 2721816274 });\n  api.modifyTerrain({\n    modifier: 'ridge',\n    region: { kind: 'path', points: [[-43, -40], [-39, 0], [-42, 42]], width: 15 },\n    amplitude: 2,\n    softness: 0.85\n  });\n\n  const defs = [\n    ['shop', '商铺底层', [3.2, 3, 6], 'One ground-floor bay of a contemporary Chinese urban village building. Concrete frame, weathered cream tile, open small shop on Z+ with recessed shutter and glass door, tiled rear wall. Width 3.2m along X, height 3m, depth 6m. Flat joining faces at X sides, no projecting side walls; adjacent bays form one building. Floor at local Y=0, open structural top at Y=3. Fixed Chinese grocery lettering above the entrance.'],\n    ['entry', '住宅门厅', [3.2, 3, 6], 'One residential ground-floor bay, 3.2m along X, 3m tall, 6m deep, weathered pale ceramic tile and concrete. Recessed Z+ entrance to a narrow stair hall, mailboxes, steel security door with open doorway, rear service window. Flat X joining faces, floor at Y=0 and structural top at Y=3, no roof.'],\n    ['floor', '窗墙楼层', [3.2, 2.8, 6], 'Reusable single upper-story bay of a Chinese urban village apartment block, width along X 3.2m, height 2.8m, depth along Z 6m. Concrete floor at Y=0 and top at Y=2.8. Weathered white small ceramic tile, two aluminum windows and security grilles on Z+ front, smaller rear windows. X sides are flush joining faces without walls. No roof or ground floor.'],\n    ['balcony', '阳台楼层', [3.2, 2.8, 6], 'Single upper-story bay, X span 3.2m, height 2.8m, Z depth 6m. Concrete floor and tiled facade. Recessed balcony within the frontmost 0.7m of the Z+ footprint, steel railing, laundry, sliding window, small fixed air conditioner. Rear wall has windows. X faces join adjacent bays without end walls. No roof.'],\n    ['end0', '底层侧墙', [0.16, 3, 6], 'Ground-story building end wall, thin along X, height 3m and length 6m along Z. Weathered cement with tiled plinth and narrow service windows. Flat vertical joining edges, base at Y=0; no roof, floor, or front wall.'],\n    ['end', '楼层侧墙', [0.16, 2.8, 6], 'Single apartment-story end wall, 0.16m thick along X, 2.8m high, 6m long along Z. Gray rendered brick with small frosted windows and one drainpipe. Flat upper and lower joining faces, base at Y=0; no roof or floor.'],\n    ['roof', '屋顶半跨', [3.2, 0.35, 6], 'Half-width flat roof module for a concrete apartment building. X width 3.2m and Z depth 6m, slab thickness 0.15m and low parapet on front Z+ and rear Z- only, overall height 0.35m. X edges join flush with adjacent roof modules. Weathered waterproof gray surface, base at local Y=0.'],\n    ['hut', '天台梯间', [2.3, 2.2, 2.4], 'Small standalone concrete rooftop stair enclosure with a corrugated flat roof, weathered painted wall, steel door facing Z+, dimensions 2.3m wide, 2.2m tall, 2.4m deep. Base at Y=0.'],\n    ['tank', '不锈钢水箱', [1.5, 1.8, 1.5], 'Standalone cylindrical stainless steel rooftop water tank on a short steel frame, horizontal seams, lid, inlet pipe, weathered reflective metal; base at Y=0.'],\n    ['awning', '条纹雨棚', [2.7, 0.35, 1], 'Single red and faded white striped canvas shop awning on a slim steel frame, width along X, extends toward Z+, wall mounting edge at Z-. No posts.'],\n    ['sign', '竖式店招', [0.5, 1.8, 0.18], 'One narrow illuminated vertical Chinese shop sign reading 理发, faded red and cream plastic, wall mounting brackets, readable front faces Z+.'],\n    ['scooter', '电动车', [0.7, 1.15, 1.9], 'Parked practical Chinese electric scooter with front basket, dark blue body, mirrors, kickstand and rear delivery rack. Front wheel points Z+.'],\n    ['bike', '自行车', [0.55, 1.05, 1.75], 'Old city bicycle resting on a kickstand, silver frame, wire basket and rear rack. Front points Z+.'],\n    ['cart', '早餐推车', [2, 2.2, 1.2], 'Compact Chinese street breakfast cart with stainless worktop, glass food case, steamer pots, wheels and faded yellow canopy. Serving side faces Z+, small 早餐 lettering.'],\n    ['crates', '菜筐货堆', [1.1, 0.85, 0.8], 'Standalone small stack of green plastic vegetable crates, several filled with leafy vegetables, one cardboard box, irregular practical stacking.'],\n    ['bins', '分类垃圾桶', [1.4, 1.05, 0.65], 'Pair of wheeled neighborhood waste bins, green and gray, closed lids, faded Chinese sorting labels facing Z+.'],\n    ['pole', '巷口电杆', [0.45, 9, 0.45], 'One slender weathered concrete utility pole, base Y=0, dark distribution crossarm and ceramic insulators near Y=8.6, small attached street lamp facing Z+, cable fasteners.'],\n    ['wire', '架空线束', [4, 0.18, 0.15], 'Single short span of three black overhead utility cables along local X, canonical span 4m with endpoints at X=-2 and X=2 at Y=0; slight downward sag at center. No poles or ground attachments. Joining ends are bare.'],\n    ['bench', '街边长凳', [1.8, 0.85, 0.65], 'Simple worn wooden neighborhood bench on concrete feet, seating faces Z+, base at Y=0.'],\n    ['tree', '榕树', [6, 8, 6], 'One mature subtropical banyan street tree with branching trunk, dense rounded green canopy beginning above 2.3m and a small root flare. Base at Y=0.'],\n    ['planter', '盆栽绿植', [0.65, 0.95, 0.65], 'One mismatched terracotta planter holding a leafy ornamental shrub, worn pot and dense green leaves.'],\n    ['bollard', '防撞柱', [0.22, 0.8, 0.22], 'Single short black steel traffic bollard with yellow reflective stripes and rounded cap, base Y=0.'],\n    ['notice', '社区公告栏', [2.4, 2.1, 0.35], 'Standalone Chinese community notice board on two steel legs, shallow green rain hood, glazed posters and 社区公告 heading, front Z+, base Y=0.'],\n    ['ac', '外挂机', [0.8, 0.55, 0.4], 'Single weathered wall-mounted air conditioner outdoor unit with circular fan grille facing Z+, short steel support brackets and pipe elbows.'],\n    ['stool', '塑料凳', [0.4, 0.45, 0.4], 'One low red plastic street-side stool with four legs, worn surface, base Y=0.']\n  ];\n  defs.forEach(function(d) {\n    api.requireAsset({\n      key: d[0], name: d[1], dimensions: d[2], prompt: d[3] + ' Coordinates: Y+ up, X+ right, Z+ front.',\n      role: ['shop', 'entry', 'floor', 'balcony', 'end0', 'end', 'roof', 'hut'].indexOf(d[0]) >= 0 ? 'structure' : 'environment'\n    });\n  });\n  function put(key, p, rot) {\n    return api.place({ assetId: api.asset(key), position: p, rotationY: rot || 0 });\n  }\n  function sample(p) { return api.environmentSample(p); }\n  function distance(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }\n  function segmentDistance(p, a, b) {\n    const dx = b[0] - a[0], dz = b[1] - a[1];\n    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / (dx * dx + dz * dz)));\n    return distance(p, [a[0] + t * dx, a[1] + t * dz]);\n  }\n\n  const spine = [];\n  let previous = [1, -44];\n  for (let i = 0; i < 8; i++) {\n    const z = -44 + i * 12;\n    const preferred = 2 + 3.4 * Math.sin(i * 0.83);\n    let best = null;\n    for (let j = -1; j <= 1; j++) {\n      const p = [preferred + j * 2.5, z], s = sample(p);\n      const cost = s.slope * 3 + Math.abs(s.height - sample(previous).height) + Math.abs(p[0] - previous[0]) * 0.09;\n      if (!best || cost < best.cost) best = { p: p, cost: cost };\n    }\n    spine.push(best.p);\n    previous = best.p;\n  }\n  const streets = [{ points: spine, width: 4.3 }];\n  [1, 3, 5, 6].forEach(function(index, k) {\n    [-1, 1].forEach(function(side) {\n      const start = spine[index];\n      const bendX = start[0] + side * (17 + (k % 2) * 2);\n      let best = null;\n      [-5, 0, 5].forEach(function(delta) {\n        const mid = [bendX, start[1] + side * 3 + delta];\n        const end = [side * 43, start[1] + side * 5 + delta];\n        if (Math.abs(end[1]) > 43) return;\n        const a = sample(start), b = sample(mid), c = sample(end);\n        const cost = Math.abs(a.height - b.height) + Math.abs(b.height - c.height) + b.slope + c.slope;\n        if (!best || cost < best.cost) best = { points: [start, mid, end], cost: cost };\n      });\n      if (best) streets.push({ points: best.points, width: k === 1 ? 3.5 : 2.8 });\n    });\n  });\n  const routeIds = [];\n  streets.forEach(function(street, i) {\n    for (let j = 1; j < street.points.length; j++) {\n      const a = street.points[j - 1], b = street.points[j];\n      api.rampTerrain({\n        start: a, end: b, width: street.width + 0.8,\n        startHeight: sample(a).height, endHeight: sample(b).height,\n        softness: 0.7, strength: 0.8\n      });\n    }\n    routeIds.push(api.route({\n      id: 'lane-' + i, points: street.points, width: street.width,\n      curve: 'polyline', surface: 'paving', material: 'patched gray concrete with dark repaired seams'\n    }));\n  });\n\n  const court = [spine[0][0] - 10, -39];\n  const courtHeight = sample(court).height;\n  api.sculptTerrain({ mode: 'flatten', point: court, radius: 6.5, strength: 1, targetHeight: courtHeight });\n  const courtBase = sample(court).height;\n  api.surface({ id: 'entrance-court', surface: 'paving', material: 'worn square concrete tiles', region: { kind: 'circle', center: court, radius: 6 } });\n  api.route({ id: 'court-access', points: [court, [spine[0][0], -39]], width: 3, surface: 'paving' });\n\n  const parcels = [];\n  function nearStreet(p) {\n    let minimum = 100;\n    streets.forEach(function(s) {\n      for (let i = 1; i < s.points.length; i++) minimum = Math.min(minimum, segmentDistance(p, s.points[i - 1], s.points[i]) - s.width / 2);\n    });\n    return minimum;\n  }\n  streets.forEach(function(street, streetIndex) {\n    for (let j = 1; j < street.points.length; j++) {\n      const a = street.points[j - 1], b = street.points[j], len = distance(a, b);\n      const tangent = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];\n      for (let t = 4.6; t < len - 2.8; t += 8.0 + (streetIndex % 3) * 0.45) {\n        [-1, 1].forEach(function(side) {\n          const normal = [-tangent[1] * side, tangent[0] * side];\n          const access = [a[0] + tangent[0] * t, a[1] + tangent[1] * t];\n          const setback = street.width / 2 + 3.8 + ((j + streetIndex) % 2) * 0.25;\n          const center = [access[0] + normal[0] * setback, access[1] + normal[1] * setback];\n          if (Math.abs(center[0]) > 41.8 || Math.abs(center[1]) > 41.8 || distance(center, court) < 10.5) return;\n          if (parcels.some(function(p) { return distance(p.center, center) < 8.0; })) return;\n          const yaw = Math.atan2(-normal[0], -normal[1]);\n          function local(x, z) {\n            return [center[0] + x * Math.cos(yaw) + z * Math.sin(yaw), center[1] - x * Math.sin(yaw) + z * Math.cos(yaw)];\n          }\n          const corners = [local(-3.35, -3.1), local(3.35, -3.1), local(3.35, 3.1), local(-3.35, 3.1)];\n          if (corners.some(function(p) { return nearStreet(p) < 0.4; })) return;\n          const samples = corners.map(sample);\n          const high = Math.max.apply(null, samples.map(function(s) { return s.height; }));\n          const low = Math.min.apply(null, samples.map(function(s) { return s.height; }));\n          if (high - low > 1.8) return;\n          parcels.push({ center: center, yaw: yaw, access: access, local: local, height: sample(center).height, street: streetIndex });\n        });\n      }\n    }\n  });\n\n  parcels.forEach(function(p, index) {\n    const stories = 3 + ((index * 7 + p.street) % 3);\n    api.sculptTerrain({ mode: 'flatten', point: p.center, radius: 4.65, strength: 1, targetHeight: p.height });\n    const base = sample(p.center).height;\n    const door = p.local(1.6, 3.12);\n    const laneHeight = sample(p.access).height;\n    api.rampTerrain({ start: p.access, end: door, width: 1.35, startHeight: laneHeight, endHeight: base, softness: 0.45, strength: 1 });\n    api.route({ id: 'door-' + index, points: [p.access, door], width: 1.25, surface: 'paving' });\n    function at(key, x, y, z) {\n      const q = p.local(x, z);\n      return put(key, [q[0], base + y, q[1]], p.yaw);\n    }\n    const ground = [\n      at(index % 4 === 0 ? 'entry' : 'shop', -1.6, 0, 0),\n      at('entry', 1.6, 0, 0)\n    ];\n    api.foundation({ under: ground, top: 'level', maxThickness: 2, material: 'stained concrete plinth' });\n    at('end0', -3.2, 0, 0);\n    at('end0', 3.2, 0, 0);\n    for (let floor = 1; floor < stories; floor++) {\n      const y = 3 + (floor - 1) * 2.8;\n      at((floor + index) % 3 === 0 ? 'balcony' : 'floor', -1.6, y, 0);\n      at((floor + index) % 2 === 0 ? 'balcony' : 'floor', 1.6, y, 0);\n      at('end', -3.2, y, 0);\n      at('end', 3.2, y, 0);\n      if (floor === 1) at('ac', -2.5, y + 0.6, 3.15);\n    }\n    const top = 3 + (stories - 1) * 2.8;\n    at('roof', -1.6, top, 0);\n    at('roof', 1.6, top, 0);\n    if (index % 2 === 0) at('hut', 1.5, top + 0.15, -1.5);\n    at('tank', -1.5, top + 0.15, -1.6);\n    if (index % 4 !== 0) at('awning', -1.6, 2.65, 3.4);\n    if (index % 7 === 0) at('sign', -2.9, 3.4, 3.15);\n    if (index % 3 === 0) at('scooter', -2.2, 0, 3.6);\n    if (index % 5 === 0) at('planter', 2.75, 0, 3.45);\n    if (index % 6 === 0) at('crates', -0.8, 0, 3.4);\n  });\n\n  function courtObject(key, x, z, yaw) {\n    return put(key, [court[0] + x, courtBase, court[1] + z], yaw || 0);\n  }\n  courtObject('tree', -3.1, -1.5);\n  courtObject('bench', -2.8, 1.6);\n  courtObject('notice', 0, -4.4);\n  courtObject('cart', 3.0, -1.8, -Math.PI / 2);\n  courtObject('stool', 1.3, -1.2);\n  courtObject('crates', 3.9, -3.2);\n  courtObject('bins', -4, -3.8);\n  courtObject('bike', 3.6, 2.2, 0.3);\n  courtObject('scooter', 1.8, 3.5, 0.5);\n  courtObject('planter', -1.6, -4.2);\n  courtObject('bollard', 4.7, 1.3);\n  courtObject('bollard', 4.7, -0.7);\n\n  const poles = [];\n  for (let i = 0; i < spine.length; i++) {\n    const p = [spine[i][0] + 2.55, spine[i][1]];\n    const y = sample(p).height;\n    put('pole', [p[0], y, p[1]]);\n    poles.push({ p: p, y: y + 8.6 });\n  }\n  for (let i = 1; i < poles.length; i++) {\n    const a = poles[i - 1], b = poles[i];\n    const n = Math.ceil(distance(a.p, b.p) / 4);\n    for (let j = 0; j < n; j++) {\n      const t0 = j / n, t1 = (j + 1) / n;\n      const start = [a.p[0] + (b.p[0] - a.p[0]) * t0, a.p[1] + (b.p[1] - a.p[1]) * t0];\n      const end = [a.p[0] + (b.p[0] - a.p[0]) * t1, a.p[1] + (b.p[1] - a.p[1]) * t1];\n      api.placeBetween({\n        assetId: api.asset('wire'), start: start, end: end,\n        dimensions: [4, 0.18, 0.15], spanAxis: 'x', terrain: false,\n        elevation: a.y + (b.y - a.y) * ((t0 + t1) / 2)\n      });\n    }\n  }\n\n  const greenery = api.sampleProbabilityField({\n    bounds: { minX: -44, maxX: 44, minZ: -43, maxZ: 43 },\n    candidates: 320, maxPoints: 20, minDistance: 2.3,\n    seed: 2721816274,\n    cluster: { strength: 0.6, scale: 10 }\n  }, function(p) {\n    if (distance(p, court) < 7 || nearStreet(p) < 0.8) return 0;\n    if (parcels.some(function(b) { return distance(p, b.center) < 5.1; })) return 0;\n    const s = api.environmentSample(p, { guideIds: routeIds });\n    return s.slope < 0.5 ? 0.5 : 0.1;\n  });\n  greenery.forEach(function(p, i) {\n    put('planter', p, i * 0.6);\n  });\n  api.spawn([spine[0][0], -43], 0);\n}",
+      "transactionId": "tx-634a63d2-0aab-4e6c",
+      "objectCount": 1082,
+      "assetCount": 25,
+      "diagnostics": [
+        {
+          "code": "code.declaration-normalized",
+          "severity": "warning",
+          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
+          "repaired": true
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-657c73fc-6f10-4160"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-0e6d8796-3fdf-41d6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d25a91d4-eb14-4db9",
+            "obj-code-cb488e9e-ac57-4493"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-17cd8a5e-b20e-47ed",
+            "obj-code-5508e068-fff9-4f34"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-17cd8a5e-b20e-47ed",
+            "obj-code-6dee5776-1807-49b9"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-17cd8a5e-b20e-47ed",
+            "obj-code-df36d145-b4d9-4445"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-30787800-9a7b-4bbd",
+            "obj-code-49456b82-8363-4d33"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c095d167-f5e9-49e3",
+            "obj-code-0bc80ee2-3eb8-4d8a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c095d167-f5e9-49e3",
+            "obj-code-ecc78246-6d49-4392"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c095d167-f5e9-49e3",
+            "obj-code-34e1f522-859f-4074"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4ce00042-9f85-4e27",
+            "obj-code-d5643aae-9d97-4180"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-2c5a574d-8c24-48ed",
+            "obj-code-b25d63ec-9549-419c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-2c5a574d-8c24-48ed",
+            "obj-code-fc41d32e-ee9a-45bf"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-68dad6e8-000f-4c44",
+            "obj-code-9ed7a471-0911-4d70"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-68dad6e8-000f-4c44",
+            "obj-code-c06c14c1-59dd-4dc2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-612c2da8-6285-44c4",
+            "obj-code-a464d7c8-b416-4e50"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ed23ed34-9079-48ee",
+            "obj-code-df95f0a2-9f52-4729"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ed23ed34-9079-48ee",
+            "obj-code-f207f953-d730-4dc6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ed23ed34-9079-48ee",
+            "obj-code-2ed47b10-b9ae-4bea"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-e9b15bb6-cd0f-493a",
+            "obj-code-862f161f-74eb-4fe4"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-40cdaf1a-1773-419d",
+            "obj-code-1693f299-ede9-43dd"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-40cdaf1a-1773-419d",
+            "obj-code-f9d8e127-ca55-4ab5"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-40cdaf1a-1773-419d",
+            "obj-code-573bfa8c-74dc-441f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a669f185-7110-4484",
+            "obj-code-3b96cee7-daee-4fad"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-3a93d4e9-3048-47cc",
+            "obj-code-85b166a5-1243-4f1c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-3a93d4e9-3048-47cc",
+            "obj-code-90d3e280-fd9e-4f99"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-3a93d4e9-3048-47cc",
+            "obj-code-5b192a99-e05d-4f60"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-fc7b4c9d-5a6e-4e88",
+            "obj-code-0cc30cc1-6f0b-4763"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8648edc3-3e9a-487d",
+            "obj-code-2ba11e86-c8e8-46c9"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8648edc3-3e9a-487d",
+            "obj-code-b96d1e5e-a265-4486"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4bafd02e-d58a-4a06",
+            "obj-code-60159f5a-b036-4727"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-73e512f7-79ec-4f4a",
+            "obj-code-f8745703-dfd2-4e63"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-73e512f7-79ec-4f4a",
+            "obj-code-32e1bcd8-1867-42e3"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-73e512f7-79ec-4f4a",
+            "obj-code-75a283b4-8fe7-401c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-916d092c-84da-4cde",
+            "obj-code-59584e12-0a70-487f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b4d24c36-99f8-4e58",
+            "obj-code-f01380c3-8b08-4428"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b4d24c36-99f8-4e58",
+            "obj-code-93121f4e-134c-4159"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b4d24c36-99f8-4e58",
+            "obj-code-efd5cbe5-3d53-4980"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-310177dc-ed9e-4d27",
+            "obj-code-a26e5ca1-c8de-4e4f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-861e86ed-b146-4491",
+            "obj-code-a23a43c0-ea5e-4650"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-861e86ed-b146-4491",
+            "obj-code-db81db39-8f7a-4065"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-861e86ed-b146-4491",
+            "obj-code-336a2f12-2c5b-4e11"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-68e7a150-9447-4bdb",
+            "obj-code-506a181e-1a08-44d5"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d993f990-188e-4996",
+            "obj-code-6d7ab287-0e7b-4565"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6d7ab287-0e7b-4565",
+            "obj-code-82c4d975-58d8-4d87"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-eb7f69fb-21d4-40cb",
+            "obj-code-5d20b9a5-c30b-4d42"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7bc38d08-c143-472b",
+            "obj-code-2ae36523-8314-4ea5"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7bc38d08-c143-472b",
+            "obj-code-df6d22a7-f0a8-46c3"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7bc38d08-c143-472b",
+            "obj-code-31c7a8ed-3db1-4c10"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-45b06a7a-7942-4d9b",
+            "obj-code-ab6cf3a8-0002-4c4c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ecb1a3db-7966-4e3c",
+            "obj-code-da02811a-51c1-4dea"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ecb1a3db-7966-4e3c",
+            "obj-code-b552100a-292b-44a2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ecb1a3db-7966-4e3c",
+            "obj-code-893b4259-5ef9-4ce1"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-edeaee02-e0e9-49e0",
+            "obj-code-128ba143-99aa-491e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-eb35178b-4d84-4ab7",
+            "obj-code-4bb9bfa8-1b20-49cd"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-eb35178b-4d84-4ab7",
+            "obj-code-7e26d824-c90c-4334"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-eb35178b-4d84-4ab7",
+            "obj-code-969ac1d3-2612-4f07"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d46a6554-ec14-487c",
+            "obj-code-2ff64e27-af2f-4e6c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d4edd327-398b-4a4d",
+            "obj-code-8613dc9d-47a6-4102"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d4edd327-398b-4a4d",
+            "obj-code-ef864739-47ed-481f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-16d4938b-1dc0-44c5",
+            "obj-code-a8198035-ee61-4223"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-001f354a-8be4-4f4b",
+            "obj-code-a2bc6698-9253-4086"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-001f354a-8be4-4f4b",
+            "obj-code-88bc8c26-fd10-424a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-001f354a-8be4-4f4b",
+            "obj-code-61b82414-414a-4203"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a6cb16fe-6785-42e3",
+            "obj-code-45a16cbc-16f7-4534"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-11df50a4-04b6-4784",
+            "obj-code-41ecba5d-73bf-4e76"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-11df50a4-04b6-4784",
+            "obj-code-6d29386f-339b-4b04"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-11df50a4-04b6-4784",
+            "obj-code-a5f36690-00a2-4305"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0bba64de-4e02-44c8",
+            "obj-code-22b9e536-c7bf-4bef"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d0196002-d6f9-4bdb",
+            "obj-code-7941478c-7d4e-4108"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d0196002-d6f9-4bdb",
+            "obj-code-531a6fa4-02e2-4cb6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d0196002-d6f9-4bdb",
+            "obj-code-1701d642-7340-4c83"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9af25db0-3a87-4a56",
+            "obj-code-9aee168f-9008-4091"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-930fa204-e7cf-410b",
+            "obj-code-afd5a30f-769e-48ed"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-930fa204-e7cf-410b",
+            "obj-code-240d19ad-6395-484c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ffbc1d4d-a009-427c",
+            "obj-code-f33b1a45-8368-4c51"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-30f030a8-679c-470b",
+            "obj-code-2b6b2905-a7f0-45eb"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-30f030a8-679c-470b",
+            "obj-code-0c1cbb55-d59e-497e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-30f030a8-679c-470b",
+            "obj-code-dcf0ebe1-3905-44eb"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-df680332-1b2d-4ca5",
+            "obj-code-5047a314-8a6a-41ad"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b351ba87-c26e-4d7b",
+            "obj-code-d555403f-00e1-40e6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b351ba87-c26e-4d7b",
+            "obj-code-56949b3f-230c-46f8"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b351ba87-c26e-4d7b",
+            "obj-code-b9d924f8-6622-4c67"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-177b4040-3543-48a4",
+            "obj-code-ea2accdb-e23e-4903"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a3315295-3bc5-4e57",
+            "obj-code-a9679abe-31f4-433f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a3315295-3bc5-4e57",
+            "obj-code-0ed2b908-ac98-434e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a3315295-3bc5-4e57",
+            "obj-code-68fdce9a-90f4-4516"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0533cd78-bb5e-4b88",
+            "obj-code-25d70cc3-f811-4d81"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0e9a0a4b-45ce-4abf",
+            "obj-code-0fd80f8f-8da9-4743"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0e9a0a4b-45ce-4abf",
+            "obj-code-240a167e-4fa7-42a7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-328b2f79-fdd2-46ae",
+            "obj-code-c0416cb9-7746-44b3"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7beee789-3f67-4161",
+            "obj-code-06d87fb7-782d-45ba"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7beee789-3f67-4161",
+            "obj-code-498ab1c1-7e19-47dd"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7beee789-3f67-4161",
+            "obj-code-dd269b11-03a1-4296"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-2d24581e-1fb6-4765",
+            "obj-code-9e6a21c9-beb5-4108"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6f63b395-a74d-4854",
+            "obj-code-4f945a2b-2e40-482a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6f63b395-a74d-4854",
+            "obj-code-674e95b1-50b9-4052"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6f63b395-a74d-4854",
+            "obj-code-b50f8bb5-afd5-4d6e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8f0b9f3d-b7c3-4e15",
+            "obj-code-57905fbd-e482-4102"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-13de2c41-827c-4bd3",
+            "obj-code-bc949807-711c-4ecd"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-13de2c41-827c-4bd3",
+            "obj-code-224b149d-3438-44cb"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-13de2c41-827c-4bd3",
+            "obj-code-0391d874-3007-49fc"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8741f17e-25d1-4abb",
+            "obj-code-18b2f846-3b1a-4e23"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-59fd48f3-7de2-42c3",
+            "obj-code-84dce752-abfa-47e0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-59fd48f3-7de2-42c3",
+            "obj-code-ea6c9daf-815d-4605"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-59fd48f3-7de2-42c3",
+            "obj-code-11bfa54f-bc8a-48a0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0029adb7-cbb5-496d",
+            "obj-code-e2ca1d89-a3c2-4e6e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c7584b64-6bd8-46ca",
+            "obj-code-8ad84b4f-ed87-43d7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c7584b64-6bd8-46ca",
+            "obj-code-db602033-6e8e-4491"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c7584b64-6bd8-46ca",
+            "obj-code-63ab8539-fa98-497d"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a3938666-059f-416b",
+            "obj-code-51c5e282-f38e-4c9d"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-29c0f93f-4f86-409b",
+            "obj-code-0f18354e-de3e-4d47"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-29c0f93f-4f86-409b",
+            "obj-code-670df60f-52d1-4325"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-29c0f93f-4f86-409b",
+            "obj-code-21294251-912d-483a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8aa97741-a16b-4204",
+            "obj-code-d38a27b7-b191-4af7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-97772435-5304-4925",
+            "obj-code-89744b7b-350d-4bdc"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-97772435-5304-4925",
+            "obj-code-b0596404-c5cc-4da1"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-97772435-5304-4925",
+            "obj-code-5a6b1a6c-12af-4664"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c9e62042-bdeb-4589",
+            "obj-code-14a32931-6f09-457c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-fa75e423-8ca0-47e7",
+            "obj-code-85ad4426-96d6-4673"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-fa75e423-8ca0-47e7",
+            "obj-code-657ac5b4-0ecb-4e27"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0a89b681-9caa-4d0d",
+            "obj-code-b465c18a-2142-496c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d3a603fa-ef09-4c21",
+            "obj-code-8d81521c-cd57-4166"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d3a603fa-ef09-4c21",
+            "obj-code-0fd737c6-36f1-4c08"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d3a603fa-ef09-4c21",
+            "obj-code-ce12fe49-2db0-487d"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-bb5975c2-c054-455e",
+            "obj-code-f5b54479-7847-4521"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ecf87afa-b3a9-4d66",
+            "obj-code-4e73a6ae-2cba-4d42"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ecf87afa-b3a9-4d66",
+            "obj-code-e6b02452-dcb7-4959"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ecf87afa-b3a9-4d66",
+            "obj-code-ad3b00f3-79c9-4d7a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9c43eb08-6736-45a2",
+            "obj-code-62edd383-787b-4380"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-18ddc463-9dad-488e",
+            "obj-code-651554ce-8236-42b4"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-18ddc463-9dad-488e",
+            "obj-code-72c981a2-36c1-45d4"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-18ddc463-9dad-488e",
+            "obj-code-a9277930-3d6d-40f4"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-37e0ae18-def0-442b",
+            "obj-code-9ebcf19d-467d-4690"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-e2991a4f-1f5a-4851",
+            "obj-code-bcd781a3-18e4-4083"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-e2991a4f-1f5a-4851",
+            "obj-code-1fed7b2e-e39b-4fd0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-796ccc1e-f2ce-4f29",
+            "obj-code-3ccbf2d4-6590-401b"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-f08843b8-0edc-45da",
+            "obj-code-f6519eb2-38a8-488a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-f08843b8-0edc-45da",
+            "obj-code-7fde2f87-1da8-4114"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-f08843b8-0edc-45da",
+            "obj-code-8feb4da1-71fa-4d87"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-f5f00335-b547-4c76",
+            "obj-code-34362154-1abf-4dec"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-147c8d76-ed63-4506",
+            "obj-code-43605659-1572-4f37"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-147c8d76-ed63-4506",
+            "obj-code-d65ced97-1c64-429d"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-147c8d76-ed63-4506",
+            "obj-code-d3b8c9e2-8722-458a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-53f439cb-9242-4501",
+            "obj-code-b6ad86d3-1f59-4730"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9a12e897-fece-4544",
+            "obj-code-1e1b7054-1ded-4a38"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9a12e897-fece-4544",
+            "obj-code-1590cb59-f171-4617"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9a12e897-fece-4544",
+            "obj-code-a0b95653-da96-4f11"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-36b9216d-1b53-4c14",
+            "obj-code-90ead77b-0a56-4284"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-70fe0121-422d-46a6",
+            "obj-code-e6d9ca53-eb8b-4b22"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-70fe0121-422d-46a6",
+            "obj-code-d910a6d8-2927-4eb6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a9afa386-f6a7-4664",
+            "obj-code-1691748a-8053-4df0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b21a61a9-c5b8-4d90",
+            "obj-code-fb193595-72fe-4e8e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b21a61a9-c5b8-4d90",
+            "obj-code-608af1c4-8753-4695"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b21a61a9-c5b8-4d90",
+            "obj-code-e4cb0087-7886-439b"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b88ca806-c337-4b9a",
+            "obj-code-d8cc4282-78b9-49da"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-515b9f66-7aa6-405f",
+            "obj-code-f12241fe-4460-4a73"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-515b9f66-7aa6-405f",
+            "obj-code-124c0b5c-8d72-4b09"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-515b9f66-7aa6-405f",
+            "obj-code-586c6f0e-5803-44c1"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-b885095a-fa1e-46a6",
+            "obj-code-b1baebd2-3207-495f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-3e4549fb-8b98-4332",
+            "obj-code-baaf26b6-0c81-4ba5"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-3e4549fb-8b98-4332",
+            "obj-code-1360d065-26ec-4c07"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-3e4549fb-8b98-4332",
+            "obj-code-70d14c62-cf90-49b3"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6c29f547-d9d9-450f",
+            "obj-code-fa6a9fcf-545f-4f17"
+          ],
+          "repaired": false
+        }
+      ]
+    },
+    {
+      "name": "中古宏伟斗兽场",
+      "prompt": "一座中古时期的宏伟石砌斗兽场",
+      "seed": 3011432877,
+      "full": "map-9639fa98-557f-43ac",
+      "minimal": "map-c56dae97-b091-46ad",
+      "minNewAssets": 0,
+      "maxNewAssets": 16,
+      "status": "saved",
+      "attempt": 2,
+      "failures": [
+        {
+          "attempt": 1,
+          "mapId": "map-b34a6e5e-84da-427b",
+          "error": "An error occurred while processing your request. You can retry your request, or contact us through our help center at help.openai.com if the error persists. Please include the request ID 6ea53e20-e811-4de0-9d0a-7c0f55aadebd in your message."
+        }
+      ],
+      "mapId": "map-46ccbb21-2c9d-4c58",
+      "code": "function plan(api) {\n  api.terrain('plain', { amplitude: 0.7, roughness: 0.25, seed: 3011432877 });\n\n  const candidates = [[0, 0], [-3, 2], [3, -2]];\n  let center = candidates[0];\n  let bestRelief = Infinity;\n  for (const p of candidates) {\n    const samples = [\n      api.environmentSample(p),\n      api.environmentSample([p[0] - 28, p[1]]),\n      api.environmentSample([p[0] + 28, p[1]]),\n      api.environmentSample([p[0], p[1] - 23]),\n      api.environmentSample([p[0], p[1] + 23])\n    ];\n    const heights = samples.map(s => s.height);\n    const relief = Math.max.apply(null, heights) - Math.min.apply(null, heights);\n    if (relief < bestRelief) {\n      bestRelief = relief;\n      center = p;\n    }\n  }\n\n  const initialHeight = api.environmentSample(center).height;\n  api.sculptTerrain({\n    mode: 'flatten', point: center, radius: 37,\n    strength: 1, targetHeight: initialHeight\n  });\n  const base = api.environmentSample(center).height;\n  const cx = center[0];\n  const cz = center[1];\n  const count = 40;\n  const angleStep = 2 * Math.PI / count;\n\n  function point(rx, rz, angle) {\n    return [cx + rx * Math.cos(angle), cz + rz * Math.sin(angle)];\n  }\n  function outline(rx, rz) {\n    const points = [];\n    for (let i = 0; i < count; i++) {\n      points.push(point(rx, rz, (i - 0.5) * angleStep));\n    }\n    return points;\n  }\n  function declare(key, name, dimensions, prompt, role) {\n    api.requireAsset({ key, name, dimensions, prompt, role: role || 'structure' });\n    return api.asset(key);\n  }\n\n  api.surface({\n    id: 'stone-precinct', surface: 'paving', material: 'weathered limestone cobbles',\n    region: { kind: 'polygon', points: outline(35, 29) }\n  });\n  api.surface({\n    id: 'arena-sand', surface: 'sand', material: 'warm ochre trampled sand',\n    region: { kind: 'polygon', points: outline(16.7, 10.7) }\n  });\n\n  const arcade = declare(\n    'arcade', '石拱廊', [4.3, 4, 2.2],\n    'One medieval monumental limestone arcade bay. Y up, X span, Z+ outward front. Canonical span 4.3m, height 4m, depth 2.2m. A tall open round arch leads completely through the depth, flanked by half-width square piers at the X joining faces so neighboring bays form full piers. Heavy voussoirs, recessed inner arch, projecting imposts, weathered pale stone with dark seams. Continuous narrow floor and level cornice terminate exactly at both X joining faces. No end walls, no roof above cornice, no furniture in the passage.'\n  );\n  const upperArcade = declare(\n    'upper-arcade', '上层拱廊', [4.3, 4, 2],\n    'One upper-story medieval limestone amphitheater arcade bay, Y up, X span, Z+ outward. 4.3m wide, 4m high, 2m deep. Open round arch with low solid stone balustrade, paired half-piers at X joining faces, engaged slender pilaster and strongly recessed shadowed opening. Continuous floor and upper stringcourse join neighboring bays at equal height. Aged ivory limestone, restrained carved geometric medallion in spandrel. Flat joining faces, no end walls.'\n  );\n  const crown = declare(\n    'crown', '顶层石墙', [4.3, 3, 1.8],\n    'One medieval amphitheater attic wall bay, Y up, X span, Z+ outward front. Canonical width 4.3m, height 3m, depth 1.8m. Massive weathered limestone, a small centered arched window open through wall, engaged pilasters at shared half-pier ends, horizontal cornice and continuous crenellated stone parapet integrated within the 3m height. X joining faces flush, matching adjacent bays. No broad roof.'\n  );\n  const gate = declare(\n    'gate', '主入口拱门', [4.3, 4, 2.2],\n    'One monumental entrance bay for a medieval stone arena, Y up, X span, Z+ exterior front. 4.3m wide, 4m high, 2.2m deep. Fully open tall round arch with 3m clear passage and level stone sill, rusticated half-piers at X joining faces, heavy carved keystone, two attached bronze torch brackets and an ochre heraldic shield above arch. No gate leaf blocking access. Floor and cornice align with ordinary 4m arcade bays.'\n  );\n  const seats = declare(\n    'seats', '阶梯看台', [3.6, 3, 4],\n    'One solid masonry amphitheater seating wedge, Y up, X tangential span, Z+ front toward arena. Canonical 3.6m span, 4m radial depth, 3m total height. Six broad stone seating steps ascend from low front edge at Z+ to high back edge at Z-. Slightly tapered side faces allow a polygonal curved seating ring; rear wider than front. Solid load-bearing rubble stone core underneath, pale worn limestone treads. Flush side joining faces; no railings or end caps, no roof. Front begins at local base elevation.'\n  );\n  const stair = declare(\n    'stair', '看台阶梯', [3.6, 3, 4],\n    'One amphitheater radial stair wedge, Y up, X tangential span, Z+ faces arena. Canonical 3.6m wide, 4m deep, 3m high. A centered 1.5m wide walkable staircase of eighteen small risers climbs from low Z+ front to high Z- rear, flanked by short solid stone cheeks and narrow seating edges. Solid stone support below; slightly tapered sides meet neighboring seating wedges. Front starts at base elevation and rear finishes exactly 3m higher.'\n  );\n  const arenaWall = declare(\n    'arena-wall', '竞技场围墙', [2.7, 1.4, 0.65],\n    'One low medieval arena retaining barrier, Y up, X span, Z+ facing sandy arena. Canonical span 2.7m, height 1.4m, depth 0.65m. Rough limestone blocks and smooth rounded coping; flat X ends join other barrier segments. Narrow iron tie plates, chipped weathering. No doorway.'\n  );\n  const banner = declare(\n    'banner', '纹章旗杆', [1.8, 5, 0.6],\n    'One slender medieval dark timber flagpole on a small iron shoe, Y up, Z+ front. Long hanging deep crimson cloth banner with a simple faded gold lion emblem, iron crossbar and spear finial. Wind-bent fabric silhouette, no oversized pedestal.',\n    'environment'\n  );\n  const brazier = declare(\n    'brazier', '石座火盆', [1.1, 2.1, 1.1],\n    'One medieval wrought iron brazier on a squat carved limestone pedestal, Y up, Z+ front. Open iron bowl with glowing coals and modest amber flames, four iron supports, soot staining and aged bronze rim.',\n    'environment'\n  );\n  const booth = declare(\n    'booth', '入口棚亭', [4.5, 3.4, 3.4],\n    'One small medieval admissions and provisions booth, Y up, Z+ open customer front. Heavy dark oak posts, sloping faded ochre canvas canopy, stone footings, wooden counter along rear, two barrels and stacked pottery attached within footprint. Open front allows sheltered access.',\n    'structure'\n  );\n  const tree = declare(\n    'cypress', '柏树', [3, 10, 3],\n    'One tall slender Mediterranean cypress, Y up. Dark olive green dense upright foliage, irregular tapered crown, visible short rough trunk and small root flare.',\n    'environment'\n  );\n\n  function ring(rx, rz, y, assetId, dimensions, select, inward) {\n    const points = outline(rx, rz);\n    for (let i = 0; i < count; i++) {\n      const chosen = select ? select(i) : assetId;\n      if (!chosen) continue;\n      const a = points[i];\n      const b = points[(i + 1) % count];\n      const angle = i * angleStep;\n      const target = inward ? center : point(rx + 12, rz + 12, angle);\n      api.placeBetween({\n        assetId: chosen, start: a, end: b,\n        dimensions: dimensions, spanAxis: 'x',\n        terrain: false, elevation: y, frontTarget: target\n      });\n    }\n  }\n\n  // The load-bearing facade surrounds open concentric seating and a sandy arena.\n  ring(30, 24, base, arcade, [4.3, 4, 2.2],\n    i => i === 0 || i === 20 ? gate : arcade, false);\n  ring(30, 24, base + 4, upperArcade, [4.3, 4, 2], null, false);\n  ring(30, 24, base + 8, crown, [4.3, 3, 1.8], null, false);\n\n  for (let tier = 0; tier < 3; tier++) {\n    const rx = 19 + tier * 4;\n    const rz = 13 + tier * 4;\n    ring(rx, rz, base + tier * 3, seats, [3.6, 3, 4],\n      i => {\n        if (i === 0 || i === 20) return null;\n        return i === 10 || i === 30 ? stair : seats;\n      }, true);\n  }\n  ring(16.7, 10.7, base, arenaWall, [2.7, 1.4, 0.65],\n    i => i === 0 || i === 20 || i === 10 || i === 30 ? null : arenaWall, true);\n\n  api.route({\n    id: 'east-gate-approach',\n    points: [[cx + 16, cz], [cx + 31, cz], [cx + 39, cz + 1], [45, 7]],\n    width: 3, curve: 'catmull-rom', surface: 'paving',\n    material: 'worn limestone paving'\n  });\n  api.route({\n    id: 'west-gate-approach',\n    points: [[cx - 16, cz], [cx - 31, cz], [-40, cz - 2], [-46, -12]],\n    width: 3, curve: 'catmull-rom', surface: 'paving',\n    material: 'worn limestone paving'\n  });\n  const promenade = outline(33.4, 27.4);\n  promenade.push(promenade[0]);\n  api.route({\n    id: 'outer-promenade', points: promenade, width: 3,\n    curve: 'polyline', surface: 'paving', material: 'limestone cobbles'\n  });\n\n  for (const side of [-1, 1]) {\n    for (const dz of [-4, 4]) {\n      api.place({\n        assetId: brazier,\n        position: [cx + side * 32.5, base, cz + dz],\n        terrain: false\n      });\n    }\n  }\n  for (const i of [3, 8, 13, 18, 23, 28, 33, 38]) {\n    const p = point(30, 24, i * angleStep);\n    api.place({\n      assetId: banner, position: [p[0], base + 11, p[1]],\n      terrain: false, rotationY: -i * angleStep\n    });\n  }\n\n  for (const side of [-1, 1]) {\n    const p = [cx + side * 35.5, cz - 9];\n    const obj = api.place({\n      assetId: booth, position: p,\n      rotationY: side === 1 ? -Math.PI / 2 : Math.PI / 2\n    });\n    api.foundation({\n      under: [obj], top: 'level', maxThickness: 1,\n      material: 'rough limestone'\n    });\n    api.route({\n      id: side === 1 ? 'east-booth-access' : 'west-booth-access',\n      points: [[cx + side * 33, cz - 9], [cx + side * 33, cz - 3], [cx + side * 34, cz]],\n      width: 1.8, surface: 'paving'\n    });\n  }\n\n  api.grass('peripheral-meadow', {\n    kind: 'polygon', points: [[-47, -47], [47, -47], [47, 47], [-47, 47]]\n  }, { preset: 'meadow', density: 0.22, height: 0.18 });\n\n  const trees = api.sampleProbabilityField({\n    bounds: { minX: -44, maxX: 44, minZ: -44, maxZ: 44 },\n    maxPoints: 24, candidates: 220, minDistance: 5,\n    seed: 3011432877\n  }, p => {\n    const x = p[0] - cx;\n    const z = p[1] - cz;\n    const ellipse = x * x / (38 * 38) + z * z / (33 * 33);\n    if (ellipse < 1 || Math.abs(z) < 13) return 0;\n    const sample = api.environmentSample(p);\n    return sample.slope < 0.45 ? 0.65 : 0.1;\n  });\n  for (const p of trees) {\n    api.place({ assetId: tree, position: p, rotationY: Math.random() * Math.PI * 2 });\n  }\n\n  api.spawn([43, 7], -100);\n}",
+      "transactionId": "tx-0e982016-8aa2-4abe",
+      "objectCount": 310,
+      "assetCount": 11,
+      "diagnostics": [
+        {
+          "code": "code.declaration-normalized",
+          "severity": "warning",
+          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
+          "repaired": true
+        }
+      ]
+    },
+    {
+      "name": "哥特式大教堂",
+      "prompt": "一座高耸宏伟的哥特式石砌大教堂",
+      "seed": 2930301838,
+      "full": "map-c3c4075b-7631-46ac",
+      "minimal": "map-1c74009c-d64c-4285",
+      "minNewAssets": 0,
+      "maxNewAssets": 16,
+      "status": "failed",
+      "attempt": 2,
+      "discardedResults": [
+        {
+          "attempt": 1,
+          "mapId": "map-23fb0ed6-a51b-42a9",
+          "reason": "用户判定第一次改进图质量异常，要求作废并独立重生成。"
+        }
+      ],
+      "mapId": "map-0160ced5-e516-4eee",
+      "failures": [
+        {
+          "attempt": 2,
+          "mapId": "map-0160ced5-e516-4eee",
+          "error": "map_code_execution_failed:non_finite_map_code_value:array(length=2) at at plan (worldforge-map-plan.js:79:20) at source: const nave = api.requireAsset({"
+        }
+      ],
+      "error": "map_code_execution_failed:non_finite_map_code_value:array(length=2) at at plan (worldforge-map-plan.js:79:20) at source: const nave = api.requireAsset({"
+    },
+    {
+      "name": "山谷密集石屋村庄",
+      "prompt": "一座坐落在山谷中的密集石屋村庄",
+      "seed": 866756897,
+      "full": "map-3ee8dd37-e9a7-4b53",
+      "minimal": "map-8562a1d4-a44b-48fd",
+      "minNewAssets": 0,
+      "maxNewAssets": 16,
+      "status": "saved",
+      "attempt": 1,
+      "mapId": "map-57368110-0b81-4609",
+      "code": "function plan(api) {\n  api.terrain('valley', { amplitude: 13, roughness: 0.42, seed: api.seed });\n  const riverPoints = [[3, -47], [1, -32], [5, -16], [7, 0], [5, 17], [9, 33], [12, 47]];\n  const river = api.water('valley-stream', {\n    type: 'river',\n    points: riverPoints,\n    width: 4,\n    depth: 1.5\n  });\n\n  function sample(p) {\n    return api.environmentSample(p, { waterId: river });\n  }\n  function distance(a, b) {\n    return Math.hypot(a[0] - b[0], a[1] - b[1]);\n  }\n  function segmentDistance(p, a, b) {\n    const dx = b[0] - a[0], dz = b[1] - a[1];\n    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / (dx * dx + dz * dz || 1)));\n    return distance(p, [a[0] + t * dx, a[1] + t * dz]);\n  }\n\n  const west = [[-11, -37], [-13, -27], [-10, -16], [-12, -5], [-10, 7], [-7, 18], [-8, 30], [-3, 40]];\n  const east = [[20, -37], [21, -27], [23, -16], [25, -5], [23, 7], [23, 18], [25, 30], [27, 40]];\n  function inspect(points) {\n    let climb = 0, steep = 0;\n    let last = sample(points[0]).height;\n    for (const p of points) {\n      const s = sample(p);\n      climb += Math.abs(s.height - last);\n      steep += s.slope;\n      last = s.height;\n    }\n    return { climb: climb, steep: steep };\n  }\n  const w = inspect(west), e = inspect(east);\n  const main = (w.steep + w.climb * 0.2 <= e.steep + e.climb * 0.2) ? west : east;\n  const side = main === west ? -1 : 1;\n  const outer = main.slice(1, 7).map(function(p, i) {\n    return [p[0] + side * (14 + (i === 2 || i === 3 ? 1 : 0)), p[1] + (i % 2 ? 2 : -1)];\n  });\n  for (const p of outer) sample(p);\n\n  const lanes = [];\n  function lane(id, points, width) {\n    for (let i = 0; i < points.length - 1; i++) {\n      const a = sample(points[i]), b = sample(points[i + 1]);\n      api.rampTerrain({\n        start: points[i], end: points[i + 1], width: width + 0.8,\n        startHeight: a.height, endHeight: b.height,\n        softness: 0.8, strength: 0.8\n      });\n    }\n    const routeId = api.route({\n      id: id, points: points, width: width,\n      curve: 'polyline', surface: 'paving',\n      material: 'irregular worn grey limestone cobbles'\n    });\n    lanes.push({ points: points, width: width, id: routeId });\n    return routeId;\n  }\n  lane('valley-lane', main, 3.2);\n  lane('upper-lane', outer, 2.4);\n  lane('south-climb', [main[1], [main[1][0] + side * 7, main[1][1] - 4], outer[0]], 2.3);\n  lane('middle-climb', [main[3], [main[3][0] + side * 7, main[3][1] + 3], outer[2]], 2.2);\n  lane('north-climb', [main[6], [main[6][0] + side * 7, main[6][1] + 4], outer[5]], 2.3);\n\n  api.requireAsset({\n    key: 'stone-house', name: '山谷石屋', role: 'structure',\n    dimensions: [5.4, 7.5, 5.5], variants: 3,\n    prompt: 'A compact inhabited mountain village house built from irregular grey limestone with pale mortar, two closely stacked floors and a steep dark slate gable roof. Y+ up, Z+ front entrance, X+ right. Footprint 5.4 by 5.5 metres, total height 7.5 metres. Ground-level front timber door, small recessed windows with weathered wooden shutters, modest chimney, copper gutter, narrow stone door threshold, restrained ivy on one side. Solid continuous walls and no wide porch, no projecting external stairs. Variations in masonry tone, shutter colour and roof ridge detail, preserving the same footprint and entrance.'\n  });\n  api.requireAsset({\n    key: 'chapel', name: '石砌小教堂', role: 'structure',\n    dimensions: [7, 11, 10],\n    prompt: 'A small rural mountain chapel of grey limestone, one simple narrow nave with slate gabled roof, front arched timber door at ground level and a slender integrated bell gable rising above the front wall. Y+ up, Z+ front, X+ right. Seven metre width, ten metre depth, eleven metre total height. Deep narrow windows, stone quoins, small iron bell, weathered masonry. Complete simple building with no separate wings, no surrounding ground or enclosure.'\n  });\n  api.requireAsset({\n    key: 'fountain', name: '村庄水槽', role: 'environment',\n    dimensions: [2.8, 1.8, 1.5],\n    prompt: 'A communal mountain village limestone water trough, rectangular basin with thick worn rim, short rear stone pillar and bronze spout pouring a thin stream into the basin. Y+ up, Z+ front. Weathered pale grey stone and subtle moss at water level.'\n  });\n  api.requireAsset({\n    key: 'tree', name: '山谷阔叶树', role: 'environment',\n    dimensions: [5, 9, 5],\n    prompt: 'A mountain deciduous tree with a crooked grey trunk and airy irregular crown of small muted green leaves. Y+ up, natural branching, exposed base, no ground patch.'\n  });\n  api.requireAsset({\n    key: 'pine', name: '山坡松树', role: 'environment',\n    dimensions: [4.5, 11, 4.5],\n    prompt: 'A slender mountain pine with a textured brown trunk and uneven layered branches bearing dark green needles. Y+ up. Natural open silhouette, no ground patch.'\n  });\n  api.requireAsset({\n    key: 'supplies', name: '柴薪木桶', role: 'environment',\n    dimensions: [1.8, 1.3, 0.9],\n    prompt: 'One compact village doorstep supply group: neatly stacked split firewood under a small weathered timber cover, with a single wooden barrel beside it. Y+ up, Z+ front. Fits within 1.8 metre width and 0.9 metre depth.'\n  });\n\n  const square = [main[4][0] - side * 3.5, main[4][1] + 1];\n  const squareSample = sample(square);\n  api.sculptTerrain({ mode: 'flatten', point: square, radius: 5, targetHeight: squareSample.height, strength: 0.9 });\n  sample(square);\n  api.surface({\n    id: 'village-square', surface: 'paving',\n    material: 'worn pale limestone setts',\n    region: { kind: 'circle', center: square, radius: 4.8 }\n  });\n  api.route({ id: 'square-entry', points: [main[4], square], width: 3, surface: 'paving' });\n  const fountainPoint = [square[0], square[1] + 2.5];\n  const fountain = api.place({ assetId: api.asset('fountain'), position: fountainPoint });\n  api.foundation({ under: [fountain], top: 'level', maxThickness: 0.8, material: 'limestone' });\n\n  const chapelPoint = [outer[3][0] + side * 7, outer[3][1] + 1];\n  const chapelGround = sample(chapelPoint);\n  api.sculptTerrain({ mode: 'flatten', point: chapelPoint, radius: 6.3, targetHeight: chapelGround.height, strength: 0.85 });\n  sample(chapelPoint);\n  const chapelYaw = Math.atan2(-side, 0);\n  const chapel = api.place({\n    assetId: api.asset('chapel'), position: chapelPoint, rotationY: chapelYaw\n  });\n  api.foundation({ under: [chapel], top: 'level', maxThickness: 4, material: 'rough limestone retaining masonry' });\n  const chapelDoor = [chapelPoint[0] - side * 5, chapelPoint[1]];\n  lane('chapel-access', [outer[3], chapelDoor], 2.5);\n\n  const occupied = [{ p: chapelPoint, r: 6.2 }];\n  let count = 0;\n  const frontageLanes = lanes.slice(0, 2);\n  for (let li = 0; li < frontageLanes.length; li++) {\n    const line = frontageLanes[li];\n    for (let i = 0; i < line.points.length - 1; i++) {\n      const a = line.points[i], b = line.points[i + 1];\n      const length = distance(a, b);\n      const tx = (b[0] - a[0]) / length, tz = (b[1] - a[1]) / length;\n      const slots = Math.max(1, Math.floor(length / 6));\n      for (let j = 0; j < slots; j++) {\n        const t = (j + 0.5) / slots;\n        const access = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];\n        for (const direction of [-1, 1]) {\n          const setback = line.width / 2 + 3.2 + Math.random() * 0.45;\n          const nx = -tz * direction, nz = tx * direction;\n          const p = [access[0] + nx * setback, access[1] + nz * setback];\n          if (Math.abs(p[0]) > 42 || Math.abs(p[1]) > 42) continue;\n          if (distance(p, square) < 8.1) continue;\n          if (occupied.some(function(o) { return distance(o.p, p) < o.r + 3.1; })) continue;\n          let blocked = false;\n          for (const road of lanes) {\n            for (let k = 0; k < road.points.length - 1; k++) {\n              if (segmentDistance(p, road.points[k], road.points[k + 1]) < road.width / 2 + 2.85) blocked = true;\n            }\n          }\n          if (blocked) continue;\n          const s = sample(p);\n          if (s.waterDistance < 4.6) continue;\n          const corners = [\n            [p[0] + 2.5, p[1] + 2.5], [p[0] - 2.5, p[1] + 2.5],\n            [p[0] + 2.5, p[1] - 2.5], [p[0] - 2.5, p[1] - 2.5]\n          ].map(sample);\n          const relief = Math.max.apply(null, corners.map(function(v) { return v.height; })) -\n            Math.min.apply(null, corners.map(function(v) { return v.height; }));\n          if (relief > 4.8) continue;\n          const roadHeight = sample(access).height;\n          const targetHeight = s.height * 0.4 + roadHeight * 0.6;\n          api.sculptTerrain({\n            mode: 'flatten', point: p, radius: 3.8,\n            targetHeight: targetHeight, strength: 0.95\n          });\n          const revised = sample(p);\n          const yaw = Math.atan2(-nx, -nz);\n          const h = 6.4 + Math.random() * 2.2;\n          const obj = api.place({\n            assetId: api.asset('stone-house', count % 3),\n            position: p, rotationY: yaw, dimensions: [5.4, h, 5.5]\n          });\n          api.foundation({\n            under: [obj], top: 'level', maxThickness: 3.5,\n            material: 'rough grey limestone matching the house walls'\n          });\n          const door = [p[0] - nx * 2.8, p[1] - nz * 2.8];\n          api.rampTerrain({\n            start: access, end: door, width: 1.5,\n            startHeight: roadHeight, endHeight: revised.height,\n            softness: 0.65, strength: 1\n          });\n          api.route({ id: 'door-path-' + count, points: [access, door], width: 1.2, surface: 'paving' });\n          if (count % 4 === 0) {\n            api.place({\n              assetId: api.asset('supplies'),\n              position: [door[0] + tx * 1.7, door[1] + tz * 1.7],\n              rotationY: yaw\n            });\n          }\n          occupied.push({ p: p, r: 3.05 });\n          count++;\n        }\n      }\n    }\n  }\n\n  const start = main[0];\n  api.spawn(start, Math.atan2(main[1][0] - start[0], main[1][1] - start[1]) * 180 / Math.PI);\n  api.grass('valley-meadow', {\n    kind: 'polygon', points: [[-47, -47], [47, -47], [47, 47], [-47, 47]]\n  }, { preset: 'meadow', density: 0.32, height: 0.3 });\n\n  const trees = api.sampleProbabilityField({\n    maxPoints: 85, candidates: 750, minDistance: 4,\n    bounds: { minX: -43, maxX: 43, minZ: -43, maxZ: 43 },\n    seed: api.seed + 13, cluster: { strength: 0.5, scale: 13 }\n  }, function(p) {\n    if (distance(p, square) < 8 || occupied.some(function(o) { return distance(p, o.p) < o.r + 4; })) return 0;\n    for (const road of lanes) {\n      for (let i = 0; i < road.points.length - 1; i++) {\n        if (segmentDistance(p, road.points[i], road.points[i + 1]) < 4.5) return 0;\n      }\n    }\n    const s = sample(p);\n    if (s.waterDistance < 3) return 0;\n    return 0.2 + 0.6 * Math.min(1, Math.abs(p[0]) / 35);\n  });\n  for (let i = 0; i < trees.length; i++) {\n    const p = trees[i];\n    const scale = 0.75 + Math.random() * 0.45;\n    const pine = Math.abs(p[0]) > 27;\n    api.place({\n      assetId: api.asset(pine ? 'pine' : 'tree'), position: p,\n      rotationY: Math.random() * Math.PI * 2,\n      dimensions: pine ? [4.5 * scale, 11 * scale, 4.5 * scale] : [5 * scale, 9 * scale, 5 * scale]\n    });\n  }\n}",
+      "transactionId": "tx-26cfef4c-c095-4467",
+      "objectCount": 134,
+      "assetCount": 8,
+      "diagnostics": [
+        {
+          "code": "code.declaration-normalized",
+          "severity": "warning",
+          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
+          "repaired": true
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-584cfed6-b38a-4c3c",
+            "obj-code-45fb9cd0-fb1e-47a7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4373b54e-6145-4eb1",
+            "obj-code-21ca1aa0-8123-4b74"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8ff1a61a-fa9d-41bc",
+            "obj-code-7a5dfd61-0626-46d8"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-98730217-219e-4925",
+            "obj-code-4c96197c-9bc0-406b"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-98730217-219e-4925",
+            "obj-code-0c202adc-ab31-43be"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a2314d71-4a15-4a45",
+            "obj-code-b30674ca-f0d7-4953"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ee09b1c2-efcd-4b80",
+            "obj-code-1b43a4be-7a78-4b6c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d23d3e29-b998-4ef9",
+            "obj-code-9338ae42-7af0-4c77"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c2f16b8a-0a91-41b8",
+            "obj-code-17cd1fd4-d241-4020"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c2f16b8a-0a91-41b8",
+            "obj-code-af84698a-d194-49e7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-cb637e13-83f2-41b2",
+            "obj-code-1964e55c-b610-4851"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-cb637e13-83f2-41b2",
+            "obj-code-af84698a-d194-49e7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-fdd55b7f-4430-4114",
+            "obj-code-0cc3a91a-86c4-4b61"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-86cb1ed2-79a8-49f2",
+            "obj-code-86a1129a-bf02-4715"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-460e6479-bbde-434c",
+            "obj-code-2ff99edb-1f6b-4a48"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4c1dd0a0-6aff-43b6",
+            "obj-code-87a39fcf-ab58-4c69"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-5b28fdbb-26ea-4f1d",
+            "obj-code-b014faa7-f6b4-44c6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0d0e042e-7555-45c3",
+            "obj-code-9290f2d9-4c4b-46e2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ab158a82-09a5-43c8",
+            "obj-code-264ee655-9a8f-40ba"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-af84698a-d194-49e7",
+            "obj-code-c054fb55-bb09-42b6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4033c12e-5130-4f22",
+            "obj-code-3177af46-3c85-4043"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-392f6fa8-ec07-40bb",
+            "obj-code-24597596-c630-48f7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7a474114-6dab-434a",
+            "obj-code-783a486a-9903-4c2a"
+          ],
+          "repaired": false
+        }
+      ]
+    }
+  ],
+  "folderId": "folder-5c49763b-9e86-4547"
+}

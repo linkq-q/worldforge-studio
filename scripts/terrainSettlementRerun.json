@@ -1,0 +1,522 @@
+{
+  "name": "地形聚落提示更新后复跑 · GPT规划 · DeepSeek资产",
+  "runs": [
+    {
+      "name": "山谷密集石屋村庄",
+      "prompt": "一座坐落在山谷中的密集石屋村庄",
+      "seed": 866756897,
+      "minNewAssets": 0,
+      "maxNewAssets": 16,
+      "status": "saved",
+      "attempt": 1,
+      "mapId": "map-0abe31b3-9cfa-4eca",
+      "code": "function plan(api) {\n  api.terrain('valley', { amplitude: 13, roughness: 0.48, seed: 866756897 });\n  const river = api.water('valley-stream', {\n    type: 'river',\n    points: [[-7, -47], [-5, -31], [0, -15], [3, 1], [1, 17], [7, 33], [10, 47]],\n    width: 3.4,\n    depth: 1.2\n  });\n  api.surface({\n    id: 'valley-ground',\n    surface: 'grass',\n    region: { kind: 'polygon', points: [[-48, -48], [48, -48], [48, 48], [-48, 48]] },\n    intensity: 0.7\n  });\n\n  api.requireAsset({\n    key: 'stone-home',\n    name: '山谷石屋',\n    role: 'structure',\n    dimensions: [5.4, 6.8, 5.3],\n    variants: 3,\n    prompt: 'Complete compact two-storey mountain village house, Y up, Z+ front entrance, X+ right. Thick irregular gray limestone walls, recessed small timber windows, integrated shutters, timber front door at ground level centered on front, steep weathered dark slate roof, stone chimney. Front eaves remain within footprint. Variants have subtle differences in masonry, roof pitch and window layout, all with the same front entrance and compact proportions. Fully finished side and rear walls, no detached accessories.'\n  });\n  api.requireAsset({\n    key: 'small-home',\n    name: '石砌小屋',\n    role: 'structure',\n    dimensions: [4.7, 4.7, 4.7],\n    prompt: 'Complete modest mountain stone cottage, Y up, Z+ front entrance. Rough pale gray stone walls, ground-level timber door centered on front, two deep-set shuttered windows, steep charcoal slate roof, small chimney, slightly mossy stonework. Closed finished rear and sides, footprint including roof overhang 4.7 by 4.7 metres.'\n  });\n  api.requireAsset({\n    key: 'hall',\n    name: '村庄会堂',\n    role: 'structure',\n    dimensions: [8, 8.5, 6.5],\n    prompt: 'Small complete alpine village assembly hall in weathered limestone, Y up and Z+ entrance. Eight metre wide gabled front with central ground-level double wooden door, integrated stone lintels and narrow windows, steep slate roof and a modest roof bell turret. Heavy masonry base, no external staircase. Rural vernacular stone construction matching nearby cottages.'\n  });\n  api.requireAsset({\n    key: 'bridge',\n    name: '石拱桥',\n    role: 'structure',\n    dimensions: [3.5, 2, 9],\n    prompt: 'Narrow mountain village stone bridge, longitudinal span on local Z, Y up. Shallow stone arch below a gently crowned walkable cobbled deck, low stone parapets on both sides, open ends flush with deck for connection to footpaths, rough limestone voussoirs.'\n  });\n  api.requireAsset({\n    key: 'fountain',\n    name: '石泉',\n    role: 'environment',\n    dimensions: [2.3, 1.8, 2.3],\n    prompt: 'Rural limestone village fountain, circular low stone water basin and short central column with bronze spout, weathered rim, clear water inside, Y up.'\n  });\n  api.requireAsset({\n    key: 'tree',\n    name: '山谷乔木',\n    role: 'environment',\n    dimensions: [4.2, 9, 4.2],\n    prompt: 'Single mountain deciduous tree, slender branching trunk, irregular green crown, natural open silhouette, Y up, trunk base at origin.'\n  });\n  api.requireAsset({\n    key: 'woodpile',\n    name: '柴垛',\n    role: 'environment',\n    dimensions: [2, 1.2, 0.9],\n    prompt: 'Neatly stacked split firewood beneath a small weathered timber rain cover, freestanding rural village detail, Y up, cut log ends facing Z+.'\n  });\n\n  function streamX(z) {\n    const p = [[-7, -47], [-5, -31], [0, -15], [3, 1], [1, 17], [7, 33], [10, 47]];\n    for (let i = 1; i < p.length; i++) {\n      if (z <= p[i][1]) {\n        const t = (z - p[i - 1][1]) / (p[i][1] - p[i - 1][1]);\n        return p[i - 1][0] * (1 - t) + p[i][0] * t;\n      }\n    }\n    return 10;\n  }\n  function sample(p) {\n    return api.environmentSample(p, { waterId: river });\n  }\n  const lanes = [];\n  for (const side of [-1, 1]) {\n    let previous = null;\n    const points = [];\n    for (let z = -37; z <= 37; z += 7.4) {\n      const options = [9, 12, 15].map(function (offset) {\n        const p = [streamX(z) + side * offset, z];\n        return { p: p, s: sample(p) };\n      });\n      options.sort(function (a, b) {\n        const ha = previous ? Math.abs(a.s.height - previous.s.height) : 0;\n        const hb = previous ? Math.abs(b.s.height - previous.s.height) : 0;\n        return (a.s.slope + ha * 0.65) - (b.s.slope + hb * 0.65);\n      });\n      previous = options[0];\n      points.push(previous.p);\n    }\n    lanes.push(points);\n  }\n\n  const plazaOptions = [\n    { p: [-15, -3], side: 0 },\n    { p: [16, 5], side: 1 },\n    { p: [-15, 14], side: 0 }\n  ].map(function (c) {\n    c.s = sample(c.p);\n    return c;\n  });\n  plazaOptions.sort(function (a, b) { return a.s.slope - b.s.slope; });\n  const plaza = plazaOptions[0];\n  api.sculptTerrain({ mode: 'flatten', point: plaza.p, radius: 7.5, targetHeight: plaza.s.height, strength: 0.85 });\n  const plazaGround = sample(plaza.p);\n\n  function path(id, points, width) {\n    for (let i = 1; i < points.length; i++) {\n      const a = sample(points[i - 1]);\n      const b = sample(points[i]);\n      api.rampTerrain({\n        start: points[i - 1], end: points[i], width: width + 0.8,\n        startHeight: a.height, endHeight: b.height, softness: 0.7, strength: 0.75\n      });\n    }\n    return api.route({ id: id, points: points, width: width, curve: 'polyline', surface: 'paving', material: 'weathered gray cobblestone' });\n  }\n  lanes.forEach(function (points, i) { path('bank-lane-' + i, points, 3); });\n\n  function nearest(points, p) {\n    let best = points[0], distance = Infinity;\n    for (const q of points) {\n      const d = Math.hypot(q[0] - p[0], q[1] - p[1]);\n      if (d < distance) { distance = d; best = q; }\n    }\n    return best;\n  }\n  path('plaza-approach', [nearest(lanes[plaza.side], plaza.p), plaza.p], 3.5);\n  api.surface({ id: 'village-square', surface: 'paving', material: 'worn limestone setts', region: { kind: 'circle', center: plaza.p, radius: 6.7 } });\n  api.place({ assetId: api.asset('fountain'), position: [plaza.p[0] + 2.4, plaza.p[1]], role: 'environment' });\n\n  for (const z of [-21, 17]) {\n    const x = streamX(z);\n    sample([x - 6, z]);\n    sample([x + 6, z]);\n    api.bridge({ waterId: river, assetId: api.asset('bridge'), crossingCenter: [x, z], direction: [1, 0], dimensions: [3.5, 2, 9] });\n    path('bridge-west-' + z, [nearest(lanes[0], [x - 6, z]), [x - 4.5, z]], 3);\n    path('bridge-east-' + z, [[x + 4.5, z], nearest(lanes[1], [x + 6, z])], 3);\n  }\n\n  const occupied = [];\n  function construct(key, p, target, dims, variant, id) {\n    const yaw = Math.atan2(target[0] - p[0], target[1] - p[1]);\n    const s = sample(p);\n    api.sculptTerrain({ mode: 'flatten', point: p, radius: Math.max(dims[0], dims[2]) * 0.63, targetHeight: s.height, strength: 0.9 });\n    const ground = sample(p);\n    const house = api.place({\n      assetId: api.asset(key, variant), position: [p[0], ground.height, p[1]],\n      rotationY: yaw, dimensions: dims, role: 'structure'\n    });\n    api.foundation({ under: [house], top: 'level', maxThickness: 4, material: 'rough limestone retaining masonry' });\n    const door = [p[0] + Math.sin(yaw) * (dims[2] / 2 + 0.25), p[1] + Math.cos(yaw) * (dims[2] / 2 + 0.25)];\n    path('door-' + id, [door, target], 1.35);\n    occupied.push({ p: p, r: Math.max(dims[0], dims[2]) * 0.64 });\n    return yaw;\n  }\n\n  const hallP = [plaza.p[0], plaza.p[1] - 9.7];\n  construct('hall', hallP, plaza.p, [8, 8.5, 6.5], 0, 'hall');\n  let count = 0;\n  for (let bank = 0; bank < lanes.length; bank++) {\n    const points = lanes[bank];\n    for (let i = 0; i < points.length - 1; i++) {\n      const a = points[i], b = points[i + 1];\n      const length = Math.hypot(b[0] - a[0], b[1] - a[1]);\n      const normal = [(b[1] - a[1]) / length, -(b[0] - a[0]) / length];\n      for (const side of [-1, 1]) {\n        const t = side < 0 ? 0.27 : 0.72;\n        const entrance = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];\n        const p = [entrance[0] + normal[0] * side * 5, entrance[1] + normal[1] * side * 5];\n        const s = sample(p);\n        if (Math.abs(p[0]) > 41 || Math.abs(p[1]) > 41 || s.waterDistance < 4.1) continue;\n        if (Math.hypot(p[0] - plaza.p[0], p[1] - plaza.p[1]) < 10) continue;\n        if (occupied.some(function (o) { return Math.hypot(p[0] - o.p[0], p[1] - o.p[1]) < o.r + 3.35; })) continue;\n        const small = count % 5 === 4;\n        const dims = small ? [4.7, 4.7, 4.7] : [5.4, 6.4 + (count % 3) * 0.65, 5.3];\n        const yaw = construct(small ? 'small-home' : 'stone-home', p, entrance, dims, small ? 0 : count % 3, count);\n        if (count % 6 === 0) {\n          api.place({\n            assetId: api.asset('woodpile'),\n            position: [p[0] + Math.cos(yaw) * 2, p[1] - Math.sin(yaw) * 2 + Math.cos(yaw) * 3.3],\n            rotationY: yaw, role: 'environment'\n          });\n        }\n        count++;\n      }\n    }\n  }\n\n  const trees = api.sampleProbabilityField({\n    minDistance: 4.5, maxPoints: 75, candidates: 450,\n    bounds: { minX: -44, maxX: 44, minZ: -44, maxZ: 44 },\n    cluster: { strength: 0.55, scale: 13, seed: 866756898 }\n  }, function (p) {\n    const s = sample(p);\n    if (s.waterDistance < 2.5 || Math.hypot(p[0] - plaza.p[0], p[1] - plaza.p[1]) < 11) return 0;\n    if (occupied.some(function (o) { return Math.hypot(p[0] - o.p[0], p[1] - o.p[1]) < o.r + 3; })) return 0;\n    for (const lane of lanes) {\n      for (const q of lane) {\n        if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 5) return 0;\n      }\n    }\n    if (Math.abs(p[1] + 21) < 3 || Math.abs(p[1] - 17) < 3) return 0;\n    return Math.abs(p[0] - streamX(p[1])) > 23 ? 0.85 : 0.15;\n  });\n  trees.forEach(function (p) {\n    const scale = 0.8 + Math.random() * 0.5;\n    api.place({ assetId: api.asset('tree'), position: p, rotationY: Math.random() * Math.PI * 2, dimensions: [4.2 * scale, 9 * scale, 4.2 * scale], role: 'environment' });\n  });\n  api.grass('west-meadow', { kind: 'path', points: [[-38, -43], [-34, -16], [-34, 14], [-31, 43]], width: 14 }, { preset: 'meadow', density: 0.6, height: 0.35 });\n  api.grass('east-meadow', { kind: 'path', points: [[29, -43], [35, -14], [36, 15], [39, 42]], width: 12 }, { preset: 'meadow', density: 0.55, height: 0.3 });\n  api.spawn(lanes[0][0], 15);\n}",
+      "transactionId": "tx-d7514ce8-e3db-4dc8",
+      "objectCount": 128,
+      "assetCount": 9,
+      "diagnostics": [
+        {
+          "code": "code.declaration-normalized",
+          "severity": "warning",
+          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
+          "repaired": true
+        },
+        {
+          "code": "foundation.max-thickness",
+          "severity": "warning",
+          "message": "地基 需要 4.55m 厚度，超过 4.00m 上限，已跳过。",
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-45c1f7ee-2104-46c3",
+            "obj-code-190a5b4d-10e9-4ca1"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-94778f91-e1be-45b3",
+            "obj-code-a1daf595-6ed4-47df"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6143b73d-84f9-4091",
+            "obj-code-2d6710fd-18b2-4e2e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-26f8a6f3-adc2-4ce4",
+            "obj-code-51e62154-3cc5-4468"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-160a386e-0bd3-4127",
+            "obj-code-54e3a5b5-c907-42ac"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-160a386e-0bd3-4127",
+            "obj-code-4062ef20-d72c-4780"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8e2f52be-7071-4243",
+            "obj-code-6c8d82b2-8952-4a3c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8e2f52be-7071-4243",
+            "obj-code-3ce04807-626b-4c16"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4062ef20-d72c-4780",
+            "obj-code-f15618f0-440e-49b7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-673c92ac-851a-426c",
+            "obj-code-e7e5189c-e650-4212"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8acc7a7e-e8d6-4bef",
+            "obj-code-22672114-21c7-4027"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-4c9c4096-7220-4940",
+            "obj-code-54eb337e-5425-4519"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-41803879-5918-40ca",
+            "obj-code-3638573d-19a1-457a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-8ab03a75-f6be-414c",
+            "obj-code-9088f977-f295-4282"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-74b3f936-04d2-4d89",
+            "obj-code-0490d601-6b1c-4ef0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d5955873-0516-42fa",
+            "obj-code-d13302ff-d3ba-4013"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-fdc5f841-7d1d-48d2",
+            "obj-code-8a42e538-4e30-4852"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9de9f6be-e3aa-4c3b",
+            "obj-code-c7f66d47-9dd6-4f92"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-9de9f6be-e3aa-4c3b",
+            "obj-code-14974d0e-f958-44d2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-55dda00b-df7b-42bd",
+            "obj-code-3b5f5c93-890b-43dd"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-14974d0e-f958-44d2",
+            "obj-code-a756e374-7308-45c4"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-eaba968d-3b83-4535",
+            "obj-code-b62e52f9-a8b3-4c90"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7275c56d-00db-418a",
+            "obj-code-91e15de4-34f0-4ff2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-eecc739b-872a-4282",
+            "obj-code-b8748ef3-e47f-48a8"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-2e986ca1-86ef-4647",
+            "obj-code-0eb64dca-2816-4d66"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-0377e3e8-934f-415c",
+            "obj-code-dc19fd4c-8cf3-40c5"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-ce8f5886-8a69-4a4d",
+            "obj-code-a61d1d6b-906e-4868"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-357828bc-a617-4da1",
+            "obj-code-b23974ec-63d1-42cc"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "spawn.unsafe",
+          "severity": "error",
+          "message": "出生点已移动到附近可站立位置。",
+          "repaired": false
+        }
+      ]
+    },
+    {
+      "name": "峡谷村庄",
+      "prompt": "一座建在峡谷中的村庄",
+      "seed": 866756897,
+      "minNewAssets": 0,
+      "maxNewAssets": 16,
+      "status": "saved",
+      "attempt": 1,
+      "mapId": "map-a0c3e3aa-78da-4bd9",
+      "code": "function plan(api) {\n  api.terrain('canyon', { amplitude: 12, roughness: 0.32, seed: api.seed });\n  api.modifyTerrain({\n    modifier: 'valley',\n    region: { kind: 'path', points: [[0, -47], [-2, -23], [0, 0], [3, 24], [1, 47]], width: 12 },\n    amplitude: 5,\n    softness: 0.65\n  });\n  const river = api.water('gorge-river', {\n    type: 'river',\n    points: [[0, -48], [-2, -23], [0, 0], [3, 24], [1, 48]],\n    level: 0,\n    depth: 2,\n    width: 5\n  });\n  api.surface({\n    id: 'canyon-stone',\n    surface: 'rock',\n    material: 'Warm ochre sandstone with exposed grey strata',\n    region: { kind: 'polygon', points: [[-48, -48], [48, -48], [48, 48], [-48, 48]] },\n    intensity: 0.72\n  });\n\n  function observe(p) {\n    return api.environmentSample(p, { waterId: river });\n  }\n  function distance(a, b) {\n    return Math.hypot(a[0] - b[0], a[1] - b[1]);\n  }\n  function riverX(z) {\n    if (z < -23) return -2 * (z + 48) / 25;\n    if (z < 0) return 2 * z / 23;\n    if (z < 24) return z / 8;\n    return 3 - 2 * (z - 24) / 24;\n  }\n\n  api.requireAsset({\n    key: 'home',\n    name: '峡谷石屋',\n    role: 'structure',\n    dimensions: [6.4, 6.6, 6],\n    variants: 2,\n    prompt: 'A complete two-storey inhabited canyon village house, Y+ up, Z+ front entrance, X+ right. Canonical footprint 6.4m wide by 6m deep. Thick irregular warm sandstone walls, dark timber floor beams, small recessed windows with wooden shutters, front ground-level door, narrow upper front balcony with carved timber railing, low pitched weathered grey clay tile roof. Include fixed windows, doors, chimney and balcony. One variant has pale earthen plaster and a slightly uneven gable, the other exposed stone and timber framing. Mountain vernacular architecture, modest practical proportions. Ground floor doorway flush with the base.'\n  });\n  api.requireAsset({\n    key: 'workshop',\n    name: '山村作坊',\n    role: 'structure',\n    dimensions: [6.8, 4.4, 5.6],\n    prompt: 'A complete small sandstone canyon craft workshop, Y+ up and Z+ front. Broad open front doorway at base level, timber lintel, two shuttered windows, weathered low grey tile roof, fixed shallow front canopy, attached wall shelves holding baskets and clay jars. Canonical 6.8m width, 5.6m depth, 4.4m height. Earthy mountain village materials.'\n  });\n  api.requireAsset({\n    key: 'inn',\n    name: '峡谷客栈',\n    role: 'structure',\n    dimensions: [9, 8.2, 7],\n    prompt: 'A complete modest three-storey canyon village inn, sandstone lower floor and ochre plaster upper floors, dark structural timber, grey tiled gabled roof, fixed recessed windows and wooden shutters, narrow front balconies on upper floors. Y+ up, Z+ front entrance, X+ right. Footprint 9m wide by 7m deep. Main double door at ground level in the middle of front, small attached timber signboard, simple chimney, mountain vernacular proportions.'\n  });\n  api.requireAsset({\n    key: 'bridge',\n    name: '峡谷木桥',\n    role: 'structure',\n    dimensions: [3.2, 1.3, 12],\n    prompt: 'A narrow rustic pedestrian bridge running along local Z, 3.2m wide and canonical 12m long, Y+ up. Continuous walkable timber deck, substantial dark timber side trusses and stone-grey low end bearings, wooden guardrails 1.1m above deck on both sides. Both Z ends open for passage. No roof, no stairs, no decorative objects blocking the deck.'\n  });\n  api.requireAsset({\n    key: 'tree',\n    name: '山地杂树',\n    role: 'environment',\n    dimensions: [4.2, 7, 4.2],\n    prompt: 'One mountain deciduous tree with a crooked grey-brown trunk, sparse irregular branches and dusty green foliage, exposed root base. Y+ up. Natural drought-adapted canyon tree, airy crown.'\n  });\n  api.requireAsset({\n    key: 'rock',\n    name: '层理巨石',\n    role: 'environment',\n    dimensions: [3.8, 2.8, 3],\n    prompt: 'A single angular weathered canyon sandstone boulder with horizontal sedimentary layers, ochre and muted grey faces, fissures and a broad stable base, Y+ up.'\n  });\n  api.requireAsset({\n    key: 'goods',\n    name: '村市货摊',\n    role: 'environment',\n    dimensions: [2.8, 2.6, 1.8],\n    prompt: 'One small rustic village market stall, timber table under a faded ochre canvas canopy on four thin posts, woven baskets and ceramic jars on the table, open customer side toward Z+, Y+ up. Compact 2.8m by 1.8m footprint.'\n  });\n  api.requireAsset({\n    key: 'bench',\n    name: '石木长凳',\n    role: 'environment',\n    dimensions: [2.4, 0.85, 0.65],\n    prompt: 'A simple mountain village bench with two rough sandstone supports and a weathered thick timber seat and low backrest, 2.4m span along X, facing Z+, Y+ up.'\n  });\n\n  const lanes = [];\n  const laneHeights = [];\n  const zs = [-33, -22, -10, 2, 15, 28, 38];\n  for (let side = 0; side < 2; side++) {\n    const sign = side === 0 ? -1 : 1;\n    const points = [];\n    const heights = [];\n    for (let i = 0; i < zs.length; i++) {\n      const z = zs[i];\n      const choices = [15, 19, 23].map(function(offset) {\n        const p = [riverX(z) + sign * offset, z];\n        return { p: p, s: observe(p) };\n      });\n      let best = choices[0];\n      for (let j = 1; j < choices.length; j++) {\n        const a = choices[j];\n        const previous = i ? heights[i - 1] : a.s.height;\n        const bestPrevious = i ? heights[i - 1] : best.s.height;\n        const aGentler = Math.abs(a.s.height - previous) + a.s.slope * 4;\n        const bGentler = Math.abs(best.s.height - bestPrevious) + best.s.slope * 4;\n        if (aGentler < bGentler) best = a;\n      }\n      points.push(best.p);\n      heights.push(Math.max(1.2, best.s.height));\n    }\n    for (let i = 0; i < points.length - 1; i++) {\n      api.rampTerrain({\n        start: points[i],\n        end: points[i + 1],\n        width: 4.2,\n        startHeight: heights[i],\n        endHeight: heights[i + 1],\n        softness: 0.8,\n        strength: 1\n      });\n    }\n    lanes.push(points);\n    laneHeights.push(points.map(function(p) { return observe(p).height; }));\n  }\n\n  const crossingCandidates = [-10, 2, 15].map(function(z, i) {\n    const center = [riverX(z), z];\n    const left = [center[0] - 6, z];\n    const right = [center[0] + 6, z];\n    return { z: z, center: center, left: left, right: right, l: observe(left), r: observe(right), index: i + 2 };\n  });\n  let crossing = crossingCandidates[0];\n  for (let i = 1; i < crossingCandidates.length; i++) {\n    const c = crossingCandidates[i];\n    if (Math.abs(c.l.height - c.r.height) + c.l.slope + c.r.slope <\n        Math.abs(crossing.l.height - crossing.r.height) + crossing.l.slope + crossing.r.slope) {\n      crossing = c;\n    }\n  }\n  const landingHeight = Math.max(1.3, crossing.l.height, crossing.r.height);\n  [crossing.left, crossing.right].forEach(function(p) {\n    api.sculptTerrain({ mode: 'flatten', point: p, radius: 3.1, targetHeight: landingHeight, strength: 1 });\n    observe(p);\n  });\n  for (let side = 0; side < 2; side++) {\n    const landing = side === 0 ? crossing.left : crossing.right;\n    const access = lanes[side][crossing.index];\n    const accessHeight = observe(access).height;\n    api.rampTerrain({\n      start: landing, end: access, width: 3.8,\n      startHeight: observe(landing).height, endHeight: accessHeight,\n      softness: 0.8, strength: 1\n    });\n    api.route({\n      id: 'bridge-approach-' + side,\n      points: [landing, access],\n      width: 3.1,\n      surface: 'paving',\n      material: 'Worn sandstone cobbles'\n    });\n  }\n  api.bridge({\n    waterId: river,\n    assetId: api.asset('bridge'),\n    crossingCenter: crossing.center,\n    direction: [1, 0],\n    dimensions: [3.2, 1.3, 12]\n  });\n  for (let side = 0; side < lanes.length; side++) {\n    api.route({\n      id: 'village-lane-' + side,\n      points: lanes[side],\n      width: side === 0 ? 3.5 : 2.8,\n      curve: 'polyline',\n      surface: 'paving',\n      material: 'Uneven sandstone paving with dusty joints'\n    });\n  }\n\n  const occupied = [];\n  const paths = [];\n  function build(key, variant, p, access, dimensions, id) {\n    const sample = observe(p);\n    const entranceDirection = [access[0] - p[0], access[1] - p[1]];\n    const length = Math.hypot(entranceDirection[0], entranceDirection[1]);\n    const unit = [entranceDirection[0] / length, entranceDirection[1] / length];\n    const h = Math.max(1.25, sample.height);\n    const radius = Math.hypot(dimensions[0], dimensions[2]) / 2 + 0.5;\n    api.sculptTerrain({ mode: 'flatten', point: p, radius: radius, targetHeight: h, strength: 1 });\n    const newSample = observe(p);\n    const door = [p[0] + unit[0] * (dimensions[2] / 2 + 0.25), p[1] + unit[1] * (dimensions[2] / 2 + 0.25)];\n    api.rampTerrain({\n      start: access, end: door, width: 2.1,\n      startHeight: observe(access).height, endHeight: newSample.height,\n      softness: 0.75, strength: 1\n    });\n    const object = api.place({\n      assetId: api.asset(key, variant),\n      position: [p[0], observe(p).height, p[1]],\n      rotationY: Math.atan2(unit[0], unit[1]),\n      dimensions: dimensions,\n      terrain: false\n    });\n    api.foundation({\n      under: [object], top: 'level',\n      material: 'Rough load-bearing sandstone retaining masonry',\n      maxThickness: 8\n    });\n    api.route({ id: id + '-doorway', points: [access, door], width: 1.8, surface: 'paving' });\n    occupied.push({ p: p, radius: radius });\n    paths.push([access, door]);\n  }\n\n  for (let side = 0; side < 2; side++) {\n    const sign = side === 0 ? -1 : 1;\n    for (let i = 1; i <= 5; i++) {\n      const access = lanes[side][i];\n      const isInn = side === 0 && i === crossing.index;\n      const isWorkshop = !isInn && ((side === 1 && i === crossing.index) || (side === 0 && i === 1));\n      const dims = isInn ? [9, 8.2, 7] : isWorkshop ? [6.8, 4.4, 5.6] : [6.4, 6.6, 6];\n      const candidates = [-2, 1.5, 3].map(function(dz) {\n        const p = [access[0] + sign * (isInn ? 9.3 : 8), access[1] + dz];\n        return { p: p, s: observe(p) };\n      });\n      candidates.sort(function(a, b) {\n        return (a.s.slope + Math.abs(a.s.height - observe(access).height) * 0.25) -\n               (b.s.slope + Math.abs(b.s.height - observe(access).height) * 0.25);\n      });\n      const p = candidates[0].p;\n      build(isInn ? 'inn' : isWorkshop ? 'workshop' : 'home', isInn || isWorkshop ? 0 : (i + side) % 2,\n        p, access, dims, 'house-' + side + '-' + i);\n    }\n  }\n\n  for (let side = 0; side < 2; side++) {\n    const i = side === 0 ? 4 : 1;\n    const access = lanes[side][i];\n    const sign = side === 0 ? 1 : -1;\n    const p = [access[0] + sign * 7.5, access[1] + 4];\n    const s = observe(p);\n    if (Math.abs(p[0] - riverX(p[1])) > 8 && s.height > 0.8) {\n      build('home', side, p, access, [6.4, 6.6, 6], 'riverside-house-' + side);\n    }\n  }\n\n  const marketAccess = lanes[0][crossing.index];\n  const square = [marketAccess[0], marketAccess[1] + 5];\n  api.surface({\n    id: 'bridge-market',\n    surface: 'paving',\n    material: 'Broad worn sandstone flagstones',\n    region: { kind: 'circle', center: square, radius: 4.2 }\n  });\n  api.route({ id: 'market-link', points: [marketAccess, square], width: 3, surface: 'paving' });\n  api.place({\n    assetId: api.asset('goods'),\n    position: [square[0] - 2.4, square[1] + 1],\n    rotationY: Math.PI / 2\n  });\n  api.place({\n    assetId: api.asset('bench'),\n    position: [square[0] + 2.7, square[1] + 0.7],\n    rotationY: -Math.PI / 2\n  });\n  occupied.push({ p: square, radius: 5 });\n\n  function segmentDistance(p, a, b) {\n    const dx = b[0] - a[0], dz = b[1] - a[1];\n    const denominator = dx * dx + dz * dz;\n    const t = denominator > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / denominator)) : 0;\n    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz);\n  }\n  const routeSegments = paths.slice();\n  for (let side = 0; side < 2; side++) {\n    for (let i = 0; i < lanes[side].length - 1; i++) routeSegments.push([lanes[side][i], lanes[side][i + 1]]);\n    routeSegments.push([lanes[side][crossing.index], side === 0 ? crossing.left : crossing.right]);\n  }\n  function clear(p) {\n    if (Math.abs(p[0] - riverX(p[1])) < 6) return false;\n    for (let i = 0; i < occupied.length; i++) {\n      if (distance(p, occupied[i].p) < occupied[i].radius + 2.5) return false;\n    }\n    for (let i = 0; i < routeSegments.length; i++) {\n      if (segmentDistance(p, routeSegments[i][0], routeSegments[i][1]) < 4) return false;\n    }\n    return true;\n  }\n  const trees = api.sampleProbabilityField({\n    bounds: { minX: -43, maxX: 43, minZ: -43, maxZ: 43 },\n    maxPoints: 35, candidates: 450, minDistance: 4.8,\n    seed: api.seed + 31,\n    cluster: { strength: 0.45, scale: 12 }\n  }, function(p) {\n    if (!clear(p)) return 0;\n    const s = observe(p);\n    if (s.height < 0.7) return 0;\n    return 0.65 / (1 + Math.max(0, s.slope) * 3);\n  });\n  trees.forEach(function(p, i) {\n    const scale = 0.7 + (i % 5) * 0.1;\n    api.place({\n      assetId: api.asset('tree'), position: p,\n      rotationY: Math.random() * Math.PI * 2,\n      dimensions: [4.2 * scale, 7 * scale, 4.2 * scale]\n    });\n    api.grass('tree-ground-' + i, { kind: 'circle', center: p, radius: 2.1 }, {\n      preset: 'meadow', density: 0.22, height: 0.22\n    });\n  });\n  const rocks = api.sampleProbabilityField({\n    bounds: { minX: -44, maxX: 44, minZ: -44, maxZ: 44 },\n    maxPoints: 24, candidates: 220, minDistance: 5.5, seed: api.seed + 73\n  }, function(p) {\n    if (!clear(p)) return 0;\n    for (let i = 0; i < trees.length; i++) if (distance(p, trees[i]) < 3.5) return 0;\n    return 0.2 + Math.min(1, Math.max(0, observe(p).slope));\n  });\n  rocks.forEach(function(p) {\n    api.place({ assetId: api.asset('rock'), position: p, rotationY: Math.random() * Math.PI * 2 });\n  });\n  api.spawn(lanes[0][0], 15);\n}",
+      "transactionId": "tx-d16d76e0-6437-449b",
+      "objectCount": 66,
+      "assetCount": 9,
+      "diagnostics": [
+        {
+          "code": "water.bounds-limited",
+          "severity": "warning",
+          "message": "水体 gorge-river 请求水位 0.00m、深度 2.00m；实际使用 0.02m、2.00m。",
+          "repaired": false
+        },
+        {
+          "code": "code.declaration-normalized",
+          "severity": "warning",
+          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
+          "repaired": true
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a529b855-badf-4ad3",
+            "obj-code-e807847d-dccb-4d3c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a529b855-badf-4ad3",
+            "obj-code-d43c782a-ab24-4a28"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d43c782a-ab24-4a28",
+            "obj-code-9df95ce8-b99a-4ac0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-bcf8a88d-4f37-4f7a",
+            "obj-code-6137c33c-be66-4e53"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7adebedc-1284-430c",
+            "obj-code-caaefc20-1ecf-4d0f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-486a330f-30ab-4e10",
+            "obj-code-0d595b5b-235d-4dce"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-043622fc-c15e-4dc1",
+            "obj-code-c14f7fb8-4feb-4276"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-324f4a16-aa8f-414d",
+            "obj-code-cc4809fc-2ec1-4074"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-de9a273e-d361-46ac",
+            "obj-code-d22ae358-223e-47f0"
+          ],
+          "repaired": false
+        }
+      ]
+    },
+    {
+      "name": "拥挤的城中村",
+      "prompt": "拥挤的城中村",
+      "seed": 2721816274,
+      "minNewAssets": 22,
+      "maxNewAssets": 32,
+      "status": "saved",
+      "attempt": 1,
+      "mapId": "map-0bafc857-8780-4e9f",
+      "code": "function plan(api) {\n  api.terrain('hills', { amplitude: 3.5, roughness: 0.62, seed: 2721816274 });\n\n  const canal = api.water('排水渠', {\n    type: 'river',\n    points: [[-46, 17], [-30, 14], [-12, 12], [8, 10], [26, 8], [46, 5]],\n    level: 3.2,\n    depth: 1.4,\n    width: 2.6\n  });\n\n  const sample = function (p) {\n    return api.environmentSample(p, { waterId: canal });\n  };\n\n  const sites = [\n    [-32, -18], [-20, -12], [-8, -8], [5, -5], [18, -2],\n    [31, 3], [-30, 4], [-18, 7], [-5, 8], [9, 12],\n    [22, 15], [35, 18], [-34, 27], [-20, 25], [-6, 23],\n    [8, 27], [22, 29], [35, 31]\n  ];\n\n  const samples = [];\n  for (let i = 0; i < sites.length; i++) samples.push(sample(sites[i]));\n\n  api.surface({\n    id: '村巷铺装',\n    surface: 'soil',\n    region: { kind: 'polygon', points: [[-43, -26], [-18, -32], [18, -25], [42, -10], [43, 28], [23, 38], [-17, 35], [-42, 19]] },\n    intensity: 0.85\n  });\n  api.surface({\n    id: '小广场铺装',\n    surface: 'paving',\n    region: { kind: 'circle', center: [5, -4], radius: 8 },\n    intensity: 0.9\n  });\n  api.grass('边缘杂草', {\n    kind: 'polygon',\n    points: [[-47, -45], [-28, -45], [-35, -28], [-47, -24]]\n  }, { preset: 'meadow', density: 0.45, height: 0.35, mix: 0.6 });\n\n  const roadMain = api.route({\n    id: '主巷',\n    points: [[-44, -25], [-34, -18], [-25, -12], [-13, -9], [-2, -5], [10, -2], [22, 3], [35, 9], [44, 16]],\n    width: 4.2,\n    curve: 'catmull-rom',\n    surface: 'paving',\n    material: 'worn concrete'\n  });\n  const roadNorth = api.route({\n    id: '北侧巷道',\n    points: [[-34, 27], [-22, 23], [-10, 24], [2, 27], [16, 29], [29, 27], [42, 22]],\n    width: 3.2,\n    curve: 'catmull-rom',\n    surface: 'soil'\n  });\n  api.route({\n    id: '南北支巷',\n    points: [[-31, -28], [-28, -18], [-24, -7], [-21, 5], [-20, 18], [-18, 30]],\n    width: 2.6,\n    curve: 'polyline',\n    surface: 'soil'\n  });\n  api.route({\n    id: '河边巷',\n    points: [[-42, 14], [-30, 12], [-17, 10], [-4, 9], [9, 8], [24, 7], [42, 5]],\n    width: 2.3,\n    curve: 'catmull-rom',\n    surface: 'soil'\n  });\n\n  api.rampTerrain({\n    start: [-36, -24],\n    end: [35, 16],\n    width: 5,\n    softness: 0.72,\n    strength: 0.65\n  });\n\n  const entrance = function (key, name, prompt, dimensions, role) {\n    api.requireAsset({ key, name, prompt, dimensions, role });\n  };\n\n  entrance('高层握手楼', '握手楼', 'A tightly packed urban village mid rise concrete apartment building, narrow footprint, four stories, exposed balconies, many irregular windows, rooftop utility tanks, doors and facade details included, Y+ up, Z+ front entrance.', [7, 14, 8], 'structure');\n  entrance('低层出租屋', '出租屋', 'A complete three story urban village rental house with narrow concrete body, fixed entrance door, barred windows, shallow balconies and a simple flat roof, Y+ up, Z+ front entrance.', [6, 10, 7], 'structure');\n  entrance('转角楼', '转角楼', 'A complete corner apartment building with two connected street facades, rounded concrete corner, fixed doors, windows, balconies and parapet roof, Y+ up, Z+ front entrance.', [9, 12, 9], 'structure');\n  entrance('小卖部', '小卖部', 'A complete tiny ground floor convenience shop with rolling shutter, glass display window, awning and flat roof, Y+ up, Z+ front entrance.', [4, 3.6, 4], 'structure');\n  entrance('早餐铺', '早餐铺', 'A complete narrow breakfast stall building with open serving window, stainless counter, tiled canopy and rear service wall, Y+ up, Z+ front entrance.', [3.5, 3.2, 3], 'structure');\n  entrance('修车铺', '修车铺', 'A complete roadside bicycle and motorbike repair shop with open bay, corrugated canopy, tool wall and narrow office, Y+ up, Z+ front entrance.', [5, 3.5, 4], 'structure');\n  entrance('理发店', '理发店', 'A complete small barber shop with striped awning, glazed storefront, two barber chairs visible inside and a flat roof, Y+ up, Z+ front entrance.', [4, 3.4, 4], 'structure');\n  entrance('社区诊所', '社区诊所', 'A complete compact neighborhood clinic with covered entrance, blue medical sign panel, barred windows, waiting room and flat roof, Y+ up, Z+ front entrance.', [6, 4.2, 5], 'structure');\n  entrance('城中村祠堂', '小祠堂', 'A complete compact village shrine with masonry walls, raised threshold, covered entrance, small tiled gable roof and incense porch, Y+ up, Z+ front entrance.', [7, 5.5, 7], 'structure');\n  entrance('共享厨房', '共享厨房', 'A complete communal kitchen building with brick base, serving hatch, exhaust hood, side door and corrugated roof, Y+ up, Z+ front entrance.', [6, 4, 5], 'structure');\n  entrance('杂货仓', '杂货仓', 'A complete narrow storage shed with roll up door, loading threshold, patched metal siding and slightly sloped roof, Y+ up, Z+ front entrance.', [5, 4, 7], 'structure');\n  entrance('水塔', '水塔', 'A freestanding rooftop water tank assembly with steel support frame, cylindrical tank, pipes and maintenance ladder, Y+ up, Z+ front.', [2.5, 5, 2.5], 'environment');\n  entrance('楼梯塔', '外置楼梯塔', 'A freestanding concrete emergency stair tower with landings, railings, narrow door openings and weathered facade, Y+ up, Z+ front entrance.', [3.5, 12, 3.5], 'structure');\n  entrance('居民电箱', '居民电箱', 'A compact electrical cabinet kiosk with vented metal doors, conduit pipes, warning decals and concrete plinth, Y+ up, Z+ front.', [1.5, 2, 1], 'environment');\n  entrance('屋顶棚', '屋顶棚', 'A small rooftop laundry shelter with steel posts, translucent corrugated canopy, hanging clothes rails and low parapet connection, Y+ up, Z+ front.', [4, 2.5, 3], 'environment');\n  entrance('雨棚', '巷口雨棚', 'A modular narrow alley awning with steel brackets, patched corrugated cover, gutter and simple side supports, Y+ up, Z+ front.', [4, 2.5, 2.5], 'environment');\n  entrance('晾衣架', '晾衣架', 'A freestanding crowded laundry rack with metal poles, several hanging garments and weighted feet, Y+ up, Z+ front.', [2, 3, 1.5], 'environment');\n  entrance('垃圾站', '垃圾站', 'A compact neighborhood waste station with roofed concrete enclosure, sorting bins, drain channel and swinging service gate, Y+ up, Z+ front.', [4, 2.5, 3], 'environment');\n  entrance('摩托车棚', '摩托车棚', 'A narrow shared motorbike shelter with corrugated roof, steel posts, parked scooter silhouettes and low curb, Y+ up, Z+ front.', [5, 2.6, 3], 'environment');\n  entrance('临街招牌', '临街招牌', 'A weathered projecting shop signboard with Chinese lettering area, metal bracket, fluorescent strip and hanging wires, Y+ up, Z+ front.', [2.8, 1, 0.35], 'environment');\n  entrance('防护栏', '河边护栏', 'A modular galvanized pedestrian railing segment with concrete posts, handrail and lower kick plate, Y+ up, Z+ front.', [2.5, 1.2, 0.18], 'environment');\n  entrance('混凝土桥', '排水渠小桥', 'A narrow concrete pedestrian bridge with low metal rails, textured deck and beveled ends, designed to cross a drainage channel, Y+ up, Z+ front.', [5, 0.8, 4], 'structure');\n  entrance('公共座椅', '公共座椅', 'A simple concrete and timber public bench with backrest, worn edges and two side supports, Y+ up, Z+ front.', [2, 1, 0.6], 'environment');\n  entrance('路灯', '巷道路灯', 'A slender galvanized alley lamp with curved arm, warm lantern head and small concrete footing, Y+ up, Z+ front.', [0.5, 5, 0.5], 'environment');\n\n  const put = function (key, x, z, yaw, terrain) {\n    const p = sample([x, z]);\n    const y = p && isFinite(p.height) ? p.height : 0;\n    return api.place({\n      assetId: api.asset(key),\n      position: terrain ? [x, z] : [x, y, z],\n      rotationY: yaw || 0,\n      terrain: !!terrain,\n      role: 'structure'\n    });\n  };\n\n  const foundation = function (key, x, z, yaw, w, d) {\n    const o = put(key, x, z, yaw, true);\n    api.foundation({\n      under: [o],\n      position: [x, z],\n      shape: 'rounded-rectangle',\n      width: w,\n      depth: d,\n      top: 'slope',\n      maxThickness: 0.8,\n      material: 'weathered concrete'\n    });\n    return o;\n  };\n\n  foundation('高层握手楼', -25, -16, 0.12, 7, 8);\n  foundation('高层握手楼', 4, 5, -0.18, 7, 8);\n  foundation('低层出租屋', -13, -4, 1.45, 6, 7);\n  foundation('低层出租屋', 16, 11, -1.1, 6, 7);\n  foundation('低层出租屋', 29, 24, 0.25, 6, 7);\n  foundation('转角楼', -4, 19, 0.7, 9, 9);\n  foundation('转角楼', 27, 4, -0.9, 9, 9);\n\n  put('小卖部', -18, -10, 0.05, true);\n  put('早餐铺', 1, -3, 0.1, true);\n  put('修车铺', 12, 2, 1.55, true);\n  put('理发店', 23, 8, -1.5, true);\n  put('社区诊所', 8, 20, 0.2, true);\n  put('城中村祠堂', -29, 26, 0.6, true);\n  put('共享厨房', 19, 28, -0.2, true);\n  put('杂货仓', -35, 9, 1.2, true);\n  put('水塔', -25, -16, 0, true);\n  put('楼梯塔', 4, 5, 0.4, true);\n  put('居民电箱', -10, -7, 0, true);\n  put('屋顶棚', 16, 11, 0, true);\n  put('雨棚', -18, -10, 0, true);\n  put('晾衣架', -25, -12, 0.3, true);\n  put('垃圾站', 34, 14, -0.4, true);\n  put('摩托车棚', -5, -6, 0.1, true);\n  put('临街招牌', -18, -10, 0.1, true);\n  put('临街招牌', 1, -3, 0.1, true);\n  put('防护栏', -31, 12, 0.2, true);\n  put('防护栏', -22, 10, 0.2, true);\n  put('防护栏', 10, 8, 0.2, true);\n  api.bridge({\n    waterId: canal,\n    assetId: api.asset('混凝土桥'),\n    crossingCenter: [4, 9],\n    direction: [0, 1],\n    dimensions: [5, 0.8, 4]\n  });\n  put('公共座椅', 5, -3, 0.15, true);\n  put('公共座椅', 10, -5, -0.2, true);\n  put('路灯', -26, -12, 0, true);\n  put('路灯', -4, -5, 0, true);\n  put('路灯', 17, 3, 0, true);\n  put('路灯', 32, 11, 0, true);\n\n  const vegetation = api.sampleProbabilityField({\n    bounds: { minX: -44, maxX: 44, minZ: -38, maxZ: 38 },\n    candidates: 100,\n    maxPoints: 24,\n    minDistance: 3.2,\n    seed: 2721816274,\n    region: { kind: 'polygon', points: [[-44, -38], [-25, -40], [44, -20], [44, 38], [-44, 38]] },\n    cluster: { strength: 0.55, scale: 14, seed: 2721816274 }\n  }, function (p) {\n    const e = sample(p);\n    return e && e.waterDistance > 3 ? 0.35 : 0.05;\n  });\n\n  for (let i = 0; i < vegetation.length; i++) {\n    api.grass('巷边绿化' + i, {\n      kind: 'circle',\n      center: vegetation[i],\n      radius: 1.2\n    }, { preset: 'meadow', density: 0.7, height: 0.45, mix: 0.35 });\n  }\n\n  api.spawn([-40, -26], 38);\n}",
+      "transactionId": "tx-c77b0335-1760-4557",
+      "objectCount": 41,
+      "assetCount": 23,
+      "diagnostics": [
+        {
+          "code": "bridge.unresolved-crossing",
+          "severity": "warning",
+          "message": "桥梁没有形成 water-1157854089 的有效跨水线，已跳过该局部摆放。",
+          "repaired": false
+        },
+        {
+          "code": "code.declaration-normalized",
+          "severity": "warning",
+          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
+          "repaired": true
+        },
+        {
+          "code": "scene.program-incomplete",
+          "severity": "warning",
+          "repaired": false,
+          "message": "人工场景包含 10 类核心设施，但缺少功能分组；无法分别验证各区域的组合完整度与重复使用。"
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-bbe28b36-eec8-48eb",
+            "obj-code-7add739c-3558-46ba"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d8ff1f0e-e742-4b12",
+            "obj-code-9176948f-bf68-4fbe"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a012eb6f-48bb-491a",
+            "obj-code-487263aa-1f0e-4087"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a012eb6f-48bb-491a",
+            "obj-code-913be748-bcd2-49d5"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6ac07794-7d49-4f69",
+            "obj-code-23430c18-6ee3-4b4f"
+          ],
+          "repaired": false
+        }
+      ]
+    }
+  ],
+  "folderId": "folder-ada349e5-8da0-41a5"
+}
