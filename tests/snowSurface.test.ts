@@ -3,7 +3,8 @@ import { createEmptyMap, normalizeMap, sampleTerrainHeight } from '../src/shared
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { executeMapCodePlan } from '../src/server/mapCodePlanner';
 import { terrainSemanticSurfaceWeight, terrainVertexColor } from '../src/client/terrainAppearance';
-import { createTerrainSnowTexture } from '../src/client/terrainSnow';
+import * as THREE from 'three';
+import { buildTerrainSnowLayer, SNOW_LAYER_THICKNESS, createTerrainSnowTexture } from '../src/client/terrainSnow';
 import { grassSurfaceCoverage } from '../src/client/mapGrassRenderer';
 
 describe('snow terrain surfaces', () => {
@@ -57,7 +58,8 @@ describe('snow material coverage and relief', () => {
     ]);
     const texture = createTerrainSnowTexture(map);
     try {
-      const { data, width } = texture.image;
+      const width = texture.image.width;
+      const data = texture.image.data as Uint8Array;
       const coverage = (x: number, z: number) => data[(Math.floor((z / 32 + 0.5) * width) * width
         + Math.floor((x / 32 + 0.5) * width)) * 4];
       expect(coverage(6, 2)).toBe(255);
@@ -78,8 +80,41 @@ describe('snow material coverage and relief', () => {
     const before = JSON.stringify(map);
     const texture = createTerrainSnowTexture(map);
     expect(texture.image.width).toBe(1);
-    expect(texture.image.data[0]).toBe(0);
+    expect((texture.image.data as Uint8Array)[0]).toBe(0);
     expect(JSON.stringify(map)).toBe(before);
     texture.dispose();
+  });
+});
+
+
+describe('thin snow layer geometry', () => {
+  it('adds a continuous raised top and vertical edge while preserving terrain and road openings', () => {
+    const base = createEmptyMap('thin snow', 'thin-snow', [16, 8, 16]);
+    const map = applyMapOperations(base, [
+      { type: 'terrain.surface', surface: 'snow', zoneId: 'snow',
+        region: { kind: 'polygon', points: [[-6,-6],[6,-6],[6,6],[-6,6]] } },
+      { type: 'terrain.surface', surface: 'soil', zoneId: 'path',
+        region: { kind: 'path', points: [[0,-8],[0,8]], width: 2 } }
+    ]);
+    const field = createTerrainSnowTexture(map);
+    const material = new THREE.MeshStandardMaterial();
+    const mesh = buildTerrainSnowLayer(map, field, material)!;
+    try {
+      expect(mesh).not.toBeNull();
+      const positions = mesh.geometry.getAttribute('position');
+      const normals = mesh.geometry.getAttribute('normal');
+      let top = 0, wall = 0;
+      for (let i = 0; i < positions.count; i += 1) {
+        expect(positions.getY(i)).toBeGreaterThanOrEqual(0);
+        expect(positions.getY(i)).toBeLessThanOrEqual(SNOW_LAYER_THICKNESS);
+        expect(Math.abs(positions.getX(i))).toBeGreaterThan(0.65);
+        if (normals.getY(i) > 0.9) { top++; expect(positions.getY(i)).toBeCloseTo(SNOW_LAYER_THICKNESS); }
+        if (Math.abs(normals.getY(i)) < 0.1) wall++;
+      }
+      expect(top).toBeGreaterThan(100);
+      expect(wall).toBeGreaterThan(10);
+      expect(map.terrain.heights).toEqual(base.terrain.heights);
+      expect(map.objects).toHaveLength(0);
+    } finally { mesh.geometry.dispose(); mesh.material.dispose(); material.dispose(); field.dispose(); }
   });
 });

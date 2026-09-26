@@ -58,7 +58,7 @@ For a town or campus, `streetGrid` adds one explicit hierarchy level: it returns
 
 Terrain surfaces preserve their real circle, path or polygon masks. They are not reduced to a bounding circle, so a curved road changes only its own corridor. Dense curves are deterministically resampled to the persisted 64-point terrain-region limit, and a map can retain up to 96 semantic surface zones for road and field networks.
 
-Surface semantics include grass, sand, rock, soil, paving and snow. Snow colors the existing terrain with fine rough detail and masks grass without changing heights or adding geometry. Use snow surfaces for continuous snowfields and ski routes; reserve assets for discrete snowbanks or other three-dimensional forms. Farms can therefore keep visible soil between crops, while roads and plazas suppress ordinary grass and use a distinct paved tint instead of borrowing the rock treatment.
+Surface semantics include grass, sand, rock, soil, paving and snow. Snow uses fine material detail and masks grass. Coverage also produces one continuous terrain-following render layer, about 0.125 m thick with closed side edges and openings for soil/paved routes. This layer changes neither the saved heightfield nor asset/object counts. Use snow surfaces for continuous snowfields and ski routes; reserve assets for discrete snowbanks or other three-dimensional forms. Farms can therefore keep visible soil between crops, while roads and plazas suppress ordinary grass and use a distinct paved tint instead of borrowing the rock treatment.
 
 `placeAlong`, `scatter` and `placeAt` all use the shared placement kernels. They report underfilled requests instead of silently forcing objects through bounds, water, steep terrain or occupied footprints.
 

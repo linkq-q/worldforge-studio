@@ -26,7 +26,7 @@ import {
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
-import { createTerrainSnowTexture } from './terrainSnow';
+import { buildTerrainSnowLayer, createTerrainSnowTexture } from './terrainSnow';
 import { terrainSemanticSurfaceWeight, terrainVertexColor, type TerrainPaletteColors } from './terrainAppearance';
 import { buildMapGrassField, deriveContactAwareGrassMap, grassSurfaceCoverage } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
@@ -186,6 +186,13 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
   root.add(terrain);
   pickables.push(terrain);
+  let snowLayer = buildTerrainSnowLayer(map, sandFlow.snowSurface, terrain.material as THREE.MeshStandardMaterial);
+  if (snowLayer) root.add(snowLayer);
+  const disposeSnowLayer = (): void => {
+    snowLayer?.removeFromParent();
+    snowLayer?.geometry.dispose();
+    snowLayer?.material.dispose();
+  };
   let roadBodies = buildRoadMaterialBodies(map);
   modelsRoot.add(roadBodies);
   let roadSurfaceOverlays = buildRoadSurfaceOverlays(map);
@@ -367,6 +374,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined);
+      snowLayer?.material.copy(material);
       terrain.userData.terrainMaterialStyle = { ...style };
       syncTerrainSandShader(sandFlow);
       applySceneArt();
@@ -378,6 +386,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       const report = palette ? paletteMaterials.apply(palette) : (paletteMaterials.clear(), paletteMaterials.report());
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined);
+      snowLayer?.material.copy(material);
       if (roomShell) applyRoomShellPalette(roomShell, currentMap, palette);
       applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
       applySceneArt();
@@ -427,6 +436,9 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.snowSurface = createTerrainSnowTexture(next);
       sandFlow.mapSize.set(next.box.size[0], next.box.size[2]);
       updateTerrainSandZones(sandFlow, next);
+      disposeSnowLayer();
+      snowLayer = buildTerrainSnowLayer(next, sandFlow.snowSurface, material);
+      if (snowLayer) root.add(snowLayer);
       roadBodies.removeFromParent();
       disposeObject(roadBodies);
       roadBodies = buildRoadMaterialBodies(next);
@@ -445,6 +457,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grass?.dispose();
       instancing.dispose();
       sandFlow.snowSurface.dispose();
+      disposeSnowLayer();
       disposeObject(root);
     }
   };

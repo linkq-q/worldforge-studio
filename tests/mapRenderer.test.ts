@@ -76,11 +76,15 @@ describe('terrain normal generation', () => {
     rendered.refreshTerrain(snowy);
     expect(previousDispose).toHaveBeenCalledOnce();
     expect(state.snowSurface.image.width).toBe(512);
+    const layer = rendered.group.getObjectByName('terrain-snow-layer') as THREE.Mesh;
+    expect(layer).toBeDefined();
+    const layerDispose = vi.spyOn(layer.geometry, 'dispose');
     expect(terrain.geometry.getAttribute('position').count).toBe(vertexCount);
     expect(snowy.objects).toHaveLength(0);
     const currentDispose = vi.spyOn(state.snowSurface, 'dispose');
     rendered.dispose();
     expect(currentDispose).toHaveBeenCalledOnce();
+    expect(layerDispose).toHaveBeenCalledOnce();
   });
 
   it('loads only assets referenced by scene objects', async () => {
