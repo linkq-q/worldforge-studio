@@ -332,7 +332,7 @@ class MapEditor {
     terrainRoadCurve: 'catmull-rom',
     terrainRoadWidth: 4,
     terrainRoadSmooth: false,
-    terrainSize: 1.8,
+    terrainSize: 3.5,
     terrainStrength: 0.3,
     terrainAmplitude: 5,
     terrainSoftness: 0.2,
