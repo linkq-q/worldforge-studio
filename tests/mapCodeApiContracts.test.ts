@@ -18,6 +18,39 @@ describe('Scene Code API contracts', () => {
     expect(() => run(`api.surface('other', ${JSON.stringify(form)})`)).toThrow('conflicting_map_code_surface_id');
   });
 
+  it('normalizes named-object route calls without losing path or material settings', () => {
+    const map = createEmptyMap();
+    const route = { id: 'jungleApproach', points: [[-20, 12], [-8, 4], [6, -5]],
+      width: 4.2, curve: 'catmull-rom', surface: 'soil', material: 'compacted-earth' };
+    const run = (call: string) => executeMapCodePlan(`function plan(api) { ${call}; }`, map, [],
+      { scope: 'scene', promptMode: 'main', spatialPolicy: 'diagnose' });
+    const { id, ...options } = route;
+    const canonical = run(`api.route(${JSON.stringify(route)})`);
+    const named = run(`api.route('${id}', ${JSON.stringify(options)})`);
+    expect(named.operations).toEqual(canonical.operations);
+    expect(named.diagnostics?.some(issue => issue.code === 'code.api-shape-normalized' && issue.repaired)).toBe(true);
+    expect(() => run(`api.route('other', ${JSON.stringify(route)})`)).toThrow('conflicting_map_code_route_id');
+    expect(() => run(`api.route('jungleApproach', {})`)).toThrow('invalid_map_code_route_points');
+    expect(() => run(`api.route(${JSON.stringify(route)}, {width:99})`))
+      .toThrow('invalid_map_code_route_extra_argument');
+  });
+
+  it('keeps first-pass route code unchanged and makes no model or asset request during discovery', async () => {
+    const code = `function plan(api) {
+      api.route('jungleApproach', {points:[[-20,12],[-8,4],[6,-5]],width:4,surface:'soil'});
+    }`;
+    const fetchImpl = vi.fn();
+    const createAsset = vi.fn();
+    const result = await generateMapCodeSuggestion('rainforest temple', createEmptyMap(), [], {
+      scope: 'scene', promptMode: 'main', revisionMode: 'first-pass', spatialPolicy: 'diagnose',
+      approvedCode: code, discoveryOnly: true, fetchImpl, createAsset
+    });
+    expect(result.codePlan?.code).toBe(code);
+    expect(result.operations.some(operation => operation.type === 'guide.upsert')).toBe(true);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(createAsset).not.toHaveBeenCalled();
+  });
+
   it('resolves declared Chinese water IDs consistently across sampling, fields, bridges and waterPoint', () => {
     const map = createEmptyMap('water', 'water', [48, 16, 48]);
     const result = executeMapCodePlan(`function plan(api) {

@@ -3806,6 +3806,43 @@ describe('map code planner', () => {
     expect(createAsset.mock.calls[0][0].prompt).toContain('local Z+ is the front');
   });
 
+  it('keeps each named asset variant in its own generation prompt', async () => {
+    const code = `function plan(api) {
+      const stone = api.requireAsset({key:'stone',name:'教堂石构件',prompt:'Gothic limestone wall bay',
+        variants:['pale limestone','cool gray granite'],role:'structure'});
+      api.place({assetId:api.asset(stone,0),position:[-4,0],role:'structure'});
+      api.place({assetId:api.asset(stone,1),position:[4,0],role:'structure'});
+    }`;
+    const createAsset = vi.fn(async (request) => testAsset(`asset-${request.name}`, request.name));
+    const fetchImpl = vi.fn();
+    await generateMapCodeSuggestion('a cathedral', createEmptyMap(), [], {
+      approvedCode: code, scope:'scene', promptMode:'main', revisionMode:'first-pass',
+      spatialPolicy:'diagnose', createAsset, fetchImpl
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(createAsset.mock.calls[0][0].prompt).toContain('pale limestone');
+    expect(createAsset.mock.calls[0][0].prompt).not.toContain('cool gray granite');
+    expect(createAsset.mock.calls[1][0].prompt).toContain('cool gray granite');
+    expect(createAsset.mock.calls[1][0].prompt).not.toContain('pale limestone');
+  });
+
+  it('rejects unusable variant descriptions before requesting assets', async () => {
+    const createAsset = vi.fn();
+    for (const variants of [[], ['pale limestone', '  '], [1, 2]]) {
+      const code = `function plan(api) {
+        const stone = api.requireAsset({key:'stone',name:'石构件',prompt:'Wall bay',role:'structure',
+          variants:${JSON.stringify(variants)}});
+        api.place({assetId:api.asset(stone),position:[0,0],role:'structure'});
+      }`;
+      await expect(generateMapCodeSuggestion('a cathedral', createEmptyMap(), [], {
+        approvedCode: code, scope:'scene', promptMode:'main', revisionMode:'first-pass',
+        spatialPolicy:'diagnose', createAsset
+      })).rejects.toThrow('invalid_map_code_asset_variants');
+    }
+    expect(createAsset).not.toHaveBeenCalled();
+  });
+
   it('prunes unused trailing variants instead of requesting a full code rewrite', () => {
     expect(discoverMapCodeAssets(`
       function plan(api) {

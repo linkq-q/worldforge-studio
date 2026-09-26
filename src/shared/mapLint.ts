@@ -31,7 +31,7 @@ export interface MapLintIssue {
     | 'interior.operational-clearance' | 'object.invalid-support' | 'outdoor.access-repaired' | 'outdoor.water-intrusion-repaired'
     | 'outdoor.clearance-repaired'
     | 'bridge.unresolved-crossing' | 'scene.design-missing' | 'scene.program-incomplete'
-    | 'code.route-unresolved' | 'code.geometry-unresolved' | 'code.declaration-normalized'
+    | 'code.route-unresolved' | 'code.geometry-unresolved' | 'code.declaration-normalized' | 'code.api-shape-normalized'
     | 'terrain.surface-material-repaired' | 'terrain.bounds-limited' | 'water.bounds-limited'
     | 'scene.group-relations-unclear' | 'scene.primary-focus-missing' | 'scene.focus-underdominant'
     | 'scene.group-massing-flat'

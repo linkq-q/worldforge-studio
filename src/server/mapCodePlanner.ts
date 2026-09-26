@@ -550,6 +550,7 @@ export interface CodeAssetRequirement {
   prompt: string;
   tags: string[];
   variants: number;
+  variantPrompts?: string[];
   generatedVariants?: number;
   dimensions?: Point3;
   role?: CodeAssetRole;
@@ -563,7 +564,7 @@ interface CodeAssetRequirementInput {
   name: string;
   prompt: string;
   tags?: string[];
-  variants?: number;
+  variants?: number | string[];
   dimensions?: Point3;
   role?: CodeAssetRole;
   optional?: boolean;
@@ -773,8 +774,11 @@ export async function generateMapCodeSuggestion(
         name: variantCount > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
         prompt: [
           codeAssetOrientationPrompt(requirement.prompt, requirement.dimensions),
-          variantCount > 1 && !seededFamily
+          variantCount > 1 && !seededFamily && !requirement.variantPrompts
             ? `Create variation ${variantIndex + 1} of ${variantCount}; preserve the same reusable asset family while varying silhouette and details.`
+            : '',
+          requirement.variantPrompts?.[variantIndex]
+            ? `Variation ${variantIndex + 1}: keep the shared asset structure, but use these specific features over conflicting color or material details above: ${requirement.variantPrompts[variantIndex]}`
             : ''
         ].filter(Boolean).join('\n'),
         tags: requirement.tags,
@@ -1793,8 +1797,24 @@ function executeMapCodePlanInternal(
         ...params
       });
     },
-    route(input: RouteInput): string {
+    route(input: RouteInput | string, optionsValue?: Omit<RouteInput, 'id'> & { id?: string }): string {
       record('route');
+      if (typeof input === 'string') {
+        if (!optionsValue || typeof optionsValue !== 'object' || Array.isArray(optionsValue)) {
+          throw new Error('invalid_map_code_route');
+        }
+        if (optionsValue.id !== undefined && optionsValue.id !== input) {
+          throw new Error('conflicting_map_code_route_id');
+        }
+        reportIssue({
+          key: `route-form:${input}`,
+          code: 'code.api-shape-normalized',
+          message: `路线 ${input} 的双参数调用已归一化为单对象参数。`,
+          repaired: true
+        });
+        return emitRoute({ ...optionsValue, id: input });
+      }
+      if (optionsValue !== undefined) throw new Error('invalid_map_code_route_extra_argument');
       return emitRoute(input);
     },
     routeNetwork(input: RouteNetworkInput): string[] {
@@ -4017,7 +4037,7 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 4. api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?,levels?,widths?,shorelineProfile?:'steep'|'gentle',carveTerrain?,bankHeight?,bankWidth?}). Omitted depth/profile selects a seeded deep-steep or shallow-gentle natural bank; explicit values take priority. River levels/widths have one value per control point. Use carveTerrain:false only for structure-supported spillways; join their endpoints to the actual source and receiving water elevations. End the sloped mesh at the receiving surface; do not extend a coplanar tail over another water body. High reservoirs need containing terrain/structures; explicit bankHeight (freeboard) and bankWidth raise a bounded shoreline bank. Omit banks when existing terrain or a retaining structure already contains the water. Keep architectural shorelines straight with shorelineSmoothness:0, shorelineIrregularity:0.
 5. api.route({id,name?,points,curve?,closed?,width?,surface?,material?,intensity?,tags?}) returns the route ID string.
 6. api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?:number,mix?,habitat?:{height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}). Top-level height is grass blade height; the four-number terrain elevation band belongs in habitat.height.
-7. api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth],role:'structure'|'environment',optional?}) returns key.
+7. api.requireAsset({key,name,prompt,tags?,variants?:number|string[],dimensions:[width,height,depth],role:'structure'|'environment',optional?}) returns key. Use a count for unspecified variations, or a nonempty array of individual variation descriptions.
 8. api.asset(key,index?) returns the generated asset ID; never invent asset IDs.
 9. api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,dimensions?,terrain?,role?}) returns a placement reference.
 10. api.random(min?,max?) is deterministic for this map seed.
@@ -4071,7 +4091,7 @@ The sandbox exposes exactly these 19 keys; write your own other helpers:
 - Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,height?,mix?:{short?,tall?,flowers?},habitat?}). Grass regions can be a circle, a path with points/width, or a polygon with points; use kind, never type.
 - Circulation: api.route({id,points:[[x,z],...],width?,curve?:'polyline'|'catmull-rom',surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?}) returns an ID string and paints the road unless surface:'none'. Surface and route material IDs are 'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud'; choose one for authored roads, using 'default' only intentionally. api.bridge({waterId,assetId?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth]}) crosses the actual water boundary; center must lie inside that water body and direction must cross opposite banks. api.spawn([x,z],yawDegrees?) marks the player start.
 - Observation and natural distribution: api.environmentSample([x,z],{waterId?,guideIds?,region?}) returns height, slope, waterDistance and other local relationships from terrain, water and routes already declared. api.sampleProbabilityField({bounds?:{minX,maxX,minZ,maxZ},maxPoints?,candidates?,minDistance?,seed?,region?,cluster?:{strength?,scale?,seed?},marks?:[{id,minDistance?,maxPoints?,cluster?}]},(point,index)=>weight) returns sampled [x,z] points; omit bounds to use the map bounds. Use bounded candidates and nonnegative finite weights. Cluster strength is 0..1. Marks are categories, not exclusion zones or route IDs; only use them with a callback returning {[markId]:weight}.
-- Assets and placement: api.requireAsset({key,name,prompt,dimensions:[width,height,depth],role:'structure'|'environment',variants?}); api.asset(key,index?) resolves a declared family; api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,dimensions?,terrain?,role?}) returns an object reference. api.foundation({under?:[objectReference],position?:[x,z],shape?:'rounded-rectangle'|'capsule'|'polygon'|'path',width?,depth?,top?:'level'|'slope'|'steps',stepHeight?,stepCount?,maxThickness?,material?}) gives a walkable top without flattening the whole terrain. api.placeBetween({assetId?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',elevation?,terrain?,frontTarget?:[x,z]}) joins structural modules between endpoints; frontTarget chooses which side faces the target while preserving the span axis.
+- Assets and placement: api.requireAsset({key,name,prompt,dimensions:[width,height,depth],role:'structure'|'environment',variants?:number|string[]}); variants is either a count or an array of individual variation descriptions. api.asset(key,index?) resolves a declared family; api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,dimensions?,terrain?,role?}) returns an object reference. api.foundation({under?:[objectReference],position?:[x,z],shape?:'rounded-rectangle'|'capsule'|'polygon'|'path',width?,depth?,top?:'level'|'slope'|'steps',stepHeight?,stepCount?,maxThickness?,material?}) gives a walkable top without flattening the whole terrain. api.placeBetween({assetId?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',elevation?,terrain?,frontTarget?:[x,z]}) joins structural modules between endpoints; frontTarget chooses which side faces the target while preserving the span axis.
 
 Use one object for surface, for example api.surface({id:'court',surface:'paving',region:{kind:'circle',center:[0,0],radius:6}}). Water returns its actual ID: const stream = api.water('stream',{type:'river',points:[[-10,0],[10,0]],width:3}); use {waterId:stream} in later observations and bridges. Keep display names separate from IDs and reuse returned IDs instead of rewriting them.
 ${CODE_ASSET_PROMPT_CONTRACT}
@@ -4170,7 +4190,7 @@ Scalar math: api.random(min?,max?). Use plain JavaScript and Math for other scal
 Layouts: api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,guideIds?,region?,cluster?:{strength,scale,seed},marks?:[{id,minDistance?,maxPoints?,cluster?}]}, (sample,index) => weightOrMarkWeights) returns points with optional point.mark. sample uses the same environment values as environmentSample. A scalar callback preserves ordinary custom fields; with marks, return {[markId]:weight} and give each mark its own spacing, quota and optional cluster parameters. Cross-mark spacing uses the global minDistance, so trees, flowers or any other labels remain model-authored rather than hard-coded. Omitted seeds default to api.seed. Weights are clamped to [0,1], candidates to 4096 and results to 512.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. This helper returns geometry only; you still own entrances, structural roles and connected placements.
 ${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
-Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
+Assets: api.requireAsset({key,name,prompt,tags?,variants?:number|string[],dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. Use a count for unspecified variations, or a nonempty array of individual variation descriptions. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); terrain:true makes a three-component position terrain-relative, with y as its elevation offset. api.placeAlongRoute(...) uses existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
 Include doors, windows, banners, signs and facade ornaments in their host asset when they must remain physically joined to it.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId); api.noChange(reason). These APIs are available only during refinement. noChange is exclusive: use it only when no operation is needed.
@@ -4249,7 +4269,7 @@ Every model uses local Y+ up, local Z+ front/forward, and local X+ right.
 api.place({assetId?,name?,position?,rotationY?,facing?,scale?,size?,dimensions?,roomOpeningId?,role:'functional'|'decor'}) places one object. dimensions is the intended world [width,height,depth] and is fitted to the generated model's actual visual bounds.
 api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role:'functional'|'decor'}) attaches a child to an earlier api.place/api.attach return value or an existing object ID. supported uses local [x,z] offset on a surface; mounted requires side north|south|east|west and uses local [horizontal,vertical] offset relative to anchorY.
 api.placeBetween remains available for connected counters, shelves, railings, partitions or bench rows.
-api.requireAsset({key,name,prompt,tags?,variants?,dimensions,role:'functional'|'decor',optional?}) declares assets; api.asset(key,index?) binds them. Functional families are core room content; only restrained decor may be optional.
+api.requireAsset({key,name,prompt,tags?,variants?:number|string[],dimensions,role:'functional'|'decor',optional?}) declares assets; api.asset(key,index?) binds them. Use a count for unspecified variations, or a nonempty array of individual variation descriptions. Functional families are core room content; only restrained decor may be optional.
 The hard user-selected range is ${minNewAssets}-${maxNewAssets} distinct requireAsset families, regardless of variants per family. For this room size, aim for about ${suggestedAssetCount} useful reusable families; variants still cost separate model generation calls, so add them only for visible diversity. Each name is one short 2-8 character Simplified Chinese noun. Every declared variant must be placed.
 Use existing reusable IDs exactly as listed; never invent an asset ID. Do not generate assets already available and suitable for reuse.
 
@@ -5018,6 +5038,14 @@ function normalizeCodeAssetRequirement(
   }
   const light = input.light === undefined ? undefined : normalizeMapAssetLight(input.light);
   if (input.light !== undefined && !light) throw new Error('invalid_map_code_asset_light');
+  const rawVariants: unknown = input.variants;
+  const variantPrompts = Array.isArray(rawVariants)
+    ? rawVariants.map(value => typeof value === 'string' ? value.trim() : '')
+    : undefined;
+  if ((rawVariants !== undefined && !Array.isArray(rawVariants) && typeof rawVariants !== 'number')
+    || (variantPrompts && (variantPrompts.length < 1 || variantPrompts.length > 8 || variantPrompts.some(value => !value)))) {
+    throw new Error('invalid_map_code_asset_variants');
+  }
   return {
     key,
     name,
@@ -5025,7 +5053,8 @@ function normalizeCodeAssetRequirement(
     ...(typeof input.mountOnAssetId === 'string' && input.mountOnAssetId.trim() ? { mountOnAssetId: input.mountOnAssetId.trim() } : {}),
     tags: normalizeAssetTags(input.tags) ?? [],
     ...(light ? { light } : {}),
-    variants: boundedCount(input.variants ?? 1, 1, 8),
+    variants: variantPrompts?.length ?? boundedCount(typeof rawVariants === 'number' ? rawVariants : 1, 1, 8),
+    ...(variantPrompts ? { variantPrompts } : {}),
     ...(input.dimensions === undefined ? {} : { dimensions: point3(input.dimensions) }),
     ...(input.role === undefined ? {} : { role: input.role }),
     ...(input.optional === true ? { optional: true } : {})
@@ -5041,6 +5070,7 @@ function codeAssetOrientationPrompt(prompt: string, dimensions?: Point3): string
 
 function supportsSeededEnvironmentVariants(requirement: CodeAssetRequirement): boolean {
   if (requirement.mountOnAssetId) return false;
+  if (requirement.variantPrompts) return false;
   if (requirement.variants < 2 || (requirement.role !== undefined && requirement.role !== 'environment')) return false;
   const semantic = `${requirement.name} ${requirement.prompt} ${requirement.tags.join(' ')}`;
   return /tree|shrub|bush|rock|stone|plant|flower|mushroom|cactus|树|灌木|岩|石|植物|花|蘑菇|仙人掌/i.test(semantic)
@@ -5068,6 +5098,7 @@ function sameCodeAssetRequirement(left: CodeAssetRequirement, right: CodeAssetRe
     && left.mountOnAssetId === right.mountOnAssetId
     && left.prompt === right.prompt
     && left.variants === right.variants
+    && JSON.stringify(left.variantPrompts) === JSON.stringify(right.variantPrompts)
     && left.tags.join('\n') === right.tags.join('\n')
     && JSON.stringify(left.dimensions) === JSON.stringify(right.dimensions)
     && JSON.stringify(left.light) === JSON.stringify(right.light)
