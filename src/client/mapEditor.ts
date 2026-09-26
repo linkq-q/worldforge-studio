@@ -753,8 +753,9 @@ class MapEditor {
           </div>
         </section>
         <aside class="editor-sidebar right">
-          <div class="inspector-heading"><strong>属性</strong><small>SCENE</small></div>
+          <div class="inspector-heading"><strong>属性</strong><button id="close-editor-panel" class="secondary" type="button" aria-label="关闭面板">×</button></div>
           <div id="map-ai-panel"></div>
+          <div id="map-layout-panel"></div>
           <div id="map-inspector"></div>
           <div id="object-inspector"></div>
           <div id="asset-panel"></div>
@@ -825,6 +826,8 @@ class MapEditor {
         </div>
       </dialog>
     `;
+
+    this.organizeEditorShell();
 
     this.app.querySelectorAll<HTMLElement>('[data-open-workspace]').forEach(button => {
       button.onclick = () => void this.openWorkspace(button.dataset.openWorkspace as 'maps' | 'experiments');
@@ -1045,6 +1048,92 @@ class MapEditor {
         this.transform?.setMode(this.state.transformMode);
         this.renderPanels();
       });
+    });
+  }
+
+  private organizeEditorShell(): void {
+    const shell = this.app.querySelector<HTMLElement>('.editor-shell')!;
+    const toolbar = shell.querySelector<HTMLElement>('.editor-toolbar')!;
+    shell.prepend(toolbar);
+    const brand = shell.querySelector<HTMLElement>('.studio-brand')!;
+    const project = toolbar.querySelector<HTMLElement>('.toolbar-project-menu')!;
+    const exports = toolbar.querySelector<HTMLElement>('.toolbar-more')!;
+    const tools = toolbar.querySelector<HTMLElement>('.toolbar-tools')!;
+    const transforms = toolbar.querySelector<HTMLElement>('.toolbar-transform')!;
+    const view = toolbar.querySelector<HTMLElement>('.toolbar-view-menu')!;
+    const stage = toolbar.querySelector<HTMLElement>('.stage-switcher')!;
+    const save = toolbar.querySelector<HTMLElement>('#save-map')!;
+    const hierarchy = shell.querySelector<HTMLElement>('#toggle-hierarchy')!;
+    const byId = (id: string) => shell.querySelector<HTMLElement>(`#${id}`)!;
+    const button = (label: string, panel: string): HTMLButtonElement => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.textContent = label;
+      item.dataset.panelTarget = panel;
+      return item;
+    };
+    const menu = (label: string, ...items: HTMLElement[]): HTMLElement => {
+      const root = document.createElement('details');
+      root.className = 'toolbar-transfer engine-menu';
+      root.innerHTML = `<summary>${label}</summary><div class="toolbar-transfer-menu"></div>`;
+      root.querySelector('.toolbar-transfer-menu')!.append(...items);
+      return root;
+    };
+    const file = menu('文件', project, exports, byId('import-transfer-file'));
+    const edit = menu('编辑', byId('undo-edit'), byId('redo-edit'), byId('undo-transaction'), byId('redo-transaction'));
+    const map = menu('地图', tools, transforms, byId('add-object'), byId('confirm-map'), button('地图设置…', 'map'));
+    const assets = menu('资产', button('资产面板…', 'asset'));
+    const generate = menu('生成', button('生成地图…', 'generate'), button('生态分区…', 'map'), toolbar.querySelector<HTMLElement>('[data-open-workspace="experiments"]')!);
+    const render = menu('渲染', button('渲染设置…', 'render'), byId('toggle-developer-mode'));
+    view.querySelector('summary')!.textContent = '视图';
+    view.classList.add('engine-menu');
+    view.querySelector('.toolbar-transfer-menu')!.append(toolbar.querySelector<HTMLElement>('[data-play-mode]')!);
+    hierarchy.textContent = '场景层级';
+    const windows = menu('窗口', hierarchy, button('生成面板', 'generate'), button('地图面板', 'map'), button('属性面板', 'object'), button('资产面板', 'asset'), button('渲染面板', 'render'), toolbar.querySelector<HTMLElement>('[data-open-workspace="maps"]')!);
+    const nav = document.createElement('nav');
+    nav.className = 'editor-menu-bar';
+    nav.setAttribute('aria-label', '主菜单');
+    nav.append(file, edit, map, assets, generate, render, view, windows);
+    const currentMap = document.createElement('span');
+    currentMap.id = 'editor-current-map-name';
+    currentMap.className = 'editor-current-map';
+    const generateTrigger = button('生成', 'generate');
+    generateTrigger.className = 'engine-generate-trigger';
+    toolbar.replaceChildren(brand, nav, currentMap, stage, generateTrigger, save);
+    nav.querySelectorAll<HTMLButtonElement>('.toolbar-transfer-menu button').forEach((item) => {
+      if (!item.hasAttribute('aria-label')) item.setAttribute('aria-label', item.textContent?.trim() ?? '');
+    });
+    toolbar.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('button')) target.closest<HTMLElement>('.engine-menu')?.removeAttribute('open');
+    });
+    nav.querySelectorAll<HTMLDetailsElement>('.engine-menu').forEach((item) => {
+      item.addEventListener('toggle', () => {
+        if (item.open) nav.querySelectorAll<HTMLDetailsElement>('.engine-menu').forEach((other) => {
+          if (other !== item) other.open = false;
+        });
+      });
+    });
+    toolbar.querySelectorAll<HTMLButtonElement>('[data-panel-target]').forEach((item) => {
+      item.addEventListener('click', () => this.openEditorPanel(item.dataset.panelTarget!));
+    });
+    this.app.querySelector('#close-editor-panel')?.addEventListener('click', () => this.openEditorPanel('none'));
+    this.app.dataset.panel = 'none';
+  }
+
+  private openEditorPanel(panel: string): void {
+    if (panel === 'render' && this.state.stage !== 'render') return;
+    if (panel !== 'render' && panel !== 'none' && this.state.stage !== 'map') return;
+    this.app.dataset.panel = this.app.dataset.panel === panel ? 'none' : panel;
+    this.updateEditorPanel();
+  }
+
+  private updateEditorPanel(): void {
+    const panel = this.app.dataset.panel;
+    const heading = this.app.querySelector<HTMLElement>('.inspector-heading strong');
+    if (heading) heading.textContent = ({ generate: '生成地图', map: '地图设置', object: '属性', asset: '资产', render: '渲染方案' } as Record<string, string>)[panel ?? ''] ?? '';
+    this.app.querySelectorAll<HTMLButtonElement>('[data-panel-target]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.panelTarget === panel);
     });
   }
 
@@ -1584,6 +1673,8 @@ class MapEditor {
     const mapStage = this.state.stage === 'map';
     const mapAiHost = this.app.querySelector<HTMLElement>('#map-ai-panel');
     if (mapAiHost) mapAiHost.hidden = !mapStage || this.mapPreviewKind === 'draft';
+    const mapLayoutHost = this.app.querySelector<HTMLElement>('#map-layout-panel');
+    if (mapLayoutHost) mapLayoutHost.hidden = !mapStage || Boolean(this.mapAiPreviewMap);
     const mapEditorHidden = !mapStage || Boolean(this.mapAiPreviewMap);
     for (const id of ['map-inspector', 'object-inspector', 'asset-panel']) {
       const host = this.app.querySelector<HTMLElement>(`#${id}`);
@@ -1601,22 +1692,21 @@ class MapEditor {
     } else {
       this.renderRenderInspector();
     }
-    const heading = this.app.querySelector<HTMLElement>('.inspector-heading strong');
-    const headingMode = this.app.querySelector<HTMLElement>('.inspector-heading small');
-    if (heading) heading.textContent = mapStage
-      ? this.mapAiPreviewMap ? '地图预览' : '属性'
-      : '渲染方案';
-    if (headingMode) headingMode.textContent = mapStage ? 'MAP' : 'RENDER';
+    if (this.app.dataset.panel === 'render' && mapStage) this.app.dataset.panel = 'none';
+    else if (!mapStage && this.app.dataset.panel !== 'none') this.app.dataset.panel = 'render';
+    this.updateEditorPanel();
     this.attachSelectedTransform();
     this.updateToolbarState();
   }
 
   private renderMapAiPanel(): void {
     const host = this.app.querySelector<HTMLElement>('#map-ai-panel');
+    const layoutHost = this.app.querySelector<HTMLElement>('#map-layout-panel');
     if (!host) return;
     const map = this.state.map;
     if (!map) {
       host.innerHTML = '';
+      if (layoutHost) layoutHost.innerHTML = '';
       return;
     }
     const suggestion = this.mapAiSuggestion;
@@ -1640,14 +1730,18 @@ class MapEditor {
       || !compositionAvailable || Boolean(this.pendingCompositionPlan || this.pendingCodeSuggestion);
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
+    const advancedOpen = host.querySelector<HTMLDetailsElement>('.map-ai-advanced')?.open ?? false;
     const layoutHtml = map.sceneMode === 'indoor' ? '' : this.renderMapLayoutHtml(map);
+    if (layoutHost) layoutHost.innerHTML = layoutHtml;
     host.innerHTML = `
-      ${layoutHtml}
       <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
         <summary><span><b>${map.sceneMode === 'indoor' ? 'AI 生成室内场景' : 'AI 生成地图'}</b><small>一句话生成或继续调整</small></span></summary>
         <section class="editor-section inspector-body map-ai">
+        <label for="map-ai-prompt">场景描述</label>
         <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
+        <details class="map-ai-advanced" ${advancedOpen ? 'open' : ''}>
+          <summary>高级设置</summary>
         <label class="field compact">
           <span>焦点偏好（可选）</span>
           <input id="map-ai-focus-prompt" maxlength="300" value="${escapeHtml(this.mapAiFocusPrompt)}" placeholder="例如：长廊、主楼，留空则由 AI 决定" ${this.state.busy ? 'disabled' : ''} />
@@ -1734,6 +1828,7 @@ class MapEditor {
             </select>
           </label>` : ''}
         </div>
+        </details>
         <div class="map-ai-controls">
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '先生成灰盒构图' : map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成室内规划' : '生成新规划'}</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
@@ -1819,7 +1914,7 @@ class MapEditor {
         </section>
       ` : ''}
     `;
-    this.bindMapLayoutPanel(host, map);
+    if (layoutHost) this.bindMapLayoutPanel(layoutHost, map);
     host.querySelector<HTMLTextAreaElement>('#map-ai-prompt')?.addEventListener('input', (event) => {
       this.mapAiPrompt = (event.target as HTMLTextAreaElement).value;
       const blocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
@@ -2001,7 +2096,7 @@ class MapEditor {
       ?? map.layout.seams[0];
     const compositeEdgeMask = map.layout.edgeMask.kind === 'composite';
     if (selectedSeam && !this.selectedStitchSeamId) this.selectedStitchSeamId = selectedSeam.id;
-    const layoutOpen = this.app.querySelector<HTMLDetailsElement>('[data-inspector-section="map-layout"]')?.open ?? true;
+    const layoutOpen = this.app.querySelector<HTMLDetailsElement>('[data-inspector-section="map-layout"]')?.open ?? false;
     return `
       <details class="inspector-disclosure" data-inspector-section="map-layout" ${layoutOpen ? 'open' : ''}>
         <summary><span><b>生态分区与地图拼接</b><small>先规划区块，再分别生成</small></span></summary>
@@ -3327,6 +3422,8 @@ class MapEditor {
     if (!visibleMaps.some(map => map.id === this.state.map?.id)) select.value = '';
     const name = this.app.querySelector<HTMLElement>('#toolbar-map-name');
     if (name) name.textContent = this.state.map?.name ?? '选择地图';
+    const currentMap = this.app.querySelector<HTMLElement>('#editor-current-map-name');
+    if (currentMap) currentMap.textContent = this.state.map?.name ?? '选择地图';
     const renameInput = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
     if (renameInput) renameInput.value = this.state.map?.name ?? '';
     const deletedSelect = this.app.querySelector<HTMLSelectElement>('#deleted-map-select');
@@ -6030,6 +6127,7 @@ class MapEditor {
     }
     this.cancelAssetPlacement();
     this.state.stage = stage;
+    this.app.dataset.panel = stage === 'render' ? 'render' : 'none';
     this.state.tool = 'select';
     this.painting = false;
     if (this.brushPreview) this.brushPreview.visible = false;
@@ -6750,6 +6848,22 @@ class MapEditor {
     const width = Math.max(1, Math.floor(rect.width));
     const height = Math.max(1, Math.floor(rect.height));
     this.renderScene?.setSize(width, height);
+    const panel = this.app.querySelector<HTMLElement>('.editor-sidebar.right');
+    const occlusion = this.app.dataset.panel !== 'none' && this.app.dataset.playMode !== 'true'
+      ? Math.min(width - 1, panel?.offsetWidth ?? 0) : 0;
+    const view = this.camera.view;
+    if (occlusion && (!view?.enabled || view.fullWidth !== width + occlusion || view.fullHeight !== height)) {
+      this.camera.setViewOffset(width + occlusion, height, occlusion, 0, width, height);
+    } else if (!occlusion && view?.enabled) {
+      this.camera.clearViewOffset();
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+    }
+    const zoom = occlusion ? Math.max(0.5, (width - occlusion) / width) : 1;
+    if (this.camera.zoom !== zoom) {
+      this.camera.zoom = zoom;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   private resizePreview(): void {
@@ -6765,6 +6879,9 @@ class MapEditor {
   private updateToolbarState(): void {
     const mapStage = this.state.stage === 'map';
     this.app.dataset.stage = this.state.stage;
+    this.app.querySelectorAll<HTMLButtonElement>('[data-panel-target]').forEach((button) => {
+      button.disabled = button.dataset.panelTarget === 'render' ? mapStage : !mapStage;
+    });
     const mapSelect = this.app.querySelector<HTMLSelectElement>('#editor-map-select');
     if (mapSelect) mapSelect.disabled = this.state.busy;
     this.app.querySelectorAll<HTMLElement>('[data-map-only]').forEach((element) => {
