@@ -1,0 +1,1013 @@
+{
+  "name": "地形感知标准规划 · 山谷石屋村庄",
+  "prompt": "生成一座山谷里的密集石屋村庄。需要住宅、公共建筑、公共聚集处、多条相连街巷和周边自然环境。村庄应有丰富的空间层次，建筑和道路适应起伏地形，人能够沿地面连续步行游览。",
+  "baseSeed": 2077257521,
+  "runs": [
+    {
+      "repeat": 1,
+      "status": "saved",
+      "mapId": "map-270041b8-1e1f-4daa",
+      "code": "function plan(api) {\n  api.sceneIntent({kind:\"authored\",reason:\"山谷地形中的密集石屋聚落，以连续步行街巷、阶梯式屋群和公共广场组织空间。\"});\n  api.terrain({preset:\"valley\",amplitude:9,roughness:0.38,direction:[0,1],seed:api.seed});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[-44,-43],[-42,-10],[-43,23],[-39,44]],width:13},amplitude:7,softness:0.65,access:\"scenic\"});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[43,-43],[44,-12],[40,19],[43,44]],width:12},amplitude:8,softness:0.7,access:\"scenic\"});\n\n  const orientation = \" Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\";\n  function asset(key,name,prompt,dimensions,variants,light) {\n    const spec={key:key,name:name,prompt:prompt+orientation,dimensions:dimensions,variants:variants,role:\"structure\"};\n    if(light) spec.light=light;\n    return api.requireAsset(spec);\n  }\n  function natural(key,name,prompt,dimensions,variants) {\n    return api.requireAsset({key:key,name:name,prompt:prompt+orientation,dimensions:dimensions,variants:variants,role:\"environment\"});\n  }\n  const house=asset(\"stone-house\",\"山谷石屋\",\"Standalone compact inhabited mountain village house, two irregular storeys of rubble stone, slate gable roof, chimney, recessed ground-level front doorway, timber shutters, small front balcony, attached flower boxes and firewood niche. Three compatible architectural variations with different roof silhouettes. No ground, background or lettering.\",[7,8.2,7],3);\n  const hall=asset(\"village-hall\",\"村庄会堂\",\"Standalone mountain village civic hall, broad stone facade, tall central bell gable, slate roof, timber entrance doors and two open arched porch bays facing front, windows, attached modest pennants, entrance at ground level. No ground, background or lettering.\",[13,11,9],1);\n  const chapel=asset(\"chapel\",\"山谷礼堂\",\"Standalone small stone wayside chapel with narrow square bell tower, steep slate roof, round window and recessed front entrance at ground level, attached stone buttresses. No ground, background or lettering.\",[7,10,8],1);\n  const fountain=asset(\"fountain\",\"石砌泉池\",\"Standalone village drinking fountain, octagonal low stone basin with integrated shallow water, central carved stone spout and worn rim; human-scale gathering landmark. No ground, background or lettering.\",[3.2,2.5,3.2],1);\n  const bench=asset(\"bench\",\"木石长椅\",\"Standalone worn timber bench with solid stone legs, seating faces local Z+, no ground, background or lettering.\",[2.5,1,0.75],1);\n  const stall=asset(\"market-stall\",\"集市摊位\",\"Standalone mountain village market stall, timber frame, muted canvas canopy, front counter displaying baskets of vegetables and pottery, no people, no ground or lettering.\",[3,2.9,2.2],2);\n  const cart=asset(\"handcart\",\"木制手推车\",\"Standalone small wooden handcart with two iron-rimmed wheels and a few sacks, handles facing front; no ground or lettering.\",[1.5,1.3,2.5],1);\n  const goods=asset(\"goods\",\"货筐陶罐\",\"Standalone compact group of two wicker produce baskets, one ceramic jar and a small wooden crate, no ground or lettering.\",[1.3,1.1,0.95],1);\n  const domestic=asset(\"domestic\",\"门前生活物件\",\"Standalone compact domestic arrangement of split firewood in a low wooden rack, a ceramic planter and a small stool, arranged horizontally without blocking an entrance; no ground or lettering.\",[2,1.2,0.8],2);\n  const lamp=asset(\"street-lamp\",\"街巷灯笼\",\"Standalone iron lantern on a short timber street post with stone foot, functional warm light inside its glass enclosure, no ground or lettering.\",[0.5,3,0.5],1,{kind:\"point\",color:\"#FFD29A\",intensity:1.6,range:6,offset:[0,2.55,0]});\n  const wall=asset(\"retaining-wall\",\"毛石挡墙\",\"Standalone compatible mountain village rubble-stone retaining wall bay, canonical span 3m along local X, 1.2m height, 0.6m depth, flat stone coping, square joining ends, no ground or background.\",[3,1.2,0.6],1);\n  const trough=asset(\"trough\",\"石制洗衣槽\",\"Standalone long stone communal washing trough with integrated shallow water, worn sloping scrubbing slabs and small metal water spout; no ground or background.\",[3.8,1.15,1.4],1);\n  const tree=natural(\"valley-tree\",\"山谷乔木\",\"Standalone mountain deciduous tree with irregular branching, modest open crown and textured trunk, no ground or background.\",[6,9,6],2);\n  const pine=natural(\"mountain-pine\",\"山坡松树\",\"Standalone slender mountain pine with uneven wind-shaped branches and exposed trunk, no ground or background.\",[4.8,10,4.8],2);\n  const shrub=natural(\"shrub\",\"山地灌丛\",\"Standalone low irregular mountain shrub with grasses at its root crown, no ground or background.\",[2,1.3,1.7],1);\n  const rock=natural(\"rock\",\"山谷岩块\",\"Standalone weathered angular mountain rock outcrop with fractured stone surfaces, no ground or background.\",[3.5,2.7,3],2);\n\n  function sampleCost(x,z,w,d) {\n    const points=[[x,z],[x-w/2,z-d/2],[x+w/2,z-d/2],[x-w/2,z+d/2],[x+w/2,z+d/2]];\n    let low=16,high=-16,slope=0;\n    for(const p of points) {\n      const s=api.environmentSample(p);\n      low=Math.min(low,s.height);\n      high=Math.max(high,s.height);\n      slope+=s.slope;\n    }\n    return high-low+slope*0.08;\n  }\n  const arrangements=[[-21,0,21],[-20,-1,20],[-22,1,22]];\n  let lanes=arrangements[0],best=100000;\n  for(const a of arrangements) {\n    let cost=0;\n    for(const x of a) {\n      for(const z of [-32,-18,-4,10,24]) cost+=sampleCost(x,z,3.5,4);\n    }\n    if(cost<best) {best=cost;lanes=a;}\n  }\n  const squareCenter=[lanes[1],22];\n  const squareSample=api.environmentSample(squareCenter);\n  api.sculptTerrain({mode:\"flatten\",point:squareCenter,radius:11,strength:1,targetHeight:squareSample.height});\n  const hallCenter=[lanes[1],36];\n  const hallHeight=api.environmentSample(hallCenter).height;\n  api.sculptTerrain({mode:\"flatten\",point:hallCenter,radius:8.1,strength:1,targetHeight:hallHeight});\n  const chapelCenter=[30,33];\n  const chapelHeight=api.environmentSample(chapelCenter).height;\n  api.sculptTerrain({mode:\"flatten\",point:chapelCenter,radius:5.7,strength:1,targetHeight:chapelHeight});\n\n  const homes=[];\n  const rows=[-28,-16,-4,8,20,32];\n  for(let col=0;col<4;col++) {\n    const laneIndex=col<2?0:2;\n    const side=col===0||col===2?-1:1;\n    const nominal=lanes[laneIndex]+side*9;\n    for(let row=0;row<rows.length;row++) {\n      if(col===3&&row===5) continue;\n      const baseZ=rows[row]+(col===1||col===2?1.3:0);\n      let selected=[nominal,baseZ],score=100000;\n      for(const shift of [-0.7,0,0.7]) {\n        const p=[nominal+shift,baseZ];\n        const value=sampleCost(p[0],p[1],7.4,7.4);\n        if(value<score) {score=value;selected=p;}\n      }\n      const h=api.environmentSample(selected).height;\n      api.sculptTerrain({mode:\"flatten\",point:selected,radius:5.1,strength:1,targetHeight:h});\n      homes.push({point:selected,lane:lanes[laneIndex],side:side,variant:(row+col)%3,index:homes.length});\n    }\n  }\n\n  const guides=[];\n  function walk(id,points,width,material) {\n    for(let i=0;i<points.length-1;i++) {\n      api.rampTerrain({start:points[i],end:points[i+1],width:width+1,softness:0.8,strength:1});\n    }\n    const result=api.route({id:id,points:points,width:width,curve:\"polyline\",surface:\"paving\",material:material||\"cobblestone\",tags:[\"pedestrian\",\"connected-village\"]});\n    guides.push(result);\n    return result;\n  }\n  const heights=[];\n  for(const z of [-39,-28,-16,-4,8,20,32,42]) heights.push(api.environmentSample([lanes[1],z]).height);\n  const laneRoutes=[];\n  for(let i=0;i<lanes.length;i++) {\n    const x=lanes[i];\n    const pts=[[x,-39],[x,-28],[x,-16],[x,-4],[x,8],[x,20],[x,32]];\n    if(i===1) pts[6]=[x,31.5];\n    laneRoutes.push(walk(\"lane-\"+i,pts,i===1?4:3.3));\n  }\n  for(const z of [-35,-22,-10,2,14,28]) {\n    walk(\"cross-\"+z,[[lanes[0],z],[lanes[1],z],[lanes[2],z]],2.6);\n  }\n  walk(\"village-entry\",[[0,-46],[lanes[1],-39]],4.2,\"compacted-earth\");\n  walk(\"chapel-approach\",[[lanes[2],28],[30,28],[30,29]],2.4);\n  walk(\"hall-approach\",[[lanes[1],22],[lanes[1],28],[lanes[1],31.5]],4);\n  walk(\"upper-return\",[[lanes[0],32],[lanes[0],41],[lanes[1],43],[lanes[2],41],[lanes[2],32]],2.3,\"gravel\");\n  api.surface({id:\"public-square\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"polygon\",points:[[lanes[1]-7,15],[lanes[1]+7,15],[lanes[1]+7,28],[lanes[1]-7,28]]},clearNatural:true});\n  api.surface({id:\"wash-court\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"circle\",center:[-29,-38],radius:4.6},clearNatural:true});\n  walk(\"wash-access\",[[lanes[0],-35],[-25,-35],[-29,-36]],2.3);\n\n  for(const h of homes) {\n    const p=h.point;\n    const entrance=[p[0]-h.side*3.5,p[1]];\n    walk(\"door-\"+h.index,[[h.lane,p[1]],entrance],1.55);\n    const site=api.environmentSample(p);\n    const ref=api.place({assetId:api.asset(house,h.variant),name:\"山谷住宅 \"+(h.index+1),position:p,facing:{target:[h.lane,p[1]]},groupId:\"homes\",role:\"primary\"});\n    api.foundation({name:\"住宅顺坡石基\",under:[ref],shape:\"rounded-rectangle\",position:p,width:7.25,depth:7.25,top:\"level\",thickness:0.18,maxThickness:1.7,material:\"rough stone\"});\n    api.place({assetId:api.asset(domestic,h.index%2),position:[entrance[0],p[1]+2.25],facing:{target:[h.lane,p[1]+2.25]},groupId:\"homes\",role:\"detail\"});\n    if(h.index%3===0) {\n      api.place({assetId:api.asset(lamp,0),position:[h.lane+h.side*2.4,p[1]-3.2],groupId:\"homes\",role:\"support\"});\n    }\n    const rearX=p[0]+h.side*4.2;\n    const back=api.environmentSample([rearX,p[1]]);\n    if(Math.abs(back.height-site.height)>0.35) {\n      const bays=api.subdividePathBySpan({points:[[rearX,p[1]-4],[rearX,p[1]+4]],span:2.7,fit:\"stretch\"});\n      for(const bay of bays) api.placeBetween({assetId:api.asset(wall,0),start:bay.start,end:bay.end,dimensions:[3,1.2,0.6],spanAxis:\"x\",groupId:\"homes\"});\n    }\n  }\n\n  const hallRef=api.place({assetId:api.asset(hall,0),position:hallCenter,facing:{target:squareCenter},groupId:\"civic\",role:\"primary\"});\n  api.foundation({under:[hallRef],shape:\"rounded-rectangle\",position:hallCenter,width:13.5,depth:9.5,top:\"level\",thickness:0.2,maxThickness:2,material:\"cut stone\"});\n  api.place({assetId:api.asset(fountain,0),position:[lanes[1]-2,21.5],groupId:\"civic\",role:\"primary\"});\n  for(let i=0;i<3;i++) {\n    const z=17.5+i*4;\n    api.place({assetId:api.asset(stall,i%2),position:[lanes[1]+5.2,z],facing:{target:[lanes[1],z]},groupId:\"civic\",role:\"support\"});\n    api.place({assetId:api.asset(goods,0),position:[lanes[1]+6.2,z-1.4],groupId:\"civic\",role:\"detail\"});\n  }\n  for(const z of [17,25.5]) {\n    api.place({assetId:api.asset(bench,0),position:[lanes[1]-5.7,z],facing:{target:squareCenter},groupId:\"civic\",role:\"support\"});\n    api.place({assetId:api.asset(lamp,0),position:[lanes[1]-6.2,z+1.6],groupId:\"civic\",role:\"detail\"});\n  }\n  api.place({assetId:api.asset(cart,0),position:[lanes[1]+8.2,30.5],facing:{target:[lanes[2],28]},groupId:\"civic\",role:\"support\"});\n  for(const dx of [-4.5,4.5]) api.place({assetId:api.asset(goods,0),position:[hallCenter[0]+dx,30.8],groupId:\"civic\",role:\"detail\"});\n\n  const chapelRef=api.place({assetId:api.asset(chapel,0),position:chapelCenter,facing:{target:[30,28]},groupId:\"chapel\",role:\"primary\"});\n  api.foundation({under:[chapelRef],shape:\"rounded-rectangle\",position:chapelCenter,width:7.4,depth:8.4,thickness:0.18,maxThickness:1.6,top:\"level\",material:\"rough stone\"});\n  api.surface({id:\"chapel-court\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"polygon\",points:[[25,25],[35,25],[35,29],[25,29]]},clearNatural:true});\n  for(const x of [26,34]) {\n    api.place({assetId:api.asset(bench,0),position:[x,27],facing:{target:[30,27]},groupId:\"chapel\",role:\"support\"});\n    api.place({assetId:api.asset(lamp,0),position:[x,29],groupId:\"chapel\",role:\"detail\"});\n  }\n  api.place({assetId:api.asset(tree,0),position:[36.5,39],groupId:\"chapel\",role:\"support\"});\n\n  api.place({assetId:api.asset(trough,0),position:[-30,-39],facing:{target:[-29,-36]},groupId:\"wash\",role:\"primary\"});\n  for(const x of [-32.5,-25.8]) {\n    api.place({assetId:api.asset(bench,0),position:[x,-37.5],facing:{target:[-29,-38]},groupId:\"wash\",role:\"support\"});\n    api.place({assetId:api.asset(goods,0),position:[x,-39.5],groupId:\"wash\",role:\"detail\"});\n  }\n  api.place({assetId:api.asset(lamp,0),position:[-26,-35.8],groupId:\"wash\"});\n  api.place({assetId:api.asset(tree,1),position:[-35,-41],groupId:\"wash\"});\n\n  api.grass({id:\"valley-meadow\",preset:\"meadow\",region:{kind:\"polygon\",points:[[-47,-47],[47,-47],[47,47],[-47,47]]},density:0.48,variation:0.65,height:0.25,mix:{short:0.75,tall:0.2,flowers:0.05}});\n  const naturalPoints=api.sampleProbabilityField({bounds:{minX:-45,maxX:45,minZ:-44,maxZ:44},maxPoints:90,candidates:1400,minDistance:3.4,seed:api.seed,guideIds:guides},function(s) {\n    if(s.guideDistance<3.5) return 0;\n    if(Math.abs(s.x)<36&&s.z>-43&&s.z<44) return 0;\n    return 0.5;\n  });\n  let count=0;\n  for(const p of naturalPoints) {\n    const s=api.environmentSample([p.x,p.z]);\n    const key=count%5===0?rock:(s.slope>0.65?pine:tree);\n    api.place({assetId:api.asset(key,count%2),position:[p.x,p.z],rotationY:api.random(0,api.TAU),role:\"environment\"});\n    count++;\n  }\n  for(let i=0;i<14;i++) {\n    const x=i%2===0?-37:37;\n    const z=-36+Math.floor(i/2)*11;\n    api.place({assetId:api.asset(shrub,0),position:[x,z],rotationY:api.random(0,api.TAU),role:\"environment\"});\n  }\n  api.place({assetId:api.asset(pine,0),position:[-42,37],role:\"environment\"});\n  api.place({assetId:api.asset(pine,1),position:[42,-32],role:\"environment\"});\n  api.place({assetId:api.asset(rock,0),position:[-41,-20],role:\"environment\"});\n  api.place({assetId:api.asset(rock,1),position:[42,16],role:\"environment\"});\n  api.spawn([lanes[1],-43],0);\n  api.renderSuggestion(\"从南侧较高的斜俯视角表现山谷两侧自然山坡、层叠石屋屋顶与连通街巷；补充广场人眼视角，强调门廊、泉池和集市生活尺度。建议柔和午后日光、自然石材与板岩质感、适量远山空气透视。渲染阶段另行确认。\");\n}",
+      "transactionId": "tx-ce5c5056-5fe9-4c09",
+      "objectCount": 181,
+      "assetCount": 22,
+      "diagnostics": [
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 7.00m，实际使用 3.71m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 8.00m，实际使用 3.43m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "terrain.surface-material-repaired",
+          "severity": "warning",
+          "message": "铺装材质 compacted-earth 与 surface 不兼容，已按材质改用 soil。",
+          "repaired": true
+        },
+        {
+          "code": "terrain.surface-material-repaired",
+          "severity": "warning",
+          "message": "铺装材质 gravel 与 surface 不兼容，已按材质改用 soil。",
+          "repaired": true
+        },
+        {
+          "code": "foundation.max-thickness",
+          "severity": "warning",
+          "message": "住宅顺坡石基 需要 1.85m 厚度，超过 1.70m 上限，已跳过。",
+          "repaired": false
+        },
+        {
+          "code": "foundation.max-thickness",
+          "severity": "warning",
+          "message": "地基 需要 2.33m 厚度，超过 2.00m 上限，已跳过。",
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-6206fc5e-8b4d-4034"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-3e3c3090-4d0b-4471"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-03e2c247-2632-466e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-ebee19c8-c9a0-4126"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-0a3124a4-9ae3-432c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-7e8ea9b2-ea73-4551"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-771da612-f1a0-4379"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-8554cdcd-d167-4a36"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-0abe3104-c409-4612"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-98323d80-ff9c-4065"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-2bffb32a-70a6-4679"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-aaba74be-83af-48e7"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-47b4dc26-07b4-4d5a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-5d45c142-c516-4c88"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-42b6db17-285d-4304"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-a057f6d0-ddc1-479a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-dbed2016-8adf-48ea"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-353ef162-db6e-40e1"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-655d3525-7ae6-4661"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-598bfe7f-ef27-4033"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-3dbf5a56-2b6d-4f4f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-fa525f62-6a93-4b2e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-98e5d9f0-8f8f-4b3e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-c6cc45ab-ac05-416c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-a39c1acf-f991-483a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-239c3ed0-ba23-485a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-0f34c815-6de9-4272"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-50fa2c77-3a6f-4ebb"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-fa795a47-49e7-49e2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-109287e2-17ac-4d59"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-8106023d-9b21-4ac0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-3bb3c3d2-0498-40ce"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-56eab818-dd2a-48f6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-96691e9e-eea0-42c2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-4d61b873-db9a-4bd3"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-72c51614-9f65-4f49"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-817f0dd4-c275-428f"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-03c4bb51-c3ef-4696"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-8015e851-07ea-4978"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-a529b796-0dd2-416e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-5068ff05-d9bb-4ad0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-48374964-1614-4f89"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-2926eda1-7836-4409"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-73de50a8-d6f9-4054"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-850f6852-41e2-4fcb"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-5cdca7f5-541b-47df"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-415f25a9-aa9b-478e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.too-small",
+          "severity": "warning",
+          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
+          "objectIds": [
+            "obj-code-6d2bd9ed-ecbf-4107"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7b9d87a0-d05d-4e4d",
+            "obj-code-7ad46848-5a18-446a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-f5bd5852-956e-4a9f",
+            "obj-code-3bbaadd0-752e-44be"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-2503d250-f7ab-441e",
+            "obj-code-7ba402fb-ee36-4166"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6ded558b-02e1-4edf",
+            "obj-code-0c00a52b-8180-4595"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-e91936ea-c117-4f04",
+            "obj-code-0bc72bd9-1678-4914"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-d86f1e73-fac8-4cc3",
+            "obj-code-7b2b81de-e47f-454b"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-a09e44e5-16d7-40db",
+            "obj-code-20c6982d-4a1d-444a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-5756f632-12b3-44a5",
+            "obj-code-1e5310a3-b80c-4802"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-264d9bc2-d3d5-4579",
+            "obj-code-ab455775-b493-4335"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-6aad82f2-8ba7-4004",
+            "obj-code-6c81ff4d-6664-48c0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-aeff2c7e-f7d8-474f",
+            "obj-code-252021ed-f96e-40e6"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7fab1c3b-80e4-4350",
+            "obj-code-76c91225-9aa0-48f8"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-c2ee238c-9d38-41ab",
+            "obj-code-6ddf5156-76c5-4532"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-1cfd8201-5c48-4dbe",
+            "obj-code-8223d703-d8db-490b"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-5fe65707-a33f-49ae",
+            "obj-code-5180a62d-64ab-4e10"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-66ff7cd1-a85e-41c7",
+            "obj-code-6bc409ac-f36f-43e2"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-e9f70e2e-d383-4931",
+            "obj-code-a6e1620b-2258-440c"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-5f358266-edf6-49bc",
+            "obj-code-ade93339-8a54-4b94"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-7187c656-449b-4d6f",
+            "obj-code-8d427223-40e0-485e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-10a6a3de-d658-4abf",
+            "obj-code-c7808808-2aa8-4e3e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-770a6d47-44fe-4cbe",
+            "obj-code-029f9dbb-d342-46ca"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.overlap",
+          "severity": "warning",
+          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
+          "objectIds": [
+            "obj-code-07d6d339-9159-49c2",
+            "obj-code-a528bb3e-09e2-428c"
+          ],
+          "repaired": false
+        }
+      ],
+      "functions": [
+        "asset",
+        "environmentSample",
+        "foundation",
+        "grass",
+        "modifyTerrain",
+        "place",
+        "rampTerrain",
+        "random",
+        "renderSuggestion",
+        "requireAsset",
+        "route",
+        "sampleProbabilityField",
+        "sceneIntent",
+        "sculptTerrain",
+        "spawn",
+        "surface",
+        "terrain"
+      ]
+    },
+    {
+      "repeat": 2,
+      "status": "saved",
+      "mapId": "map-78159dad-0589-4c22",
+      "code": "function plan(api) {\n  api.sceneIntent({kind:\"authored\",reason:\"依山谷地形生长的密集石屋村庄，以连续步行街巷串联住宅、集市、礼拜堂与公共广场。\"});\n  api.terrain({preset:\"valley\",amplitude:9,roughness:0.34,direction:[0,1],seed:api.seed});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[-43,-44],[-40,-12],[-43,20],[-39,44]],width:13},amplitude:5,softness:0.7,access:\"scenic\"});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[43,-43],[41,-8],[44,25],[40,44]],width:12},amplitude:5,softness:0.7,access:\"scenic\"});\n\n  const orientation = \" Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\";\n  function asset(key,name,prompt,dimensions,variants,light) {\n    const spec={key:key,name:name,prompt:prompt+orientation,dimensions:dimensions,variants:variants,role:\"structure\"};\n    if(light) spec.light=light;\n    return api.requireAsset(spec);\n  }\n  const house=asset(\"stone-homes\",\"山谷石屋\",\"Standalone compact inhabited mountain village stone house, irregular rubble masonry, two storeys and usable attic, steep slate roof, chimney, timber shutters, small attached flower boxes, deeply recessed front door at ground level on Z+, modest front canopy, weathered domestic details. No ground, background or lettering.\",[6.2,8,6.4],3);\n  const hall=asset(\"village-hall\",\"村民会堂\",\"Standalone mountain village civic hall, thick dressed stone walls, broad slate gable roof, central modest bell turret, ground level central entrance on Z+, attached notice cabinet without lettering, front ground floor arcade recessed within footprint, upper meeting room windows. No ground or background.\",[12,11,9],1);\n  const chapel=asset(\"chapel\",\"石砌礼拜堂\",\"Standalone small alpine stone chapel with narrow bell tower integrated at the rear, slate roof, ground level front portal on Z+, arched windows and simple carved stone ornament. No ground, text or background.\",[7,12,10],1);\n  const stall=asset(\"market-stall\",\"集市摊棚\",\"Standalone reusable village market stall, timber frame, subdued striped canvas awning, rear baskets and shelves, vegetables, bread and pottery on counter, open customer frontage on Z+, no ground, background or lettering.\",[3.1,3,2.4],2);\n  const fountain=asset(\"fountain\",\"石泉水池\",\"Standalone village drinking fountain, low octagonal stone basin with central carved spout and visible contained water, worn rim, no surrounding ground, no background or text.\",[3.2,2.3,3.2],1);\n  const bench=asset(\"bench\",\"公共长凳\",\"Standalone sturdy weathered timber village bench on stone legs, seating faces Z+, no ground or background.\",[2.4,1,0.75],1);\n  const lamp=asset(\"street-lantern\",\"街巷灯柱\",\"Standalone functional village lantern on a slender wrought iron post, enclosed warm glass lantern at top, stone mounting foot, no ground or background.\",[0.55,3.5,0.55],1,{kind:\"point\",color:\"#FFD69A\",intensity:1.6,range:7,offset:[0,3.1,0]});\n  const cart=asset(\"handcart\",\"木车货筐\",\"Standalone parked wooden handcart with two wheels, shafts facing Z+, several sacks and wicker baskets secured in its bed, no ground or background.\",[1.6,1.5,2.8],1);\n  const wood=asset(\"woodpile\",\"柴薪架\",\"Standalone compact covered firewood rack with neatly stacked split logs beneath a small slate shelter, opening on Z+, no ground or background.\",[2.2,1.9,1.1],1);\n  const pots=asset(\"door-pots\",\"门边花盆\",\"Standalone pair of rustic terracotta pots with herbs and small flowers, no ground, background or text.\",[0.85,0.8,0.6],1);\n  function natural(key,name,prompt,dimensions,variants) {\n    return api.requireAsset({key:key,name:name,prompt:prompt+orientation,dimensions:dimensions,variants:variants,role:\"environment\"});\n  }\n  const tree=natural(\"valley-trees\",\"山谷乔木\",\"Standalone mountain deciduous tree, irregular branching, full restrained crown with clear trunk, no ground or background.\",[6,11,6],2);\n  const pine=natural(\"ridge-pine\",\"山坡松树\",\"Standalone mature mountain pine, weathered trunk, asymmetrical layered needles, no ground or background.\",[5,12,5],1);\n  const rock=natural(\"outcrop\",\"山坡岩块\",\"Standalone irregular fractured mountain rock outcrop with subtle lichen and moss in crevices, no ground or background.\",[4,3,3.5],2);\n\n  function road(id,points,width,material) {\n    for(let i=0;i<points.length-1;i++) {\n      api.rampTerrain({start:points[i],end:points[i+1],width:width+0.8,softness:0.8,strength:1});\n    }\n    return api.route({id:id,points:points,width:width,curve:\"polyline\",surface:\"paving\",material:material || \"cobblestone\"});\n  }\n\n  const alternatives=[\n    {left:-16,right:16,bend:1.5},\n    {left:-17.5,right:17.5,bend:0},\n    {left:-15,right:15,bend:-1.5}\n  ];\n  let chosen=alternatives[0],best=100000;\n  for(const arrangement of alternatives) {\n    let score=0;\n    for(const z of [-34,-23,-12,-1,10,21]) {\n      for(const x of [arrangement.left,0,arrangement.right]) {\n        const sample=api.environmentSample([x,z]);\n        score+=sample.slope+Math.abs(sample.height)*0.025;\n      }\n    }\n    if(score<best) {best=score;chosen=arrangement;}\n  }\n  const left=chosen.left,right=chosen.right;\n  road(\"entry-spine\",[[0,-46],[-1,-36],[0,-25],[chosen.bend,-13],[0,0],[0,12],[0,24]],4.2);\n  road(\"west-lane\",[[0,-36],[left,-35],[left,-24],[left-0.7,-12],[left,0],[left,13],[-11,21],[0,24]],3.1);\n  road(\"east-lane\",[[0,-36],[right,-35],[right,-24],[right+0.7,-12],[right,0],[right,13],[11,21],[0,24]],3.1);\n  for(const z of [-35,-24,-12,0]) {\n    road(\"cross-\"+z,[[left,z],[0,z],[right,z]],2.7);\n  }\n  road(\"upper-walk\",[[left,13],[-10,13],[0,13],[10,13],[right,13]],3);\n  road(\"chapel-path\",[[left,13],[left-7,13],[left-11,19],[left-11,22]],2.5);\n\n  const squareHeight=api.environmentSample([0,19]).height;\n  api.sculptTerrain({mode:\"flatten\",point:[0,19],radius:9.5,strength:0.85,targetHeight:squareHeight});\n  api.sculptTerrain({mode:\"smooth\",point:[0,19],radius:12,strength:0.5});\n  api.environmentSample([0,19]);\n  api.surface({id:\"assembly-square\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"polygon\",points:[[-8,12],[8,12],[9,23],[6,25],[-6,25],[-9,23]]},clearNatural:true});\n  road(\"square-axis\",[[0,12],[0,19],[0,24],[0,26]],3.5);\n  road(\"square-west-link\",[[left,13],[-8,15],[0,15]],2.7);\n  road(\"square-east-link\",[[right,13],[8,15],[0,15]],2.7);\n\n  let homeIndex=0;\n  for(const side of [-1,1]) {\n    const lane=side<0?left:right;\n    for(const row of [-29.5,-18,-6,6.5]) {\n      for(const outer of [false,true]) {\n        const nominalX=lane+(outer?side*7.1:-side*7.1);\n        const candidates=[[nominalX,row],[nominalX,row+0.7],[nominalX+side*0.65,row-0.4]];\n        let site=candidates[0],siteScore=100000;\n        for(const p of candidates) {\n          const center=api.environmentSample(p);\n          let minimum=center.height,maximum=center.height;\n          for(const dx of [-3.3,3.3]) {\n            for(const dz of [-3.3,3.3]) {\n              const h=api.environmentSample([p[0]+dx,p[1]+dz]).height;\n              minimum=Math.min(minimum,h);\n              maximum=Math.max(maximum,h);\n            }\n          }\n          const score=maximum-minimum+center.slope*0.04;\n          if(score<siteScore) {site=p;siteScore=score;}\n        }\n        const target=[lane,site[1]];\n        const direction=lane>site[0]?1:-1;\n        const door=[site[0]+direction*3.2,site[1]];\n        const level=api.environmentSample(site).height;\n        api.sculptTerrain({mode:\"flatten\",point:site,radius:4.5,strength:0.8,targetHeight:level});\n        api.environmentSample(site);\n        road(\"door-\"+homeIndex,[target,door],1.45,\"garden-stone\");\n        const group=\"home-\"+homeIndex;\n        const ref=api.place({assetId:api.asset(house,homeIndex%3),position:site,facing:{target:target},groupId:group});\n        api.foundation({name:\"顺坡石屋基座\",under:[ref],shape:\"rounded-rectangle\",margin:0.12,top:\"level\",thickness:0.18,maxThickness:2.5,material:\"stone\"});\n        api.place({assetId:api.asset(pots,0),position:[door[0],door[1]+1.3],facing:{target:target},groupId:group});\n        if(homeIndex%2===0) {\n          api.place({assetId:api.asset(wood,0),position:[site[0],site[1]+4.05],facing:{target:[site[0],site[1]+8]},groupId:group});\n        }\n        homeIndex++;\n      }\n    }\n  }\n\n  const civic=api.place({assetId:api.asset(hall,0),position:[0,30.5],facing:{target:[0,19]},groupId:\"civic\"});\n  api.foundation({name:\"会堂顺坡基座\",under:[civic],shape:\"rounded-rectangle\",margin:0.2,top:\"level\",thickness:0.2,maxThickness:3,material:\"stone\"});\n  road(\"hall-service\",[[8,21],[10,27],[10,35],[0,36]],2.1);\n  api.place({assetId:api.asset(cart,0),position:[8,32],facing:{target:[10,27]},groupId:\"civic\"});\n  api.place({assetId:api.asset(wood,0),position:[-4,36],groupId:\"civic\"});\n  api.place({assetId:api.asset(fountain,0),position:[-4.7,18.7],groupId:\"civic\"});\n  for(const p of [[-7,22],[-4,24],[4,24],[7,22]]) {\n    api.place({assetId:api.asset(bench,0),position:p,facing:{target:[0,18]},groupId:\"civic\"});\n  }\n  for(const p of [[-7.7,14],[7.7,14],[-7.7,24],[7.7,24]]) {\n    api.place({assetId:api.asset(lamp,0),position:p,groupId:\"civic\"});\n  }\n\n  const cx=left-11;\n  const chapelSite=[cx,27];\n  const ch=api.place({assetId:api.asset(chapel,0),position:chapelSite,facing:{target:[cx,19]},groupId:\"chapel\"});\n  api.foundation({name:\"礼拜堂石基\",under:[ch],shape:\"rounded-rectangle\",margin:0.18,top:\"level\",thickness:0.2,maxThickness:3,material:\"stone\"});\n  api.surface({id:\"chapel-court\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"circle\",center:[cx,19],radius:4.4},clearNatural:true});\n  road(\"chapel-court-access\",[[cx,17],[cx,19],[cx,22]],2);\n  for(const x of [cx-3,cx+3]) {\n    for(const z of [18,21]) {\n      api.place({assetId:api.asset(bench,0),position:[x,z],facing:{target:[cx,z]},groupId:\"chapel\"});\n    }\n  }\n  api.place({assetId:api.asset(lamp,0),position:[cx-3.7,23],groupId:\"chapel\"});\n  api.place({assetId:api.asset(pots,0),position:[cx+2,22],groupId:\"chapel\"});\n\n  api.surface({id:\"market-court\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"polygon\",points:[[20,15],[32,15],[32,29],[20,29]]},clearNatural:true});\n  road(\"market-link\",[[right,13],[22,16],[26,20],[26,29],[17,30],[10,27]],2.7);\n  for(let i=0;i<3;i++) {\n    const z=18+i*4.2;\n    for(const side of [-1,1]) {\n      const x=26+side*4;\n      api.place({assetId:api.asset(stall,i%2),position:[x,z],facing:{target:[26,z]},groupId:\"market\"});\n    }\n  }\n  for(const p of [[22,30.5],[30,30.5]]) {\n    api.place({assetId:api.asset(cart,0),position:p,facing:{target:[26,29]},groupId:\"market\"});\n  }\n  api.place({assetId:api.asset(fountain,0),position:[34,21],groupId:\"market\"});\n  for(const z of [17,25]) {\n    api.place({assetId:api.asset(bench,0),position:[34,z],facing:{target:[26,z]},groupId:\"market\"});\n    api.place({assetId:api.asset(lamp,0),position:[19.5,z],groupId:\"market\"});\n  }\n\n  for(const x of [left,right]) {\n    for(const z of [-34,-23,-11,1,12]) {\n      api.place({assetId:api.asset(lamp,0),position:[x+1.9,z],groupId:\"lanes\"});\n    }\n  }\n  road(\"orchard-walk\",[[0,36],[0,40],[-13,40],[-25,36],[cx,32]],2,\"compacted-earth\");\n  road(\"east-overlook-walk\",[[26,29],[32,34],[34,40],[20,42],[0,40]],1.8,\"compacted-earth\");\n  for(const p of [[-11,42],[32,41]]) {\n    api.place({assetId:api.asset(bench,0),position:p,facing:{target:[0,10]},groupId:\"overlooks\"});\n  }\n\n  api.grass({id:\"valley-cover\",preset:\"meadow\",region:{kind:\"polygon\",points:[[-47,-47],[47,-47],[47,47],[-47,47]]},density:0.64,variation:0.4,height:0.3,mix:{short:0.75,tall:0.2,flowers:0.05}});\n  const vegetation=api.poissonDisk({bounds:{minX:-45,maxX:45,minZ:-44,maxZ:45},minDistance:5.3,maxPoints:145,seed:api.seed});\n  let naturalIndex=0;\n  for(const p of vegetation) {\n    const outside=Math.abs(p[0])>35 || (p[1]>38 && Math.abs(p[0])>5) || (p[1]<-39 && Math.abs(p[0])>9);\n    if(outside) {\n      const e=api.environmentSample(p);\n      const selected=e.slope>0.6 || Math.abs(p[0])>40 ? pine : tree;\n      api.place({assetId:api.asset(selected,selected===tree?naturalIndex%2:0),position:[p[0],p[1]],rotationY:api.random(0,api.TAU),scale:api.random(0.75,1.15),groupId:\"valley-woodland\"});\n      naturalIndex++;\n    }\n  }\n  for(let i=0;i<16;i++) {\n    const side=i%2===0?-1:1;\n    const p=[side*(39+(i%3)*2),-37+Math.floor(i/2)*10];\n    api.place({assetId:api.asset(rock,i%2),position:p,rotationY:i*0.79,scale:0.65+(i%3)*0.2,groupId:\"valley-outcrops\"});\n  }\n  for(let i=0;i<6;i++) {\n    api.place({assetId:api.asset(tree,i%2),position:[-16+i*5.7,44],scale:0.7,groupId:\"upper-orchard\"});\n  }\n  api.spawn([0,-43],0);\n  api.renderSuggestion(\"建议从山谷南侧略高位置看入，展示两侧山坡、密集石屋屋顶、相连横巷与北端会堂广场；另从步行视角检查门前支巷、集市和礼拜堂院落。采用柔和午后侧光、自然石材层次与少量山谷薄雾，保留可读的街巷阴影；最终照明、曝光和氛围在独立渲染阶段确认。\");\n}",
+      "transactionId": "tx-17ea9265-986d-4dbf",
+      "objectCount": 176,
+      "assetCount": 18,
+      "diagnostics": [
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 5.00m，实际使用 3.71m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 5.00m，实际使用 3.43m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "terrain.surface-material-repaired",
+          "severity": "warning",
+          "message": "铺装材质 compacted-earth 与 surface 不兼容，已按材质改用 soil。",
+          "repaired": true
+        },
+        {
+          "code": "terrain.surface-material-repaired",
+          "severity": "warning",
+          "message": "铺装材质 compacted-earth 与 surface 不兼容，已按材质改用 soil。",
+          "repaired": true
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-e0d5ec30-f22b-474a"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-ebfb4e54-fb11-4645"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.off-ground",
+          "severity": "warning",
+          "message": "物体已重新贴合地形。",
+          "objectIds": [
+            "obj-code-ebfb4e54-fb11-4645"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-0caafbf6-92a4-4247"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.off-ground",
+          "severity": "warning",
+          "message": "物体已重新贴合地形。",
+          "objectIds": [
+            "obj-code-0caafbf6-92a4-4247"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-35c6330f-36fa-4093"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.off-ground",
+          "severity": "warning",
+          "message": "物体已重新贴合地形。",
+          "objectIds": [
+            "obj-code-35c6330f-36fa-4093"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-ba8bb0c1-4103-4927"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.off-ground",
+          "severity": "warning",
+          "message": "物体已重新贴合地形。",
+          "objectIds": [
+            "obj-code-ba8bb0c1-4103-4927"
+          ],
+          "repaired": false
+        }
+      ],
+      "functions": [
+        "asset",
+        "environmentSample",
+        "foundation",
+        "grass",
+        "modifyTerrain",
+        "place",
+        "poissonDisk",
+        "rampTerrain",
+        "random",
+        "renderSuggestion",
+        "requireAsset",
+        "route",
+        "sceneIntent",
+        "sculptTerrain",
+        "spawn",
+        "surface",
+        "terrain"
+      ]
+    },
+    {
+      "repeat": 3,
+      "status": "saved",
+      "mapId": "map-43d772b7-d225-4f6a",
+      "code": "function plan(api) {\n  api.sceneIntent({kind:\"authored\",reason:\"山谷地形约束下形成的密集石屋村庄，以连续可步行街巷串联住宅、集市广场、议事厅和山坡礼堂。\"});\n  api.terrain({preset:\"valley\",amplitude:11,roughness:0.32,direction:[0,1],seed:api.seed});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[-44,-43],[-40,0],[-43,43]],width:13},amplitude:6,softness:0.7,access:\"scenic\"});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[43,-43],[40,0],[44,43]],width:13},amplitude:7,softness:0.7,access:\"scenic\"});\n\n  const orient=\" Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\";\n  function asset(key,name,prompt,dimensions,variants) {\n    api.requireAsset({key:key,name:name,prompt:prompt+orient,dimensions:dimensions,variants:variants,role:\"structure\"});\n    return key;\n  }\n  const house=asset(\"stone-house\",\"山村石屋\",\"Standalone compact inhabited two-storey mountain village dwelling, irregular rubble stone masonry, lime mortar, weathered slate gable roof, chimney, timber shutters, recessed front door at ground level, small windows, attached shallow upper wooden balcony, firewood recess integrated into facade. No ground, background or lettering. Keep entire footprint within stated dimensions.\",[6.2,7.6,6.6],3);\n  const hall=asset(\"village-hall\",\"石砌议事厅\",\"Standalone mountain village civic hall, broad rubble stone building, tall slate hipped roof, modest central bell turret, three front arch openings with central ground-level entrance, joined timber doors and carved stone lintels, side windows. No ground, text or background.\",[12,11,9],1);\n  const chapel=asset(\"hillside-chapel\",\"山坡礼堂\",\"Standalone small rural stone chapel with narrow square bell tower, slate roof, front ground-level arched doorway, deeply recessed windows, restrained worn masonry details, no surrounding ground, text or background.\",[8,12,10],1);\n  const stall=asset(\"market-stall\",\"集市摊位\",\"Standalone reusable village market stall, timber counter under coarse linen canopy, integrated baskets of vegetables and earthenware, open customer-facing front. No ground, text or background.\",[3,3,2.2],2);\n  const well=asset(\"village-well\",\"广场水井\",\"Standalone communal stone well with low circular parapet, timber pulley frame and bucket, slate canopy, weathered rope; no surrounding ground, text or background.\",[3,4,3],1);\n  const bench=asset(\"stone-bench\",\"石脚长凳\",\"Standalone rustic public bench, heavy stone supports and worn timber seat and back, front seating side faces Z+. No ground, text or background.\",[2.4,1.1,0.7],1);\n  const trough=asset(\"water-trough\",\"公共水槽\",\"Standalone mountain village rectangular stone washing trough, short attached back wall with two metal spouts, shallow water contained in trough, front working edge toward Z+. No ground, text or background.\",[3.5,1.6,1.4],1);\n  const goods=asset(\"doorstep-goods\",\"门前生活物件\",\"Standalone compact domestic grouping of split firewood in a timber rack, two earthenware storage jars and a woven basket, all neatly grouped within footprint. No ground, text or background.\",[1.6,1.3,0.8],2);\n  const wall=asset(\"retaining-wall\",\"矮石护墙\",\"Reusable rubble stone retaining parapet module, continuous compatible squared ends along local X span axis, canonical width 3m height 1m depth 0.55m, no attached terrain, text or background.\",[3,1,0.55],1);\n  api.requireAsset({key:\"valley-tree\",name:\"山谷乔木\",prompt:\"Standalone mature mountain deciduous tree with irregular branching trunk and airy crown, no ground, text or background.\"+orient,dimensions:[5,9,5],variants:2,role:\"environment\"});\n  api.requireAsset({key:\"valley-rock\",name:\"山坡岩块\",prompt:\"Standalone natural weathered angular mountain rock outcrop with layered fractured stone, no ground, text or background.\"+orient,dimensions:[4,3,3],role:\"environment\"});\n  api.requireAsset({key:\"street-lantern\",name:\"街巷灯柱\",prompt:\"Standalone short wrought iron village lantern post with stone foot and enclosed warm lantern, no ground, text or background.\"+orient,dimensions:[0.5,3.2,0.5],role:\"structure\",light:{kind:\"point\",color:\"#FFD49A\",intensity:1.2,range:6,offset:[0,2.7,0]}});\n\n  function height(x,z) {\n    return api.environmentSample([x,z]).height;\n  }\n  function levelPad(x,z,r) {\n    const h=height(x,z);\n    api.sculptTerrain({mode:\"flatten\",point:[x,z],radius:r,targetHeight:h,strength:1});\n    return api.environmentSample([x,z]).height;\n  }\n  const candidates=[[-18,0,18],[-20,-1,17],[-17,2,21]];\n  let best=candidates[0], bestScore=100000;\n  for (const arrangement of candidates) {\n    let score=0;\n    for (const x of arrangement) {\n      for (const z of [-29,-15,0,15,29]) {\n        const s=api.environmentSample([x,z]);\n        score+=s.slope*3;\n        for (const side of [-1,1]) {\n          const p=api.environmentSample([x+side*6.5,z]);\n          score+=p.slope+Math.abs(p.height-s.height);\n        }\n      }\n    }\n    if(score<bestScore){bestScore=score;best=arrangement;}\n  }\n  const center=best[1];\n  const squareHeight=levelPad(center,0,10);\n  api.surface({id:\"village-square\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"polygon\",points:[[center-9,-8],[center+9,-8],[center+9,8],[center-9,8]]},clearNatural:true});\n\n  function walk(id,points,width) {\n    for(let i=0;i<points.length-1;i++){\n      api.rampTerrain({start:points[i],end:points[i+1],width:width+0.7,softness:0.8,strength:1});\n    }\n    return api.route({id:id,points:points,width:width,surface:\"paving\",material:\"cobblestone\",curve:\"polyline\"});\n  }\n  const lanes=[];\n  for(let i=0;i<best.length;i++){\n    const x=best[i];\n    lanes.push(walk(\"long-lane-\"+i,[[x,-32],[x,-21],[x,-10],[x,0],[x,10],[x,21],[x,30]],3));\n  }\n  for(const z of [-32,0,30]){\n    walk(\"cross-lane-\"+z,[[best[0],z],[center,z],[best[2],z]],3.2);\n  }\n  walk(\"southern-entry\",[[center,-46],[center-1,-39],[center,-32]],4);\n\n  let index=0;\n  for(let lane=0;lane<best.length;lane++){\n    const roadX=best[lane];\n    for(const z of [-25,-14,14,25]){\n      for(const side of [-1,1]){\n        if(lane===0 && side===-1 && z===14) continue;\n        const baseX=roadX+side*6.7;\n        let chosen=[baseX,z], merit=100000;\n        for(const dz of [-0.7,0,0.7]){\n          const sample=api.environmentSample([baseX,z+dz]);\n          let difference=0;\n          for(const corner of [[-3,-3],[-3,3],[3,-3],[3,3]]){\n            difference+=Math.abs(height(baseX+corner[0],z+dz+corner[1])-sample.height);\n          }\n          const m=sample.slope+difference;\n          if(m<merit){merit=m;chosen=[baseX,z+dz];}\n        }\n        const x=chosen[0], zz=chosen[1];\n        levelPad(x,zz,4.7);\n        const entry=[x-side*3.3,zz];\n        walk(\"door-path-\"+index,[[roadX,zz],entry],1.5);\n        const h=api.environmentSample([x,zz]).height;\n        const ref=api.place({assetId:api.asset(house,index%3),position:[x,h,zz],facing:{target:[roadX,zz]},groupId:\"homes-\"+lane});\n        api.foundation({name:\"顺坡石屋基座\",under:[ref],shape:\"rounded-rectangle\",position:[x,zz],width:6.8,depth:6.5,top:\"level\",thickness:0.15,maxThickness:2,material:\"stone\"});\n        api.place({assetId:api.asset(goods,index%2),position:[entry[0],zz+2.1],facing:{target:[roadX,zz+2.1]},groupId:\"homes-\"+lane});\n        index++;\n      }\n    }\n  }\n\n  levelPad(center,37,8);\n  walk(\"hall-approach\",[[center,30],[center,32.5]],3.8);\n  const civic=api.place({assetId:api.asset(hall),position:[center,37],facing:{target:[center,25]},groupId:\"civic\"});\n  api.foundation({name:\"议事厅石基\",under:[civic],shape:\"rounded-rectangle\",position:[center,37],width:12.6,depth:9.6,top:\"level\",thickness:0.15,maxThickness:2,material:\"stone\"});\n  for(const dx of [-5,-2.5,2.5,5]){\n    api.place({assetId:api.asset(bench),position:[center+dx,31.5],facing:{target:[center+dx,28]},groupId:\"civic\"});\n  }\n  api.place({assetId:api.asset(trough),position:[center+8,34],facing:{target:[center+4,32]},groupId:\"civic\"});\n  walk(\"hall-water-path\",[[center+5,30],[center+8,31],[center+8,33]],1.5);\n\n  const chapelX=best[0]-8;\n  levelPad(chapelX,13,6.8);\n  walk(\"chapel-entry\",[[best[0],10],[best[0]-2,10],[chapelX+5,13]],2.2);\n  const worship=api.place({assetId:api.asset(chapel),position:[chapelX,13],facing:{target:[best[0],13]},groupId:\"chapel\"});\n  api.foundation({name:\"礼堂顺坡基座\",under:[worship],shape:\"rounded-rectangle\",position:[chapelX,13],width:10.6,depth:8.6,top:\"level\",thickness:0.15,maxThickness:2,material:\"stone\"});\n  walk(\"chapel-court\",[[chapelX+5.8,8],[chapelX+5.8,13],[chapelX+5.8,18]],2);\n  for(const z of [9,17]){\n    api.place({assetId:api.asset(bench),position:[chapelX+4.9,z],facing:{target:[best[0],z]},groupId:\"chapel\"});\n  }\n  api.place({assetId:api.asset(trough),position:[chapelX+1,19],facing:{target:[chapelX+5,18]},groupId:\"chapel\"});\n  walk(\"chapel-wash-access\",[[chapelX+5.8,18],[chapelX+3,19]],1.4);\n\n  api.place({assetId:api.asset(well),position:[center-4,0],groupId:\"square\"});\n  for(let i=0;i<4;i++){\n    const x=center-6+i*4;\n    api.place({assetId:api.asset(stall,i%2),position:[x,-6],facing:{target:[x,0]},groupId:\"square\"});\n  }\n  for(const x of [center-6,center-2,center+3,center+7]){\n    api.place({assetId:api.asset(bench),position:[x,6.5],facing:{target:[x,0]},groupId:\"square\"});\n  }\n  api.place({assetId:api.asset(trough),position:[center+7,2.5],facing:{target:[center,2.5]},groupId:\"square\"});\n\n  for(let i=0;i<best.length;i++){\n    for(const z of [-30,-8,8,29]){\n      api.place({assetId:api.asset(\"street-lantern\"),position:[best[i]+2.1,z],groupId:\"street-furniture\"});\n    }\n  }\n  for(const side of [-1,1]){\n    const x=side<0?best[0]-12:best[2]+12;\n    for(const z of [-30,-9,23]){\n      const bays=api.subdividePathBySpan({points:[[x,z],[x,z+6]],span:3});\n      for(const bay of bays){\n        api.placeBetween({assetId:api.asset(wall),start:bay.start,end:bay.end,dimensions:[3,1,0.55],spanAxis:\"x\",frontTarget:[center,z],groupId:\"terrace-edges\"});\n      }\n    }\n  }\n\n  api.grass({id:\"valley-meadow\",preset:\"meadow\",region:{kind:\"polygon\",points:[[-47,-47],[47,-47],[47,47],[-47,47]]},density:0.52,height:0.3,variation:0.65,mix:{short:0.75,tall:0.2,flowers:0.05}});\n  const trees=api.sampleProbabilityField({bounds:{minX:-44,maxX:44,minZ:-43,maxZ:43},maxPoints:66,candidates:500,minDistance:5,seed:api.seed},function(s){\n    const outer=Math.abs(s.x);\n    if(outer<34) return 0;\n    return s.slope<1.2?0.85:0.3;\n  });\n  for(let i=0;i<trees.length;i++){\n    api.place({assetId:api.asset(\"valley-tree\",i%2),position:[trees[i].x,trees[i].z],rotationY:api.random(0,api.TAU),scale:api.random(0.8,1.15)});\n  }\n  for(const p of [[-41,-31],[-39,-12],[-42,16],[-36,35],[40,-36],[39,-19],[42,5],[39,29],[26,42],[-25,43]]){\n    api.place({assetId:api.asset(\"valley-rock\"),position:p,rotationY:api.random(0,api.TAU),scale:api.random(0.7,1.3)});\n  }\n  for(const p of [[-12,39],[13,42],[-31,-38],[29,-38]]){\n    api.place({assetId:api.asset(\"valley-tree\",0),position:p,scale:0.9});\n  }\n  api.environmentSample([center,-40]);\n  api.environmentSample([center,0]);\n  api.environmentSample([best[0],13]);\n  api.environmentSample([center,31]);\n  api.spawn([center,-41],0);\n  api.renderSuggestion(\"建议以柔和的山谷清晨侧光表现石墙、灰瓦与坡地层次；主视角从南侧入口略高处看向村庄广场及北侧议事厅，同时保留地面步行视角。灯具仅作为局部暖光，远山淡雾不要遮挡街巷连续性。\");\n}",
+      "transactionId": "tx-f7101277-e420-446f",
+      "objectCount": 151,
+      "assetCount": 17,
+      "diagnostics": [
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 6.00m，实际使用 3.71m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 7.00m，实际使用 3.71m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "foundation.max-thickness",
+          "severity": "warning",
+          "message": "议事厅石基 需要 2.90m 厚度，超过 2.00m 上限，已跳过。",
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-fb9ed19f-dce2-4672"
+          ],
+          "repaired": false
+        }
+      ],
+      "functions": [
+        "asset",
+        "environmentSample",
+        "foundation",
+        "grass",
+        "modifyTerrain",
+        "place",
+        "placeBetween",
+        "rampTerrain",
+        "random",
+        "renderSuggestion",
+        "requireAsset",
+        "route",
+        "sampleProbabilityField",
+        "sceneIntent",
+        "sculptTerrain",
+        "spawn",
+        "subdividePathBySpan",
+        "surface",
+        "terrain"
+      ]
+    },
+    {
+      "repeat": 4,
+      "status": "saved",
+      "mapId": "map-7fcf360d-bb4d-419e",
+      "code": "function plan(api) {\n  api.sceneIntent({kind:\"authored\",reason:\"沿山谷地形生长的密集石屋村庄，以连续步行街巷串联住宅、集市与公共会堂。\"});\n  api.terrain({preset:\"valley\",amplitude:6,roughness:0.32,direction:[0,1],seed:api.seed});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[-43,-43],[-39,-15],[-42,15],[-36,44]],width:17},amplitude:10,softness:0.7,access:\"scenic\"});\n  api.modifyTerrain({modifier:\"ridge\",region:{kind:\"path\",points:[[42,-43],[38,-15],[43,15],[38,44]],width:17},amplitude:11,softness:0.7,access:\"scenic\"});\n\n  const orient = \" Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\";\n  function asset(key,name,prompt,dimensions,role,variants) {\n    api.requireAsset({key,name,prompt:prompt+orient,dimensions,role,variants:variants || 1});\n    return key;\n  }\n  const house = asset(\"stone-home\",\"山谷石屋\",\"Standalone compact two-storey vernacular mountain dwelling, irregular dressed stone walls, slate pitched roof, chimney, deep timber door at ground level on front, shuttered windows, attached small upper balcony and climbing vine on facade. No surrounding ground, text or background.\",[6.2,7.2,6.4],\"structure\",3);\n  const hall = asset(\"village-hall\",\"村庄会堂\",\"Standalone mountain village civic hall, heavy stone masonry, steep slate roof, small bell turret, broad front doorway at ground level, three front arcade openings and timber doors, rear chimney, restrained carved stone ornament, no ground or background or text.\",[12,11,9],\"structure\");\n  const market = asset(\"market-loggia\",\"石柱集市\",\"Standalone open mountain village market loggia, stone end walls, timber roof trusses and slate roof, three open bays facing front, ground-level accessible open frontage, no platform, no ground or text or background.\",[12,5.8,6],\"structure\");\n  const stall = asset(\"produce-stall\",\"集市货摊\",\"Standalone reusable small wooden market stall with cloth awning, baskets of bread and vegetables, counter at rear with customer side toward front, no ground, text or background.\",[2.4,2.7,1.7],\"structure\",2);\n  const fountain = asset(\"spring-fountain\",\"泉水池\",\"Standalone low octagonal stone village spring basin with central carved spout and contained shallow water, worn rim, no ground, no text or background.\",[3.4,2.1,3.4],\"structure\");\n  const bench = asset(\"stone-bench\",\"石木长椅\",\"Standalone weathered timber bench on two carved stone legs, usable seat facing front, no ground, text or background.\",[2.2,0.95,0.7],\"structure\");\n  const props = asset(\"doorstep-tools\",\"门前杂物\",\"Standalone compact household grouping of stacked split firewood in a timber rack, wicker basket and two ceramic jars, no ground, text or background.\",[1.6,1.25,0.75],\"structure\",2);\n  const trough = asset(\"wash-trough\",\"公共洗衣池\",\"Standalone mountain village long stone washing trough with two washing ledges, a small stone water spout and shallow contained water, no ground, text or background.\",[4.2,1.3,1.5],\"structure\");\n  const wall = asset(\"retaining-wall\",\"砌石矮墙\",\"Standalone compatible dry stone wall module, horizontal connection span along local X, canonical length 3m, height 1.1m, thickness 0.55m, flat stone cap, no ground, text or background.\",[3,1.1,0.55],\"structure\");\n  const tree = asset(\"valley-tree\",\"山谷乔木\",\"Standalone mature mountain deciduous tree with irregular leafy crown, visible branching trunk and natural roots, no ground, text or background.\",[6,10,6],\"environment\",2);\n  const pine = asset(\"mountain-pine\",\"山坡松树\",\"Standalone mountain pine with slender irregular trunk and tiered windswept needle branches, no ground, text or background.\",[5,11,5],\"environment\",2);\n  const rock = asset(\"outcrop\",\"山石\",\"Standalone irregular layered weathered mountain rock outcrop with sparse moss in cracks, no ground, text or background.\",[4,3,3],\"environment\",2);\n  api.requireAsset({key:\"street-lantern\",name:\"街巷灯\",role:\"structure\",dimensions:[0.55,3,0.55],prompt:\"Standalone wrought iron village lantern on a stone-footed post, functional warm lamp within glass housing at top, no ground, text or background.\"+orient,light:{kind:\"point\",color:\"#FFD59C\",intensity:1.6,range:6,offset:[0,2.65,0]}});\n\n  // 在有限的三组谷底街道中选择坡度较缓、可用宽度较充足的一组。\n  let shift = 0;\n  let best = 100000;\n  for (const dx of [-3,0,3]) {\n    let score = 0;\n    for (const x of [-14,0,14]) {\n      for (const z of [-30,-16,0,16,29]) {\n        const s = api.environmentSample([x+dx,z]);\n        score += s.slope + Math.abs(s.height)*0.08;\n        for (const side of [-1,1]) {\n          const f = api.environmentSample([x+dx+side*5.7,z]);\n          score += f.slope*0.35;\n        }\n      }\n    }\n    if (score < best) { best=score; shift=dx; }\n  }\n  function p(x,z) { return [x+shift,z]; }\n  const streets = [\n    [p(-14,-36),p(-15,-23),p(-13,-8),p(-15,8),p(-13,22),p(-12,32)],\n    [p(0,-43),p(1,-30),p(-1,-17),p(1,-3),p(0,12),p(1,26),p(0,32)],\n    [p(14,-36),p(15,-23),p(13,-8),p(15,8),p(13,22),p(12,32)]\n  ];\n  function smoothRoute(points,width) {\n    for (let i=0;i<points.length-1;i++) {\n      api.rampTerrain({start:points[i],end:points[i+1],width:width+1.5,softness:0.7,strength:1});\n    }\n  }\n  for (const points of streets) smoothRoute(points,3.1);\n\n  const plaza = p(0,32);\n  const marketCourt = p(0,-31);\n  const plazaH = api.environmentSample(plaza).height;\n  const marketH = api.environmentSample(marketCourt).height;\n  api.sculptTerrain({mode:\"flatten\",point:plaza,radius:10,strength:1,targetHeight:plazaH});\n  api.sculptTerrain({mode:\"flatten\",point:p(0,40),radius:8,strength:1,targetHeight:plazaH});\n  api.sculptTerrain({mode:\"flatten\",point:marketCourt,radius:9,strength:1,targetHeight:marketH});\n  api.sculptTerrain({mode:\"flatten\",point:p(0,-39),radius:7.5,strength:1,targetHeight:marketH});\n  api.environmentSample(plaza);\n  api.environmentSample(marketCourt);\n  const crossRoutes = [];\n  for (const z of [-23,-8,8,22,32]) {\n    const spread = z===32 ? 12 : (z===-8 ? 13 : (z===22 ? 13 : 15));\n    const points=[p(-spread,z),p(0,z+1),p(spread,z)];\n    smoothRoute(points,2.7);\n    crossRoutes.push(points);\n  }\n  smoothRoute([p(1,26),plaza],4);\n  smoothRoute([p(1,-30),p(-1,-23)],4);\n  api.surface({id:\"civic-square\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"circle\",center:plaza,radius:8.5},clearNatural:true});\n  api.surface({id:\"market-square\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"circle\",center:marketCourt,radius:8},clearNatural:true});\n\n  for (let i=0;i<streets.length;i++) {\n    api.route({id:\"valley-street-\"+i,name:\"谷地石板街\",points:streets[i],width:i===1?3.6:2.9,surface:\"paving\",material:\"cobblestone\"});\n  }\n  for (let i=0;i<crossRoutes.length;i++) {\n    api.route({id:\"cross-lane-\"+i,name:\"横向联络巷\",points:crossRoutes[i],width:2.6,surface:\"paving\",material:\"cobblestone\"});\n  }\n  api.route({id:\"arrival\",name:\"村口绕集市步道\",points:[p(0,-47),p(-9,-43),p(-11,-36),p(-8,-30),p(1,-30)],width:3,surface:\"soil\",material:\"compacted-earth\"});\n  smoothRoute([p(0,-47),p(-9,-43),p(-11,-36),p(-8,-30)],3);\n\n  // 每段街坊两侧共用临街规则；保留横巷与两个公共广场的空地。\n  let homeIndex=0;\n  for (let lane=0;lane<3;lane++) {\n    for (let row=0;row<4;row++) {\n      const z = -16 + row*15;\n      if (z>22) continue;\n      const roadX = lane===0 ? -14 : (lane===1 ? 0 : 14);\n      for (const side of [-1,1]) {\n        let chosen=p(roadX+side*5.5,z);\n        let minCost=100000;\n        for (const dz of [-1,0,1]) {\n          const site=p(roadX+side*5.5,z+dz);\n          const center=api.environmentSample(site);\n          let lo=center.height,hi=center.height;\n          for (const corner of [[-3,-3],[-3,3],[3,-3],[3,3]]) {\n            const s=api.environmentSample([site[0]+corner[0],site[1]+corner[1]]);\n            lo=Math.min(lo,s.height); hi=Math.max(hi,s.height);\n          }\n          const cost=hi-lo+center.slope*0.04+Math.abs(dz)*0.12;\n          if (cost<minCost) { minCost=cost; chosen=site; }\n        }\n        const road=p(roadX,chosen[1]);\n        const rh=api.environmentSample(road).height;\n        const sh=api.environmentSample(chosen).height;\n        const height=rh+Math.max(-0.35,Math.min(0.35,sh-rh));\n        api.sculptTerrain({mode:\"flatten\",point:chosen,radius:4.6,strength:1,targetHeight:height});\n        const door=[chosen[0]-side*3.25,chosen[1]];\n        api.rampTerrain({start:road,end:door,width:1.7,startHeight:rh,endHeight:height,softness:0.55,strength:1});\n        api.environmentSample(chosen);\n        const group=\"home-\"+homeIndex;\n        const building=api.place({assetId:api.asset(house,homeIndex%3),position:chosen,facing:{target:road},groupId:group});\n        api.foundation({name:\"石屋基础\",under:[building],shape:\"rounded-rectangle\",position:chosen,width:6.5,depth:6.4,top:\"level\",thickness:0.12,maxThickness:1.2,material:\"stone\"});\n        api.route({id:\"door-\"+homeIndex,name:\"入户短巷\",points:[road,door],width:1.4,surface:\"paving\",material:\"garden-stone\",groupId:group});\n        api.place({assetId:api.asset(props,homeIndex%2),position:[door[0]+side*0.15,door[1]+2.1],facing:{target:road},groupId:group});\n        if (homeIndex%3===0) api.place({assetId:api.asset(\"street-lantern\",0),position:[road[0]+side*1.95,road[1]-3.3],groupId:group});\n        homeIndex++;\n      }\n    }\n  }\n\n  api.place({assetId:api.asset(hall,0),position:p(0,40),facing:{target:plaza},groupId:\"civic\"});\n  api.route({id:\"hall-entry\",name:\"会堂入口\",points:[plaza,p(0,35.5)],width:4,surface:\"paving\",material:\"garden-stone\",groupId:\"civic\"});\n  api.place({assetId:api.asset(fountain,0),position:p(-3,30),groupId:\"civic\"});\n  for (const q of [[-6,34],[6,34],[6,29],[-6,26]]) {\n    api.place({assetId:api.asset(bench,0),position:p(q[0],q[1]),facing:{target:plaza},groupId:\"civic\"});\n  }\n  for (const x of [-8,8]) {\n    api.place({assetId:api.asset(\"street-lantern\",0),position:p(x,33),groupId:\"civic\"});\n    api.place({assetId:api.asset(tree,x<0?0:1),position:p(x,39),groupId:\"civic\"});\n  }\n\n  api.place({assetId:api.asset(market,0),position:p(0,-39),facing:{target:marketCourt},groupId:\"market\"});\n  api.route({id:\"market-entry\",name:\"集市通廊\",points:[marketCourt,p(0,-36)],width:3.5,surface:\"paving\",material:\"garden-stone\",groupId:\"market\"});\n  for (let i=0;i<4;i++) {\n    api.place({assetId:api.asset(stall,i%2),position:p(-4.5+i*3,-39),facing:{target:p(-4.5+i*3,-31)},groupId:\"market\"});\n  }\n  for (const x of [-6,6]) {\n    api.place({assetId:api.asset(bench,0),position:p(x,-31),facing:{target:marketCourt},groupId:\"market\"});\n    api.place({assetId:api.asset(\"street-lantern\",0),position:p(x,-34),groupId:\"market\"});\n  }\n\n  const wash=p(23,8);\n  const wh=api.environmentSample(wash).height;\n  api.sculptTerrain({mode:\"flatten\",point:wash,radius:4.5,strength:1,targetHeight:wh});\n  smoothRoute([p(15,8),p(20,8),wash],2);\n  api.environmentSample(wash);\n  api.surface({id:\"wash-court\",surface:\"paving\",material:\"garden-stone\",region:{kind:\"circle\",center:wash,radius:3.8},clearNatural:true});\n  api.route({id:\"wash-lane\",name:\"洗衣坪支巷\",points:[p(15,8),p(20,8),wash],width:2,surface:\"paving\",material:\"garden-stone\"});\n  api.place({assetId:api.asset(trough,0),position:p(23,10),facing:{target:wash},groupId:\"wash\"});\n  for (const x of [21,25]) api.place({assetId:api.asset(bench,0),position:p(x,6),facing:{target:wash},groupId:\"wash\"});\n  api.place({assetId:api.asset(props,1),position:p(26,10),groupId:\"wash\"});\n\n  for (const side of [-1,1]) {\n    const edge=[p(side*26,-23),p(side*27,-7),p(side*28,18),p(side*25,32)];\n    const bays=api.subdividePathBySpan({points:edge,span:3,fit:\"stretch\"});\n    for (const bay of bays) {\n      if (bay.center[1]>3 && bay.center[1]<13) continue;\n      api.placeBetween({assetId:api.asset(wall,0),start:bay.start,end:bay.end,dimensions:[3,1.1,0.55],spanAxis:\"x\",groupId:\"terrace-edges\"});\n    }\n  }\n  api.grass({id:\"valley-meadow\",preset:\"meadow\",region:{kind:\"polygon\",points:[[-47,-47],[47,-47],[47,47],[-47,47]]},density:0.55,variation:0.7,height:0.3,mix:{short:0.7,tall:0.25,flowers:0.05}});\n  const naturalPoints=api.poissonDisk({bounds:{minX:-44,maxX:44,minZ:-44,maxZ:44},minDistance:5,maxPoints:150,seed:api.seed});\n  let count=0;\n  for (const point of naturalPoints) {\n    const x=point[0],z=point[1];\n    if (Math.abs(x-shift)<30) continue;\n    const s=api.environmentSample([x,z]);\n    const isRock=s.slope>32 || count%6===0;\n    const key=isRock?rock:(s.height>7?pine:tree);\n    api.place({assetId:api.asset(key,count%2),position:[x,z],rotationY:api.random(0,api.TAU),groupId:\"surrounding-woodland\"});\n    count++;\n  }\n  api.spawn(p(0,-46),0);\n  api.renderSuggestion(\"从南侧村口和东南高处观察山谷石屋村庄，表现石板街连续上升、屋顶错落与两处公共广场。建议柔和清晨侧光、山坡薄雾、自然石材质感；保留街巷中的可读阴影与暖色灯光，渲染设置另行确认。\");\n}",
+      "transactionId": "tx-e1e0acec-0aaf-4636",
+      "objectCount": 162,
+      "assetCount": 20,
+      "diagnostics": [
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 10.00m，实际使用 4.86m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "terrain.bounds-limited",
+          "severity": "warning",
+          "message": "ridge 请求振幅 11.00m，实际使用 4.86m；区域宽度不足，按 mountain 生成。",
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-ce1e8e63-ea93-462e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.off-ground",
+          "severity": "warning",
+          "message": "物体已重新贴合地形。",
+          "objectIds": [
+            "obj-code-ce1e8e63-ea93-462e"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-89f79013-a7f9-4aa0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.off-ground",
+          "severity": "warning",
+          "message": "物体已重新贴合地形。",
+          "objectIds": [
+            "obj-code-89f79013-a7f9-4aa0"
+          ],
+          "repaired": false
+        },
+        {
+          "code": "object.out-of-bounds",
+          "severity": "warning",
+          "message": "物体已移回地图边界内。",
+          "objectIds": [
+            "obj-code-14c31815-7116-4b58"
+          ],
+          "repaired": false
+        }
+      ],
+      "functions": [
+        "asset",
+        "environmentSample",
+        "foundation",
+        "grass",
+        "modifyTerrain",
+        "place",
+        "placeBetween",
+        "poissonDisk",
+        "rampTerrain",
+        "random",
+        "renderSuggestion",
+        "requireAsset",
+        "route",
+        "sceneIntent",
+        "sculptTerrain",
+        "spawn",
+        "subdividePathBySpan",
+        "surface",
+        "terrain"
+      ],
+      "failedAttempts": [
+        "map_code_execution_failed:Unexpected token ';' at worldforge-map-plan.js:200",
+        "map_code_execution_failed:invalid_terrain_ramp at at plan (worldforge-map-plan.js:111:35) at source: for (const p of s.points) api.environmentSample(p);"
+      ]
+    }
+  ],
+  "folderId": "folder-03316830-57a9-4f86"
+}

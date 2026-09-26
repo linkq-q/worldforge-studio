@@ -17,6 +17,43 @@ import {
 } from '../src/shared/mapLimits';
 
 describe('map code planner', () => {
+  it('lets one scene program inspect the terrain it just generated before choosing a site', () => {
+    const map = createEmptyMap('terrain-aware village', 'terrain-aware-village', [96, 16, 96]);
+    const code = `function plan(api) {
+      api.terrain('hills', {seed:42, amplitude:5});
+      const site = api.environmentSample([7,11]);
+      if (site.height <= 0) throw new Error('terrain_was_not_sampled');
+      api.place({name:'site-' + site.height.toFixed(6), position:[7,11], role:'structure'});
+    }`;
+    const run = () => executeMapCodePlan(code, map, [], { scope:'scene', legacyApis:false, spatialPolicy:'diagnose' });
+    const first = run();
+    const second = run();
+    const finalMap = applyMapOperations(map, first.operations);
+    const sites = (suggestion: ReturnType<typeof run>) => suggestion.operations.flatMap((operation) => (
+      operation.type === 'object.add'
+        ? [{ name: operation.object.name, position: operation.object.transform?.position }]
+        : []
+    ));
+
+    expect(sites(first)).toEqual([{
+      name: `site-${sampleTerrainHeight(finalMap, 7, 11).toFixed(6)}`,
+      position: [7, sampleTerrainHeight(finalMap, 7, 11), 11]
+    }]);
+    expect(sites(second)).toEqual(sites(first));
+    expect(first.codePlan?.functions).toContain('environmentSample');
+  });
+
+  it('gives only the standard outdoor planner a conditional terrain-aware composition hint', () => {
+    const map = createEmptyMap();
+    const prompt = (mode: 'standard' | 'minimal') => buildMapCodePlannerSystemPrompt(
+      map, [], 0, 4, 'scene', 'generate', '', [], mode
+    );
+
+    expect(prompt('standard')).toContain('Compare a bounded set of plausible road and building arrangements');
+    expect(prompt('standard')).toContain('make that rule conditional on frontage, terrain and neighbors');
+    expect(prompt('minimal')).not.toContain('Terrain-aware composition');
+  });
+
   it('lets AI sculpt, smooth and grade terrain through ordered map operations', () => {
     const map = createEmptyMap('village', 'village', [48, 12, 48]);
     const suggestion = executeMapCodePlan(`function plan(api) {
