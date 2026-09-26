@@ -7,7 +7,7 @@ export interface MapCatalog { folders: MapFolder[]; membership: Record<string, s
 export const EXPERIMENT_TEMPLATES = ['repeat', 'assets', 'prompts', 'apis'] as const;
 export const EXPERIMENT_API_PROFILES = ['editor', 'core10', 'placeBetween', 'foundation', 'attach', 'sampleProbabilityField', 'design'] as const;
 export type ExperimentApiProfile = typeof EXPERIMENT_API_PROFILES[number];
-export interface ExperimentCase { name: string; prompt: string; apiProfile: ExperimentApiProfile; systemPrompt?: string }
+export interface ExperimentCase { name: string; prompt: string; apiProfile: ExperimentApiProfile; systemPrompt?: string; promptMode?: MapCodePromptMode }
 export interface ExperimentConfig {
   name: string;
   question: string;

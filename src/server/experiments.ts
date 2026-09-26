@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { createEmptyMap, createId, type EditableMap, type MapAsset } from '../shared/map';
 import { type MapAiSuggestion } from '../shared/mapOperations';
-import { CHAT_PROVIDER_OPTIONS, isModelProvider } from '../shared/protocol';
+import { CHAT_PROVIDER_OPTIONS, isModelProvider, normalizeMapCodePromptMode } from '../shared/protocol';
 import { MODEL_GENERATION_MODES } from '../shared/modelGenerationMode';
 import {
   EXPERIMENT_API_PROFILES, EXPERIMENT_TEMPLATES, REVIEW_TAGS, experimentTrials,
@@ -27,7 +27,8 @@ export function validateExperimentConfig(value: ExperimentConfig): ExperimentCon
     || !Array.isArray(value.cases) || !value.cases.length || value.cases.length > 50
     || value.cases.some(item => !item || !text(item.name, 100) || !text(item.prompt, 1200)
       || !EXPERIMENT_API_PROFILES.includes(item.apiProfile)
-      || (item.systemPrompt !== undefined && !text(item.systemPrompt, 60000)))
+      || (item.systemPrompt !== undefined && !text(item.systemPrompt, 60000))
+      || (item.promptMode !== undefined && normalizeMapCodePromptMode(item.promptMode) !== item.promptMode))
     || !integer(value.repeats, 1, 50) || !integer(value.assetRepeats, 1, 20)
     || !CHAT_PROVIDER_OPTIONS.some(provider => provider.key === value.provider && !provider.disabled)
     || !Array.isArray(value.assetProviders) || !value.assetProviders.length
@@ -37,13 +38,14 @@ export function validateExperimentConfig(value: ExperimentConfig): ExperimentCon
     || !['outdoor', 'indoor'].includes(value.sceneMode)
     || !MODEL_GENERATION_MODES.some(mode => mode.key === value.assetGenerationMode)
     || !integer(value.minNewAssets, 0, 64) || !integer(value.maxNewAssets, value.minNewAssets, 64)
-    || !['standard', 'minimal', 'coupled'].includes(value.promptMode)
+    || normalizeMapCodePromptMode(value.promptMode) !== value.promptMode
     || !['first-pass', 'repair'].includes(value.revisionMode)
     || !['diagnose', 'repair'].includes(value.spatialPolicy)) throw new Error('invalid_experiment_config');
   if (value.cases.some(item => item.apiProfile !== 'editor') && (value.revisionMode !== 'first-pass' || value.sceneMode !== 'outdoor')) {
     throw new Error('api_profiles_require_outdoor_first_pass');
   }
   if (value.cases.some(item => item.apiProfile !== 'editor' && item.systemPrompt)) throw new Error('api_profile_system_prompt_conflict');
+  if (value.cases.some(item => item.apiProfile !== 'editor' && item.promptMode)) throw new Error('api_profile_prompt_mode_conflict');
   if (experimentTrials(value).length > 200) throw new Error('experiment_limit_200_runs');
   return structuredClone(value);
 }
@@ -216,7 +218,7 @@ export class ExperimentManager {
     const systemPrompt = item.apiProfile === 'editor' ? item.systemPrompt : experimentPrompt(base, item.apiProfile, config.minNewAssets, config.maxNewAssets);
     const options: MapCodePlannerOptions = {
       provider: config.provider, scope: 'scene', minNewAssets: config.minNewAssets, maxNewAssets: config.maxNewAssets,
-      promptMode: config.promptMode, revisionMode: config.revisionMode, spatialPolicy: config.spatialPolicy,
+      promptMode: item.promptMode ?? config.promptMode, revisionMode: config.revisionMode, spatialPolicy: config.spatialPolicy,
       reuseExistingAssets: false, systemPromptOverride: systemPrompt, signal,
       ...(item.apiProfile === 'editor' ? {} : { validateCode: (code: string) => auditApiUse(code, item.apiProfile as Exclude<typeof item.apiProfile, 'editor'>) }),
       onProgress: event => { run.progress = event.label; }

@@ -32,6 +32,20 @@ it('expands paired asset trials with one plan per repeat, and rejects malformed 
  expect(()=>validateExperimentConfig({...c,repeats:50,assetRepeats:20})).toThrow('limit');
  expect(()=>validateExperimentConfig({...c,assetProviders:['invented' as 'gpt']})).toThrow('invalid');
  expect(()=>validateExperimentConfig({...c,cases:[{...c.cases[0],apiProfile:'foundation'}],revisionMode:'repair'})).toThrow('first_pass');
+ expect(()=>validateExperimentConfig({...c,cases:[{...c.cases[0],promptMode:'invented' as 'standard'}]})).toThrow('invalid');
+});
+it('passes each editor case its own planning mode',async()=>{
+ const planner=vi.fn<typeof generateMapCodeSuggestion>(async()=>suggestion());
+ const {manager,folder}=await setup(planner);
+ const c=config(folder.id);
+ c.assetProviders=['deepseek'];c.repeats=1;
+ c.cases=[
+  {name:'极简',prompt:'生成山村',apiProfile:'editor',promptMode:'minimal'},
+  {name:'语法',prompt:'生成山村',apiProfile:'editor',promptMode:'teacher-grammar'}
+ ];
+ const job=await manager.create(c);
+ await run(manager,job.id);
+ expect(planner.mock.calls.filter(call=>call[3]?.discoveryOnly).map(call=>call[3]?.promptMode)).toEqual(['minimal','teacher-grammar']);
 });
 it('plans once per pair, auto-files every result, and keeps archive snapshots after maps change',async()=>{
  const planner=vi.fn<typeof generateMapCodeSuggestion>(async()=>suggestion());
