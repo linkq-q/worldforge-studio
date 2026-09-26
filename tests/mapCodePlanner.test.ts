@@ -214,6 +214,10 @@ describe('map code planner', () => {
     expect(main).toContain('## Architectural composition');
     expect(main).toContain('## Settlement formation');
     expect(main).toContain('## Ground cover');
+    expect(main).toContain("Use surface:'snow' for snowfields, ski routes and drifts");
+    expect(main).toContain('never model assets or tiled blocks, slabs or blankets');
+    expect(main).not.toContain('Assets are for discrete snowbanks');
+    expect(standard).toContain('Do not request model assets for snow cover, snowbanks');
     expect(main).toContain('first cover broad suitable ground');
     expect(main).toContain('smaller overlapping patches');
     expect(main).toContain("'cobblestone'|'gravel'|'mud'");
