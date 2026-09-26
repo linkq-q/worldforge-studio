@@ -10,11 +10,15 @@ const baseline = JSON.parse(readFileSync('scripts/mainModeComparison.json', 'utf
   runs: { name: string; prompt: string; seed: number; full: string; minimal: string; mapId?: string }[];
 };
 const wanted = ['哥特式大教堂', '雪山滑雪度假村', '热带雨林神庙遗迹'];
+const only = process.argv.find(arg => arg.startsWith('--name='))?.slice('--name='.length);
+const replace = process.argv.includes('--replace');
+if (replace && !only) throw new Error('--replace requires --name to select one scene');
 type Run = { name: string; prompt: string; seed: number; full: string; minimal: string;
   minNewAssets: number; maxNewAssets: number; status: 'queued' | 'planned' | 'saved' | 'failed';
   attempt: number; mapId?: string; code?: string; transactionId?: string;
   objectCount?: number; assetCount?: number; diagnostics?: unknown; error?: string;
-  failures?: { attempt: number; mapId?: string; error: string }[] };
+  failures?: { attempt: number; mapId?: string; error: string }[];
+  discardedResults?: { attempt: number; mapId: string; reason: string }[] };
 type Ledger = { name: string; folderId?: string; runs: Run[] };
 const file = 'scripts/groundCoverComparison.json';
 const expected = wanted.map(name => {
@@ -47,8 +51,33 @@ if (!ledger.folderId) {
 }
 let stopped = false;
 for (const [index, run] of ledger.runs.entries()) {
+  if (only && run.name !== only) continue;
+  if (replace && run.status === 'saved') {
+    if (!run.mapId) throw new Error(`Saved comparison result has no map ID: ${run.name}`);
+    run.discardedResults = [...(run.discardedResults ?? []), {
+      attempt: run.attempt, mapId: run.mapId, reason: '用户判定本次模型质量异常，要求独立重生成'
+    }];
+    run.attempt += 1;
+    run.status = 'queued';
+    delete run.mapId;
+    delete run.code;
+    delete run.transactionId;
+    delete run.objectCount;
+    delete run.assetCount;
+    delete run.diagnostics;
+    await save();
+  }
   if (run.status === 'saved') continue;
-  while (run.attempt <= 2 && run.status !== 'saved') {
+  const maxAttempts = replace ? run.attempt : 3;
+  if (run.status === 'failed' && run.attempt >= maxAttempts) { stopped = true; break; }
+  if (run.status === 'failed' && run.attempt < maxAttempts) {
+    run.attempt += 1;
+    run.status = 'queued';
+    delete run.mapId;
+    delete run.code;
+    await save();
+  }
+  while (run.attempt <= maxAttempts && run.status !== 'saved') {
     const progress = (label: string) => console.log(`${index + 1}/3 ${run.name} · 首版 ${run.attempt}：${label}`);
     try {
       let map = run.mapId ? await store.loadMap(run.mapId) : null;
@@ -108,7 +137,7 @@ for (const [index, run] of ledger.runs.entries()) {
       run.error = message;
       await save();
       progress(`失败：${message}`);
-      if (run.attempt >= 2) { stopped = true; break; }
+      if (run.attempt >= maxAttempts) { stopped = true; break; }
       run.attempt += 1;
       run.status = 'queued';
       delete run.mapId;
