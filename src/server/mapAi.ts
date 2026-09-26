@@ -1416,7 +1416,7 @@ function normalizeAssetRequests(
     if (!item || typeof item !== 'object') continue;
     const input = item as Record<string, unknown>;
     const name = cleanText(input.name, '', 42);
-    const prompt = cleanText(input.prompt, '', 500);
+    const prompt = typeof input.prompt === 'string' ? input.prompt.trim() : '';
     const tags = normalizeAssetTags(input.tags) ?? [];
     const light = normalizeMapAssetLight(input.light);
     const mode = normalizeModelGenerationMode(selectedMode);

@@ -211,10 +211,46 @@ describe('map code planner', () => {
     expect(main).toContain('api.bridge');
     expect(main).toContain('exactly these 19 keys');
     expect(main).toContain('Declare 2..5 useful asset families');
+    expect(main).toContain('## Architectural composition');
+    expect(main).toContain('## Settlement formation');
+    expect(main).toContain('Ordinary repeated homes, apartment blocks and small shops should be complete reusable building assets');
+    expect(main).toContain('Signs and other exterior attachments may be placed separately');
+    expect(main).toContain('For large focal architecture with repeated bays');
+    expect(main).toContain('contours, shoreline, access paths and neighboring buildings');
+    expect(main).toContain('rivers, lakes, mountains, valleys, cliffs and other terrain or water features');
+    expect(main).toContain('Compare buildable ground, access and connections around or across these features');
+    expect(main).not.toContain('Do not split routine settlement buildings');
+    expect(main).not.toContain('Air conditioners, signs');
+    expect(main).toContain('Changing a grid position by a small random offset');
     expect(main.length).toBeLessThan(standard.length / 2);
     expect(main).not.toContain('never uniform grids');
     expect(refine).toContain('Outdoor Scene Code refinement');
     expect(indoor).toContain('procedural indoor-scene planner');
+  });
+
+  it('executes the main prompt architecture example with separate tiers and an intentional entrance', () => {
+    const map = createEmptyMap('module example', 'module-example', [48, 16, 48]);
+    const prompt = buildMapCodePlannerSystemPrompt(map, [], 0, 4, 'scene', 'generate', '', [], 'main');
+    const example = prompt.match(/function placeTier\([\s\S]*?\n}/)?.[0];
+    expect(example).toBeDefined();
+    for (const api of ['attach', 'subdividePathBySpan', 'offsetPolygon', 'insetPolygon', 'design']) {
+      expect(prompt).not.toContain(`api.${api}`);
+    }
+    const result = executeMapCodePlan(`function plan(api) {
+      ${example}
+      const points = [[-8,-8],[0,-8],[8,-8],[8,0],[8,8],[0,8],[-8,8],[-8,0]];
+      const spec = {moduleAssetId:'asset-wall',openingAssetId:'asset-gate',dimensions:[8,3,0.5],frontTarget:[0,0]};
+      placeTier(points, 1, {...spec, kindAt:i => i === 0 ? 'void' : i === 3 ? 'opening' : 'ordinary'});
+      placeTier(points, 4, spec);
+    }`, map, [testAsset('asset-wall', 'Wall module'), testAsset('asset-gate', 'Gate module')], {
+      scope: 'scene', promptMode: 'main', legacyApis: false, spatialPolicy: 'diagnose'
+    });
+    const objects = result.operations.flatMap(op => op.type === 'object.add' ? [op.object] : []);
+    expect(objects).toHaveLength(15);
+    expect(objects.filter(o => o.assetId === 'asset-gate')).toHaveLength(1);
+    expect(objects.filter(o => o.transform?.position?.[1] === 1)).toHaveLength(7);
+    expect(objects.filter(o => o.transform?.position?.[1] === 4)).toHaveLength(8);
+    expect(objects.some(o => JSON.stringify(o.transform?.position) === JSON.stringify([-4, 1, -8]))).toBe(false);
   });
 
   it('compiles a large repeated placement plan as one transaction', () => {
@@ -3716,17 +3752,25 @@ describe('map code planner', () => {
       .toThrow('map_code_asset_requirement_limit');
   });
 
-  it('keeps joining details at the end of an asset prompt and rejects overlong descriptions', () => {
-    const prompt = `${'Stone nave with structural bays. '.repeat(18)}Front at Z+ is a flat joining face for the west facade.`;
+  it.each(['main', 'minimal', 'standard'] as const)('preserves long asset descriptions through discovery and generation in %s', async (promptMode) => {
+    const prompt = `${'Stone nave with structural bays. '.repeat(80)}Front at Z+ is a flat joining face for the west facade.`;
     const code = (description: string) => `function plan(api) {
       const nave = api.requireAsset({key:'nave',name:'Nave',prompt:${JSON.stringify(description)},role:'structure'});
       api.place({assetId:api.asset(nave),position:[0,0],role:'structure'});
     }`;
 
-    expect(prompt.length).toBeGreaterThan(500);
+    expect(prompt.length).toBeGreaterThan(1200);
     expect(discoverMapCodeAssets(code(prompt), createEmptyMap())[0]?.prompt).toBe(prompt);
-    expect(() => discoverMapCodeAssets(code('x'.repeat(1201)), createEmptyMap()))
-      .toThrow('map_code_asset_prompt_too_long');
+    const createAsset = vi.fn(async (request) => testAsset('asset-nave', request.name));
+    const fetchImpl = vi.fn();
+    await generateMapCodeSuggestion('a nave', createEmptyMap(), [], {
+      approvedCode: code(prompt), scope: 'scene', promptMode,
+      revisionMode: 'first-pass', spatialPolicy: 'diagnose', createAsset, fetchImpl
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(createAsset).toHaveBeenCalledOnce();
+    expect(createAsset.mock.calls[0][0].prompt).toContain(`${prompt}\n`);
+    expect(createAsset.mock.calls[0][0].prompt).toContain('local Z+ is the front');
   });
 
   it('prunes unused trailing variants instead of requesting a full code rewrite', () => {

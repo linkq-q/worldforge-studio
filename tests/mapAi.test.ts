@@ -1015,11 +1015,12 @@ describe('map AI adapter', () => {
   });
 
   it('retries a refine plan once when it misses the requested minimum new assets', async () => {
+    const assetPrompt = `${'Standalone pine with branching trunk and layered needles. '.repeat(30)}Keep the final root arch open.`;
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(chatResponse({ summary: 'too few', assetRequests: [], terrain: [{ mode: 'raise', x: 0, z: 0 }] }))
       .mockResolvedValueOnce(chatResponse({
         summary: 'request one',
-        assetRequests: [{ name: 'Pine', prompt: 'one reusable pine tree', tags: ['tree'] }],
+        assetRequests: [{ name: 'Pine', prompt: assetPrompt, tags: ['tree'] }],
         terrain: [{ mode: 'raise', x: 0, z: 0 }]
       }))
       .mockResolvedValueOnce(chatResponse({
@@ -1036,6 +1037,7 @@ describe('map AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(3);
     expect(createAsset).toHaveBeenCalledOnce();
+    expect(createAsset.mock.calls[0][0].prompt).toBe(assetPrompt);
     expect(JSON.stringify(suggestion.operations)).toContain('asset-new-pine');
   });
 

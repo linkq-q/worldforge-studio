@@ -119,6 +119,7 @@ const MAX_GRASS_FIELD_RESOLUTION = 64;
 const MAX_LAYOUT_ITEMS = 64;
 const MAX_LAYOUT_ITERATIONS = 512;
 const MAX_SPATIAL_QUERIES = 128;
+const CODE_ASSET_PROMPT_CONTRACT = 'Keep asset descriptions focused on identity, structure, openings, joining faces, proportions, orientation and useful detail. Use enough text to specify the object; omit repeated boilerplate and unrelated scene layout. Asset descriptions are preserved in full without a per-asset character limit.';
 const REFINE_ASSET_CATALOG_LIMIT = 64;
 const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
 const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
@@ -1223,6 +1224,9 @@ function executeMapCodePlanInternal(
   const foundationWarnings: string[] = [];
   const missingAssetBindings = new Set<string>();
   const executionIssues = new Map<string, CodeExecutionIssue>();
+  // Resolve only IDs declared by this program. Persisted IDs stay exact; display names are not aliases.
+  const waterIds = new Map<string, string>();
+  const resolveWaterId = (value: string): string => waterIds.get(value.trim()) ?? value.trim();
   let cachedEnvironmentOperationCount = -1;
   let cachedEnvironmentMap: EditableMap | null = null;
   let cachedExistingVisualAabbs: MapObjectAabb[] | null = null;
@@ -1595,7 +1599,7 @@ function executeMapCodePlanInternal(
       record('updateWater');
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
       const form = codeObject(input, 'invalid_map_code_water_update');
-      const waterId = String(form.waterId ?? form.id ?? '').trim();
+      const waterId = resolveWaterId(String(form.waterId ?? form.id ?? ''));
       const workingMap = currentEnvironmentMap();
       if (!workingMap.waterBodies.some((item) => item.id === waterId)) throw new Error(`unknown_map_code_water:${waterId}`);
       emitSceneOperation({
@@ -1616,7 +1620,7 @@ function executeMapCodePlanInternal(
     removeWater(waterIdValue: string): string {
       record('removeWater');
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
-      const waterId = String(waterIdValue ?? '').trim();
+      const waterId = resolveWaterId(String(waterIdValue ?? ''));
       const workingMap = currentEnvironmentMap();
       if (!workingMap.waterBodies.some((item) => item.id === waterId)) throw new Error(`unknown_map_code_water:${waterId}`);
       emitSceneOperation({ type: 'water.remove', waterId });
@@ -1745,14 +1749,18 @@ function executeMapCodePlanInternal(
     },
     surface(
       idValue: string | Record<string, unknown>,
-      surfaceValue?: string,
+      surfaceValue?: string | Record<string, unknown>,
       regionValue?: unknown,
       intensityValue = 1
     ): void {
       record('surface');
+      const namedForm = typeof idValue === 'string' && surfaceValue && typeof surfaceValue === 'object' && !Array.isArray(surfaceValue)
+        ? codeObject(surfaceValue, 'invalid_map_code_surface_form')
+        : undefined;
+      if (namedForm?.id !== undefined && namedForm.id !== idValue) throw new Error('conflicting_map_code_surface_id');
       const form = idValue && typeof idValue === 'object' && !Array.isArray(idValue)
         ? codeObject(idValue, 'invalid_map_code_surface_form')
-        : undefined;
+        : namedForm ? { ...namedForm, id: idValue } : undefined;
       const rawSurface = String(form?.surface ?? surfaceValue ?? '');
       const surface = normalizeCodeTerrainSurface(rawSurface);
       if (!surface) {
@@ -2029,6 +2037,14 @@ function executeMapCodePlanInternal(
       const points = codePointArray(options.points, 'invalid_map_code_water_points').slice(0, 64);
       if (points.length < (type === 'river' ? 2 : 3)) throw new Error('invalid_map_code_water_points');
       const id = cleanId(idValue, 'water');
+      const declaredId = String(idValue ?? '').trim();
+      const existingWater = currentEnvironmentMap().waterBodies;
+      if (existingWater.some(water => water.id === id)) throw new Error(`duplicate_water_id:${id}`);
+      if (existingWater.some(water => water.id === declaredId)
+        || (waterIds.has(id) && waterIds.get(id) !== id)) {
+        throw new Error(`ambiguous_map_code_water_id:${declaredId}`);
+      }
+      waterIds.set(declaredId, id);
       const requestedLevel = optionalFinite(options.level);
       const requestedDepth = optionalFinite(options.depth);
       const actualLevel = requestedLevel === undefined ? undefined : clampFinite(
@@ -2191,7 +2207,7 @@ function executeMapCodePlanInternal(
         });
       }
       const environmentMap = currentEnvironmentMap();
-      const environmentOptions = normalizeCodeEnvironmentOptions(options);
+      const environmentOptions = normalizeCodeEnvironmentOptions(options, resolveWaterId);
       const sampleEnvironment = createMapEnvironmentSampler(environmentMap, environmentOptions);
       const bounds = getMapBounds(environmentMap);
       const densities: number[] = [];
@@ -2361,12 +2377,12 @@ function executeMapCodePlanInternal(
         currentEnvironmentMap(),
         point[0],
         point[1],
-        normalizeCodeEnvironmentOptions(optionsValue)
+        normalizeCodeEnvironmentOptions(optionsValue, resolveWaterId)
       ));
     },
     waterPoint(waterIdValue: string, pointValue: Point2, draft = 0): Point3 {
       record('waterPoint');
-      const waterId = cleanText(waterIdValue, 80);
+      const waterId = resolveWaterId(String(waterIdValue ?? ''));
       const point = point2(pointValue);
       const environmentMap = currentEnvironmentMap();
       const water = environmentMap.waterBodies.find((candidate) => candidate.id === waterId);
@@ -2491,12 +2507,14 @@ function executeMapCodePlanInternal(
       options: {
         bounds?: { minX: number; maxX: number; minZ: number; maxZ: number }
           | { xMin: number; xMax: number; zMin: number; zMax: number }
+          | { x: Point2; z: Point2 }
           | [Point2, Point2];
         maxPoints?: number;
         candidates?: number;
         minDistance?: number;
         seed?: number;
         guideIds?: string[];
+        waterId?: string;
         region?: unknown;
         cluster?: MapProbabilityCluster;
         marks?: MapProbabilityMark[];
@@ -2518,7 +2536,7 @@ function executeMapCodePlanInternal(
         seed: options.seed ?? map.seed,
         cluster: options.cluster,
         marks: options.marks,
-        ...normalizeCodeEnvironmentOptions(options)
+        ...normalizeCodeEnvironmentOptions(options, resolveWaterId)
       }, (sample, index) => weightFunction(codeEnvironmentPoint(sample), index))
         .map((sample) => codeMarkedPoint(sample.x, sample.z, sample.mark));
     },
@@ -2899,7 +2917,7 @@ function executeMapCodePlanInternal(
         replacementAssetId = object.assetId ?? undefined;
         replacementObjectId = objectId;
       }
-      const waterId = cleanId(input.waterId, 'water');
+      const waterId = resolveWaterId(String(input.waterId ?? ''));
       const environmentMap = currentEnvironmentMap();
       const water = environmentMap.waterBodies.find((item) => item.id === waterId);
       if (!water) {
@@ -3998,6 +4016,7 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 
 Ground objects should use position:[x,z], for example [-21,20] means x=-21,z=20 and samples terrain Y. In [x,y,z], y is vertical height, not z; terrain accepts only boolean true or false, never 'ground'. Use terrain:true with [x,0,z] only when you need an explicit terrain-relative Y offset.
 
+${CODE_ASSET_PROMPT_CONTRACT}
 Declare ${minNewAssets}..${maxNewAssets} requireAsset families and place every declared variant at least once. Each asset prompt describes one standalone reusable object and follows this orientation contract: Y+ up, Z+ front/entrance, X+ right. Keep all coordinates inside the map bounds and return the complete function plan(api).`;
 }
 
@@ -4011,14 +4030,38 @@ Compose the scene from the user's request and the actual terrain. Decide what co
 
 Declare terrain and water before sampling candidate sites. Use api.environmentSample on the current map to compare plausible locations and elevations before committing roads and buildings; sample again after a local terrain change when it changes that decision. Plan in 3D: place structures on suitable terrain, use foundations or local grading where needed, and connect height differences with walkable ramps, steps or bridges when appropriate. Use shared local helper functions for repeated relations. Use api.sampleProbabilityField for vegetation or other things that vary continuously; do not use it as a mandatory road or building layout rule. A small generate-and-select comparison is optional when several real arrangements are plausible; write that comparison in JavaScript and choose for spatial reasons, not a generic numeric score.
 
+## Architectural composition
+Ordinary repeated homes, apartment blocks and small shops should be complete reusable building assets, including their fixed doors, windows, balconies and roofs. Signs and other exterior attachments may be placed separately.
+For large focal architecture with repeated bays, stories, wings, arcades, buttresses or seating, decide the footprint -> depth layers -> massing tiers/stories -> boundary runs -> ordinary/corner/entrance modules before requesting assets. The scene program owns their connections, floor heights, silhouette and deliberate voids such as courtyards, arenas and entrance passages; reusable assets own the detail of each part. A unique tightly coupled roof, sculpture or simple complete building may remain one asset. Choose decomposition for structural benefit, not a minimum part count.
+Use shared dimensions, tier profiles and local frames so a change to one footprint or wing carries through related placements. Transform local points with JavaScript and Math. Distinguish entrance, corner and transition exceptions from ordinary repeats. Preserve useful asymmetry and depth; tiers need not be uniform or concentric.
+For connected modules, describe canonical dimensions, span axis, joining faces, open passages and front direction in the asset prompt. Use spanAxis:'x' for side-by-side bays and spanAxis:'z' for longitudinal parts. Fit individual bays with placeBetween; do not stretch one detailed module across an entire building. Sample a closed outline into short segments near the canonical module span before applying this transferable tier rule:
+function placeTier(points, elevation, spec) {
+  for (let i = 0; i < points.length; i++) {
+    const kind = spec.kindAt ? spec.kindAt(i) : 'ordinary';
+    if (kind === 'void') continue;
+    const assetId = kind === 'opening' ? spec.openingAssetId : spec.moduleAssetId;
+    if (!assetId) continue;
+    api.placeBetween({assetId, start:points[i], end:points[(i+1)%points.length], dimensions:spec.dimensions, spanAxis:'x', terrain:false, elevation, frontTarget:spec.frontTarget});
+  }
+}
+Here elevation is absolute world Y because terrain:false. Choose a supported base from the sampled site and call the rule at baseHeight + storyIndex * storyHeight, changing outline or exceptions when needed. This is an optional pattern, not a required ring or uniform story template. Keep central voids and access paths free of spanning slabs. Include fixed doors, windows and facade ornaments in their host module.
+Asset-family count is not placement count: reuse compatible modules and use variants only for useful diversity. Give major built areas related primary, supporting and detail objects; perimeter vegetation or fences do not substitute for core structure. Before returning, check entrances, supports, tier heights, module joints and intended empty spaces.
+
+## Settlement formation
+For organic villages and dense urban settlements, derive streets and parcels from contours, shoreline, access paths and neighboring buildings before placing houses. Use terrain samples to find plausible traversable alignments; let local paths and parcels branch, bend, narrow or cluster as site conditions warrant. Avoid defaulting to fixed world-axis rows with evenly spaced cross streets. Changing a grid position by a small random offset does not change its street or parcel structure. If comparing candidates, vary an actual alignment, branch or grouping.
+Treat rivers, lakes, mountains, valleys, cliffs and other terrain or water features as conditions that shape a settlement, not automatic boundaries for it. Compare buildable ground, access and connections around or across these features, then let the actual site determine whether buildings follow, wrap around, climb, cross or form connected clusters. Keep buildings on safe ground and make crossings or grade changes plausible where needed.
+Orient entrances toward local access, then vary setbacks, parcel widths, building heights and compatible building types with neighborhood context. Density depends on occupied frontage, street width relative to building height and clustered spacing as well as house count. Keep usable alleys, shared spaces and support; do not replace layout reasoning with random rotations or flatten the whole site to fit a preset grid. Regular geometry is appropriate where the requested planned district, airport or industrial use calls for it.
+
 The sandbox exposes exactly these 19 keys; write your own other helpers:
 - Data: api.seed, api.bounds.
 - Land: api.terrain(preset,{amplitude?,roughness?,seed?}) with preset 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}). Keep ramp softness and strength between 0 and 1.
 - Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,height?,mix?}). Region uses kind:'circle' with center/radius, kind:'path' with points/width, or kind:'polygon' with points; never type.
 - Circulation: api.route({id,points:[[x,z],...],width?,curve?:'polyline'|'catmull-rom',surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?}) returns an ID string and paints the road unless surface:'none'. api.bridge({waterId,assetId?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth]}) crosses the actual water boundary; center must lie inside that water body and direction must cross opposite banks. api.spawn([x,z],yawDegrees?) marks the player start.
-- Observation and natural distribution: api.environmentSample([x,z],{waterId?,guideIds?,region?}) returns height, slope, waterDistance and other local relationships from terrain, water and routes already declared. api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?,region?,cluster?,marks?},(point,index)=>weight) returns sampled [x,z] points; use bounded candidates and nonnegative finite weights.
-- Assets and placement: api.requireAsset({key,name,prompt,dimensions:[width,height,depth],role:'structure'|'environment',variants?}); api.asset(key,index?) resolves a declared family; api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,dimensions?,terrain?,role?}) returns an object reference. api.foundation({under?:[objectReference],position?:[x,z],shape?:'rounded-rectangle'|'capsule'|'polygon'|'path',width?,depth?,top?:'level'|'slope'|'steps',stepHeight?,stepCount?,maxThickness?,material?}) gives a walkable top without flattening the whole terrain. api.placeBetween({assetId?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',elevation?,terrain?}) joins structural modules between endpoints.
+- Observation and natural distribution: api.environmentSample([x,z],{waterId?,guideIds?,region?}) returns height, slope, waterDistance and other local relationships from terrain, water and routes already declared. api.sampleProbabilityField({bounds?:{minX,maxX,minZ,maxZ},maxPoints?,candidates?,minDistance?,seed?,region?,cluster?:{strength?,scale?,seed?},marks?:[{id,minDistance?,maxPoints?,cluster?}]},(point,index)=>weight) returns sampled [x,z] points; omit bounds to use the map bounds. Use bounded candidates and nonnegative finite weights. Cluster strength is 0..1. Marks are categories, not exclusion zones or route IDs; only use them with a callback returning {[markId]:weight}.
+- Assets and placement: api.requireAsset({key,name,prompt,dimensions:[width,height,depth],role:'structure'|'environment',variants?}); api.asset(key,index?) resolves a declared family; api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,dimensions?,terrain?,role?}) returns an object reference. api.foundation({under?:[objectReference],position?:[x,z],shape?:'rounded-rectangle'|'capsule'|'polygon'|'path',width?,depth?,top?:'level'|'slope'|'steps',stepHeight?,stepCount?,maxThickness?,material?}) gives a walkable top without flattening the whole terrain. api.placeBetween({assetId?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',elevation?,terrain?,frontTarget?:[x,z]}) joins structural modules between endpoints; frontTarget chooses which side faces the target while preserving the span axis.
 
+Use one object for surface, for example api.surface({id:'court',surface:'paving',region:{kind:'circle',center:[0,0],radius:6}}). Water returns its actual ID: const stream = api.water('stream',{type:'river',points:[[-10,0],[10,0]],width:3}); use {waterId:stream} in later observations and bridges. Keep display names separate from IDs and reuse returned IDs instead of rewriting them.
+${CODE_ASSET_PROMPT_CONTRACT}
 Declare ${minNewAssets}..${maxNewAssets} useful asset families and place every declared variant at least once. Asset prompts describe one standalone reusable object in English, with Y+ up, Z+ front/entrance and X+ right; names are short Simplified Chinese. Keep every placement inside bounds. Do not invent API names or asset IDs. Return the function only.`;
 }
 
@@ -4072,6 +4115,7 @@ export function buildMapCodePlannerSystemPrompt(
     : '';
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}${terrainAdaptiveContract}${compositionContract}${densityContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
+${CODE_ASSET_PROMPT_CONTRACT}
 ${CODE_ACTIVITY_CONTRACT()}
 
 ## Output contract
@@ -4163,6 +4207,7 @@ function buildIndoorMapCodePlannerSystemPrompt(
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 ${CODE_ASSET_LIGHT_CONTRACT}
+${CODE_ASSET_PROMPT_CONTRACT}
 ${CODE_ACTIVITY_CONTRACT(true)}
 
 ## Output contract
@@ -4948,7 +4993,6 @@ function normalizeCodeAssetRequirement(
   const key = normalizeCodeAssetKey(input.key);
   const name = cleanText(input.name, 42);
   const prompt = String(input.prompt ?? '').trim();
-  if (prompt.length > 1_200) throw new Error('map_code_asset_prompt_too_long');
   if (!name || !prompt) throw new Error('invalid_map_code_asset_requirement');
   if (sceneMode === 'indoor' && INDOOR_FORBIDDEN_CONTENT.test(`${name} ${prompt} ${(input.tags ?? []).join(' ')}`)) {
     throw new Error('indoor_map_code_forbidden_content');
@@ -6177,7 +6221,7 @@ function placementExplicitHeight(value: PlacementInput['position']): number | un
   return 'y' in value && value.y !== undefined ? finite(value.y) : undefined;
 }
 
-function normalizeCodeEnvironmentOptions(value: unknown): MapEnvironmentSampleOptions {
+function normalizeCodeEnvironmentOptions(value: unknown, resolveWaterId: (id: string) => string): MapEnvironmentSampleOptions {
   const input = value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
@@ -6189,7 +6233,7 @@ function normalizeCodeEnvironmentOptions(value: unknown): MapEnvironmentSampleOp
   return {
     ...(guideIds.length > 0 ? { guideIds } : {}),
     ...(region ? { region } : {}),
-    ...(waterId ? { waterId } : {})
+    ...(waterId ? { waterId: resolveWaterId(waterId) } : {})
   };
 }
 
@@ -6225,6 +6269,7 @@ function codeEnvironmentPoint(
     waterDistance: { value: sample.waterDistance, enumerable: true },
     guideDistance: { value: sample.guideDistance, enumerable: true },
     index: { value: sample.index, enumerable: true },
+    ...(sample.water === undefined ? {} : { water: { value: Object.freeze(sample.water), enumerable: true } }),
     ...(sample.regionDistance === undefined
       ? {}
       : { regionDistance: { value: sample.regionDistance, enumerable: true } })
@@ -6718,6 +6763,15 @@ function normalizePoissonBounds(
   }
   if (value && typeof value === 'object') {
     const bounds = value as Record<string, unknown>;
+    if ('x' in bounds || 'z' in bounds) {
+      if (['minX', 'maxX', 'minZ', 'maxZ', 'xMin', 'xMax', 'zMin', 'zMax'].some(key => key in bounds)) {
+        throw new Error('invalid_map_code_sampling_bounds:mixed_forms');
+      }
+      if (!Array.isArray(bounds.x) || bounds.x.length !== 2 || !Array.isArray(bounds.z) || bounds.z.length !== 2) {
+        throw new Error('invalid_map_code_sampling_bounds:expected={x:[min,max],z:[min,max]}');
+      }
+      return { minX: finite(bounds.x[0]), maxX: finite(bounds.x[1]), minZ: finite(bounds.z[0]), maxZ: finite(bounds.z[1]) };
+    }
     return {
       minX: finite(bounds.minX ?? bounds.xMin),
       maxX: finite(bounds.maxX ?? bounds.xMax),
