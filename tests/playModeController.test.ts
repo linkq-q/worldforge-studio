@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { createEmptyMap, type MapWaterBody } from '../src/shared/map';
 import type { InputState } from '../src/shared/protocol';
 import { MapGrassInteraction } from '../src/client/mapGrassInteraction';
-import { stepPlayMotion, type PlayMotionState } from '../src/client/playModeController';
+import { PlayModeController, stepPlayMotion, type PlayMotionState } from '../src/client/playModeController';
 
 const FORWARD: InputState = {
   forward: true,
@@ -18,6 +18,33 @@ const FORWARD: InputState = {
 };
 
 describe('first-person play mode', () => {
+  it('uses a wider play FOV and restores the editor camera on exit', () => {
+    vi.stubGlobal('window', { addEventListener: vi.fn() });
+    vi.stubGlobal('document', { addEventListener: vi.fn(), pointerLockElement: null });
+    try {
+      const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
+      const editorProjection = camera.projectionMatrix.elements[5];
+      const canvas = { addEventListener: vi.fn(), requestPointerLock: vi.fn() } as unknown as HTMLCanvasElement;
+      const map = createEmptyMap('视角测试');
+      const controller = new PlayModeController({
+        canvas,
+        camera,
+        getMap: () => map,
+        onActiveChange: () => {},
+        onInteraction: () => {}
+      });
+
+      expect(controller.enter()).toBe(true);
+      expect(camera.fov).toBe(70);
+      expect(camera.projectionMatrix.elements[5]).toBeLessThan(editorProjection);
+      controller.exit();
+      expect(camera.fov).toBe(55);
+      expect(camera.projectionMatrix.elements[5]).toBeCloseTo(editorProjection);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('moves from the capsule feet position and applies gravity/jump through map collision', () => {
     const map = createEmptyMap('游玩地图');
     const initial = state();

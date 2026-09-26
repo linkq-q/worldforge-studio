@@ -14,6 +14,7 @@ import { PLAYER_GRAVITY, type InputState, type Vec3 } from '../shared/protocol';
 import { getMapMeshCollisionWorld, type MeshCollisionWorld } from './mapMeshCollision';
 
 const WATER_SPEED_SCALE = 0.62;
+const PLAY_FOV = 70;
 
 export interface PlayMotionState {
   position: Vec3;
@@ -40,7 +41,7 @@ export class PlayModeController {
   private pitch = 0;
   private state: PlayMotionState | null = null;
   private collisionWorld: MeshCollisionWorld | null = null;
-  private savedCamera: { position: THREE.Vector3; quaternion: THREE.Quaternion; up: THREE.Vector3 } | null = null;
+  private savedCamera: { position: THREE.Vector3; quaternion: THREE.Quaternion; up: THREE.Vector3; fov: number } | null = null;
 
   constructor(private readonly options: PlayModeControllerOptions) {
     window.addEventListener('keydown', this.onKeyDown, { capture: true });
@@ -77,10 +78,13 @@ export class PlayModeController {
     this.savedCamera = {
       position: this.options.camera.position.clone(),
       quaternion: this.options.camera.quaternion.clone(),
-      up: this.options.camera.up.clone()
+      up: this.options.camera.up.clone(),
+      fov: this.options.camera.fov
     };
     this.active = true;
     this.lockAcquired = false;
+    this.options.camera.fov = PLAY_FOV;
+    this.options.camera.updateProjectionMatrix();
     this.syncCamera();
     this.options.onActiveChange(true);
     void this.options.canvas.requestPointerLock();
@@ -98,6 +102,8 @@ export class PlayModeController {
       this.options.camera.position.copy(this.savedCamera.position);
       this.options.camera.quaternion.copy(this.savedCamera.quaternion);
       this.options.camera.up.copy(this.savedCamera.up);
+      this.options.camera.fov = this.savedCamera.fov;
+      this.options.camera.updateProjectionMatrix();
     }
     this.savedCamera = null;
     this.state = null;
