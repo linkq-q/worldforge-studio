@@ -4,6 +4,14 @@ import { applyMapOperations } from '../src/shared/mapOperations';
 import { buildMapCodePlannerSystemPrompt, executeMapCodePlan, generateMapCodeSuggestion } from '../src/server/mapCodePlanner';
 
 describe('Scene Code API contracts', () => {
+  it('states slope units and sampled placement limits in the main-mode prompt', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(
+      createEmptyMap(), [], 0, 16, 'scene', 'generate', '热带雨林神庙遗迹', [], 'main'
+    );
+    expect(prompt).toContain('slope (degrees: 0 flat, 30 steep)');
+    expect(prompt).toContain('maxPoints is only an upper bound');
+  });
+
   it('preserves surface options in both object and named-object calls', () => {
     const form = { id: 'court', surface: 'paving', material: 'garden-stone',
       region: { kind: 'circle', center: [0, 0], radius: 5 }, intensity: 0.7, clearNatural: true };
@@ -33,6 +41,26 @@ describe('Scene Code API contracts', () => {
     expect(() => run(`api.route('jungleApproach', {})`)).toThrow('invalid_map_code_route_points');
     expect(() => run(`api.route(${JSON.stringify(route)}, {width:99})`))
       .toThrow('invalid_map_code_route_extra_argument');
+  });
+
+  it('normalizes named-object bridge calls only when the water ID is unambiguous', () => {
+    const map = createEmptyMap('bridge', 'bridge', [48, 16, 48]);
+    const water = "api.water('stream',{type:'river',points:[[-20,0],[20,0]],width:6,level:2,depth:1});";
+    const options = { crossingCenter: [0, 0], direction: [0, 1], dimensions: [3, 1, 10] };
+    const run = (call: string) => executeMapCodePlan(`function plan(api) { ${water} ${call}; }`, map, [],
+      { scope: 'scene', promptMode: 'main', spatialPolicy: 'diagnose' });
+    const canonical = run(`api.bridge({waterId:'stream',...${JSON.stringify(options)}})`);
+    const named = run(`api.bridge('stream',${JSON.stringify(options)})`);
+    const withoutGeneratedIds = (operations: typeof named.operations) => operations.map(operation =>
+      operation.type === 'object.add' ? { ...operation, object: { ...operation.object, id: '' } } : operation
+    );
+    expect(withoutGeneratedIds(named.operations)).toEqual(withoutGeneratedIds(canonical.operations));
+    expect(named.diagnostics?.some(issue => issue.code === 'code.api-shape-normalized' && issue.repaired)).toBe(true);
+    expect(() => run(`api.bridge('other',{waterId:'stream',...${JSON.stringify(options)}})`))
+      .toThrow('conflicting_map_code_bridge_water_id');
+    expect(() => run(`api.bridge('stream',{})`)).toThrow();
+    expect(() => run(`api.bridge({waterId:'stream',...${JSON.stringify(options)}},{})`))
+      .toThrow('invalid_map_code_bridge_extra_argument');
   });
 
   it('keeps first-pass route code unchanged and makes no model or asset request during discovery', async () => {

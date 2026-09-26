@@ -2041,33 +2041,28 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('explains the one-object bridge signature when repairing positional arguments', async () => {
+  it('normalizes a named bridge call without requesting a paid repair', async () => {
     const invalid = `function plan(api) {
       api.water('canal', { type:'lake', points:[[-8,-4],[8,-4],[8,4],[-8,4]], level:0.2 });
       api.bridge('canal', { name:'水晶桥', crossingCenter:[0,0], direction:[1,0], dimensions:[3,1,4] });
     }`;
-    const repaired = JSON.stringify({ edits: [{
-      old: "api.bridge('canal', { name:'水晶桥', crossingCenter:[0,0], direction:[1,0], dimensions:[3,1,4] });",
-      new: "api.bridge({ waterId:'canal', name:'水晶桥', crossingCenter:[0,0], direction:[1,0], dimensions:[3,1,4] });"
-    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(response(invalid))
-      .mockResolvedValue(response(repaired));
+    const fetchImpl = vi.fn().mockResolvedValue(response(invalid));
 
     const suggestion = await generateMapCodeSuggestion('生成一条运河和跨河桥', createEmptyMap(), [], {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
-    expect(repairRequest.messages.at(-1).content).toContain('api.bridge accepts one object argument only');
-    expect(repairRequest.messages.at(-1).content).toContain('api.bridge({ waterId:');
-    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.codePlan?.code).toBe(invalid);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'code.api-shape-normalized', repaired: true })
+    ]));
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'object.add' })
     ]));
