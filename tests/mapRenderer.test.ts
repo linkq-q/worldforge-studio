@@ -64,6 +64,25 @@ function terrainBoundaryPoints(geometry: THREE.BufferGeometry): THREE.Vector3[] 
 }
 
 describe('terrain normal generation', () => {
+  it('refreshes and disposes the snow mask without adding terrain vertices or objects', async () => {
+    const map = createEmptyMap();
+    const rendered = await buildEditableMapGroup(map);
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const vertexCount = terrain.geometry.getAttribute('position').count;
+    const state = terrain.userData.sandFlow as { snowSurface: THREE.DataTexture };
+    const previousDispose = vi.spyOn(state.snowSurface, 'dispose');
+    const snowy = applyMapOperations(map, [{ type: 'terrain.surface', surface: 'snow', zoneId: 'snow',
+      region: { kind: 'circle', x: 0, z: 0, radius: 15 } }]);
+    rendered.refreshTerrain(snowy);
+    expect(previousDispose).toHaveBeenCalledOnce();
+    expect(state.snowSurface.image.width).toBe(512);
+    expect(terrain.geometry.getAttribute('position').count).toBe(vertexCount);
+    expect(snowy.objects).toHaveLength(0);
+    const currentDispose = vi.spyOn(state.snowSurface, 'dispose');
+    rendered.dispose();
+    expect(currentDispose).toHaveBeenCalledOnce();
+  });
+
   it('loads only assets referenced by scene objects', async () => {
     const map = createEmptyMap('large catalogue');
     const unused = { id: 'unused', name: 'unused', modelJson: null } as unknown as MapAsset;

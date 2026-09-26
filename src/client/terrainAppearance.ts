@@ -29,7 +29,8 @@ export function terrainVertexColor(
   y: number,
   z: number,
   palette?: TerrainPaletteColors,
-  renderSurfaceHeight?: number
+  renderSurfaceHeight?: number,
+  includeSnow = true
 ): [number, number, number] {
   const surfaceY = renderSurfaceHeight ?? sampleTerrainHeight(map, x, z);
   const base = new THREE.Color(palette?.base ?? map.box.colors.floor);
@@ -43,7 +44,7 @@ export function terrainVertexColor(
   base.lerp(new THREE.Color(palette?.dry ?? DRY_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['dry']) * 0.62);
   base.lerp(new THREE.Color(palette?.rock ?? ROCK_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['rocky']) * 0.88);
   base.lerp(new THREE.Color(palette?.sand ?? SAND_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['sand']) * 0.96);
-  base.lerp(SNOW_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['snow']) * 0.98);
+  if (includeSnow) base.lerp(SNOW_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['snow']) * 0.98);
   base.lerp(new THREE.Color(palette?.soil ?? SOIL_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['soil']) * 0.92);
   base.lerp(new THREE.Color(palette?.paving ?? PAVING_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['paving']) * 0.94);
   return colorTuple(base);
