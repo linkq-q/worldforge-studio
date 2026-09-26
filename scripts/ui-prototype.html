@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WorldForge · 简洁界面原型</title>
+  <style>
+    /* Mneme's neutral surfaces, hairlines and restrained blue, adapted to a top-menu workspace. */
+    :root { color-scheme:dark; font:13px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; --page:#0d0d0d; --surface:#141413; --panel:#1a1a19; --ink:#f5f5f2; --ink2:#c3c2b7; --muted:#8a887f; --line:#2c2c2a; --hair:#232321; --accent:#3987e5; color:var(--ink); background:var(--page); -webkit-font-smoothing:antialiased; }
+    * { box-sizing:border-box; }
+    body { margin:0; overflow:hidden; }
+    button,input,textarea,select { font:inherit; color:inherit; }
+    button { border:1px solid transparent; background:transparent; cursor:pointer; border-radius:6px; padding:5px 9px; white-space:nowrap; }
+    button:hover,button[aria-expanded="true"] { background:var(--hair); color:var(--ink); }
+    button:focus-visible,summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    button:disabled { color:var(--muted); cursor:default; }
+    [hidden] { display:none!important; }
+    .app { height:100dvh; display:flex; flex-direction:column; }
+    .menu-bar { display:flex; align-items:center; min-height:38px; padding:0 12px; gap:4px; border-bottom:1px solid var(--line); background:var(--surface); z-index:20; }
+    .brand { font-size:14px; font-weight:600; letter-spacing:-.02em; margin-right:20px; }
+    nav { display:flex; align-items:center; gap:2px; }
+    .menu { position:relative; }
+    .menu>button { padding:5px 9px; color:var(--ink2); }
+    .dropdown { position:absolute; left:0; top:calc(100% + 10px); width:230px; padding:5px; background:var(--panel); border:1px solid var(--line); border-radius:7px; box-shadow:0 8px 24px #0004; }
+    .dropdown button { display:flex; width:100%; align-items:center; justify-content:space-between; gap:20px; padding:8px 10px; text-align:left; }
+    .dropdown hr { border:0; border-top:1px solid var(--line); margin:5px; }
+    .dropdown small { color:var(--muted); }
+    .grow { flex:1; }
+    .project-title { color:var(--muted); font-size:12px; margin-right:18px; white-space:nowrap; }
+    .stage-switch { display:flex; padding:2px; border:1px solid var(--line); background:var(--page); border-radius:7px; margin-right:8px; }
+    .stage { color:var(--muted); padding:3px 10px; font-size:12px; }
+    .stage.active { color:var(--ink); background:var(--line); }
+    .primary { background:var(--accent); color:#fff; padding:7px 12px; font-weight:500; }
+    .primary:hover { background:#4794ed; color:#fff; }
+    .generate-trigger { border-color:#3d3d39; color:var(--ink); padding-inline:14px; }
+    .viewport { --left-panel:0px; --right-panel:0px; flex:1; min-height:0; position:relative; overflow:hidden; background:#20201f; }
+    .viewport:has(.panel.left:not([hidden])) { --left-panel:230px; }
+    .viewport:has(.panel:not(.left):not([hidden])) { --right-panel:280px; }
+    canvas { display:block; position:absolute; top:0; left:var(--left-panel); width:calc(100% - var(--left-panel)); height:100%; touch-action:none; }
+    .view-label { position:absolute; top:12px; left:calc(14px + var(--left-panel)); color:var(--muted); font-size:12px; pointer-events:none; }
+    .view-actions { position:absolute; top:5px; right:calc(8px + var(--right-panel)); display:flex; gap:2px; }
+    .view-actions button { color:var(--ink2); font-size:12px; }
+    .view-actions button[aria-pressed="true"] { background:var(--line); }
+    .hint { position:absolute; bottom:19px; left:calc(22px + var(--left-panel)); color:var(--muted); font-size:11px; pointer-events:none; }
+    .status { min-height:22px; padding:0 12px; display:flex; align-items:center; gap:12px; color:var(--muted); font-size:11px; background:var(--surface); border-top:1px solid var(--hair); }
+    .panel { position:absolute; top:0; right:0; width:280px; max-width:100%; max-height:100%; overflow:auto; background:var(--panel); border-left:1px solid var(--line); border-bottom:1px solid var(--line); z-index:12; }
+    .panel.left { left:0; right:auto; width:230px; bottom:0; border-left:0; border-bottom:0; border-right:1px solid var(--line); }
+    .panel-header { display:flex; align-items:center; min-height:32px; padding:3px 10px; border-bottom:1px solid var(--line); gap:6px; }
+    .panel-header strong { font-size:13px; font-weight:500; flex:1; }
+    .panel-header button { padding:1px 5px; color:var(--muted); font-size:18px; }
+    .panel-content { padding:10px; }.panel-content label { display:block; color:var(--ink2); margin-bottom:4px; font-size:12px; }
+    textarea,input,select { border:1px solid var(--line); background:var(--surface); border-radius:5px; padding:4px 6px; width:100%; min-width:0; outline-offset:3px; }
+    textarea { display:block; height:76px; min-height:56px; resize:vertical; font-size:13px; line-height:1.55; padding:6px; }
+    .panel-note { font-size:12px; line-height:1.55; color:var(--muted); margin:6px 0 8px; }
+    .field-row { display:grid; grid-template-columns:76px minmax(0,1fr); align-items:center; gap:6px; margin-top:6px; }.field-row>label { margin:0; }
+    .segmented { display:flex; padding:2px; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:5px; margin-bottom:8px; }.segmented button { flex:1; padding:3px 5px; font-size:12px; color:var(--ink2); }.segmented button.active { background:var(--line); color:var(--ink); }
+    details { border-top:1px solid var(--line); margin-top:8px; padding-top:7px; }summary { color:var(--ink2); cursor:pointer; font-size:12px; }
+    .panel-footer { padding:7px 10px; border-top:1px solid var(--line); display:flex; gap:6px; align-items:center; }.panel-footer .primary { flex:1; padding:4px 8px; }.panel-footer>button { padding-block:4px; }
+    #generate-panel .panel-header { min-height:38px; }
+    #generate-panel .panel-content label,#generate-panel .segmented button,#generate-panel summary { font-size:13px; }
+    #generate-panel .segmented { margin-bottom:10px; }
+    #generate-panel .segmented button,#generate-panel .field-row input,#generate-panel .field-row select,#generate-panel .panel-footer>button { height:38px; }
+    #generate-panel .field-row { margin-top:8px; }
+    #generate-panel details { padding-top:0; }
+    #generate-panel summary { padding:8px 0; }
+    .tree { padding:4px; }.tree button { display:block; text-align:left; width:100%; padding:4px 9px; color:var(--ink2); font-size:12px; }.tree .child { padding-left:28px; }.tree .selected { background:var(--line); color:var(--ink); }.tree small { float:right; color:var(--muted); }
+    .tree-section { padding:6px 9px; color:var(--muted); font-size:11px; }
+    .inspector-row { display:flex; justify-content:space-between; padding:5px 0; color:var(--ink2); font-size:12px; border-bottom:1px solid var(--line); }.inspector-row span { color:var(--muted); }.inspector-row b { font-weight:400; }
+    .toast { position:absolute; bottom:52px; left:50%; transform:translateX(-50%); border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:7px; padding:10px 16px; max-width:90%; z-index:30; font-size:12px; }
+    .zen .menu-bar,.zen .status,.zen .view-label,.zen .hint { display:none; }
+    .zen .view-actions button:not(#focus) { display:none; }
+    @media(max-width:1120px) { .project-title { display:none; }.brand { margin-right:10px; }.menu>button { padding-inline:7px; } }
+    @media(max-width:700px) { .menu-bar { padding:4px 12px; flex-wrap:wrap; gap:4px; }.brand { margin-right:auto; }.menu-bar nav { order:5; width:100%; justify-content:space-between; }.menu-bar>.grow { display:none; }.menu>button { padding-inline:6px; }.viewport:has(.panel:not([hidden])) { --left-panel:0px; --right-panel:0px; }.panel { width:min(280px,100%); }.hint { display:none; }.status { padding-inline:12px; }.status #camera-status { display:none; }.dropdown { position:fixed; top:80px; left:12px; }.stage-switch { margin-right:2px; } }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="menu-bar">
+    <div class="brand">WorldForge</div>
+    <nav aria-label="主菜单" id="menus"></nav>
+    <span class="grow"></span><span class="project-title">松湾 / 林间聚落</span>
+    <div class="stage-switch" aria-label="制作阶段"><button class="stage active" data-action="map-stage">地图</button><button class="stage" data-action="render-stage">渲染</button></div>
+    <button class="generate-trigger" data-action="generate">生成</button>
+  </header>
+  <main class="viewport" id="viewport" aria-label="3D 场景视口">
+    <canvas id="scene" aria-label="松湾村落三维示例，拖动旋转、滚轮缩放、右键拖动平移"></canvas>
+    <span class="view-label" id="view-name">透视</span>
+    <div class="view-actions"><button data-action="reset">全景</button><button data-action="grid" aria-pressed="false" id="grid-toggle">网格</button><button data-action="focus" id="focus" aria-pressed="false">专注</button></div>
+    <div class="hint">拖动旋转 · 滚轮缩放 · 右键平移</div>
+    <section class="panel" id="generate-panel" hidden aria-label="AI 生成地图">
+      <div class="panel-header"><strong>生成地图</strong><button data-close aria-label="关闭生成面板">×</button></div>
+      <div class="panel-content">
+        <div class="segmented"><button class="active" data-mode="new">生成新地图</button><button data-mode="refine">调整当前地图</button></div>
+        <label for="prompt">场景描述</label><textarea id="prompt" placeholder="描述场景、主要建筑与环境氛围…">海湾边的松林村落，暖色屋顶、石桥和一座山坡上的瞭望塔。</textarea>
+        <p class="panel-note">先预览地图构图，确认后再进入渲染。</p>
+        <div class="field-row"><label for="scale">地图尺度</label><select id="scale"><option>中型 · 96 × 96</option><option>小型 · 48 × 48</option><option>大型 · 192 × 192</option></select></div>
+        <div class="field-row"><label for="style">资产风格</label><select id="style"><option>低多边形</option><option>体素</option></select></div>
+        <details><summary>高级设置</summary><div class="field-row"><label for="provider">规划模型</label><select id="provider"><option>跟随项目设置</option></select></div><div class="field-row"><label for="budget">新资产数量</label><input id="budget" type="number" min="0" max="64" value="16"></div></details>
+      </div>
+      <div class="panel-footer"><button data-close>取消</button><button class="primary" data-action="preview" id="preview-button">生成构图预览</button></div>
+    </section>
+    <section class="panel left" id="hierarchy-panel" hidden aria-label="场景层级">
+      <div class="panel-header"><strong>场景层级</strong><button data-close aria-label="关闭场景层级">×</button></div>
+      <div class="tree"><div class="tree-section">松湾 · 林间聚落</div><button data-object="海岸地形">▾ 海岸地形 <small>01</small></button><button class="child" data-object="海湾水面">◇ 海湾水面</button><button data-object="林间聚落">▾ 林间聚落 <small>08</small></button><button class="child selected" data-object="瞭望塔">◇ 瞭望塔</button><button class="child" data-object="石桥">◇ 石桥</button><button class="child" data-object="民居与市集">◇ 民居与市集</button><button data-object="松林与岩石">▸ 松林与岩石</button><button data-object="环境与光照">▸ 环境与光照</button></div>
+    </section>
+    <section class="panel" id="properties-panel" hidden aria-label="属性">
+      <div class="panel-header"><strong>属性</strong><button data-close aria-label="关闭属性">×</button></div>
+      <div class="panel-content"><label>当前对象</label><div id="object-name">瞭望塔</div><p class="panel-note">选中场景层级中的对象，在这里检查属性。</p><div class="inspector-row"><span>位置</span><b>9.0 / 3.0 / −8.0</b></div><div class="inspector-row"><span>旋转</span><b>0° / 0° / 0°</b></div><div class="inspector-row"><span>缩放</span><b>1 / 1 / 1</b></div><p class="panel-note">属性面板布局示意</p></div>
+    </section>
+    <section class="panel" id="render-panel" hidden aria-label="渲染与氛围">
+      <div class="panel-header"><strong>渲染与氛围</strong><button data-close aria-label="关闭渲染面板">×</button></div>
+      <div class="panel-content"><label>环境预设</label><div class="segmented"><button class="active" data-light="day">晴日</button><button data-light="sunset">日落</button></div><label for="exposure">曝光</label><input id="exposure" type="range" min="0.5" max="1.6" step="0.05" value="1.1"><p class="panel-note">在示例场景中预览光照变化。</p></div>
+    </section>
+    <div class="toast" role="status" id="toast" hidden></div>
+  </main>
+  <footer class="status"><span id="load-state">正在准备场景</span><span class="grow"></span><span id="camera-status">透视</span><span>界面原型</span></footer>
+</div>
+<script type="module" src="./ui-prototype.js"></script>
+</body>
+</html>
