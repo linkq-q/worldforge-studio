@@ -29,6 +29,7 @@ export interface MapGrassLayer {
 
 export type GrassRegion =
   | { kind: 'circle'; center: [number, number]; radius: number }
+  | { kind: 'path'; points: Array<[number, number]>; width: number }
   | { kind: 'polygon'; points: Array<[number, number]> };
 
 export interface GrassHabitat {
@@ -315,6 +316,14 @@ function grassRegionWeight(region: GrassRegion, x: number, z: number, softness: 
     const inner = Math.max(0, 1 - softness);
     return normalized <= inner ? 1 : 1 - smoothstep(inner, 1, normalized);
   }
+  if (region.kind === 'path') {
+    if (region.points.length < 2) return 0;
+    const radius = region.width / 2;
+    const distance = distanceToPolygon(x, z, region.points, false);
+    if (distance >= radius) return 0;
+    const inner = radius * (1 - softness);
+    return distance <= inner ? 1 : 1 - smoothstep(inner, radius, distance);
+  }
   if (region.points.length < 3 || !pointInPolygon(x, z, region.points)) return 0;
   if (softness <= 0) return 1;
   const distance = distanceToPolygon(x, z, region.points);
@@ -392,9 +401,9 @@ function pointInPolygon(x: number, z: number, points: Array<[number, number]>): 
   return inside;
 }
 
-function distanceToPolygon(x: number, z: number, points: Array<[number, number]>): number {
+function distanceToPolygon(x: number, z: number, points: Array<[number, number]>, closed = true): number {
   let distance = Number.POSITIVE_INFINITY;
-  for (let index = 0; index < points.length; index += 1) {
+  for (let index = 0; index < points.length - (closed ? 0 : 1); index += 1) {
     const a = points[index];
     const b = points[(index + 1) % points.length];
     const dx = b[0] - a[0];

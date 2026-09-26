@@ -213,6 +213,10 @@ describe('map code planner', () => {
     expect(main).toContain('Declare 2..5 useful asset families');
     expect(main).toContain('## Architectural composition');
     expect(main).toContain('## Settlement formation');
+    expect(main).toContain('## Ground cover');
+    expect(main).toContain('first cover broad suitable ground');
+    expect(main).toContain('smaller overlapping patches');
+    expect(main).toContain("'cobblestone'|'gravel'|'mud'");
     expect(main).toContain('Ordinary repeated homes, apartment blocks and small shops should be complete reusable building assets');
     expect(main).toContain('Signs and other exterior attachments may be placed separately');
     expect(main).toContain('For large focal architecture with repeated bays');
@@ -1444,6 +1448,22 @@ describe('map code planner', () => {
     ]));
   });
 
+  it('keeps recognizable road material descriptions and degrades unknown ones without stopping', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'lane',points:[[-12,0],[12,0]],width:3,surface:'paving',material:'weathered gray cobblestone'});
+      api.surface({id:'court',surface:'paving',material:'worn concrete',region:{kind:'circle',center:[0,8],radius:3}});
+      api.route({id:'unknown',points:[[-12,-8],[12,-8]],width:2,surface:'paving',material:'mysterious composite'});
+    }`, createEmptyMap());
+    const surfaces = suggestion.operations.filter(operation => operation.type === 'terrain.surface');
+    expect(surfaces).toEqual(expect.arrayContaining([
+      expect.objectContaining({zoneId:'code:route:lane',material:'cobblestone'}),
+      expect.objectContaining({zoneId:'code:court',material:'concrete'}),
+      expect.objectContaining({zoneId:'code:route:unknown',surface:'paving'})
+    ]));
+    expect(surfaces.find(surface => surface.zoneId === 'code:route:unknown')).not.toHaveProperty('material');
+    expect(suggestion.diagnostics?.filter(issue => issue.code === 'terrain.surface-material-repaired')).toHaveLength(3);
+  });
+
   it('normalizes duplicate singleton declarations instead of failing the whole scene', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.sceneIntent({kind:'natural',reason:'first'});
@@ -1579,6 +1599,19 @@ describe('map code planner', () => {
       density: 0.3, variation: 0.8,
       habitat: { waterDistance: [0, 1, 3, 6] }
     }));
+  });
+
+  it('keeps a grass path as a width-bearing strip through Scene Code and map operations', () => {
+    const map = createEmptyMap('bank grass', 'bank-grass', [48, 16, 48]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.grass('bank', {kind:'path',points:[[-15,0],[15,0]],width:12},
+        {preset:'meadow',density:0.8,variation:0});
+    }`, map);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({type:'grass.generate',region:{kind:'path',points:[[-15,0],[15,0]],width:12}})
+    ]));
+    const generated = applyMapOperations(map, suggestion.operations);
+    expect(generated.grassLayers[0].densities.filter(density => density > 0.1).length).toBeGreaterThan(100);
   });
 
   it('allows AI-declared natural scenes to compose terrain without inventing architecture', async () => {

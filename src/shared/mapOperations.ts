@@ -662,6 +662,12 @@ function requireGrassRegion(value: unknown): asserts value is GrassRegion {
     if (Number(region.radius) <= 0) throw new Error('invalid_grass_region');
     return;
   }
+  if (region.kind === 'path' && Array.isArray(region.points) && region.points.length >= 2) {
+    for (const point of region.points) requirePoint2(point, 'invalid_grass_region');
+    requireFinite(region.width, 'invalid_grass_region');
+    if (Number(region.width) <= 0) throw new Error('invalid_grass_region');
+    return;
+  }
   if (region.kind === 'polygon' && Array.isArray(region.points) && region.points.length >= 3) {
     for (const point of region.points) requirePoint2(point, 'invalid_grass_region');
     return;

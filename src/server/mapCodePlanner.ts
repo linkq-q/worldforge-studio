@@ -149,7 +149,7 @@ api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace
 api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); Use smooth to soften a local peak or transition.
 api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}); Omitted endpoint heights sample the current terrain; use for paths between different elevations.
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true only when the authored area must exclude loose natural objects. Route surfaces are clear automatically.
-api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?:number,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Top-level height is one finite grass blade height, never an array. habitat.height is the four-number terrain elevation band. Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge; choose each layer's band from the intended ecology, not from a scene-name keyword.
+api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?:number,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Top-level height is one finite grass blade height, never an array. habitat.height is the four-number terrain elevation band. Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge; choose each layer's band from the intended ecology, not from a scene-name keyword.
 api.environmentSample([x,z],{guideIds?:string[],region?:circle|path|polygon,waterId?:string}) returns x,z,height,slope,waterDistance,guideDistance and signed regionDistance when region is requested; negative regionDistance is inside. With waterId, water is {id,inside,surfaceHeight,depth}; surfaceHeight is null outside that water body. Use the sampled surfaceHeight for floating assets after checking inside.
 api.foundation({name?,shape:'capsule'|'rounded-rectangle'|'polygon'|'path',under?:[objectReferenceOrExistingId,...],position?:[x,z]|[x,y,z],width?,depth?,margin?,cornerRadius?,points?:[[localX,localZ],...],curve?:'polyline'|'catmull-rom',closed?,top?:'level'|'slope'|'steps',thickness?,maxThickness?,slope?,slopeDirection?:radians,stepHeight?,stepCount?,material?}); The top is walkable, the bottom follows terrain, and terrain is never flattened.
 Mechanical ownership: preset:'plain' always writes a zero-height field; amplitude and roughness do not change it. api.terrain and api.modifyTerrain create landform elevation. An island modifier raises its region and turns otherwise non-positive surrounding terrain into a sloped submerged seabed; do not add a rectangular ground shelf around it. layout:'coast' deterministically varies the shoreline; softness controls its transition width and variation controls contour and relief variation. api.surface only paints existing terrain and cannot create land, water or a shoreline. Water points define the actual water coverage. Island and archipelago terrain add a default map ocean only when this transaction defines no explicit ocean; an explicit ocean is authoritative. When one landmass boundary owns terrain, surface and optional design regions, declare one const landRegion={...} and reuse that exact region instead of redrawing nearly matching boundaries; use a rectangular boundary only when the intended landform is rectangular.
@@ -311,7 +311,7 @@ interface RouteInput {
   closed?: boolean;
   width?: number;
   surface?: TerrainSurfaceKind | 'none';
-  material?: TerrainSurfaceRecipe;
+  material?: string;
   intensity?: number;
   tags?: string[];
 }
@@ -1260,17 +1260,29 @@ function executeMapCodePlanInternal(
   const reportIssue = (issue: CodeExecutionIssue): void => {
     executionIssues.set(issue.key, issue);
   };
+  const resolveCodeSurfaceMaterial = (value: unknown, issueKey: string): TerrainSurfaceRecipe => {
+    if (value === undefined || value === null || String(value).trim() === '') return 'default';
+    const raw = String(value).trim();
+    const material = inferCodeSurfaceMaterial(raw);
+    if (raw !== material) reportIssue({
+      key: `surface-material-description:${issueKey}`,
+      code: 'terrain.surface-material-repaired',
+      message: material === 'default'
+        ? `无法识别铺装材质「${raw}」，已使用默认材质。`
+        : `铺装材质「${raw}」已匹配为 ${material}。`,
+      repaired: true
+    });
+    return material;
+  };
   const normalizeCodeSurfaceParams = (
     value: Record<string, unknown>,
     issueKey: string
   ): ReturnType<typeof normalizeTerrainSurfaceParams> => {
+    const material = resolveCodeSurfaceMaterial(value.material, issueKey);
     try {
-      return normalizeTerrainSurfaceParams(value, map);
+      return normalizeTerrainSurfaceParams({ ...value, material }, map);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const material = TERRAIN_SURFACE_RECIPES.includes(value.material as TerrainSurfaceRecipe)
-        ? value.material as TerrainSurfaceRecipe
-        : 'default';
       if (!message.startsWith('invalid_terrain_surface_material:') || material === 'default') throw error;
       const surface = terrainSurfaceForRecipe(material);
       reportIssue({
@@ -1324,9 +1336,7 @@ function executeMapCodePlanInternal(
       };
     }
     if (input.surface !== 'none') {
-      const material = TERRAIN_SURFACE_RECIPES.includes(input.material as TerrainSurfaceRecipe)
-        ? input.material as TerrainSurfaceRecipe
-        : 'default';
+      const material = resolveCodeSurfaceMaterial(input.material, `route:${id}`);
       const surface = normalizeCodeTerrainSurface(input.surface ?? (
         material === 'default' ? 'paving' : terrainSurfaceForRecipe(material)
       )) ?? 'paving';
@@ -4052,11 +4062,14 @@ For organic villages and dense urban settlements, derive streets and parcels fro
 Treat rivers, lakes, mountains, valleys, cliffs and other terrain or water features as conditions that shape a settlement, not automatic boundaries for it. Compare buildable ground, access and connections around or across these features, then let the actual site determine whether buildings follow, wrap around, climb, cross or form connected clusters. Keep buildings on safe ground and make crossings or grade changes plausible where needed.
 Orient entrances toward local access, then vary setbacks, parcel widths, building heights and compatible building types with neighborhood context. Density depends on occupied frontage, street width relative to building height and clustered spacing as well as house count. Keep usable alleys, shared spaces and support; do not replace layout reasoning with random rotations or flatten the whole site to fit a preset grid. Regular geometry is appropriate where the requested planned district, airport or industrial use calls for it.
 
+## Ground cover
+Where grass belongs, first cover broad suitable ground with one or more habitat-aware grass layers, then add smaller overlapping patches for local variation. Mix short grass, tall grass and flowers within layers, and vary preset, height and density between compatible layers. Aim for grass that reads clearly across the visible ground in both overhead and oblique views; many tiny circles or a high blade count alone do not provide visible coverage. Keep paved, rocky, submerged and occupied ground legible through their surface and contact masks.
+
 The sandbox exposes exactly these 19 keys; write your own other helpers:
 - Data: api.seed, api.bounds.
 - Land: api.terrain(preset,{amplitude?,roughness?,seed?}) with preset 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}). Keep ramp softness and strength between 0 and 1.
-- Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,height?,mix?}). Region uses kind:'circle' with center/radius, kind:'path' with points/width, or kind:'polygon' with points; never type.
-- Circulation: api.route({id,points:[[x,z],...],width?,curve?:'polyline'|'catmull-rom',surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?}) returns an ID string and paints the road unless surface:'none'. api.bridge({waterId,assetId?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth]}) crosses the actual water boundary; center must lie inside that water body and direction must cross opposite banks. api.spawn([x,z],yawDegrees?) marks the player start.
+- Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,height?,mix?:{short?,tall?,flowers?},habitat?}). Grass regions can be a circle, a path with points/width, or a polygon with points; use kind, never type.
+- Circulation: api.route({id,points:[[x,z],...],width?,curve?:'polyline'|'catmull-rom',surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?}) returns an ID string and paints the road unless surface:'none'. Surface and route material IDs are 'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud'; choose one for authored roads, using 'default' only intentionally. api.bridge({waterId,assetId?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth]}) crosses the actual water boundary; center must lie inside that water body and direction must cross opposite banks. api.spawn([x,z],yawDegrees?) marks the player start.
 - Observation and natural distribution: api.environmentSample([x,z],{waterId?,guideIds?,region?}) returns height, slope, waterDistance and other local relationships from terrain, water and routes already declared. api.sampleProbabilityField({bounds?:{minX,maxX,minZ,maxZ},maxPoints?,candidates?,minDistance?,seed?,region?,cluster?:{strength?,scale?,seed?},marks?:[{id,minDistance?,maxPoints?,cluster?}]},(point,index)=>weight) returns sampled [x,z] points; omit bounds to use the map bounds. Use bounded candidates and nonnegative finite weights. Cluster strength is 0..1. Marks are categories, not exclusion zones or route IDs; only use them with a callback returning {[markId]:weight}.
 - Assets and placement: api.requireAsset({key,name,prompt,dimensions:[width,height,depth],role:'structure'|'environment',variants?}); api.asset(key,index?) resolves a declared family; api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,dimensions?,terrain?,role?}) returns an object reference. api.foundation({under?:[objectReference],position?:[x,z],shape?:'rounded-rectangle'|'capsule'|'polygon'|'path',width?,depth?,top?:'level'|'slope'|'steps',stepHeight?,stepCount?,maxThickness?,material?}) gives a walkable top without flattening the whole terrain. api.placeBetween({assetId?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',elevation?,terrain?,frontTarget?:[x,z]}) joins structural modules between endpoints; frontTarget chooses which side faces the target while preserving the span axis.
 
@@ -5310,6 +5323,23 @@ function normalizeCodeTerrainSurface(value: string): TerrainSurfaceKind | undefi
   return aliases.find(([pattern]) => pattern.test(normalized))?.[1];
 }
 
+function inferCodeSurfaceMaterial(value: string): TerrainSurfaceRecipe {
+  const normalized = value.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  if (TERRAIN_SURFACE_RECIPES.includes(normalized as TerrainSurfaceRecipe)) return normalized as TerrainSurfaceRecipe;
+  const description = normalized.replace(/-/g, ' ');
+  const aliases: Array<[RegExp, TerrainSurfaceRecipe]> = [
+    [/\b(?:cobbles?|cobblestones?|setts?)\b|鹅卵石|石块路/, 'cobblestone'],
+    [/\b(?:asphalt|tarmac|bitumen)\b|沥青/, 'asphalt'],
+    [/\b(?:concrete|cement)\b|混凝土|水泥/, 'concrete'],
+    [/\b(?:brick|bricks|brickwork)\b|砖铺|砖路/, 'brick-paver'],
+    [/\b(?:gravel|pebbles?|shingle)\b|碎石|砂砾/, 'gravel'],
+    [/\b(?:mud|muddy)\b|泥泞|泥地/, 'mud'],
+    [/\b(?:earth|dirt|clay)\b|夯土|土路/, 'compacted-earth'],
+    [/\b(?:stone|limestone|sandstone|flagstones?|slabs?)\b|石板|石砖/, 'garden-stone']
+  ];
+  return aliases.find(([pattern]) => pattern.test(description))?.[1] ?? 'default';
+}
+
 function codeTerrainMagnitude(value: unknown): number | undefined {
   const number = Number(value);
   return Number.isFinite(number) ? Math.abs(number) : undefined;
@@ -5529,6 +5559,13 @@ function codeGrassRegion(value: unknown): GrassRegion {
       kind: 'circle',
       center: point2(center),
       radius: Math.max(0.1, finite(radius))
+    };
+  }
+  if (region.kind === 'path') {
+    return {
+      kind: 'path',
+      points: codePointArray(points, 'invalid_map_code_grass_region').slice(0, 64),
+      width: Math.max(0.1, finite(region.width))
     };
   }
   if (region.kind === 'polygon' || points !== undefined) {

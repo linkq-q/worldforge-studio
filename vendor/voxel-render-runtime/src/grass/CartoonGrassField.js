@@ -105,9 +105,17 @@ export class CartoonGrassField {
     this._clear();
     const visibleLayers = this._layers.filter((layer) => layer?.visible !== false);
     if (visibleLayers.length === 0) return;
-    const weights = visibleLayers.map((layer) => grassLayerBudgetWeight(normalizePreset(layer?.preset)));
+    const weights = visibleLayers.map((layer) => {
+      const densities = Array.isArray(layer?.densities) ? layer.densities : [];
+      const coverage = densities.length
+        ? densities.reduce((sum, density) => sum + Math.max(0, Math.min(1, Number(density) || 0)), 0) / densities.length
+        : 0;
+      return coverage > 0 ? Math.max(0.02, coverage) * grassLayerBudgetWeight(normalizePreset(layer?.preset)) : 0;
+    });
     const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    if (totalWeight <= 0) return;
     for (const [index, layer] of visibleLayers.entries()) {
+      if (weights[index] <= 0) continue;
       const budget = Math.max(1, Math.floor(this._style.maxInstances * weights[index] / totalWeight));
       this._buildLayer(layer, budget);
     }

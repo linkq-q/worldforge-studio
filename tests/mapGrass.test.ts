@@ -5,6 +5,7 @@ import { MAX_GRASS_LAYERS, combinedGrassDensity, inferGrassPreset, normalizeGras
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { buildMapGrassField, deriveContactAwareGrassMap } from '../src/client/mapGrassRenderer';
 import { isNormalDepthPrePassMesh } from '../src/client/renderPrePassPolicy';
+import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
 
 describe('map grass layers', () => {
   it('renders wetland short grasses and reed stalks as distinct mixed forms', () => {
@@ -50,6 +51,40 @@ describe('map grass layers', () => {
       inferGrassPreset('enchanted glowing grass'),
       inferGrassPreset('高山苔藓')
     ]).toEqual(['meadow', 'sand', 'wetland', 'farm', 'magic', 'alpine-moss']);
+  });
+
+  it('layers broad meadow grass with a narrower mixed wetland strip', () => {
+    const map = applyMapOperations(createEmptyMap('layered grass', 'layered-grass', [48, 16, 48]), [
+      { type: 'grass.layer.add', layer: { id: 'base', preset: 'meadow', mix: { short: 0.65, tall: 0.3, flowers: 0.05 } } },
+      { type: 'grass.generate', layerId: 'base', region: { kind: 'polygon', points: [[-20,-20],[20,-20],[20,20],[-20,20]] }, density: 0.8, variation: 0, softness: 0 },
+      { type: 'grass.layer.add', layer: { id: 'wet', preset: 'wetland', mix: { short: 0.4, tall: 0.55, flowers: 0.05 } } },
+      { type: 'grass.generate', layerId: 'wet', region: { kind: 'path', points: [[-15,0],[15,0]], width: 8 }, density: 0.8, variation: 0, softness: 0 }
+    ]);
+    expect(sampleGrassDensity(map.grassLayers[0], map, 0, 10)).toBeGreaterThan(0.7);
+    expect(sampleGrassDensity(map.grassLayers[1], map, 0, 0)).toBeGreaterThan(0.7);
+    expect(sampleGrassDensity(map.grassLayers[1], map, 0, 10)).toBe(0);
+    const field = buildMapGrassField(map)!;
+    expect(field.getStats().layerCount).toBe(2);
+    expect(field.group.getObjectByName('grass:base')).toBeDefined();
+    expect(field.group.getObjectByName('grass-reeds:wet')).toBeDefined();
+    field.dispose();
+  });
+
+  it('keeps broad grass visible when a small accent layer shares the instance budget', () => {
+    const map = applyMapOperations(createEmptyMap('grass budget', 'grass-budget', [48, 16, 48]), [
+      { type: 'grass.layer.add', layer: { id: 'base', preset: 'meadow' } },
+      { type: 'grass.generate', layerId: 'base', region: { kind: 'circle', center: [0,0], radius: 22 }, density: 1, variation: 0, softness: 0 },
+      { type: 'grass.layer.add', layer: { id: 'accent', preset: 'wetland' } },
+      { type: 'grass.generate', layerId: 'accent', region: { kind: 'circle', center: [0,0], radius: 3 }, density: 1, variation: 0, softness: 0 }
+    ]);
+    const style = { ...DEFAULT_RUNTIME_GRASS_STYLE, maxInstances: 1000 };
+    const alone = buildMapGrassField({ ...map, grassLayers: map.grassLayers.slice(0, 1) }, style)!;
+    const layered = buildMapGrassField(map, style)!;
+    const count = (field: typeof layered) => (field.group.getObjectByName('grass:base') as import('three').InstancedMesh).count;
+    expect(count(layered)).toBeGreaterThan(count(alone) * 0.8);
+    expect(layered.group.getObjectByName('grass-reeds:accent')).toBeDefined();
+    alone.dispose();
+    layered.dispose();
   });
 
   it('derives contact clearance without mutating authored grass densities', () => {
