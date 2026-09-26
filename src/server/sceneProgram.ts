@@ -159,8 +159,8 @@ Available API:
 - scene.distance2D(left, right), scene.rotate2D(point, degrees, center?)
 - scene.placeOn(selector, parentId, { name?, scale?, yaw?, offset?: [localX,localZ], gap?, groupId?, layer?: 1|2|3|4 }) -> objectId
 - scene.mountOn(selector, parentId, { side: "north"|"south"|"east"|"west", name?, scale?, yaw?, offset?: [horizontal,vertical], inset?, groupId?, layer?: 1|2|3|4 }) -> objectId
-- scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving", intensity?)
-- scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
+- scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving"|"snow", intensity?)
+- scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving"|"snow", region, intensity?)
 - scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, widths?, level?, levels?, depth?, shorelineProfile?: "steep"|"gentle", carveTerrain?, bankHeight?, bankWidth?, shorelineSmoothness?, shorelineIrregularity? })
 - scene.grass(id, region, { name?, preset?, density?, variation?, softness?, height? })
 - scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", align?: "forward"|"side", contact?: "seam", groupSize?, groupId?, layer?: 1|2|3|4 })

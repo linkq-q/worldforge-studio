@@ -8,6 +8,7 @@ const DRY_COLOR = new THREE.Color('#b89558');
 const ROCK_COLOR = new THREE.Color('#8b857a');
 const SOIL_COLOR = new THREE.Color('#8f704d');
 const PAVING_COLOR = new THREE.Color('#aaa498');
+const SNOW_COLOR = new THREE.Color('#edf3f7');
 
 export interface TerrainPaletteColors {
   base: string;
@@ -42,6 +43,7 @@ export function terrainVertexColor(
   base.lerp(new THREE.Color(palette?.dry ?? DRY_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['dry']) * 0.62);
   base.lerp(new THREE.Color(palette?.rock ?? ROCK_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['rocky']) * 0.88);
   base.lerp(new THREE.Color(palette?.sand ?? SAND_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['sand']) * 0.96);
+  base.lerp(SNOW_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['snow']) * 0.98);
   base.lerp(new THREE.Color(palette?.soil ?? SOIL_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['soil']) * 0.92);
   base.lerp(new THREE.Color(palette?.paving ?? PAVING_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['paving']) * 0.94);
   return colorTuple(base);

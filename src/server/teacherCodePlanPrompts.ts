@@ -26,9 +26,9 @@ The sandbox exposes exactly these 10 APIs. Everything else is yours to build: pl
 The 10 APIs:
 1. api.terrain(preset, {amplitude?, roughness?, seed?}) — preset: 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; 'plain' stays flat.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island', region:{kind:'circle',center:[x,z],radius}|{kind:'path',points, width}|{kind:'polygon',points}, amplitude, softness?}) — local landform.
-3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving', material?, region, intensity?}) — paints existing terrain; cannot create height.
+3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving'|'snow', material?, region, intensity?}) — paints existing terrain; cannot create height.
 4. api.water(id, {type:'lake'|'river'|'ocean', points:[[x,z],...], level, depth}).
-5. api.route({id, name?, points:[[x,z],...], width?, curve?:'polyline'|'catmull-rom', closed?, surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none'}) — returns the route id; paints the path unless surface:'none'.
+5. api.route({id, name?, points:[[x,z],...], width?, curve?:'polyline'|'catmull-rom', closed?, surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'snow'|'none'}) — returns the route id; paints the path unless surface:'none'.
 6. api.grass(id, region, {preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss', density?, height?, mix?:{short?,tall?,flowers?}}).
 7. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'structure'|'environment', variants?, optional?}).
 8. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.

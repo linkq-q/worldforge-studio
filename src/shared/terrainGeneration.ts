@@ -35,7 +35,7 @@ export type TerrainModifier = typeof TERRAIN_MODIFIERS[number];
 export const TERRAIN_ACCESS_MODES = ['walkable', 'scenic'] as const;
 export type TerrainAccessMode = typeof TERRAIN_ACCESS_MODES[number];
 
-export const TERRAIN_SURFACES = ['grass', 'sand', 'rock', 'soil', 'paving'] as const;
+export const TERRAIN_SURFACES = ['grass', 'sand', 'rock', 'soil', 'paving', 'snow'] as const;
 export type TerrainSurfaceKind = typeof TERRAIN_SURFACES[number];
 
 export const TERRAIN_CLIFF_LAYOUTS = ['plateau', 'coast', 'canyon', 'wall', 'terraces'] as const;
@@ -120,7 +120,8 @@ export const TERRAIN_CAPABILITIES: readonly TerrainCapabilityDefinition[] = Obje
   { id: 'surface.sand', label: '沙地', category: 'surface', regionKinds: ALL_REGIONS },
   { id: 'surface.rock', label: '岩地', category: 'surface', regionKinds: ALL_REGIONS },
   { id: 'surface.soil', label: '土壤', category: 'surface', regionKinds: ALL_REGIONS },
-  { id: 'surface.paving', label: '铺装', category: 'surface', regionKinds: ALL_REGIONS }
+  { id: 'surface.paving', label: '铺装', category: 'surface', regionKinds: ALL_REGIONS },
+  { id: 'surface.snow', label: '雪地', category: 'surface', regionKinds: ALL_REGIONS }
 ]);
 
 export function terrainCapabilitySummary(): unknown[] {
@@ -526,7 +527,8 @@ export function applyTerrainSurfaceInPlace(map: EditableMap, value: unknown): Te
     sand: ['sand', 'dry'],
     rock: ['rocky'],
     soil: ['soil'],
-    paving: ['paving', 'settlement']
+    paving: ['paving', 'settlement'],
+    snow: ['snow']
   };
   const zone = {
     id: params.zoneId,

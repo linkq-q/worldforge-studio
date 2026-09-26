@@ -2369,7 +2369,7 @@ const TERRAIN_TEXTURE_SIZE = 1536;
 const SURFACE_TEXTURE_SIZE = 768;
 type TerrainTextureChannel = 'roughness' | 'bump';
 type TerrainRecipeDetailChannel = 'color' | TerrainTextureChannel;
-type TerrainDetailSurface = 'grass' | 'soil' | 'sand' | 'rocky' | 'paving';
+type TerrainDetailSurface = 'grass' | 'soil' | 'sand' | 'rocky' | 'paving' | 'snow';
 
 function createTerrainTextureSet(
   map: EditableMap,
@@ -2815,7 +2815,8 @@ const SEMANTIC_SURFACE_COLORS = {
   soil: '#9d7955',
   paving: '#b8b2a6',
   settlement: '#d7c5a6',
-  rocky: '#c3c0b2'
+  rocky: '#c3c0b2',
+  snow: '#edf3f7'
 } as const;
 
 const TERRAIN_RECIPE_COLORS = {
@@ -2845,7 +2846,8 @@ const TERRAIN_ROUGHNESS_COLORS: Record<TerrainDetailSurface, string> = {
   soil: '#dddddd',
   sand: '#f5f5f5',
   rocky: '#cecece',
-  paving: '#bdbdbd'
+  paving: '#bdbdbd',
+  snow: '#f5f5f5'
 };
 
 const TERRAIN_BUMP_COLORS: Record<TerrainDetailSurface, string> = {
@@ -2853,7 +2855,8 @@ const TERRAIN_BUMP_COLORS: Record<TerrainDetailSurface, string> = {
   soil: '#8d8d8d',
   sand: '#878787',
   rocky: '#969696',
-  paving: '#838383'
+  paving: '#838383',
+  snow: '#808080'
 };
 
 function drawSemanticTerrainSurface(
@@ -2872,7 +2875,7 @@ function drawSemanticTerrainSurface(
       : undefined;
     const opacity = recipeColor
       ? Math.min(0.88, 0.62 + zone.intensity * 0.22)
-      : Math.min(0.24, 0.08 + zone.intensity * 0.12);
+      : tag === 'snow' ? zone.intensity * 0.96 : Math.min(0.24, 0.08 + zone.intensity * 0.12);
     drawSemanticZoneShape(ctx, map, zone, recipeColor ?? SEMANTIC_SURFACE_COLORS[tag], opacity, width, height);
   }
   for (const water of map.waterBodies) drawWetShore(ctx, map, water, width, height);
@@ -2888,7 +2891,7 @@ function drawTerrainMaterialZones(
 ): void {
   for (const zone of map.visualSemantics.zones) {
     const tag = [...zone.tags].reverse().find((item): item is TerrainDetailSurface => (
-      ['grass', 'soil', 'sand', 'rocky', 'paving'].includes(item)
+      ['grass', 'soil', 'sand', 'rocky', 'paving', 'snow'].includes(item)
     ));
     if (!tag) continue;
     const colors = channel === 'roughness' ? TERRAIN_ROUGHNESS_COLORS : TERRAIN_BUMP_COLORS;
@@ -3546,7 +3549,8 @@ function drawProceduralTerrainDetail(
     soil: style.soilRecipe === 'moist' ? ['#493b30', '#725841'] : ['#806246', '#b08a62'],
     sand: style.sandRecipe === 'beach' ? ['#c9ae72', '#f0d79b'] : ['#b79858', '#dec174'],
     rocky: ['#777873', '#b1ada3'],
-    paving: ['#777b79', '#b8b6af']
+    paving: ['#777b79', '#b8b6af'],
+    snow: ['#dbe6ee', '#ffffff']
   } as const;
   const count = Math.round(700 + style.detailStrength * 1600);
   ctx.save();
@@ -3595,14 +3599,16 @@ function drawProceduralTerrainPropertyDetail(
     soil: style.soilRecipe === 'moist' ? ['#858585', '#c2c2c2'] : ['#b8b8b8', '#f4f4f4'],
     sand: ['#dddddd', '#ffffff'],
     rocky: ['#a0a0a0', '#e8e8e8'],
-    paving: ['#929292', '#dddddd']
+    paving: ['#929292', '#dddddd'],
+    snow: ['#eeeeee', '#ffffff']
   } as const;
   const bump = {
     grass: ['#6c6c6c', '#a2a2a2'],
     soil: ['#606060', '#b0b0b0'],
     sand: ['#6a6a6a', '#a8a8a8'],
     rocky: ['#464646', '#c4c4c4'],
-    paving: ['#505050', '#aaaaaa']
+    paving: ['#505050', '#aaaaaa'],
+    snow: ['#7c7c7c', '#848484']
   } as const;
   const palettes = channel === 'roughness' ? roughness : bump;
   const count = Math.round(900 + style.detailStrength * 2100);
@@ -3642,12 +3648,12 @@ function terrainDetailSurfaceAt(
   x: number,
   z: number
 ): { surface: TerrainDetailSurface; weight: number } {
-  const tags: readonly TerrainDetailSurface[] = ['grass', 'soil', 'sand', 'rocky', 'paving'];
+  const tags: readonly TerrainDetailSurface[] = ['grass', 'soil', 'sand', 'rocky', 'paving', 'snow'];
   let surface: TerrainDetailSurface = 'grass';
   let weight = combinedGrassDensity(map, x, z) * grassSurfaceCoverage(map, x, z);
   for (const tag of tags) {
     const candidate = terrainSemanticSurfaceWeight(map, x, z, [tag]);
-    if (candidate > weight) {
+    if (candidate > weight || (tag === 'snow' && candidate > 0 && candidate === weight && surface !== 'soil' && surface !== 'paving')) {
       surface = tag;
       weight = candidate;
     }

@@ -68,7 +68,7 @@ api.surface({
 });
 ```
 
-合法 `modifier` 为 `mountain / ridge / valley / basin / cliff / terrace / dune / island`；合法 `surface` 为 `grass / sand / rock / soil / paving`。Scene Code 编译器负责把 AI 表单转换成严格操作：`center:[x,z]` 转为内部坐标、方向向量转为角度、分层数组转为层数，语义化布局与通行要求转为项目枚举；草地区域的 `outline / boundary` 转为多边形，`origin / outerRadius` 转为圆形，并从名称语义推断草地预设。`rolling`、`gentle central basin`、`packed earth` 等旧式明确语义也在这一编译层映射；不会通过静默丢弃字段来换取通过。
+合法 `modifier` 为 `mountain / ridge / valley / basin / cliff / terrace / dune / island`；合法 `surface` 为 `grass / sand / rock / soil / paving / snow`。Scene Code 编译器负责把 AI 表单转换成严格操作：`center:[x,z]` 转为内部坐标、方向向量转为角度、分层数组转为层数，语义化布局与通行要求转为项目枚举；草地区域的 `outline / boundary` 转为多边形，`origin / outerRadius` 转为圆形，并从名称语义推断草地预设。`rolling`、`gentle central basin`、`packed earth` 等旧式明确语义也在这一编译层映射；不会通过静默丢弃字段来换取通过。
 
 - 意图与构图：`sceneIntent`、`design`
 - 基础地形：`terrain`

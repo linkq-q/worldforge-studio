@@ -64,7 +64,7 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
 /** Render-only contact mask. Persisted/manual grass densities remain untouched. */
 export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
   const hasNonGrassSurface = map.visualSemantics.zones.some(
-    (zone) => zone.tags.some((tag) => ['sand', 'soil', 'rocky', 'paving', 'clear'].includes(tag))
+    (zone) => zone.tags.some((tag) => ['sand', 'soil', 'rocky', 'paving', 'clear', 'snow'].includes(tag))
   );
   if (map.waterBodies.length === 0 && map.objects.length === 0 && !hasNonGrassSurface && map.layout.edgeMask.kind === 'none') return map;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
@@ -128,10 +128,11 @@ export function grassSurfaceCoverage(
   const rocky = terrainSemanticSurfaceWeight(map, x, z, ['rocky']);
   const paving = terrainSemanticSurfaceWeight(map, x, z, ['paving']);
   const clear = terrainSemanticSurfaceWeight(map, x, z, ['clear']);
-  if (preset === 'sand') return 1 - Math.max(rocky, paving, soil * 0.72, clear);
-  if (preset === 'alpine-moss') return 1 - Math.max(sand, rocky * 0.78, paving, soil * 0.72, clear);
-  if (preset === 'magic') return 1 - Math.max(paving, clear);
-  return 1 - Math.max(sand, rocky, paving, soil * 0.72, clear);
+  const snow = terrainSemanticSurfaceWeight(map, x, z, ['snow']);
+  if (preset === 'sand') return 1 - Math.max(rocky, paving, soil * 0.72, clear, snow);
+  if (preset === 'alpine-moss') return 1 - Math.max(sand, rocky * 0.78, paving, soil * 0.72, clear, snow);
+  if (preset === 'magic') return 1 - Math.max(paving, clear, snow);
+  return 1 - Math.max(sand, rocky, paving, soil * 0.72, clear, snow);
 }
 
 function grassWaterFactor(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
