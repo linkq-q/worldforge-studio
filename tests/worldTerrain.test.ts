@@ -336,6 +336,77 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('forms a broad connected island when compact constraints specify a complete ocean ring', () => {
+    const recipe: WorldRecipe = {
+      version: 1, seed: 6103402, size: 500, reliefProfile: 'compact', heightScale: 0.12,
+      constraints: [
+        { region: 'north', biome: 'ocean' }, { region: 'south', biome: 'ocean' },
+        { region: 'east', biome: 'ocean' }, { region: 'west', biome: 'ocean' },
+        { region: 'northwest', biome: 'ocean' }, { region: 'northeast', biome: 'ocean' },
+        { region: 'southwest', biome: 'ocean' }, { region: 'southeast', biome: 'ocean' },
+        { region: 'center', biome: 'grassland' }
+      ],
+      landforms: [
+        { center: [0, 35], radius: [175, 145], height: 7 },
+        { center: [-20, -155], radius: [72, 62], height: 34 },
+        { center: [-78, -128], radius: [38, 48], height: 18 }
+      ],
+      terrainBrushes: [
+        { id: 'north-forest-ridge', mode: 'raise', amount: 9, feather: 18,
+          region: { kind: 'path', points: [[-92,-190],[-55,-168],[-18,-148],[22,-158],[65,-190]], width: 22 } },
+        { id: 'natural-mountain-gully', mode: 'lower', amount: 6, feather: 14,
+          region: { kind: 'path', points: [[-24,-198],[-18,-174],[-10,-150],[-2,-126],[10,-103]], width: 10 } },
+        { id: 'port-terrace', mode: 'flatten', height: 3, strength: 0.25, feather: 22,
+          region: { kind: 'circle', center: [54,48], radius: 54 } }
+      ],
+      waterBodies: [{
+        id: 'inland-creek', type: 'river',
+        region: { kind: 'path', points: [[-20,-190],[-16,-166],[-10,-140],[-2,-112],[8,-82],[19,-48],[32,-14],[48,24]], width: 6 },
+        levels: [-1,-1,-1,-1,-1,-1,-1,-1], depth: 1.2,
+        shorelineSmoothness: 0.8, shorelineIrregularity: 0, shorelineProfile: 'gentle', seed: 6103402
+      }]
+    };
+    const percentile = (values: number[], fraction: number) => values.sort((a, b) => a - b)
+      [Math.floor((values.length - 1) * fraction)];
+    for (const seed of [6103402, 99173]) {
+      const sample = createWorldSampler({ ...recipe, seed }), side = 21;
+      const dry = Array.from({ length: side }, () => Array.from({ length: side }, () => false));
+      const heights: number[] = [], settlementSlopes: number[] = [];
+      let borderDry = 0;
+      for (let iz = 0; iz < side; iz++) for (let ix = 0; ix < side; ix++) {
+        const x = -250 + ix * 25, z = -250 + iz * 25, height = sample(x, z).height;
+        dry[iz][ix] = height > 2;
+        if (dry[iz][ix]) heights.push(height);
+        if (dry[iz][ix] && (ix === 0 || iz === 0 || ix === side - 1 || iz === side - 1)) borderDry++;
+      }
+      let largest = 0;
+      const visited = new Set<string>();
+      for (let iz = 0; iz < side; iz++) for (let ix = 0; ix < side; ix++) {
+        if (!dry[iz][ix] || visited.has(`${ix}:${iz}`)) continue;
+        let count = 0;
+        const pending: Array<[number, number]> = [[ix, iz]];
+        while (pending.length > 0) {
+          const [x, z] = pending.pop()!, key = `${x}:${z}`;
+          if (visited.has(key) || !dry[z]?.[x]) continue;
+          visited.add(key); count++;
+          pending.push([x - 1, z], [x + 1, z], [x, z - 1], [x, z + 1]);
+        }
+        largest = Math.max(largest, count);
+      }
+      for (let z = -70; z <= 120; z += 6) for (let x = -120; x <= 120; x += 6) {
+        if (Math.hypot(x, z) <= 125 && sample(x, z).height > 2) {
+          settlementSlopes.push(sampleWorldSlope(sample, x, z));
+        }
+      }
+      expect(heights.length).toBeGreaterThan(80);
+      expect(heights.length).toBeLessThan(140);
+      expect(largest / heights.length).toBeGreaterThan(0.97);
+      expect(borderDry).toBe(0);
+      expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(8.5);
+      expect(percentile(settlementSlopes, 0.95)).toBeLessThan(0.32);
+    }
+  });
+
   it('adds broad ridges and erosion grooves to compact mountain relief without a steep slope tail', () => {
     const medianResiduals: number[] = [], grooveShares: number[] = [], ridgeShares: number[] = [];
     for (const seed of [1, 42, 2309, 99173]) {

@@ -432,6 +432,10 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
   // Stored recipes without a profile predate scale-aware relief and must replay exactly.
   const compactRelief = recipe.reliefProfile === 'compact';
   const terrainScale = compactRelief ? clamp(size / 6400, 0.125, 1) : 1;
+  const boundedIslandMass = compactRelief
+    && constraints.some(constraint => constraint.region === 'center' && constraint.biome !== 'ocean')
+    && (['west', 'east', 'north', 'south', 'northwest', 'northeast', 'southwest', 'southeast'] as const)
+      .every(region => constraints.some(constraint => constraint.region === region && constraint.biome === 'ocean'));
   const waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed);
   const sample = (x: number, z: number): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
@@ -456,6 +460,13 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       total += w;
     }
     continentalness = continentalness / total + broad * 0.14;
+    if (boundedIslandMass) {
+      // A complete ocean ring explicitly describes an island. Keep its mass inside the ring;
+      // the warped coordinates and coast folds retain an irregular, rolling shoreline.
+      const islandFloor = 0.14 - smooth(0.3, 0.98, Math.hypot(ux, uz)) * 0.24;
+      const floorBlend = clamp(0.5 + (continentalness - islandFloor) / 0.12);
+      continentalness = mix(islandFloor, continentalness, floorBlend) + 0.06 * floorBlend * (1 - floorBlend);
+    }
     if (compactRelief) {
       // Global-coordinate folds stop a 500m coast from tracing one region-anchor line.
       const coastBand = 1 - smooth(0.04, 0.28, Math.abs(continentalness));
