@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorldForge 城市布局研究</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#17212a;font:14px system-ui;color:#ecf3f4}canvas{display:block}nav{position:fixed;left:20px;top:18px;background:#15202ae8;padding:14px 18px;border-radius:10px;max-width:370px}h1{font-size:17px;margin:0 0 8px}button,a{color:inherit;border:1px solid #657383;border-radius:5px;background:#293945;padding:6px 10px;text-decoration:none;cursor:pointer}p{margin:10px 0 0;color:#bdcbd5}#error{white-space:pre-wrap;background:#811;position:fixed;inset:20px;display:none}</style></head>
+<body><canvas id="scene"></canvas><nav><h1 id="title">城市布局研究</h1><button data-view="oblique">鸟瞰</button> <button data-view="top">俯视</button> <button data-view="near">近景</button> <a id="editor">编辑器</a><button id="finish" hidden>恢复默认路面</button><p>拖动旋转 · 滚轮缩放</p></nav><pre id="error"></pre>
+<script type="module">
+import {createMapViewer} from '/src/client/mapViewer.ts';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const params=new URLSearchParams(location.search);
+try {
+  const mapId=params.get('map'), draft=params.get('draft');
+  if (!(mapId && /^map-[a-z0-9-]+$/.test(mapId)) && !(draft && /^[a-z0-9-]+$/.test(draft))) throw Error('Missing map or draft');
+  const response=await fetch(mapId ? `http://127.0.0.1:8797/api/editor/maps/${mapId}` : `/output/urban-city-study/${draft}-draft-map.json`);
+  if (!response.ok) throw Error(`Map HTTP ${response.status}`);
+  const body=await response.json(), map=body.map ?? body;
+  const finishId=params.get('finish'),schemeId=params.get('scheme');
+  let scheme=null;
+  if(finishId||schemeId){
+    if(!/^[a-z0-9-]+$/.test(finishId||schemeId))throw Error('Invalid finish');
+    const finishResponse=await fetch(schemeId?`http://127.0.0.1:8797/api/editor/render-schemes/${schemeId}`:`/output/urban-city-study/${finishId}.json`);
+    if(!finishResponse.ok)throw Error(`Finish HTTP ${finishResponse.status}`);
+    const finishBody=await finishResponse.json();scheme=finishBody.renderScheme??finishBody;
+  }
+  const viewer=await createMapViewer({canvas:document.querySelector('canvas'),map,scheme,autoStart:false,pixelRatio:1});
+  const controls=new OrbitControls(viewer.camera,viewer.renderer.domElement);
+  controls.enableDamping=false;
+  const span=Math.max(map.box.size[0],map.box.size[2]);
+  const frame=()=>viewer.tick(0);
+  const view=(kind)=>{
+    const y=kind==='near'?5:5;
+    controls.target.set(0,y,0);
+    viewer.camera.up.set(0,1,0);
+    if(kind==='top'){viewer.camera.up.set(0,0,-1);viewer.camera.position.set(0,span*1.35,0.001);}
+    else if(kind==='near'){viewer.camera.position.set(span*.38,span*.20,span*.43);}
+    else{viewer.camera.position.set(span*.86,span*.86,span*.86);}
+    viewer.camera.near=.1;viewer.camera.far=span*10;viewer.camera.updateProjectionMatrix();
+    viewer.camera.lookAt(controls.target);controls.update();frame();
+  };
+  const resize=()=>{viewer.setSize(innerWidth,innerHeight);frame();};
+  resize();view(params.get('view') ?? 'oblique');
+  controls.addEventListener('change',frame);addEventListener('resize',resize);
+  document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>view(button.dataset.view));
+  document.querySelector('#title').textContent=map.name;
+  document.querySelector('#editor').href=`/?map=${mapId}`;
+  if(!mapId)document.querySelector('#editor').style.display='none';
+  const finish=enabled=>{viewer.setRenderScheme(enabled?scheme:null);frame();};
+  if(scheme){
+    const button=document.querySelector('#finish');button.hidden=false;let enabled=true;
+    button.onclick=()=>{enabled=!enabled;finish(enabled);button.textContent=enabled?'恢复默认路面':'查看 AI 路面配色';};
+  }
+  if(params.has('capture'))document.querySelector('nav').style.display='none';
+  window.cityStudy={viewer,view,frame,finish,controls,stats:{objects:map.objects.length,assets:map.assets?.length ?? 0,roads:map.guides.length},ready:true};
+}catch(error){document.querySelector('#error').style.display='block';document.querySelector('#error').textContent=String(error.stack ?? error);window.cityStudyError=String(error);}
+</script></body></html>
