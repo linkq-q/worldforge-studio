@@ -216,6 +216,20 @@ describe('world generation compiler', () => {
     expect(() => compileWorldDraft({...draft,assets:[]}, {...generatedRequest,generateAssets:false})).not.toThrow();
   });
 
+  it('allows enough asset families for civic buildings, ordinary roles and ecology', () => {
+    const draft = validDraft() as any;
+    draft.assets = Array.from({length: 13}, (_, index) => ({
+      key: `family-${index}`, name: `Family ${index}`, role: 'house' as const,
+      prompt: `A local building family ${index}`
+    }));
+    expect(() => compileWorldDraft(draft, request)).not.toThrow();
+    draft.assets.push(...Array.from({length: 4}, (_, index) => ({
+      key: `extra-${index}`, name: `Extra ${index}`, role: 'house' as const,
+      prompt: `Another building family ${index}`
+    })));
+    expect(() => compileWorldDraft(draft, request)).toThrow('invalid_world_draft');
+  });
+
   it('repairs only missing asset coverage while preserving the first layout trace and spatial choices', async () => {
     const input={...request,generateAssets:true,reusableAssetIds:['asset-existing']};
     const intent=parseWorldIntentDraft(rawSoloIntent(input),input),evidence=createWorldSitingEvidence(intent);
