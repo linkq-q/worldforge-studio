@@ -4,7 +4,7 @@ import { ECOLOGY_CHUNK_SIZE, selectEcologyChunks, type EcologyRule, type Ecology
 import { worldRoadSampleSpacing, type WorldBundle } from '../shared/worldPlanning';
 import type { MapGuide } from '../shared/mapGuide';
 import {
-  buildWorldAssetBuildingPlacements, buildWorldAssetBuildings, pickWorldAsset, pickWorldTreeAsset,
+  buildWorldAssetBuildingPlacements, buildWorldAssetBuildings, pickWorldAsset, pickWorldEcologyAsset,
   worldAssetBuildingMatrix, type WorldAssetLibrary, type WorldBuildingPlacement
 } from './worldAssets';
 import { createCollisionMeshInstance, MeshCollisionWorld } from './mapMeshCollision';
@@ -64,10 +64,12 @@ export class WorldEcologyView {
         const instances = event.data.data.instances as EcologyInstance[];
         const root = new THREE.Group(), near = new THREE.Group(), far = new THREE.Group();
         root.position.set(chunk.x * ECOLOGY_CHUNK_SIZE, 0, chunk.z * ECOLOGY_CHUNK_SIZE);
-        for (const coarse of [false, true]) for (const kind of ['broadleaf', 'pine', 'shrub', 'rock'] as const) {
-          const entries = instances.filter(i => i.kind === kind);
+        const groups = new Map(instances.map(instance => [`${instance.ruleId}:${instance.kind}`, instance] as const));
+        for (const coarse of [false, true]) for (const representative of groups.values()) {
+          const kind = representative.kind;
+          const entries = instances.filter(i => i.ruleId === representative.ruleId && i.kind === kind);
           if (!entries.length) continue;
-          const tree = assets && (kind === 'broadleaf' || kind === 'pine') ? pickWorldTreeAsset(assets, entries[0]?.id ?? kind) : undefined;
+          const tree = assets ? pickWorldEcologyAsset(assets, representative) : undefined;
           const scale = tree ? 9 / Math.max(tree.size.x, tree.size.z) : 1;
           const shapes: Prototype[] = tree && !coarse ? [{geometry:tree.geometry,material:tree.material,y:0,scale:[scale,scale,scale]}] : prototypes(kind, coarse);
           for (const p of shapes) {

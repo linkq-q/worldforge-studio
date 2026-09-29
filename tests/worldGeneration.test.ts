@@ -99,6 +99,17 @@ describe('world generation compiler', () => {
     mocks.recordGenerationTrace.mockReset();
   });
 
+  it('preserves a public building siting purpose and rejects unsupported purposes', () => {
+    const intent = rawSeedIntent();
+    const publicBuilding = intent.plan.towns[0].publicBuildings[0] as typeof intent.plan.towns[0]['publicBuildings'][number] & { siting?: string };
+    publicBuilding.siting = 'waterfront';
+    expect(parseWorldIntentDraft(intent, { prompt: intent.plan.prompt, seed: 9012901, size: 2000 })
+      .plan.towns[0].publicBuildings[0]).toEqual(expect.objectContaining({ id: 'market', siting: 'waterfront' }));
+    publicBuilding.siting = 'floating';
+    expect(() => parseWorldIntentDraft(intent, { prompt: intent.plan.prompt, seed: 9012901, size: 2000 }))
+      .toThrow('invalid_world_public_building_siting');
+  });
+
   it('rejects semantic fields that would otherwise be silently overwritten or ignored', () => {
     const extra = { ...validDraft(), topology: 'keep me' };
     expect(() => compileWorldDraft(extra, request)).toThrow('world_unknown_draft_field:topology');
@@ -147,6 +158,20 @@ describe('world generation compiler', () => {
       .toBe('asset-existing');
     expect(() => validateWorldGenerationRequest({ ...request, reusableAssetIds: Array.from({length:65},(_,i)=>'asset-'+i) }))
       .toThrow('invalid_world_generation_request');
+  });
+
+  it('requires generated ecology assets to bind one exact rule and matching kind', () => {
+    const draft = validDraft() as any;
+    draft.plan.ecology = [{id:'harbor-forest',kind:'broadleaf',biome:'forest',density:.7,spacing:18,maxSlope:25,scale:[.8,1.2]}];
+    draft.assets.push({key:'oak',name:'Harbor oak',role:'tree',prompt:'A broadleaf harbor oak'});
+    expect(() => compileWorldDraft(draft, request)).toThrow('invalid_world_asset_request');
+    draft.assets[0].ecologyKind = 'broadleaf';
+    draft.assets[0].ecologyRuleId = 'harbor-forest';
+    expect(compileWorldDraft(draft, request).draft.assets[0]).toMatchObject({
+      ecologyKind: 'broadleaf', ecologyRuleId: 'harbor-forest'
+    });
+    draft.assets[0].ecologyKind = 'pine';
+    expect(() => compileWorldDraft(draft, request)).toThrow('invalid_world_asset_request');
   });
 
   it('repairs an invalid GPT intent once and returns geometry audits', async () => {

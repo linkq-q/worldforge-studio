@@ -55,19 +55,17 @@ describe('deterministic chunk ecology', () => {
     expect(generateEcologyChunk({ ...recipe, seed: 43 }, trees, chunk, { sample: flat }).instances).not.toEqual(first.instances);
   });
 
-  it('thins density monotonically without moving trees or changing neighboring species', () => {
+  it('applies density before spacing while keeping accepted candidate transforms deterministic', () => {
     const generate = (factor: number) => generateEcologyChunk(recipe, trees.map(rule => ({ ...rule, density: factor })), { x: 0, z: 0 }, { sample: flat });
     const high = generate(1), medium = generate(0.6), low = generate(0.25);
     expect(low.instances.length).toBeGreaterThan(0);
     expect(low.instances.length).toBeLessThan(medium.instances.length);
-    expect(medium.instances.length).toBeLessThan(high.instances.length);
-    const mediumById = new Map(medium.instances.map(point => [point.id, point]));
-    const highById = new Map(high.instances.map(point => [point.id, point]));
-    for (const point of low.instances) expect(mediumById.get(point.id)).toEqual(point);
-    for (const point of medium.instances) expect(highById.get(point.id)).toEqual(point);
+    expect(generate(1)).toEqual(high);
+    const byId = new Map([...high.instances, ...medium.instances, ...low.instances].map(point => [point.id, point]));
+    for (const result of [high, medium, low]) for (const point of result.instances) expect(byId.get(point.id)).toEqual(point);
     expect(low.candidateCount).toBe(high.candidateCount);
     const noOak = generateEcologyChunk(recipe, trees.map(rule => ({ ...rule, density: rule.kind === 'pine' ? 1 : 0 })), { x: 0, z: 0 }, { sample: flat });
-    expect(noOak.instances).toEqual(high.instances.filter(point => point.kind === 'pine'));
+    expect(noOak.instances).toEqual(generateEcologyChunk(recipe, [trees[1]], { x: 0, z: 0 }, { sample: flat }).instances);
   });
 
 
@@ -79,10 +77,8 @@ describe('deterministic chunk ecology', () => {
     expect(thin.instances.length).toBeGreaterThan(0);
     expect(thin.instances.length).toBeLessThan(fade.instances.length);
     expect(fade.instances.length).toBeLessThan(base.instances.length);
-    const baseById = new Map(base.instances.map(point => [point.id, point]));
-    const fadeById = new Map(fade.instances.map(point => [point.id, point]));
-    for (const point of fade.instances) expect(baseById.get(point.id)).toEqual(point);
-    for (const point of thin.instances) expect(fadeById.get(point.id)).toEqual(point);
+    const known = new Map([...base.instances, ...fade.instances, ...thin.instances].map(point => [point.id, point]));
+    for (const result of [base, fade, thin]) for (const point of result.instances) expect(known.get(point.id)).toEqual(point);
     expect(fade.instances.filter(point => point.x >= 128).length).toBeGreaterThan(fade.instances.filter(point => point.x < 128).length);
     expect(generate(() => 2)).toEqual(base);
     expect(generate(() => -1).instances).toHaveLength(0);
@@ -123,7 +119,19 @@ describe('deterministic chunk ecology', () => {
     const blended = generate((x, z) => ({ ...flat(x, z), weights: { ...flat(x, z).weights, forest: 0.4, grassland: 0.6 } }));
     expect(blended.instances.length).toBeGreaterThan(0);
     expect(blended.instances.length).toBeLessThan(base.instances.length);
-    for (const point of blended.instances) expect(base.instances).toContainEqual(point);
+    const baseById = new Map(base.instances.map(point => [point.id, point]));
+    for (const point of blended.instances) if (baseById.has(point.id)) expect(baseById.get(point.id)).toEqual(point);
+  });
+
+  it('does not let an uninhabitable tree rule thin eligible neighboring trees', () => {
+    const pine = { ...trees[1], density: 1 };
+    const uninhabitableBroadleaf: EcologyRule = {
+      ...trees[0], id: 'desert-broadleaf', biome: 'desert', density: 1
+    };
+    const alone = generateEcologyChunk(recipe, [pine], { x: 0, z: 0 }, { sample: flat });
+    const together = generateEcologyChunk(recipe, [pine, uninhabitableBroadleaf], { x: 0, z: 0 }, { sample: flat });
+    expect(together.instances.filter(instance => instance.kind === 'pine')).toEqual(alone.instances);
+    expect(together.instances.every(instance => instance.ruleId === 'pine')).toBe(true);
   });
 
   it('passes a footprint radius to exclusion and does not rearrange surviving candidates', () => {
@@ -135,7 +143,8 @@ describe('deterministic chunk ecology', () => {
     expect(exclusion).toHaveBeenCalled();
     for (const point of result.instances) {
       expect(point.x - (point.kind === 'pine' ? 11 : 9)).toBeGreaterThanOrEqual(128);
-      expect(base.instances).toContainEqual(point);
+      const original = base.instances.find(candidate => candidate.id === point.id);
+      if (original) expect(original).toEqual(point);
     }
     expect(new Set(exclusion.mock.calls.map(call => call[2]))).toEqual(new Set([9, 11]));
   });
@@ -145,7 +154,7 @@ describe('deterministic chunk ecology', () => {
     const sample = vi.fn(flat);
     const small = generateEcologyChunk({ ...recipe, size: 8000 }, rules, { x: 0, z: 0 }, { sample });
     expect(small.candidateCount).toBeLessThanOrEqual(8 * 44 * 44);
-    expect(sample.mock.calls.length).toBeLessThanOrEqual(small.candidateCount * 5);
+    expect(sample.mock.calls.length).toBeLessThanOrEqual(8 * 78 * 78 * 5);
     expect(sample.mock.calls.length).toBeGreaterThan(0);
     sample.mockClear();
     expect(generateEcologyChunk({ ...recipe, size: 256000 }, rules, { x: 0, z: 0 }, { sample })).toEqual(small);

@@ -4,7 +4,7 @@ import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { applyMapOperations } from '../shared/mapOperations';
 import { validateWorldRecipe, createWorldSampler } from '../shared/worldTerrain';
 import { WORLD_REGIONS, type WorldRecipe, type WorldRegion, type WorldTerrainBrush } from '../shared/worldTerrain';
-import { validateEcologyRules, type EcologyRule } from '../shared/worldEcology';
+import { validateEcologyRules, type EcologyKind, type EcologyRule } from '../shared/worldEcology';
 import { findWorldRoute, findWorldSiteCandidates,
   type WorldSiteCandidate, type WorldSiteIntent } from '../shared/worldSiting';
 import { validateWorldPlan, validateWorldBundle, type TownBuilding, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
@@ -34,6 +34,8 @@ export interface WorldAssetRequest {
   enterable?: boolean;
   strategy?: 'single' | 'assembly';
   existingAssetId?: string;
+  ecologyKind?: EcologyKind;
+  ecologyRuleId?: string;
 }
 export interface WorldAssetResult {
   id: string;
@@ -43,6 +45,8 @@ export interface WorldAssetResult {
   assetId: string;
   provider: 'deepseek' | 'existing';
   strategy: 'single' | 'assembly';
+  ecologyKind?: EcologyKind;
+  ecologyRuleId?: string;
 }
 export interface WorldDraft {
   plan: WorldPlan;
@@ -89,7 +93,7 @@ const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. R
 This is terrain intent, not final geometry. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
 recipe={version:1,seed,size,heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Regions: west/east/north/south/northwest/northeast/southwest/southeast/center. Biomes: ocean/grassland/forest/desert/mountains/snow. Constraints blend continuously and express broad intent. For playable 500..2000m worlds, prefer heightScale around 0.08..0.15; raise exceptional volcanoes and other local relief with landforms=[{center:[x,z],radius:[rx,rz],height}] instead of globally exaggerating terrain.
 Brush region is {kind:'circle',center:[x,z],radius} or {kind:'path',points:[[x,z],...],width}. terrainBrushes are {id,mode:'raise'|'lower',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:PATH,heights:[one per path point],strength?,feather?}. Use bounded local refinement only. Do not guess road or settlement grade heights: the server samples and grades their access after choosing sites. waterBodies=[{id,type:'lake'|'river',region,levels:[one for circle or one per path point],depth,shorelineSmoothness?:0..1,shorelineIrregularity?:0..0.4,shorelineProfile?:'steep'|'gentle',seed?:uint32}]. Lakes require circle regions and usually use smoothness 0.7..0.95 and irregularity 0.08..0.28; rivers require path regions, smoothness 0.65..0.9 and irregularity 0. shorelineProfile controls bank width and slope. Sea is terrain below zero. biomePatches=[{id,region,biome,feather?}].
-towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. Choose pattern from the requested culture and terrain before siting; the server validates that exact pattern. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. Public buildings declare program and footprint only. No center, foundation, ports, rotation or landmark coordinates.
+towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?,siting?:'central'|'waterfront'|'gateway'|'high-ground'}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. Choose pattern from the requested culture and terrain before siting; the server validates that exact pattern. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. For each named place, consider who uses it, how they reach it, what they exchange there, and which terrain feature shapes its entrance and public space. Choose civic functions appropriate to that life rather than repeating a checklist. Use siting only for a real spatial reason: central gathering, waterfront work, gateway trade, or high-ground lookout. Public buildings declare program, footprint and siting intent only. No center, foundation, ports, rotation or landmark coordinates.
 roads=[{id,name,fromTownId,toTownId,width,tags}]. They express topology and purpose only; the server routes them over sampled terrain. No points or invented elevations.
 ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?}]. Never enumerate ordinary buildings or vegetation. Preserve the user's named destinations and relations. Limits: <=12 towns, <=32 roads, <=8 ecology rules, <=16 landforms.`;
 
@@ -97,7 +101,7 @@ const WORLD_LAYOUT_PROMPT = `Choose only from supplied sampled site candidates. 
 {towns:[{townId,candidateId,landmarkLayoutId?}],settlements:[{townId,options}],assets:[]}.
 Choose exactly one candidate per town and only the available:true road pairs, which form one jointly validated candidate graph. A town with publicBuildings must choose a supplied landmarkLayoutId for that candidate and matching pattern. Never return recipe, terrain heights, centers, ports, world-road points, landmark coordinates or rotations. The server materializes those from actual samples.
 options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?}. kind, pattern and density must exactly preserve intent. Invalid or unreachable public footprints are omitted from candidates, never faked.
-Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?}], at most 12. existingAssetId may reference only an id in reusableAssets, whose visualSize is its authoritative measured [width,height,depth]. Omit existingAssetId when requesting a new asset; not every asset must be reused.`;
+Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?,ecologyKind?,ecologyRuleId?}], at most 12. Every role:'tree' asset must name exactly one intent.plan.ecology rule through ecologyRuleId and copy that rule's kind into ecologyKind; this keeps palms, broadleaf trees, pines, shrubs and rocks attached to their authored habitat. Non-tree assets omit both fields. existingAssetId may reference only an id in reusableAssets, whose visualSize is its authoritative measured [width,height,depth]. Omit existingAssetId when requesting a new asset; not every asset must be reused.`;
 
 export const WORLD_GENERATION_PROMPT = `You design a playable continuous world in metres. Return JSON only: {plan,settlements,assets}. GPT owns spatial intent and unique architecture; deterministic tools grow ordinary streets/buildings and stream vegetation. Never enumerate trees or ordinary houses. No final rendering style in the world data.
 plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
@@ -109,7 +113,7 @@ Before choosing roads and buildings, silently plan each settlement in this order
 roads use MapGuide: {id,name,points:[[worldX,worldZ],...],curve:'polyline',closed:false,width,tags:[]}. Secondary lanes 2..3.5m, main streets 4..6m, footpaths >=2m; avoid highway proportions in small settlements. Provide connected overland access between named destinations. Explicitly share coordinates at junctions. No road across deep water or cliffs; route around or author a real crossing. Paths with sharp reversals are invalid.
 ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?:[outerMin,preferredMin,preferredMax,outerMax]}]. These seeded rules run per fixed chunk; use a region for oasis groves or local woodland. Don't place trees one-by-one. Derive vegetation density from moisture, slope and human use: freshwater shores should support substantial groves where the climate permits, with a gradual transition into dry hinterland. waterDistance measures metres from explicit fresh lakes and rivers, not the sea; use it for water-dependent groves, omit it for rain-fed forests. Leave roads, entrances and occupied building footprints clear.
 settlements=[{townId,options:{kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?,landmarks?}}]. Choose a distinct planning approach appropriate to each place. The same kernel handles cities and villages. landmarks contains only authored significant buildings: {id,x,z,width,depth,height,use,rotation?,assetKey,enterable}. Reserve a sensible dry footprint and accessible entry. Use only a few landmarks; ordinary houses come from the tool.
-assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions:[width,height,depth],enterable?,strategy:'single'|'assembly',existingAssetId?}], at most 12 reusable families. When the request includes reusableAssets, reuse a suitable listed id through existingAssetId instead of requesting a duplicate; never invent or search for an unlisted id. Asset prompts describe silhouette, dimensions, local +Z entrance, +Y up, openings, joining faces and material identities. Give common houses genuinely distinct silhouettes. Vegetation is clustered by rules. Small ordinary buildings can be single models. Large castles, cathedrals, caravanserais and enterable public buildings use assembly, routed to the existing WorldForge main Scene Code architecture prompt: footprint -> depth -> tiers -> bays, reusable ordinary/corner/entrance modules, preserved passages and courtyard voids. Asset key must match landmark.assetKey. Never generate a large landmark as a solid fake facade when it is meant to be entered.
+assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions:[width,height,depth],enterable?,strategy:'single'|'assembly',existingAssetId?,ecologyKind?,ecologyRuleId?}], at most 12 reusable families. Every role:'tree' asset names its exact ecology rule and matching kind; non-tree assets omit ecology fields. When the request includes reusableAssets, reuse a suitable listed id through existingAssetId instead of requesting a duplicate; never invent or search for an unlisted id. Asset prompts describe silhouette, dimensions, local +Z entrance, +Y up, openings, joining faces and material identities. Give common houses genuinely distinct silhouettes. Vegetation is clustered by rules. Small ordinary buildings can be single models. Large castles, cathedrals, caravanserais and enterable public buildings use assembly, routed to the existing WorldForge main Scene Code architecture prompt: footprint -> depth -> tiers -> bays, reusable ordinary/corner/entrance modules, preserved passages and courtyard voids. Asset key must match landmark.assetKey. Never generate a large landmark as a solid fake facade when it is meant to be entered.
 Limits: <=12 towns, <=8 ecology rules, <=32 world roads, <=16 landforms. Return a new preview, never assume visual acceptance. A failed first output is preserved without retry by default. Only an explicitly enabled repair can provide sampled terrain evidence for one correction; never invent sampled values.`;
 
 function parseJson(text: string): unknown {
@@ -186,15 +190,19 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
     if(pattern!=='organic'&&pattern!=='grid') throw new Error('invalid_world_intent_town');
     const publicIds=new Set<string>();
     const publicBuildings=item.publicBuildings===undefined?[]:(Array.isArray(item.publicBuildings)?item.publicBuildings:[]).map(value=>{
-      const building=exactRecord(value,['id','use','width','depth','height','assetKey','enterable'],
+      const building=exactRecord(value,['id','use','width','depth','height','assetKey','enterable','siting'],
         'invalid_world_public_building','world_unknown_public_building_field');
       const buildingId=generationId(building.id,'invalid_world_public_building'),assetKey=generationId(building.assetKey,'invalid_world_public_building');
       if(publicIds.has(buildingId)||typeof building.use!=='string'||!building.use.trim()||building.use.length>120
         ||(building.enterable!==undefined&&typeof building.enterable!=='boolean')) throw new Error('invalid_world_public_building');
+      if(building.siting!==undefined&&!['central','waterfront','gateway','high-ground'].includes(building.siting as string)) {
+        throw new Error('invalid_world_public_building_siting');
+      }
       publicIds.add(buildingId);
       return {id:buildingId,use:building.use,width:finite(building.width,1,300,'invalid_world_public_building'),
         depth:finite(building.depth,1,300,'invalid_world_public_building'),height:finite(building.height,1,300,'invalid_world_public_building'),
-        assetKey,...(building.enterable===undefined?{}:{enterable:building.enterable})};
+        assetKey,...(building.enterable===undefined?{}:{enterable:building.enterable}),
+        ...(building.siting===undefined?{}:{siting:building.siting as 'central'|'waterfront'|'gateway'|'high-ground'})};
     });
     if(item.publicBuildings!==undefined&&!Array.isArray(item.publicBuildings)) throw new Error('invalid_world_public_building');
     return {id,name:item.name,prompt:item.prompt,radius,
@@ -514,8 +522,10 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
   const patches = settlements.map(s=>generateWorldSettlement(plan,s.townId,sample,s.options));
   const keys = new Set<string>();
   const assets = root.assets.map(assetInput => exactRecord(assetInput,
-    ['key','name','role','prompt','dimensions','enterable','strategy','existingAssetId'], 'invalid_world_asset_request','world_unknown_asset_field')) as unknown as WorldAssetRequest[];
+    ['key','name','role','prompt','dimensions','enterable','strategy','existingAssetId','ecologyKind','ecologyRuleId'],
+    'invalid_world_asset_request','world_unknown_asset_field')) as unknown as WorldAssetRequest[];
   for (const asset of assets) {
+    const ecologyRule=asset.ecologyRuleId?plan.ecology.find(rule=>rule.id===asset.ecologyRuleId):undefined;
     if (!asset || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(asset.key) || keys.has(asset.key)
       || !['house','shop','workshop','tree','landmark'].includes(asset.role)
       || typeof asset.name !== 'string' || !asset.name.trim() || asset.name.length>160
@@ -524,6 +534,8 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
       || (asset.enterable!==undefined && typeof asset.enterable!=='boolean')
       || (asset.existingAssetId!==undefined && (typeof asset.existingAssetId!=='string'
         || !request.reusableAssetIds?.includes(asset.existingAssetId)))
+      || asset.role==='tree' && (!asset.ecologyRuleId || !asset.ecologyKind || !ecologyRule || ecologyRule.kind!==asset.ecologyKind)
+      || asset.role!=='tree' && (asset.ecologyRuleId!==undefined || asset.ecologyKind!==undefined)
       || (asset.dimensions!==undefined && (!Array.isArray(asset.dimensions)||asset.dimensions.length!==3
         ||asset.dimensions.some(n=>!Number.isFinite(n)||n<=0||n>300)))) throw new Error('invalid_world_asset_request');
     worldAssetStrategy(asset);
@@ -588,7 +600,9 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
       if(request.existingAssetId) {
         const asset=await store.loadAsset(request.existingAssetId);
         return {id:request.key,name:request.name,role:request.role,modelJson:asset.modelJson,
-          assetId:asset.id,provider:'existing' as const,strategy};
+          assetId:asset.id,provider:'existing' as const,strategy,
+          ...(request.ecologyKind?{ecologyKind:request.ecologyKind}:{}),
+          ...(request.ecologyRuleId?{ecologyRuleId:request.ecologyRuleId}:{})};
       }
       let modelJson:unknown;
       if(strategy==='assembly') {
@@ -609,7 +623,9 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
         modelJson=await generateModel(request.prompt,{providers:['deepseek'],mode:'voxel-pro',signal});
       }
       const saved=await store.saveAsset({name:request.name,prompt:request.prompt,modelJson,mode:'voxel-pro',provider:'deepseek'});
-      return {id:request.key,name:request.name,role:request.role,modelJson,assetId:saved.id,provider:'deepseek' as const,strategy};
+      return {id:request.key,name:request.name,role:request.role,modelJson,assetId:saved.id,provider:'deepseek' as const,strategy,
+        ...(request.ecologyKind?{ecologyKind:request.ecologyKind}:{}),
+        ...(request.ecologyRuleId?{ecologyRuleId:request.ecologyRuleId}:{})};
     }));
     results.push(...batch);
   }

@@ -30,6 +30,21 @@ it('keeps the continuous sampler and a tiny persisted placeholder through normal
   expect(() => validateWorldMapState(null)).toThrow('invalid_world_map');
 });
 
+it('preserves ecology asset intent while accepting legacy untyped tree bindings', () => {
+  const state = world();
+  state.bundle.plan.ecology = [{
+    id: 'oak-grove', kind: 'broadleaf', biome: 'forest', density: 0.6,
+    spacing: 18, maxSlope: 25, scale: [0.8, 1.2]
+  }];
+  state.assets = [
+    {key: 'legacy-tree', role: 'tree', assetId: 'asset-legacy'},
+    {key: 'oak', role: 'tree', assetId: 'asset-oak', ecologyKind: 'broadleaf', ecologyRuleId: 'oak-grove'}
+  ];
+  expect(validateWorldMapState(state).assets).toEqual(state.assets);
+  expect(() => validateWorldMapState({...state, assets: [{...state.assets[1], ecologyKind: 'pine'}]}))
+    .toThrow('invalid_world_asset_binding');
+});
+
 it('saves a world as one undoable transaction and carries its bound assets through export/import', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-world-transaction-'));
   try {

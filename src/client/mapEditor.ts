@@ -2724,7 +2724,8 @@ class MapEditor {
       const library = this.state.assetLibraries.find(item => item.id === this.activeAssetLibraryId);
       const result = await editorFetch<{
         bundle: WorldBundle;
-        assetSources?: Array<{id: string; assetId: string; role: WorldAssetBinding['role']}>;
+        assetSources?: Array<{id: string; assetId: string; role: WorldAssetBinding['role'];
+          ecologyKind?: WorldAssetBinding['ecologyKind']; ecologyRuleId?: string}>;
         diagnostics?: Array<{townId: string; planningIssues: string[]}>;
       }>('/api/editor/worlds/generate', {
         method: 'POST', signal: this.mapAiAbortController.signal,
@@ -2732,7 +2733,9 @@ class MapEditor {
           generateAssets: this.worldGenerateAssets,
           ...(this.mapAiReuseExistingAssets && library ? {reusableAssetIds: library.assetIds.slice(0, 64)} : {})})
       });
-      const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role})) ?? [];
+      const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role,
+        ...(asset.ecologyKind ? {ecologyKind: asset.ecologyKind} : {}),
+        ...(asset.ecologyRuleId ? {ecologyRuleId: asset.ecologyRuleId} : {})})) ?? [];
       const generatedAssets = await Promise.all(bindings.map(async binding =>
         (await editorFetch<{asset: MapAsset}>('/api/editor/assets/' + encodeURIComponent(binding.assetId))).asset));
       const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings}}];

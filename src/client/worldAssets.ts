@@ -4,11 +4,22 @@ import { buildPatchGeometry } from '@voxel-studio/render-runtime/batching/Primit
 import { buildModelGroup, type ModelRuntime } from './modelRenderer';
 import type { TownBuilding, WorldBundle } from '../shared/worldPlanning';
 import type { WorldSample } from '../shared/worldTerrain';
+import type { EcologyInstance, EcologyKind } from '../shared/worldEcology';
+import { selectWorldEcologyAsset } from '../shared/worldMapState';
 
 export type WorldAssetRole = 'house' | 'shop' | 'workshop' | 'tree' | 'landmark';
-export interface WorldAssetSource { id: string; name: string; role: WorldAssetRole; modelJson: unknown }
+export interface WorldAssetSource {
+  id: string;
+  name: string;
+  role: WorldAssetRole;
+  modelJson: unknown;
+  ecologyKind?: EcologyKind;
+  ecologyRuleId?: string;
+}
 export interface WorldAssetPrototype {
   id: string; name: string; role: WorldAssetRole; geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial; size: THREE.Vector3;
+  ecologyKind?: EcologyKind;
+  ecologyRuleId?: string;
 }
 export interface WorldAssetLibrary {
   byId: Map<string, WorldAssetPrototype>;
@@ -40,7 +51,12 @@ const emptyRoleMap = (): Record<WorldAssetRole, WorldAssetPrototype[]> => ({ hou
 export async function buildWorldAssetLibrary(sources: WorldAssetSource[]): Promise<WorldAssetLibrary> {
   if (!Array.isArray(sources) || sources.length < 1 || sources.length > 32
     || new Set(sources.map(asset => asset.id)).size !== sources.length
-    || sources.some(asset => !asset.id || !roles.includes(asset.role))) throw new Error('invalid_preview_asset_pack');
+    || sources.some(asset => !asset.id || !roles.includes(asset.role)
+      || asset.ecologyKind !== undefined && !['broadleaf', 'pine', 'shrub', 'rock'].includes(asset.ecologyKind)
+      || asset.ecologyRuleId !== undefined && (typeof asset.ecologyRuleId !== 'string' || !asset.ecologyRuleId)
+      || asset.role !== 'tree' && (asset.ecologyKind !== undefined || asset.ecologyRuleId !== undefined))) {
+    throw new Error('invalid_preview_asset_pack');
+  }
   const library: WorldAssetLibrary = { byId: new Map(), byRole: emptyRoleMap() };
   try {
     for (const asset of sources) {
@@ -67,7 +83,9 @@ export async function buildWorldAssetLibrary(sources: WorldAssetSource[]): Promi
         const prototype: WorldAssetPrototype = {
           id: asset.id, name: asset.name, role: asset.role, geometry,
           material: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide }),
-          size: geometry.boundingBox!.getSize(new THREE.Vector3())
+          size: geometry.boundingBox!.getSize(new THREE.Vector3()),
+          ...(asset.ecologyKind ? {ecologyKind: asset.ecologyKind} : {}),
+          ...(asset.ecologyRuleId ? {ecologyRuleId: asset.ecologyRuleId} : {})
         };
         library.byId.set(asset.id, prototype); library.byRole[asset.role].push(prototype);
       } finally {
@@ -102,9 +120,11 @@ export function pickWorldAsset(library: WorldAssetLibrary, building: TownBuildin
   return variants[stableIndex(building.id, variants.length)];
 }
 
-export function pickWorldTreeAsset(library: WorldAssetLibrary, id: string): WorldAssetPrototype | undefined {
-  const variants = library.byRole.tree;
-  return variants[stableIndex(id, variants.length)];
+export function pickWorldEcologyAsset(
+  library: WorldAssetLibrary,
+  instance: Pick<EcologyInstance, 'id' | 'ruleId' | 'kind'>
+): WorldAssetPrototype | undefined {
+  return selectWorldEcologyAsset(library.byRole.tree, instance);
 }
 
 export function worldAssetBuildingMatrix(

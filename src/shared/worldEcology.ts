@@ -18,6 +18,7 @@ export interface EcologyRule {
 }
 export interface EcologyInstance {
   id: string;
+  ruleId: string;
   kind: EcologyKind;
   x: number;
   y: number;
@@ -94,13 +95,22 @@ function random(x: number, z: number, seed: number, channel: number): number {
   return ((value ^ value >>> 16) >>> 0) / 4294967296;
 }
 const isTree = (kind: EcologyKind) => kind === 'broadleaf' || kind === 'pine';
-interface Candidate { id: string; x: number; z: number; priority: number; threshold: number; rotation: number; scale: number }
+interface Candidate {
+  id: string;
+  x: number;
+  z: number;
+  priority: number;
+  threshold: number;
+  rotation: number;
+  scale: number;
+  eligibility?: { accepted: false } | { accepted: true; height: number };
+}
 
 /**
  * Local Matérn-II-like priority thinning on jittered cells, not a maximal Poisson-disk solver.
- * The raw candidate set ignores density and habitat: thinning only removes stable instances.
- * At most 8*44^2 owned candidates, 8*78^2 cached halo cells, and 5 environment samples per
- * owned candidate. Neighbor tests use bounded cells (spacing 6..100), never the whole world.
+ * Habitat eligibility is cached before thinning, so an impossible species cannot suppress a
+ * viable neighbor. Each cached candidate uses at most 5 environment samples. Neighbor tests use
+ * bounded cells (spacing 6..100), never the whole world.
  */
 export function generateEcologyChunk(
   input: WorldRecipe,
@@ -124,6 +134,7 @@ export function generateEcologyChunk(
   const waterBodies = options.freshWaterDistance ? [] : prepareWorldWaterBodies(recipe);
   const freshWaterDistance = options.freshWaterDistance
     ?? ((x: number, z: number) => preparedWorldFreshWaterDistance(waterBodies, x, z));
+  const worldMin = -recipe.size / 2, worldMax = recipe.size / 2;
   const contexts = rules.map(rule => {
     const seed = ruleSeed(recipe.seed, rule.id), cache = new Map<string, Candidate>();
     return { rule, at: (ix: number, iz: number): Candidate => {
@@ -144,6 +155,34 @@ export function generateEcologyChunk(
     } };
   });
 
+  function eligibilityOf(context: typeof contexts[number], point: Candidate): NonNullable<Candidate['eligibility']> {
+    if (point.eligibility) return point.eligibility;
+    const rule = context.rule;
+    const reject = (): { accepted: false } => (point.eligibility = { accepted: false });
+    if (point.x < worldMin || point.x >= worldMax || point.z < worldMin || point.z >= worldMax
+      || point.threshold >= rule.density || options.exclusion?.(point.x, point.z, rule.spacing / 2)) return reject();
+    const localDensity = options.density ? options.density(point.x, point.z) : 1;
+    if (!Number.isFinite(localDensity)) throw new Error('invalid_ecology_density');
+    const density = rule.density * Math.max(0, Math.min(1, localDensity));
+    const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
+    if (point.threshold >= density * regionDensity) return reject();
+    if (rule.waterDistance && point.threshold >= density * habitatBandSuitability(
+      freshWaterDistance(point.x, point.z), rule.waterDistance
+    )) return reject();
+    const environment = sample(point.x, point.z);
+    const weight = environment.weights[rule.biome];
+    if (!Number.isFinite(environment.height) || environment.height < 0 || environment.waterLevel !== null
+      || !Number.isFinite(environment.weights.ocean) || environment.weights.ocean >= 0.5
+      || !Number.isFinite(weight) || point.threshold >= density * Math.max(0, Math.min(1, weight))) return reject();
+    // Same world-space central difference as terrain normals, including across chunk borders.
+    const epsilon = 4;
+    const dx = (sample(point.x + epsilon, point.z).height - sample(point.x - epsilon, point.z).height) / (2 * epsilon);
+    const dz = (sample(point.x, point.z + epsilon).height - sample(point.x, point.z - epsilon).height) / (2 * epsilon);
+    const slope = Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
+    if (!Number.isFinite(slope) || slope > rule.maxSlope) return reject();
+    return point.eligibility = { accepted: true, height: environment.height };
+  }
+
   function hasHigherPriorityNeighbor(point: Candidate, rule: EcologyRule): boolean {
     for (const context of contexts) {
       if (rule.id !== context.rule.id && !(isTree(rule.kind) && isTree(context.rule.kind))) continue;
@@ -153,7 +192,8 @@ export function generateEcologyChunk(
           const other = context.at(x, z);
           if (other.id === point.id || other.priority > point.priority
             || (other.priority === point.priority && other.id > point.id)) continue;
-          if ((other.x - point.x) ** 2 + (other.z - point.z) ** 2 < spacing ** 2) return true;
+          if ((other.x - point.x) ** 2 + (other.z - point.z) ** 2 < spacing ** 2
+            && eligibilityOf(context, other).accepted) return true;
         }
       }
     }
@@ -169,28 +209,9 @@ export function generateEcologyChunk(
         const point = context.at(x, z);
         if (point.x < minX || point.x >= maxX || point.z < minZ || point.z >= maxZ) continue;
         candidateCount++;
-        if (point.threshold >= rule.density || hasHigherPriorityNeighbor(point, rule)
-          || options.exclusion?.(point.x, point.z, rule.spacing / 2)) continue;
-        const localDensity = options.density ? options.density(point.x, point.z) : 1;
-        if (!Number.isFinite(localDensity)) throw new Error('invalid_ecology_density');
-        const density = rule.density * Math.max(0, Math.min(1, localDensity));
-        const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
-        if (point.threshold >= density * regionDensity) continue;
-        if (rule.waterDistance && point.threshold >= density * habitatBandSuitability(
-          freshWaterDistance(point.x, point.z), rule.waterDistance
-        )) continue;
-        const environment = sample(point.x, point.z);
-        const weight = environment.weights[rule.biome];
-        if (!Number.isFinite(environment.height) || environment.height < 0 || environment.waterLevel !== null
-          || !Number.isFinite(environment.weights.ocean) || environment.weights.ocean >= 0.5
-          || !Number.isFinite(weight) || point.threshold >= density * Math.max(0, Math.min(1, weight))) continue;
-        // Same world-space central difference as terrain normals, including across chunk borders.
-        const epsilon = 4;
-        const dx = (sample(point.x + epsilon, point.z).height - sample(point.x - epsilon, point.z).height) / (2 * epsilon);
-        const dz = (sample(point.x, point.z + epsilon).height - sample(point.x, point.z - epsilon).height) / (2 * epsilon);
-        const slope = Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
-        if (!Number.isFinite(slope) || slope > rule.maxSlope) continue;
-        instances.push({ id: point.id, kind: rule.kind, x: point.x, y: environment.height, z: point.z,
+        const eligibility = eligibilityOf(context, point);
+        if (!eligibility.accepted || hasHigherPriorityNeighbor(point, rule)) continue;
+        instances.push({ id: point.id, ruleId: rule.id, kind: rule.kind, x: point.x, y: eligibility.height, z: point.z,
           rotation: point.rotation, scale: point.scale });
       }
     }

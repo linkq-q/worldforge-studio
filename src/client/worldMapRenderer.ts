@@ -13,7 +13,7 @@ import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag 
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
 import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
-import { worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
+import { selectWorldEcologyAsset, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
@@ -600,9 +600,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
 
   function resolveEcologyAsset(instance: EcologyInstance): MapAsset | null {
     if (world.assets.length === 0) return null;
-    const candidates = bindingsByRole.get('tree') ?? [];
-    const binding = candidates[stableIndex(instance.id, candidates.length)];
-    if (!binding) throw new Error('world_missing_asset_binding:tree');
+    const binding = selectWorldEcologyAsset(bindingsByRole.get('tree') ?? [], instance);
+    if (!binding) return null;
     const asset = assetsById.get(binding.assetId);
     if (!asset) throw new Error(`world_missing_asset:${binding.assetId}`);
     return asset;
@@ -967,7 +966,6 @@ function validateWorldAssets(
     if (building.assetKey && !bindingsByKey.has(building.assetKey)) throw new Error(`world_missing_asset_binding:${building.assetKey}`);
     if (!building.assetKey && !(bindingsByRole.get(buildingRole(building))?.length)) throw new Error(`world_missing_asset_binding:${buildingRole(building)}`);
   }
-  if (world.bundle.plan.ecology.length && !(bindingsByRole.get('tree')?.length)) throw new Error('world_missing_asset_binding:tree');
 }
 
 function groupBindingsByRole(bindings: WorldAssetBinding[]): Map<WorldAssetBinding['role'], WorldAssetBinding[]> {
