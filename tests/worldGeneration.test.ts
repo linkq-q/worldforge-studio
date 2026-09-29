@@ -260,6 +260,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
     expect(messages[0].content).toContain('one ordinary dwelling per four to six residents');
     expect(messages[0].content).toContain('Roads connect two different town IDs only');
+    expect(messages[0].content).toContain("Rocky terrain uses mountains, not a 'rock' biome");
     expect(messages[0].content).toContain('reserve only one or two waterfront work buildings');
     expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
@@ -268,6 +269,7 @@ describe('world generation compiler', () => {
     expect(planningInput.reusableAssets[0]).not.toHaveProperty('modelJson');
     const layoutMessages = mocks.llmChat.mock.calls[1][0] as Array<{ role: string; content: string }>;
     expect(layoutMessages[0].content).toContain("strategy:'single' is invalid for every enterable asset");
+    expect(layoutMessages[0].content).toContain('market stalls alone do not constitute a port');
     expect(layoutMessages[0].content).toContain('match its assetKey and authored [width,height,depth] exactly');
   });
 
