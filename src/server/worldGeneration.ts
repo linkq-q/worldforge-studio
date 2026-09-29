@@ -1,4 +1,5 @@
 import { Euler, Quaternion } from 'three';
+import { isDeepStrictEqual } from 'node:util';
 import { createEmptyMap, getObjectWorldTransforms, type EditableMap, type MapAsset } from '../shared/map';
 import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { applyMapOperations } from '../shared/mapOperations';
@@ -201,11 +202,14 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
     const plan = record(wrapper.plan, 'invalid_world_intent');
     const moved: string[] = [];
     for (const field of ['ecology','towns','roads']) {
-      if (Object.hasOwn(wrapper, field) && !Object.hasOwn(plan, field)) {
+      if (!Object.hasOwn(wrapper, field)) continue;
+      if (!Object.hasOwn(plan, field)) {
         plan[field] = wrapper[field];
         delete wrapper[field];
         moved.push(field);
-      }
+      } else if (isDeepStrictEqual(wrapper[field], plan[field])
+        || (Array.isArray(wrapper[field]) && wrapper[field].length === 0
+          && Array.isArray(plan[field]) && plan[field].length > 0)) delete wrapper[field];
     }
     if (moved.length) recordGenerationTrace('world.intent-wrapper-corrected', { moved });
   }
