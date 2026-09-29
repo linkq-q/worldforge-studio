@@ -245,23 +245,17 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
   unique([...streets.map(street => street.id), ...buildings.map(building => building.id)]);
   validateStreetGraph(town, streets);
   for (let i = 0; i < buildings.length; i++) {
-    const a = townBuildingBounds(buildings[i]);
-    for (const b of buildings.slice(i + 1).map(townBuildingBounds)) {
-      if (Math.abs(a.x - b.x) < (a.width + b.width) / 2
-        && Math.abs(a.z - b.z) < (a.depth + b.depth) / 2) fail('world_buildings_overlap');
+    for (const other of buildings.slice(i + 1)) {
+      if (buildingsOverlap(buildings[i], other)) fail('world_buildings_overlap');
     }
     for (const street of streets) {
-      const ownLandmarkAccess = street.id === `${town.id}-landmark-${buildings[i].id}`
-        && street.tags.includes('landmark-access');
-      if (segments(street).some(([p, q]) => ownLandmarkAccess
-        ? segmentBuildingFootprint(p, q, buildings[i], street.width / 2)
-        : segmentBox(p, q, a, street.width / 2))) {
+      if (segments(street).some(([p, q]) => segmentBuildingFootprint(p, q, buildings[i], street.width / 2))) {
         fail('world_building_intersects_street');
       }
     }
-    const worldBuilding = { ...a, x: a.x + town.center[0], z: a.z + town.center[1] };
+    const worldBuilding = { ...buildings[i], x: buildings[i].x + town.center[0], z: buildings[i].z + town.center[1] };
     for (const road of plan.roads) {
-      if (segments(road).some(([p, q]) => segmentBox(p, q, worldBuilding, road.width / 2))) {
+      if (segments(road).some(([p, q]) => segmentBuildingFootprint(p, q, worldBuilding, road.width / 2))) {
         fail('world_building_intersects_road');
       }
     }
@@ -587,6 +581,19 @@ export function segmentBuildingFootprint(a: Point, b: Point, building: TownBuild
     width: building.width,
     depth: building.depth
   }, Math.max(0, padding - TOLERANCE * 2));
+}
+
+/** Exact overlap for two Y-rotated rectangular footprints. */
+export function buildingsOverlap(a: TownBuilding, b: TownBuilding): boolean {
+  const edges = (building: TownBuilding): Array<[Point, Point]> => {
+    const rotation = building.rotation ?? 0, c = Math.cos(rotation), s = Math.sin(rotation);
+    const world = (x: number, z: number): Point => [building.x + c * x + s * z, building.z - s * x + c * z];
+    const corners = [world(-building.width / 2, -building.depth / 2), world(building.width / 2, -building.depth / 2),
+      world(building.width / 2, building.depth / 2), world(-building.width / 2, building.depth / 2)];
+    return corners.map((point, index) => [point, corners[(index + 1) % corners.length]]);
+  };
+  return edges(a).some(([from, to]) => segmentBuildingFootprint(from, to, b))
+    || edges(b).some(([from, to]) => segmentBuildingFootprint(from, to, a));
 }
 
 /** Exact slab intersection, with the bounding box expanded by half the road width. */

@@ -1,7 +1,7 @@
 import type { MapGuide } from './mapGuide';
-import { createUrbanLayout, type UrbanPoint, type UrbanRoad } from './mapUrbanLayout';
+import { createUrbanLayout, type UrbanLayout, type UrbanParcel, type UrbanPoint, type UrbanRoad } from './mapUrbanLayout';
 import {
-  createTownTasks, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, worldPlanKey, worldTownBuildingQuota,
+  buildingsOverlap, createTownTasks, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, worldPlanKey, worldTownBuildingQuota,
   type TownBuilding, type TownIntent, type TownPatch, type WorldPlan
 } from './worldPlanning';
 import { sampleWorldSlope, type WorldSample, type WorldSampler } from './worldTerrain';
@@ -187,7 +187,7 @@ export function generateWorldSettlement(
   if (streets.length > 48) throw new Error('world_settlement_road_budget');
   splitRoadIntersections(streets);
 
-  const buildings = placeBuildings(plan, town, streets, sample, settings, random);
+  const buildings = placeBuildings(plan, town, streets, layout, selected, sample, settings, random);
   if (!buildings.length) throw new Error('world_settlement_no_buildings');
   const patch: TownPatch = {
     townId: town.id,
@@ -372,7 +372,7 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     roadWidth: city ? 4.2 : 3,
     arterialWidth: city ? 6.4 : 4.6,
     blockSize: Math.max(city ? 34 : 52, Math.min(city ? 76 : 110, town.radius * (city ? 0.22 : 0.32))),
-    parcelWidth: city ? 8 : 9,
+    parcelWidth: city ? 5.8 : 9,
     parcelDepth: city ? 8.5 : 10,
     buildingGap: city ? 1.2 : 7,
     roadBudget: city ? Math.round(24 + density * 10) : Math.max(7, Math.round(6 + density * 8))
@@ -587,6 +587,8 @@ function placeBuildings(
   plan: WorldPlan,
   town: TownIntent,
   streets: MapGuide[],
+  layout: UrbanLayout,
+  selected: Edge[],
   sample: WorldSettlementSampler,
   settings: Settings,
   random: () => number
@@ -595,15 +597,24 @@ function placeBuildings(
   const city = settings.kind === 'city';
   const localRoads = streets.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width, road })));
   const worldRoads = plan.roads.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width })));
-  const candidateSegments = localRoads.filter(segment => !segment.road.tags.includes('port'))
-    .sort((a, b) => distance(mix(a.a, a.b, 0.5), [0, 0]) - distance(mix(b.a, b.b, 0.5), [0, 0]));
-  const frontageSlots = candidateSegments.reduce((sum, segment) => {
-    const length = distance(segment.a, segment.b), spacing = settings.parcelWidth + settings.buildingGap;
-    return sum + Math.max(0, Math.floor((length - settings.parcelWidth) / spacing) + 1) * 2;
-  }, 0);
-  const ordinaryTarget = Math.max(city ? 24 : 8, Math.round(frontageSlots * settings.density));
+  const selectedByRoad = new Map<string, Edge[]>();
+  for (const edge of selected) selectedByRoad.set(edge.source, [...(selectedByRoad.get(edge.source) ?? []), edge]);
+  const candidates = layout.parcels.filter(parcel => selectedByRoad.get(parcel.roadId)?.some(edge =>
+    pointSegmentDistance(parcel.front, edge.a, edge.b) < 1e-4));
+  const blockCenters = new Map(layout.blocks.map(block => [block.id, block.center]));
+  const civicAnchors: Point[] = result.length ? result.map(building => [building.x, building.z]) : [[0, 0]];
+  const waterfront = localRoads.filter(segment => segment.road.tags.includes('waterfront'));
+  const nearest = (point: Point, anchors: Point[]) => Math.min(...anchors.map(anchor => distance(point, anchor)));
+  const waterfrontDistance = (point: Point) => waterfront.length
+    ? Math.min(...waterfront.map(road => pointSegmentDistance(point, road.a, road.b))) : town.radius;
+  const score = (parcel: UrbanParcel) => {
+    const center = blockCenters.get(parcel.blockId) ?? parcel.center;
+    return nearest(center, civicAnchors) + waterfrontDistance(center) * (waterfront.length ? 0.3 : 0);
+  };
+  candidates.sort((a, b) => score(a) - score(b) || a.blockId.localeCompare(b.blockId)
+    || a.roadId.localeCompare(b.roadId) || a.id.localeCompare(b.id));
+  const ordinaryTarget = Math.max(city ? 24 : 8, Math.round(candidates.length * settings.density));
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
-  const uses = city ? ['home', 'home', 'shop', 'workshop'] : ['home', 'home', 'farmhouse', 'workshop'];
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);
     const probes = buildingProbePoints(landmark);
@@ -623,7 +634,7 @@ function placeBuildings(
     }
   }
   for (let left = 0; left < result.length; left++) for (let right = left + 1; right < result.length; right++) {
-    if (boxesOverlap(townBuildingBounds(result[left]), townBuildingBounds(result[right]))) {
+    if (buildingsOverlap(result[left], result[right])) {
       throw new Error('world_settlement_landmarks_overlap');
     }
   }
@@ -634,61 +645,37 @@ function placeBuildings(
     if (!buildingEarthworkSafe(sample, town, building)
       || probes.some(point => !dryPoint(sample, town, point, settings.waterSetback)
       || sampleSlope(sample, town, point) > settings.maxSiteSlope + EPS)) return false;
-    if (result.some(other => boxesOverlap(bounds, townBuildingBounds(other)))) return false;
-    if (localRoads.some(road => segmentBox(road.a, road.b, bounds, road.width / 2 + 0.8))) return false;
-    const worldBounds = { ...bounds, x: bounds.x + town.center[0], z: bounds.z + town.center[1] };
-    return !worldRoads.some(road => segmentBox(road.a, road.b, worldBounds, road.width / 2 + 0.8));
+    if (result.some(other => buildingsOverlap(building, other))) return false;
+    if (localRoads.some(road => segmentBuildingFootprint(road.a, road.b, building, road.width / 2))) return false;
+    const worldBuilding = { ...building, x: building.x + town.center[0], z: building.z + town.center[1] };
+    return !worldRoads.some(road => segmentBuildingFootprint(road.a, road.b, worldBuilding, road.width / 2));
   };
-  for (let pass = 0; pass < 2 && result.length < target; pass++) for (const segment of candidateSegments) {
-    const length = distance(segment.a, segment.b);
-    const tangent = normalize(sub(segment.b, segment.a));
-    const normal: Point = [-tangent[1], tangent[0]];
-    const spacing = settings.parcelWidth + settings.buildingGap;
-    const slots = Math.max(0, Math.floor((length - settings.parcelWidth) / spacing) + 1);
-    for (let slot = pass; slot < slots && result.length < target; slot += 2) for (const side of [-1, 1]) {
-      if (result.length >= target || random() > Math.min(1, settings.density * (pass ? 1.1 : 0.9))) continue;
-      const width = settings.parcelWidth * (0.82 + random() * 0.28);
-      const depth = settings.parcelDepth * (0.82 + random() * 0.28);
-      const along = Math.min(length - width / 2, width / 2 + slot * spacing);
-      if (along < width / 2) continue;
-      const frontage = add(segment.a, scale(tangent, along));
-      const rotation = normalizeAngle(Math.atan2(-normal[0] * side, -normal[1] * side));
-      const height = city ? 10 + random() * 28 * (1.15 - Math.min(1, distance(frontage, [0, 0]) / town.radius)) : 5 + random() * 6;
-      const use = uses[Math.floor(random() * uses.length)];
-      for (const extra of [0, 2, 4, 7, 11, 16]) {
-        const center = add(frontage, scale(normal, side * (segment.width / 2 + 1.2 + depth / 2 + extra)));
-        const building: TownBuilding = {
-          id: `${town.id}-building-${result.length + 1}`,
-          x: center[0], z: center[1], width, depth, height, use, rotation
-        };
-        if (!canPlace(building)) continue;
-        result.push(building);
-        break;
-      }
-    }
-  }
-  if (city && result.length < target) {
-    const step = 8.5, candidates: Array<{ point: Point; score: number }> = [];
-    const phase: Point = [(random() - 0.5) * step, (random() - 0.5) * step];
-    for (let z = -town.radius + step; z <= town.radius - step; z += step) {
-      for (let x = -town.radius + step; x <= town.radius - step; x += step) {
-        const point: Point = [x + phase[0] + (random() - 0.5) * 1.2, z + phase[1] + (random() - 0.5) * 1.2];
-        candidates.push({ point, score: distance(point, [0, 0]) + random() * town.radius * 0.12 });
-      }
-    }
-    candidates.sort((a, b) => a.score - b.score);
-    for (const { point } of candidates) {
-      if (result.length >= target) break;
-      const nearestRoad = Math.min(...localRoads.map(road => pointSegmentDistance(point, road.a, road.b)));
-      if (!Number.isFinite(nearestRoad) || nearestRoad > settings.blockSize * 0.72) continue;
-      const building: TownBuilding = {
-        id: `${town.id}-building-${result.length + 1}`,
-        x: point[0], z: point[1], width: 5.2 + random() * 0.9, depth: 5.5 + random() * 1.1,
-        height: 9 + random() * 24 * (1.15 - Math.min(1, distance(point, [0, 0]) / town.radius)),
-        use: uses[Math.floor(random() * uses.length)], rotation: (random() - 0.5) * 0.32
-      };
-      if (canPlace(building)) result.push(building);
-    }
+  for (let index = 0; index < candidates.length && result.length < target; index++) {
+    const parcel = candidates[index];
+    const width = parcel.width - Math.min(city ? 0.25 : 1.2, parcel.width * 0.16);
+    const depth = parcel.depth * (city ? 0.72 : 0.62);
+    if (width < 3.5 || depth < 3.8) continue;
+    const forward: Point = [Math.sin(parcel.rotationY), Math.cos(parcel.rotationY)];
+    const spareDepth = parcel.depth - depth;
+    const civicDistance = nearest(parcel.center, civicAnchors);
+    const shoreDistance = waterfrontDistance(parcel.center);
+    const outer = distance(parcel.center, [0, 0]) / town.radius;
+    const use = city
+      ? civicDistance < settings.blockSize * 1.1 && index % 3 !== 0 ? 'shop'
+        : shoreDistance < settings.blockSize * 0.65 && index % 3 === 0 ? 'workshop'
+          : outer > 0.68 && index % 4 === 0 ? 'workshop' : 'home'
+      : civicDistance < settings.blockSize && index % 4 === 0 ? 'shop'
+        : outer > 0.58 && index % 3 !== 0 ? 'farmhouse'
+          : index % 5 === 0 ? 'workshop' : 'home';
+    const height = city
+      ? 7 + random() * 5 + Math.max(0, 1 - civicDistance / (settings.blockSize * 2)) * 4
+      : 4.5 + random() * 3.5;
+    const center = add(parcel.center, scale(forward, spareDepth / 2));
+    const building: TownBuilding = {
+      id: `${town.id}-building-${result.length + 1}`,
+      x: center[0], z: center[1], width, depth, height, use, rotation: parcel.rotationY
+    };
+    if (canPlace(building)) result.push(building);
   }
   return result;
 }
@@ -781,11 +768,6 @@ function buildingEarthworkSafe(sample: WorldSettlementSampler, town: TownIntent,
   const heights = buildingProbePoints(building).map(point => sampleAt(sample, town, point).height).sort((a, b) => a - b);
   const target = heights[Math.floor(heights.length / 2)];
   return heights.every(height => Math.abs(height - target) <= MAX_LOCAL_EARTHWORK + EPS);
-}
-
-function boxesOverlap(a: Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'>, b: Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'>): boolean {
-  return Math.abs(a.x - b.x) < (a.width + b.width) / 2 + 0.5
-    && Math.abs(a.z - b.z) < (a.depth + b.depth) / 2 + 0.5;
 }
 
 function landmarkAccessLength(blockSize: number): number {

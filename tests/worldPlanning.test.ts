@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MapGuide } from '../src/shared/mapGuide';
 import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
 import {
-  createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
+  buildingsOverlap, createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
   validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldTownBuildingQuota,
   type TownPatch, type WorldBundle, type WorldPlan
 } from '../src/shared/worldPlanning';
@@ -346,6 +346,11 @@ describe('organic settlement integration',()=>{
     expect(validateTownPatch(plan,rotated).buildings[0]).toMatchObject({rotation:Math.PI/4});
     rotated.buildings[0].x=-175;
     expect(()=>validateTownPatch(plan,rotated)).toThrow('world_building_outside');
+  });
+  it('uses rotated footprints instead of overlapping world-axis bounds',()=>{
+    const a={id:'a',x:0,z:0,width:10,depth:2,height:4,use:'home',rotation:Math.PI/4};
+    expect(buildingsOverlap(a,{...a,id:'separate',z:6})).toBe(false);
+    expect(buildingsOverlap(a,{...a,id:'crossing',x:1,z:1})).toBe(true);
   });
   it('blends overlapping collars continuously while keeping separate town cores exact',()=>{
     const plan=fixture(),base=createWorldSampler(plan.recipe);

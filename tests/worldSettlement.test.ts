@@ -3,8 +3,9 @@ import type { MapGuide } from '../src/shared/mapGuide';
 import {
   auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, type WorldSettlementSampler
 } from '../src/shared/worldSettlement';
+import { createUrbanLayout } from '../src/shared/mapUrbanLayout';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
-import { segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
+import { buildingsOverlap, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
 
 type Point = [number, number];
 
@@ -75,6 +76,17 @@ function expectSafeRoadShape(patch: ReturnType<typeof generateWorldSettlement>):
   }
 }
 
+function expectStreetFacingBuildings(patch: ReturnType<typeof generateWorldSettlement>): void {
+  const roads = segments(patch);
+  for (const building of patch.buildings) {
+    const entrance: Point = [
+      building.x + Math.sin(building.rotation ?? 0) * building.depth / 2,
+      building.z + Math.cos(building.rotation ?? 0) * building.depth / 2
+    ];
+    expect(Math.min(...roads.map(segment => pointDistance(entrance, segment.a, segment.b))), building.id).toBeLessThan(8.5);
+  }
+}
+
 describe('world settlement growth', () => {
   it.each(['organic', 'grid'] as const)('creates deterministic, connected %s streets and terrain-fit buildings', pattern => {
     const plan = fixture(), sample = sampler(plan);
@@ -94,6 +106,8 @@ describe('world settlement growth', () => {
     expect(audit.roadWidthRange[1]).toBeLessThanOrEqual(8);
     expect(audit.maxRoadSlope).toBeLessThanOrEqual(options.maxRoadSlope + 1e-6);
     expect(audit.maxBuildingSlope).toBeLessThanOrEqual(options.maxSiteSlope + 1e-6);
+    expect(Math.max(...patch.buildings.map(building => building.height))).toBeLessThanOrEqual(16);
+    expectStreetFacingBuildings(patch);
   });
 
   it('uses one parameterized growth path for a dense city and a sparse village', () => {
@@ -138,7 +152,7 @@ describe('world settlement growth', () => {
 
   it.each([
     [100, 7, 110], [150, 19, 120], [200, 31, 160]
-  ] as const)('fills compact city blocks across radius %sm and seed %s', (radius, seed, minimumBuildings) => {
+  ] as const)('keeps compact street-facing city blocks across radius %sm and seed %s', (radius, seed, minimumBuildings) => {
     const plan = fixture(), town = plan.towns[0];
     town.radius = radius;
     town.ports[0].position = [radius, 0];
@@ -150,6 +164,78 @@ describe('world settlement growth', () => {
     const audit = auditWorldSettlement(patch, town, sample);
     expect(patch.buildings.length).toBeGreaterThanOrEqual(minimumBuildings);
     expect(audit.builtFootprintArea).toBeGreaterThan(audit.roadSurfaceArea * 0.45);
+    expectStreetFacingBuildings(patch);
+  });
+
+  it('builds coherent street walls from dry urban parcels and leaves block interiors open', () => {
+    const plan = fixture(), town = plan.towns[0], seed = 53;
+    town.radius = 140;
+    town.ports[0].position = [town.radius, 0];
+    plan.roads[0].points = [[town.center[0] + town.radius, 0], [1800, 0]];
+    const sample: WorldSettlementSampler = (x, z) => {
+      const lx = x - town.center[0], water = lx < -100;
+      return {
+        height: water ? -2 : 15 + lx * 0.025 + z * 0.015,
+        moisture: water ? 1 : 0.25,
+        temperature: 0.55,
+        continentalness: water ? 0 : 0.7,
+        weights: { ocean: water ? 1 : 0, grassland: water ? 0 : 1, forest: 0, desert: 0, mountains: 0, snow: 0 },
+        waterLevel: water ? 0 : null,
+        waterBodyId: water ? 'lake' : null
+      };
+    };
+    const patch = generateWorldSettlement(plan, town.id, sample, {
+      kind: 'city', pattern: 'organic', seed, density: 0.82, waterfrontBias: 0,
+      maxRoadSlope: 0.12, maxSiteSlope: 0.1, waterSetback: 6
+    });
+    const rotation = Math.atan2(0.025 * 16, -0.015 * 16);
+    const region = Array.from({ length: 16 }, (_, index): Point => {
+      const angle = index / 16 * Math.PI * 2;
+      return [Math.cos(angle) * town.radius * 0.84, Math.sin(angle) * town.radius * 0.84];
+    });
+    const layout = createUrbanLayout({
+      id: `${town.id}-fabric`, pattern: 'organic', center: [0, 0],
+      size: [town.radius * 1.58, town.radius * 1.58], region, rotation: rotation * 180 / Math.PI,
+      blockSize: 34, roadWidth: 4.2, arterialWidth: 6.4,
+      parcelWidth: 5.8, parcelDepth: 8.5, setback: 1, irregularity: 0.72, seed
+    }, { minX: -town.radius, maxX: town.radius, minZ: -town.radius, maxZ: town.radius });
+    const streetSegments = segments(patch).filter(segment => segment.width <= 6.4);
+    const occupied = patch.buildings.map(building => {
+      const parcel = layout.parcels.find(candidate => {
+        const forward: Point = [Math.sin(candidate.rotationY), Math.cos(candidate.rotationY)];
+        const relative: Point = [building.x - candidate.center[0], building.z - candidate.center[1]];
+        const tangent: Point = [forward[1], -forward[0]];
+        return Math.abs(relative[0] * tangent[0] + relative[1] * tangent[1]) <= candidate.width / 2 + 1e-5
+          && Math.abs(relative[0] * forward[0] + relative[1] * forward[1]) <= candidate.depth / 2 + 1e-5
+          && Math.abs(Math.atan2(Math.sin((building.rotation ?? 0) - candidate.rotationY), Math.cos((building.rotation ?? 0) - candidate.rotationY))) < 1e-6;
+      });
+      expect(parcel, building.id).toBeDefined();
+      const parcelForward: Point = [Math.sin(parcel!.rotationY), Math.cos(parcel!.rotationY)];
+      const parcelTangent: Point = [parcelForward[1], -parcelForward[0]];
+      for (const x of [-building.width / 2, building.width / 2]) for (const z of [-building.depth / 2, building.depth / 2]) {
+        const corner: Point = [
+          building.x + parcelTangent[0] * x + parcelForward[0] * z,
+          building.z + parcelTangent[1] * x + parcelForward[1] * z
+        ];
+        const relative: Point = [corner[0] - parcel!.center[0], corner[1] - parcel!.center[1]];
+        expect(Math.abs(relative[0] * parcelTangent[0] + relative[1] * parcelTangent[1])).toBeLessThanOrEqual(parcel!.width / 2 + 1e-5);
+        expect(Math.abs(relative[0] * parcelForward[0] + relative[1] * parcelForward[1])).toBeLessThanOrEqual(parcel!.depth / 2 + 1e-5);
+      }
+      const entrance: Point = [
+        building.x + Math.sin(building.rotation ?? 0) * building.depth / 2,
+        building.z + Math.cos(building.rotation ?? 0) * building.depth / 2
+      ];
+      expect(Math.min(...streetSegments.map(segment => pointDistance(entrance, segment.a, segment.b)))).toBeLessThan(7);
+      expect(parcel!.depth - building.depth).toBeGreaterThanOrEqual(parcel!.depth * 0.25);
+      const centerAlong = (building.x - parcel!.center[0]) * parcelForward[0] + (building.z - parcel!.center[1]) * parcelForward[1];
+      expect(parcel!.depth / 2 + centerAlong - building.depth / 2).toBeGreaterThanOrEqual(0.25);
+      expect(sample(town.center[0] + building.x, town.center[1] + building.z).waterLevel).toBeNull();
+      return parcel!;
+    });
+    const occupiedByBlock = new Map<string, number>();
+    for (const parcel of occupied) occupiedByBlock.set(parcel.blockId, (occupiedByBlock.get(parcel.blockId) ?? 0) + 1);
+    expect(Math.max(...occupiedByBlock.values())).toBeGreaterThanOrEqual(4);
+    expect(auditWorldSettlement(patch, town, sample).maxBuildingSlope).toBeLessThanOrEqual(0.1 + 1e-6);
   });
 
   it('grows a shore-following arterial, stays dry and avoids the old offset-fan foldback', () => {
@@ -188,9 +274,7 @@ describe('world settlement growth', () => {
     expect(patch.streets.some(street => street.tags.includes('landmark-access'))).toBe(true);
     const landmarkBounds = townBuildingBounds(landmark);
     for (const building of patch.buildings.filter(building => building.id !== landmark.id)) {
-      const bounds = townBuildingBounds(building);
-      expect(Math.abs(bounds.x - landmarkBounds.x) < (bounds.width + landmarkBounds.width) / 2
-        && Math.abs(bounds.z - landmarkBounds.z) < (bounds.depth + landmarkBounds.depth) / 2).toBe(false);
+      expect(buildingsOverlap(building, landmark)).toBe(false);
     }
     const access = patch.streets.find(street => street.tags.includes('landmark-access'))!;
     for (const street of patch.streets) for (let index = 1; index < street.points.length; index++) {
