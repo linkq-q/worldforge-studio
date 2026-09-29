@@ -255,6 +255,14 @@ function cachedWorldSampler(sample:ReturnType<typeof createWorldSampler>):Return
   };
 }
 
+function validateSettlementExperience(town:WorldIntentTown,patch:ReturnType<typeof generateWorldSettlement>):void {
+  if((town.waterfrontBias??0)>=.5&&!patch.streets.some(street=>street.tags.includes('waterfront'))) {
+    throw new Error('world_settlement_waterfront_unreachable:'+town.id);
+  }
+  const publicIds=new Set(town.publicBuildings.map(building=>building.id));
+  if(!patch.buildings.some(building=>!publicIds.has(building.id))) throw new Error('world_settlement_no_housing:'+town.id);
+}
+
 export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
   const sample=cachedWorldSampler(createWorldSampler(intent.plan.recipe));
   const towns=intent.plan.towns.map(town=>({id:town.id,candidates:findWorldSiteCandidates(intent.plan.recipe,town)}));
@@ -263,25 +271,27 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
   const connectedTownIds=new Set(intent.plan.roads.flatMap(road=>[road.fromTownId,road.toTownId]));
   for(const town of intent.plan.towns) if(!connectedTownIds.has(town.id)) {
     const evidence=towns.find(item=>item.id===town.id)!,viable:WorldSiteCandidate[]=[];
+    let lastFailure='world_no_settlement_candidates:'+town.id;
     for(const site of evidence.candidates) {
       const plan:WorldPlan={version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,
         recipe:intent.plan.recipe,ecology:intent.plan.ecology,roads:[],towns:[{id:town.id,name:town.name,prompt:town.prompt,
           center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[]}]};
       try {
-        generateWorldSettlement(plan,town.id,sample,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
+        let patch=generateWorldSettlement(plan,town.id,sample,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
         const layouts:WorldSitingEvidence['landmarkLayouts']=[];
-        try {
+        if(town.publicBuildings.length) {
           const result=createWorldSettlementLandmarkLayout(plan,town.id,sample,
             {kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings);
-          if(town.publicBuildings.length) layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,
+          patch=result.patch;
+          layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,
             candidateId:site.id,pattern:town.pattern,landmarks:result.landmarks});
-        } catch {}
-        if(town.publicBuildings.length&&!layouts.length) continue;
+        }
+        validateSettlementExperience(town,patch);
         viable.push(site);landmarkLayouts.push(...layouts);
         if(viable.length>=2) break;
-      } catch {}
+      } catch(error) {lastFailure=error instanceof Error?error.message:String(error);}
     }
-    if(!viable.length) throw new Error('world_no_settlement_candidates:'+town.id);
+    if(!viable.length) throw new Error('world_no_settlement_candidates:'+town.id+':'+lastFailure);
     evidence.candidates=viable;
   }
   type CandidateRoute={from:WorldSiteCandidate;to:WorldSiteCandidate;fromPort:[number,number];toPort:[number,number];
@@ -325,22 +335,24 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
       const plannedTowns=intent.plan.towns.filter(item=>connectedTownIds.has(item.id))
         .sort((a,b)=>a.publicBuildings.length-b.publicBuildings.length);
       for(const town of plannedTowns) {
-        generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
-        if(!town.publicBuildings.length) continue;
+        let patch=generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
+        if(!town.publicBuildings.length) {validateSettlementExperience(town,patch);continue;}
         const site=selected.get(town.id)!,townPlan=plan.towns.find(item=>item.id===town.id)!;
         const key=`${town.id}:${site.id}:${town.pattern}:${townPlan.ports.map(port=>`${port.position[0]},${port.position[1]},${port.width}`).join('|')}`;
         let landmarks=landmarkCache.get(key);
         if(landmarks===undefined&&!landmarkCache.has(key)) {
           try {
-            landmarks=createWorldSettlementLandmarkLayout(plan,town.id,planned,
-              {kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings).landmarks;
+            const result=createWorldSettlementLandmarkLayout(plan,town.id,planned,
+              {kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings);
+            landmarks=result.landmarks;patch=result.patch;
             landmarkCache.set(key,landmarks);
           } catch {landmarkCache.set(key,null);landmarks=null;}
         } else if(landmarks) {
-          generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,
+          patch=generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,
             waterfrontBias:town.waterfrontBias??0,landmarks});
         }
         if(!landmarks) throw new Error('world_no_landmark_layout:'+town.id);
+        validateSettlementExperience(town,patch);
         layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,candidateId:site.id,
           pattern:town.pattern,landmarks});
       }
@@ -445,7 +457,15 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
     return layout?{...command,options:{...options,landmarks:layout.landmarks}}:command;
   });
   const draftInput={plan,settlements:selectedSettlements,assets:root.assets};
-  try {return compileWorldDraft(draftInput,request);}
+  const validateCompiled=(compiled:ReturnType<typeof compileWorldDraft>)=>{
+    for(const town of intent.plan.towns) {
+      const patch=compiled.bundle.patches.find(item=>item.townId===town.id);
+      if(!patch) throw new Error('world_settlement_missing_patch:'+town.id);
+      validateSettlementExperience(town,patch);
+    }
+    return compiled;
+  };
+  try {return validateCompiled(compileWorldDraft(draftInput,request));}
   catch(error) {
     const reason=error instanceof Error?error.message:String(error);
     if(!/^world_settlement_(?:landmark_unreachable|invalid_landmark):/.test(reason)) throw error;
@@ -458,7 +478,7 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
       return {...command,options:resolved.options};
     });
     if(resolutions.length) recordGenerationTrace('world.materialized',{landmarks:resolutions});
-    return compileWorldDraft({...draftInput,settlements},request);
+    return validateCompiled(compileWorldDraft({...draftInput,settlements},request));
   }
 }
 

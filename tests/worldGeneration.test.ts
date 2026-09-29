@@ -66,6 +66,18 @@ function rawSoloIntent(input:WorldGenerationRequest=request) {
       blend:64,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.8,publicBuildings:[]}]}};
 }
 
+function rawHarborIntent(input:WorldGenerationRequest) {
+  return {plan:{version:1,id:'harbor-bank',revision:1,prompt:input.prompt,recipe:{version:1,seed:input.seed,
+    size:input.size,heightScale:.035,constraints:[{region:'center',biome:'grassland'},{region:'east',biome:'grassland'},
+      {region:'northeast',biome:'forest'},{region:'northwest',biome:'ocean'},{region:'southeast',biome:'grassland'},
+      {region:'southwest',biome:'ocean'},{region:'west',biome:'ocean'}],
+    landforms:[{center:[140,-170],radius:[75,65],height:8}],
+    biomePatches:[{id:'northern-woodland',region:{kind:'circle',center:[135,-175],radius:65},biome:'forest',feather:32}]},
+    ecology:[],roads:[],towns:[{id:'bay-town',name:'Bay Town',prompt:'A compact fishing town on a dry bank',radius:100,
+      blend:25,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.83,waterfrontBias:.9,
+      targetWaterBodyId:'sea',publicBuildings:[]}]}};
+}
+
 function soloLayout(input:WorldGenerationRequest=request) {
   const intent=parseWorldIntentDraft(rawSoloIntent(input),input),evidence=createWorldSitingEvidence(intent);
   return {intent,evidence,layout:{towns:[{townId:'market-town',candidateId:evidence.towns[0].candidates[0].id}],
@@ -255,6 +267,22 @@ describe('world generation compiler', () => {
     expect(()=>materializeWorldIntent(intent,evidence,layout,request)).not.toThrow();
     layout.settlements[0].options.pattern='organic';
     expect(()=>materializeWorldIntent(intent,evidence,layout,request)).toThrow('world_layout_settlement_intent_mismatch:market-town');
+  },15_000);
+
+  it('accepts only a final harbor patch with homes and an actual waterfront street', () => {
+    const input:WorldGenerationRequest={prompt:'A compact fishing town on a warm bay',seed:9012903,size:500,generateAssets:false};
+    const intent=parseWorldIntentDraft(rawHarborIntent(input),input),evidence=createWorldSitingEvidence(intent);
+    const candidate=evidence.towns[0].candidates[0],layout={towns:[{townId:'bay-town',candidateId:candidate.id}],
+      settlements:[{townId:'bay-town',options:{kind:'city',pattern:'organic',density:.83,waterfrontBias:.9}}],assets:[]};
+    const compiled=materializeWorldIntent(intent,evidence,layout,input),patch=compiled.bundle.patches[0];
+    expect(patch.streets.some(street=>street.tags.includes('waterfront'))).toBe(true);
+    expect(patch.buildings.length).toBeGreaterThan(0);
+
+    const sample=createWorldSampler(intent.plan.recipe),inland={...candidate,id:'forced-inland',center:[112,112] as [number,number],
+      foundation:sample(112,112).height};
+    const forged={...evidence,towns:[{id:'bay-town',candidates:[inland]}],landmarkLayouts:[]};
+    expect(()=>materializeWorldIntent(intent,forged,{...layout,towns:[{townId:'bay-town',candidateId:inland.id}]},input))
+      .toThrow('world_settlement_waterfront_unreachable:bay-town');
   },15_000);
 
   it('fails after the single repair instead of accepting changed request semantics', async () => {

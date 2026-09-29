@@ -67,10 +67,10 @@ function inspectSite(recipe: WorldRecipe, sample: WorldSampler, intent: WorldSit
   }
   const middle = sample(center[0], center[1]);
   if (middle.waterLevel !== null || middle.height <= 2 || dry < 13) return null;
+  const dryRatio = dry / 25;
   const water = nearestWater(recipe, sample, center, Math.max(intent.radius * 2, 160), intent.targetWaterBodyId);
   const target = intent.targetWaterBodyId;
   if (target && (!water || (target === 'sea' ? water.type !== 'sea' : water.id !== target))) return null;
-  if ((intent.waterfrontBias ?? 0) >= 0.5 && (!water || water.distance > intent.radius * 1.45)) return null;
   const accessDirections:Point[] = [];
   for (let ray = 0; ray < 8; ray++) {
     const angle = ray * Math.PI / 4;
@@ -84,12 +84,25 @@ function inspectSite(recipe: WorldRecipe, sample: WorldSampler, intent: WorldSit
   }
   const passableDirections=accessDirections.length;
   if (passableDirections < 2) return null;
-  const relief = Math.max(...values) - Math.min(...values), dryRatio = dry / 25;
+  const relief = Math.max(...values) - Math.min(...values);
   const waterPenalty = (intent.waterfrontBias ?? 0) > 0 && water
     ? Math.abs(water.distance - intent.radius) / Math.max(1, intent.radius) * (intent.waterfrontBias ?? 0) : 0;
   const score = (1 - dryRatio) * 8 + relief / Math.max(8, intent.radius) + maxSlope * 5 + waterPenalty - passableDirections * 0.08;
   return { id: '', townId: intent.id, center, foundation: middle.height, dryRatio, relief, maxSlope,
     passableDirections, accessDirections, water, score };
+}
+
+function reachableWaterfront(intent:WorldSiteIntent,candidate:WorldSiteCandidate):boolean {
+  if((intent.waterfrontBias??0)<.5) return true;
+  if(!candidate.water) return false;
+  const reachableShore=reachableShoreDistance(intent.radius,candidate.water.direction);
+  return !!candidate.water&&candidate.water.distance<=reachableShore&&candidate.dryRatio>=.68;
+}
+
+function reachableShoreDistance(radius:number,direction:Point):number {
+  // Shore probes cover the central 0.8r square. Its reach depends on the sampled water direction;
+  // settlement then searches another 0.58r from that probe.
+  return radius*(.4*(Math.abs(direction[0])+Math.abs(direction[1]))+.58);
 }
 
 /** Deterministic, bounded site search over the requested broad world region. */
@@ -105,7 +118,19 @@ export function findWorldSiteCandidates(recipe: WorldRecipe, intent: WorldSiteIn
     if(seen.has(key)) continue;
     seen.add(key);
     const result = inspectSite(recipe, sample, intent, center);
-    if (result) candidates.push(result);
+    if(result&&reachableWaterfront(intent,result)) candidates.push(result);
+    if(result&&(intent.waterfrontBias??0)>=.5&&result.water) {
+      const reachableShore=reachableShoreDistance(intent.radius,result.water.direction),desired=reachableShore*.85;
+      const shift=result.water.distance-desired,projected:Point=[
+        Math.max(-bound,Math.min(bound,center[0]+result.water.direction[0]*shift)),
+        Math.max(-bound,Math.min(bound,center[1]+result.water.direction[1]*shift))];
+      const projectedKey=projected.map(value=>value.toFixed(6)).join(':');
+      if(!seen.has(projectedKey)) {
+        seen.add(projectedKey);
+        const bank=inspectSite(recipe,sample,intent,projected);
+        if(bank&&reachableWaterfront(intent,bank)) candidates.push(bank);
+      }
+    }
   }
   candidates.sort((a, b) => a.score - b.score || a.center[0] - b.center[0] || a.center[1] - b.center[1]);
   const spaced:WorldSiteCandidate[]=[];
