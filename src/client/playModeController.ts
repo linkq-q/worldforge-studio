@@ -11,6 +11,7 @@ import {
 import { movementDelta } from '../shared/math';
 import { isPointInsideWaterBody } from '../shared/mapWater';
 import { PLAYER_GRAVITY, type InputState, type Vec3 } from '../shared/protocol';
+import { worldMapSampler } from '../shared/worldMapState';
 import { getMapMeshCollisionWorld, type MeshCollisionWorld } from './mapMeshCollision';
 
 const WATER_SPEED_SCALE = 0.62;
@@ -269,7 +270,13 @@ export function stepPlayMotion(
   };
 }
 
-function waterAt(map: EditableMap, x: number, z: number): MapWaterBody | null {
+function waterAt(map: EditableMap, x: number, z: number): Pick<MapWaterBody, 'id' | 'level'> | null {
+  if (map.world) {
+    const sample = worldMapSampler(map.world)(x, z);
+    return sample.waterLevel === null
+      ? null
+      : { id: sample.waterBodyId ?? 'world-ocean', level: sample.waterLevel };
+  }
   return map.waterBodies.find((water) => isPointInsideWaterBody(water, x, z, map)) ?? null;
 }
 

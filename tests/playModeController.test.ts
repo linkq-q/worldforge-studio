@@ -3,7 +3,9 @@ import * as THREE from 'three';
 import { createEmptyMap, type MapWaterBody } from '../src/shared/map';
 import type { InputState } from '../src/shared/protocol';
 import { MapGrassInteraction } from '../src/client/mapGrassInteraction';
+import { MeshCollisionWorld } from '../src/client/mapMeshCollision';
 import { PlayModeController, stepPlayMotion, type PlayMotionState } from '../src/client/playModeController';
+import { worldMapSampler, type WorldMapState } from '../src/shared/worldMapState';
 
 const FORWARD: InputState = {
   forward: true,
@@ -68,6 +70,26 @@ describe('first-person play mode', () => {
     expect(Math.abs(wadingStep.position[2] - entered.position[2])).toBeCloseTo(0.21 * 0.62, 4);
   });
 
+  it('detects world water from the persisted sampler when map water bodies are empty', () => {
+    const map = createEmptyMap('连续世界湖泊');
+    map.world = worldWithLake();
+    const sample = worldMapSampler(map.world);
+    const center = sample(0, 0);
+    const collision = new MeshCollisionWorld();
+    const entered = stepPlayMotion({ ...state(), position: [0, center.height, 0] }, {
+      ...FORWARD,
+      forward: false
+    }, 0, false, map, collision);
+    const wadingStep = stepPlayMotion(entered, FORWARD, 0.05, false, map, collision);
+
+    expect(map.waterBodies).toEqual([]);
+    expect(center.waterLevel! - center.height).toBeGreaterThan(0.08);
+    expect(entered.wading).toBe(true);
+    expect(entered.waterBodyId).toBe('world-lake');
+    expect(Math.abs(wadingStep.position[2] - entered.position[2])).toBeCloseTo(0.21 * 0.62, 4);
+    collision.dispose();
+  });
+
   it('bends grass in the shader without rewriting instance matrices', () => {
     const root = new THREE.Group();
     const material = new THREE.MeshBasicMaterial();
@@ -120,5 +142,37 @@ function lake(): MapWaterBody {
     depth: 1,
     width: 2,
     points: [[-3, -3], [3, -3], [3, 3], [-3, 3]]
+  };
+}
+
+function worldWithLake(): WorldMapState {
+  return {
+    bundle: {
+      plan: {
+        version: 1,
+        id: 'play-water-world',
+        revision: 1,
+        prompt: 'A lake used for play-mode water detection',
+        recipe: {
+          version: 1,
+          seed: 2309,
+          size: 500,
+          heightScale: 0.1,
+          constraints: [{ region: 'center', biome: 'grassland' }],
+          waterBodies: [{
+            id: 'world-lake',
+            type: 'lake',
+            region: { kind: 'circle', center: [0, 0], radius: 40 },
+            levels: [20],
+            depth: 2
+          }]
+        },
+        towns: [],
+        roads: [],
+        ecology: []
+      },
+      patches: []
+    },
+    assets: []
   };
 }
