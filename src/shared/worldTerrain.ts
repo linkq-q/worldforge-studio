@@ -456,6 +456,12 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       total += w;
     }
     continentalness = continentalness / total + broad * 0.14;
+    if (compactRelief) {
+      // Global-coordinate folds stop a 500m coast from tracing one region-anchor line.
+      const coastBand = 1 - smooth(0.04, 0.28, Math.abs(continentalness));
+      continentalness += fbm(x / (1000 * terrainScale), z / (1000 * terrainScale), seed + 1667, 2)
+        * 0.06 * coastBand;
+    }
     moisture = clamp(moisture / total
       + fbm(x / (4500 * terrainScale) + 13, z / (4500 * terrainScale), seed + 809, 2) * 0.08);
     temperature = clamp(temperature / total);
@@ -492,8 +498,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         height += form.height * influence;
         if (form.height > 0) {
           const slopeBand = 64 * d2 ** 3 * (1 - d2) ** 3;
+          const smallHillBoost = Math.sqrt(form.height) * 1.3 * (1 - smooth(20, 40, form.height));
           authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
-            slopeBand * Math.min(14, form.height * 0.16));
+            slopeBand * Math.min(14, form.height * 0.16 + smallHillBoost));
         }
       }
     }
@@ -504,8 +511,11 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     }
     for (const brush of recipe.terrainBrushes ?? []) {
       const authoredFeather = brush.feather ?? 0;
+      // Preserve deliberate drainage cuts; only bulk earthworks need the slope-safe expansion.
+      const narrowGully = brush.mode === 'lower' && brush.amount <= 4
+        && brush.region.kind === 'path' && brush.region.width <= 12;
       const feather = compactRelief && (brush.mode === 'raise' || brush.mode === 'lower')
-        ? Math.max(authoredFeather, brush.amount * 3.75)
+        && !narrowGully ? Math.max(authoredFeather, brush.amount * 3.75)
         : authoredFeather;
       const area = regionSample(brush.region, x, z);
       const influence = area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
