@@ -87,7 +87,7 @@ export function generateWorldSettlement(
   const site = selectSite(town, dry, slope);
   if (!site) throw new Error('world_settlement_no_buildable_site');
   const shore = settings.waterfrontBias > 0
-    ? findShore(town, sample, site, settings.waterSetback + settings.arterialWidth / 2)
+    ? findShore(town, sample, site, settings.waterSetback + settings.arterialWidth / 2, town.targetWaterBodyId)
     : undefined;
   const rotation = shore
     ? Math.atan2(shore.tangent[1], shore.tangent[0])
@@ -127,6 +127,11 @@ export function generateWorldSettlement(
         if (link.length > 1 && !same(link[0], link.at(-1)!)) {
           streets.push(guide(`${town.id}-waterfront-link`, link, settings.roadWidth,
             ['settlement', settings.kind, 'street']));
+        }
+        if(town.targetWaterBodyId==='sea') {
+          const landing=shoreLanding(shorePoints,town,sample,settings,roadSafe);
+          if(landing) streets.push(guide(`${town.id}-sea-landing`,landing,settings.roadWidth,
+            ['settlement',settings.kind,'street','waterfront','sea-landing']));
         }
       }
     }
@@ -422,13 +427,14 @@ function findShore(
   town: TownIntent,
   sample: WorldSettlementSampler,
   center: Point,
-  clearance: number
+  clearance: number,
+  targetWaterBodyId?: string
 ): Shore | undefined {
   let best: { point: Point; direction: Point; distance: number; score: number } | undefined;
   for (let z = -4; z <= 4; z++) for (let x = -4; x <= 4; x++) {
     const point: Point = [center[0] + x * town.radius * 0.1, center[1] + z * town.radius * 0.1];
     if (!inside(town, point, clearance) || wet(sampleAt(sample, town, point))) continue;
-    const water = nearestWater(sample, town, point, Math.min(180, town.radius * 0.58));
+    const water = nearestWater(sample, town, point, Math.min(180, town.radius * 0.58),targetWaterBodyId);
     if (!water || water.distance < clearance) continue;
     const score = water.distance + sampleSlope(sample, town, point) * town.radius * 2;
     if (!best || score < best.score) best = { point, direction: water.direction, distance: water.distance, score };
@@ -441,7 +447,8 @@ function nearestWater(
   sample: WorldSettlementSampler,
   town: TownIntent,
   point: Point,
-  reach: number
+  reach: number,
+  targetWaterBodyId?: string
 ): { direction: Point; distance: number } | undefined {
   let best: { direction: Point; distance: number } | undefined;
   const step = Math.max(4, Math.min(10, reach / 12));
@@ -451,13 +458,32 @@ function nearestWater(
     for (let distance = step; distance <= reach + EPS; distance += step) {
       const probe = add(point, scale(unit, distance));
       if (!inside(town, probe, 0)) break;
-      if (wet(sampleAt(sample, town, probe))) {
+      const value=sampleAt(sample,town,probe);
+      const target=targetWaterBodyId===undefined||targetWaterBodyId==='sea'?value.waterBodyId===null:value.waterBodyId===targetWaterBodyId;
+      if (wet(value) && (targetWaterBodyId===undefined||target)) {
         if (!best || distance < best.distance) best = { direction: unit, distance };
         break;
       }
     }
   }
   return best;
+}
+
+function shoreLanding(
+  shore:Point[],town:TownIntent,sample:WorldSettlementSampler,settings:Settings,
+  safe:(a:Point,b:Point,width:number)=>boolean
+):Point[]|undefined {
+  const clearance=settings.waterSetback+settings.roadWidth/2+1;
+  const candidates=shore.map(point=>({point,water:nearestWater(sample,town,point,Math.min(180,town.radius*.58),'sea')}))
+    .filter((item):item is {point:Point;water:{direction:Point;distance:number}}=>Boolean(item.water))
+    .sort((a,b)=>a.water.distance-b.water.distance||distance(a.point,[0,0])-distance(b.point,[0,0]));
+  for(const {point,water} of candidates) {
+    const length=water.distance-clearance;
+    if(length<3) continue;
+    const end=add(point,scale(water.direction,length));
+    if(safe(point,end,settings.roadWidth)) return [point,end];
+  }
+  return undefined;
 }
 
 function contourAngle(sample: WorldSettlementSampler, town: TownIntent, point: Point, random: () => number): number {
@@ -606,7 +632,7 @@ function traceShore(
         const nextHeading = rotate(heading, turn);
         const next = add(current, scale(nextHeading, step));
         if (!inside(town, next, settings.arterialWidth / 2) || !safe(current, next, settings.arterialWidth)) continue;
-        const water = nearestWater(sample, town, next, Math.min(180, town.radius * 0.58));
+        const water = nearestWater(sample, town, next, Math.min(180, town.radius * 0.58),town.targetWaterBodyId);
         if (!water) continue;
         const score = Math.abs(water.distance - desired) + sampleSlope(sample, town, next) * 80 + Math.abs(turn) * 6;
         if (!best || score < best.score) best = { point: next, heading: nextHeading, score };

@@ -318,6 +318,37 @@ describe('world settlement growth', () => {
     expectSafeRoadShape(patch);
   });
 
+  it.each(['straight','diagonal'] as const)('connects a deterministic dry sea landing on a %s coast', coast => {
+    const plan=fixture(),town=plan.towns[0],base=sampler(plan);
+    town.targetWaterBodyId='sea';
+    const sample:WorldSettlementSampler=(x,z) => {
+      const original=base(x,z),lx=x-town.center[0],lz=z-town.center[1];
+      const water=coast==='straight'?lx < -100:lx+lz < -140;
+      return {...original,height:water?-3:12,waterLevel:water?0:null,waterBodyId:null};
+    };
+    const options={kind:'city' as const,pattern:'organic' as const,seed:47,density:.8,waterfrontBias:1,waterSetback:6};
+    const patch=generateWorldSettlement(plan,town.id,sample,options);
+    expect(generateWorldSettlement(plan,town.id,sample,options)).toEqual(patch);
+    const landing=patch.streets.find(street=>street.tags.includes('sea-landing'))!;
+    const waterfront=patch.streets.find(street=>street.tags.includes('waterfront')&&!street.tags.includes('sea-landing'))!;
+    expect(landing).toBeDefined();
+    expect(waterfront.points).toContainEqual(landing.points[0]);
+    expect(patch.streets.some(street=>street.tags.includes('waterfront')&&!street.tags.includes('sea-landing'))).toBe(true);
+    for(const point of landing.points) expect(sample(town.center[0]+point[0],town.center[1]+point[1]).waterLevel).toBeNull();
+    const coastDistance=(point:Point)=>coast==='straight'?point[0]+100:(point[0]+point[1]+140)/Math.sqrt(2);
+    expect(coastDistance(landing.points.at(-1)!)).toBeLessThan(coastDistance(landing.points[0]));
+    expect(validateTownPatch(plan,patch)).toEqual(patch);
+  });
+
+  it('does not create a sea landing without sampled sea water', () => {
+    const plan=fixture();
+    plan.towns[0].targetWaterBodyId='sea';
+    const patch=generateWorldSettlement(plan,'town',sampler(plan),{
+      kind:'city',pattern:'organic',seed:47,density:.8,waterfrontBias:1,waterSetback:6
+    });
+    expect(patch.streets.some(street=>street.tags.includes('sea-landing'))).toBe(false);
+  });
+
   it('reserves a landmark footprint, retains its asset contract and connects its entrance', () => {
     const plan = fixture(), sample = sampler(plan);
     const landmark: TownBuilding = {
