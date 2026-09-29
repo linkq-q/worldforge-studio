@@ -1770,6 +1770,7 @@ class MapEditor {
         ${map.sceneMode === 'outdoor' ? `<details class="map-ai-advanced" ${map.world ? 'open' : ''}>
           <summary>连续大世界</summary>
           <label class="field compact"><span>世界宽度（米）</span><input id="world-width" type="number" min="500" max="256000" step="100" value="${this.worldWidth}" /></label>
+          <p id="world-size-hint" class="empty inspector-note">面积约 ${Math.round((this.worldWidth / MAP_SIZE_PRESETS[1].size[0]) ** 2)} 张中地图（${MAP_SIZE_PRESETS[1].size[0]} × ${MAP_SIZE_PRESETS[1].size[2]} 米）</p>
           <label class="field compact map-ai-toggle"><span>生成建筑资产 · DeepSeek</span><input id="world-assets" type="checkbox" ${this.worldGenerateAssets ? 'checked' : ''} /></label>
           <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
           <p class="empty inspector-note">先规划地形、聚落功能与交通，再生成街区和群落。大建筑沿用部件装配；地形和内容按附近区块加载。</p>
@@ -2041,7 +2042,11 @@ class MapEditor {
       else void this.generateMapAiPreview('generate');
     });
     host.querySelector<HTMLInputElement>('#world-width')?.addEventListener('change', event => {
-      this.worldWidth = Math.max(500, Math.min(256000, Number((event.target as HTMLInputElement).value) || 1600));
+      const input = event.target as HTMLInputElement;
+      this.worldWidth = Math.max(500, Math.min(256000, Number(input.value) || 500));
+      input.value = String(this.worldWidth);
+      const hint = host.querySelector('#world-size-hint');
+      if (hint) hint.textContent = `面积约 ${Math.round((this.worldWidth / MAP_SIZE_PRESETS[1].size[0]) ** 2)} 张中地图（${MAP_SIZE_PRESETS[1].size[0]} × ${MAP_SIZE_PRESETS[1].size[2]} 米）`;
     });
     host.querySelector<HTMLInputElement>('#world-assets')?.addEventListener('change', event => {
       this.worldGenerateAssets = (event.target as HTMLInputElement).checked;
