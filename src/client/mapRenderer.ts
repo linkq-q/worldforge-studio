@@ -44,6 +44,7 @@ import {
 } from '@voxel-studio/render-runtime/utils/MaterialShaderPatchChain.js';
 import type { RuntimeIndex } from '@voxel-studio/render-runtime';
 import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
+import type { MeshCollisionWorld } from './mapMeshCollision';
 import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights, resolvedMapObjectLight } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
@@ -74,6 +75,18 @@ export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassBlades: number;
   grassFlowers: number;
   grassDrawCalls: number;
+  streaming?: {
+    terrainTiles: number;
+    contentChunks: number;
+    buildings: number;
+    ecologyInstances: number;
+    texturePixels: number;
+    collisionTriangles: number;
+    collisionMeshes: number;
+    pendingTiles: number;
+    unloadedTiles: number;
+    finestTerrainSpacing: number;
+  };
 }
 
 export interface MapBuildProfile {
@@ -114,6 +127,12 @@ export interface RenderedMap {
   interactGrass: (position: Vec3, elapsedSeconds: number) => void;
   clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
+  /** Present only for derived streaming worlds; play mode reads the live nearby BVHs. */
+  getCollisionWorld?: () => MeshCollisionWorld | null;
+  /** Render runtimes use this to rebind scoped water/material capabilities after a chunk swap. */
+  subscribeContentChanges?: (listener: () => void) => () => void;
+  /** Keeps directional-shadow coverage on the resident play area instead of the full world box. */
+  getActiveLightingBounds?: () => { center: Vec3; size: Vec3 } | null;
   /**
    * Rebuilds only the grass field and the terrain tint that follows it. Grass
    * edits touch nothing else, so they must not pay for a whole scene rebuild.
@@ -133,6 +152,10 @@ export interface MapRenderOptions {
   scene?: THREE.Scene;
   renderer?: THREE.WebGLRenderer;
   motionAdapter?: MapMotionAdapter;
+  /** Derived world chunks use smaller bounded textures; ordinary maps keep the 1536 default. */
+  terrainTextureSize?: number;
+  /** Streamed interior chunks omit the closed-map vertical border skirt. */
+  terrainBorderSides?: boolean;
 }
 
 export interface MapMotionController {
@@ -153,7 +176,10 @@ export interface MapMotionAdapter {
 }
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
-  const buildStartedAt = performance.now();
+  if (input.world) {
+    const { buildStreamedWorldMapGroup } = await import('./worldMapRenderer');
+    return buildStreamedWorldMapGroup(input, options);
+  }
   // The editor catalogue can contain thousands of assets. A scene build only
   // needs models referenced by objects in this map.
   const usedAssetIds = new Set(input.objects.flatMap((object) => object.assetId ? [object.assetId] : []));
@@ -161,8 +187,14 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     ...input,
     assets: input.assets?.filter((asset) => usedAssetIds.has(asset.id))
   });
+  return buildNormalizedEditableMapGroupCore(normalizedMap, options);
+}
+
+/** Render-only entry for already validated derived maps. */
+export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
+  const buildStartedAt = performance.now();
   // Keep the persisted map/collider data untouched; only the render snapshot gets micro-offsets.
-  const zFighting = resolveMapModelZFighting(normalizedMap);
+  const zFighting = resolveMapModelZFighting(mapInput);
   const map = zFighting.map;
   let currentMap = map;
   const root = new THREE.Group();
@@ -181,7 +213,9 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
 
   let grassMap = deriveContactAwareGrassMap(map);
   const coast = mapOceanCoast(map);
-  const terrain = buildTerrain(map, coast);
+  const terrainTextureSize = resolveTerrainTextureSize(options.terrainTextureSize);
+  const terrainBorderSides = options.terrainBorderSides ?? true;
+  const terrain = buildTerrain(map, coast, terrainTextureSize, terrainBorderSides);
   terrain.visible = map.sceneMode !== 'indoor';
   const sandFlow = terrain.userData.sandFlow as TerrainSandFlowState;
   applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
@@ -384,7 +418,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.soilMoist = style.soilRecipe === 'moist' ? 1 : 0;
       sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined);
+      replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined, terrainTextureSize);
       rebuildRoadMaterials(currentMap);
       snowLayer?.material.copy(material);
       terrain.userData.terrainMaterialStyle = { ...style };
@@ -397,7 +431,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       terrainPalette = paletteTerrainColors(palette ?? undefined);
       const report = palette ? paletteMaterials.apply(palette) : (paletteMaterials.clear(), paletteMaterials.report());
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined);
+      replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined, terrainTextureSize);
       snowLayer?.material.copy(material);
       if (roomShell) applyRoomShellPalette(roomShell, currentMap, palette);
       applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
@@ -439,13 +473,15 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       currentMap = next;
       terrain.geometry.dispose();
       const nextCoast = mapOceanCoast(next);
-      terrain.geometry = buildTerrainGeometry(next, nextCoast);
+      terrain.geometry = buildTerrainGeometry(next, nextCoast, terrainBorderSides);
       refreshStructuredWaterTerrain(waterRoot, next, nextCoast);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined);
+      replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined, terrainTextureSize);
       sandFlow.snowSurface.dispose();
       sandFlow.snowSurface = createTerrainSnowTexture(next);
+      sandFlow.sandSurface.dispose();
+      sandFlow.sandSurface = createTerrainSandSurface(next, Math.min(512, terrainTextureSize));
       sandFlow.mapSize.set(next.box.size[0], next.box.size[2]);
       updateTerrainSandZones(sandFlow, next);
       disposeSnowLayer();
@@ -462,6 +498,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grass?.dispose();
       instancing.dispose();
       sandFlow.snowSurface.dispose();
+      sandFlow.sandSurface.dispose();
       disposeSnowLayer();
       disposeObject(root);
     }
@@ -848,9 +885,9 @@ function createBrickRoadOverlayTextures(style: RuntimeTerrainMaterialStyle): { m
   return { map: mapTexture, bumpMap: bumpTexture, normalMap: normalTexture };
 }
 
-function buildTerrain(map: EditableMap, coast: OceanCoastField | null): THREE.Mesh {
-  const geometry = buildTerrainGeometry(map, coast);
-  const textures = createTerrainTextureSet(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE);
+function buildTerrain(map: EditableMap, coast: OceanCoastField | null, textureSize: number, borderSides: boolean): THREE.Mesh {
+  const geometry = buildTerrainGeometry(map, coast, borderSides);
+  const textures = createTerrainTextureSet(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, undefined, textureSize);
   const material = new THREE.MeshStandardMaterial({
     map: textures.map,
     roughnessMap: textures.roughnessMap,
@@ -870,7 +907,7 @@ function buildTerrain(map: EditableMap, coast: OceanCoastField | null): THREE.Me
   mesh.receiveShadow = true;
   mesh.userData.surface = 'terrain';
   mesh.userData.terrainTextureChannels = ['color', 'roughness', 'bump', 'normal'];
-  mesh.userData.sandFlow = installTerrainSandShader(material, map);
+  mesh.userData.sandFlow = installTerrainSandShader(material, map, textureSize);
   return mesh;
 }
 
@@ -884,12 +921,13 @@ interface TerrainSandFlowState {
   wetness: number;
   snowCover: number;
   snowSurface: THREE.DataTexture;
+  sandSurface: THREE.DataTexture;
   mapSize: THREE.Vector2;
   oceanLevel: number;
   shader: THREE.WebGLProgramParametersWithUniforms | null;
 }
 
-function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: EditableMap): TerrainSandFlowState {
+function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: EditableMap, textureSize: number): TerrainSandFlowState {
   const state: TerrainSandFlowState = {
     time: 0,
     strength: 0,
@@ -900,6 +938,7 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
     wetness: 0,
     snowCover: 0,
     snowSurface: createTerrainSnowTexture(map),
+    sandSurface: createTerrainSandSurface(map, Math.min(512, textureSize)),
     mapSize: new THREE.Vector2(map.box.size[0], map.box.size[2]),
     oceanLevel: -100000,
     shader: null
@@ -917,15 +956,17 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
     shader.uniforms.uTerrainWetness = { value: state.wetness };
     shader.uniforms.uTerrainSnowCover = { value: state.snowCover };
     shader.uniforms.uTerrainSnowSurface = { value: state.snowSurface };
+    shader.uniforms.uTerrainSandSurface = { value: state.sandSurface };
     shader.uniforms.uTerrainMapSize = { value: state.mapSize };
     shader.uniforms.uTerrainOceanLevel = { value: state.oceanLevel };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainSandPosition;\nvarying vec3 vTerrainWorldNormal;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainSandPosition = position;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainSandPosition;\nvarying vec3 vTerrainSandWorldPosition;\nvarying vec3 vTerrainWorldNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainSandPosition = position;\nvTerrainSandWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;')
       .replace('#include <defaultnormal_vertex>', '#include <defaultnormal_vertex>\nvTerrainWorldNormal = inverseTransformDirection(transformedNormal, viewMatrix);');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec3 vTerrainSandPosition;
+        varying vec3 vTerrainSandWorldPosition;
         uniform float uTerrainSandTime;
         uniform float uTerrainSandStrength;
         uniform int uTerrainSandZoneCount;
@@ -936,6 +977,7 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
         uniform float uTerrainWetness;
         uniform float uTerrainSnowCover;
         uniform sampler2D uTerrainSnowSurface;
+        uniform sampler2D uTerrainSandSurface;
         uniform vec2 uTerrainMapSize;
         uniform float uTerrainOceanLevel;
         varying vec3 vTerrainWorldNormal;
@@ -943,24 +985,40 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
       .replace('#include <map_fragment>', `#include <map_fragment>
         vec3 nativeSnow = texture2D(uTerrainSnowSurface, vTerrainSandPosition.xz / uTerrainMapSize + 0.5).rgb;
         float nativeSnowMask = nativeSnow.r * smoothstep(0.05, 0.25, normalize(vTerrainWorldNormal).y);
-        float terrainSandMask = 0.0;
-        for (int i = 0; i < 8; i++) {
-          if (i >= uTerrainSandZoneCount) break;
-          vec4 zone = uTerrainSandZones[i];
-          float distanceToZone = length(vTerrainSandPosition.xz - zone.xy);
-          terrainSandMask = max(terrainSandMask, (1.0 - smoothstep(zone.z * 0.72, zone.z, distanceToZone)) * zone.w);
-        }
-        float terrainSandRipple = sin(dot(vTerrainSandPosition.xz, vec2(0.72, 0.38)) * 3.2 - uTerrainSandTime * 1.7) * 0.58;
-        terrainSandRipple += sin(dot(vTerrainSandPosition.xz, vec2(-0.31, 0.95)) * 5.1 - uTerrainSandTime * 1.15) * 0.42;
-        float terrainSandFlow = smoothstep(0.08, 0.82, terrainSandRipple) * terrainSandMask * uTerrainSandStrength;
+        float terrainSandMask = texture2D(uTerrainSandSurface, vTerrainSandPosition.xz / uTerrainMapSize + 0.5).r;
+        float terrainFlowWave = sin(dot(vTerrainSandWorldPosition.xz, vec2(0.72, 0.38)) * 3.2 - uTerrainSandTime * 1.7) * 0.58;
+        terrainFlowWave += sin(dot(vTerrainSandWorldPosition.xz, vec2(-0.31, 0.95)) * 5.1 - uTerrainSandTime * 1.15) * 0.42;
+        float terrainSandFlow = smoothstep(0.08, 0.82, terrainFlowWave) * terrainSandMask * uTerrainSandStrength;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.78, 0.34), terrainSandFlow * 0.42);
-        diffuseColor.rgb *= 1.0 - smoothstep(0.52, 0.92, terrainSandRipple) * terrainSandMask * uTerrainSandStrength * 0.12;
+        diffuseColor.rgb *= 1.0 - smoothstep(0.52, 0.92, terrainFlowWave) * terrainSandMask * uTerrainSandStrength * 0.12;
         float terrainDetail = sin(vTerrainSandPosition.x * 9.1) * sin(vTerrainSandPosition.z * 7.7);
         diffuseColor.rgb *= 1.0 + terrainDetail * uTerrainDetailStrength * 0.018;
         // The vertex height is the same derived surface consumed by ocean water.
         float terrainCoastWet = (1.0 - smoothstep(-0.1, 0.35, vTerrainSandPosition.y - uTerrainOceanLevel)) * terrainSandMask;
         float terrainWetMask = max(terrainCoastWet * 0.7, uTerrainWetness * (0.45 + terrainSandMask * 0.35));
-        diffuseColor.rgb *= 1.0 - terrainWetMask * 0.24;
+        float terrainWetSandMask = terrainSandMask * max(terrainCoastWet, uTerrainWetness * 0.65);
+        vec2 sandP = vec2(dot(vTerrainSandWorldPosition.xz, vec2(0.97, 0.243)),
+          dot(vTerrainSandWorldPosition.xz, vec2(-0.243, 0.97)));
+        float sandSpacingWarp = sin(sandP.y * 0.51 + sin(sandP.x * 0.21) * 1.1) * 1.18
+          + sin(sandP.y * 0.17 + sandP.x * 0.37) * 0.72;
+        float sandPhase = sandP.y * 4.85 + sandSpacingWarp
+          + sin(sandP.x * 1.2) * 0.72 + sin(sandP.x * 0.29 + sandP.y * 0.13) * 0.58;
+        float terrainSandAntialias = 1.0 - smoothstep(0.4, 2.2, fwidth(sandPhase));
+        float sandShape = sin(sandPhase);
+        float sandWidthVariation = sin(sandP.x * 0.34 + sandP.y * 0.2) * 0.5 + 0.5;
+        float sandCrest = smoothstep(0.3 + sandWidthVariation * 0.18, 0.91, sandShape);
+        float sandTrough = smoothstep(0.25, 0.86 - sandWidthVariation * 0.12, sin(sandPhase - 0.48));
+        float sandStrengthVariation = 0.55 + 0.45 * (sin(sandP.x * 0.27 - sandP.y * 0.16) * 0.5 + 0.5);
+        float sandRippleFade = 0.38 + 0.62 * smoothstep(0.08, 0.86,
+          sin(sandP.x * 0.18 + sin(sandP.y * 0.11)) * 0.5 + 0.5);
+        float terrainSandRipple = (sandCrest * 0.055 - sandTrough * 0.06) * sandStrengthVariation
+          * sandRippleFade * terrainSandAntialias * (1.0 - terrainWetSandMask * 0.48)
+          * (0.35 + uTerrainDetailStrength * 0.65);
+        diffuseColor.rgb *= 1.0 + terrainSandMask * terrainSandRipple;
+        float wetSandLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+        vec3 wetSandColor = mix(vec3(wetSandLuma), diffuseColor.rgb, 0.38) * 0.78;
+        diffuseColor.rgb = mix(diffuseColor.rgb, wetSandColor, terrainWetSandMask * 0.72);
+        diffuseColor.rgb *= 1.0 - terrainWetMask * 0.12;
         diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.88, 0.91, 0.94), uTerrainSoilMoist * uTerrainWetness * 0.12);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.94, 0.86, 0.68), terrainSandMask * uTerrainSandBeach * 0.08);
         float terrainSnowSlope = smoothstep(0.42, 0.78, normalize(vTerrainWorldNormal).y);
@@ -981,13 +1039,15 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
         #endif
       `)
       .replace('#include <roughnessmap_fragment>',  `#include <roughnessmap_fragment>
+        roughnessFactor = mix(roughnessFactor, 0.92, terrainSandMask);
+        roughnessFactor = mix(roughnessFactor, 0.68, terrainWetSandMask * 0.75);
         roughnessFactor = mix(roughnessFactor, 0.34, uTerrainWetness * 0.65);
         roughnessFactor = mix(roughnessFactor, 0.94, uTerrainSnowCover);
         roughnessFactor = mix(roughnessFactor, 0.82 + nativeSnow.b * 0.14, nativeSnowMask);
       `);
     syncTerrainSandShader(state);
   };
-  material.customProgramCacheKey = () => 'worldforge-terrain-sand-snow-v4';
+  material.customProgramCacheKey = () => 'worldforge-terrain-sand-snow-v5';
   return state;
 }
 
@@ -998,6 +1058,30 @@ function updateTerrainSandZones(state: TerrainSandFlowState, map: EditableMap): 
     .slice(0, 8)
     .map((zone) => new THREE.Vector4(zone.center[0], zone.center[1], zone.radius, zone.intensity));
   syncTerrainSandShader(state);
+}
+
+/** hAIde's verified sand mask, generalized to semantic sand with paving/soil exclusion. */
+function createTerrainSandSurface(map: EditableMap, size: number): THREE.DataTexture {
+  const pixels = new Uint8Array(size * size);
+  const oceanLevel = Math.max(-Infinity, ...map.waterBodies.filter(water => water.type === 'ocean').map(water => water.level));
+  for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
+    const worldX = ((x + 0.5) / size - 0.5) * map.box.size[0];
+    const worldZ = ((z + 0.5) / size - 0.5) * map.box.size[2];
+    const sand = terrainSemanticSurfaceWeight(map, worldX, worldZ, ['sand']);
+    const cover = Math.max(
+      terrainSemanticSurfaceWeight(map, worldX, worldZ, ['paving']),
+      terrainSemanticSurfaceWeight(map, worldX, worldZ, ['soil'])
+    );
+    const submerged = Number.isFinite(oceanLevel)
+      && sampleTerrainHeight(map, worldX, worldZ) <= oceanLevel + 0.03;
+    pixels[z * size + x] = Math.round(255 * (submerged ? 0 : THREE.MathUtils.clamp(sand * (1 - cover), 0, 1)));
+  }
+  const texture = new THREE.DataTexture(pixels, size, size, THREE.RedFormat);
+  texture.name = `terrain-sand:${map.id}`;
+  texture.minFilter = texture.magFilter = THREE.LinearFilter;
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 function syncTerrainSandShader(state: TerrainSandFlowState): void {
@@ -1013,6 +1097,7 @@ function syncTerrainSandShader(state: TerrainSandFlowState): void {
   uniforms.uTerrainWetness.value = state.wetness;
   uniforms.uTerrainSnowCover.value = state.snowCover;
   uniforms.uTerrainSnowSurface.value = state.snowSurface;
+  uniforms.uTerrainSandSurface.value = state.sandSurface;
   uniforms.uTerrainMapSize.value = state.mapSize;
   uniforms.uTerrainOceanLevel.value = state.oceanLevel;
 }
@@ -1547,7 +1632,7 @@ function pushUpwardTriangle(
   else indices.push(a, c, b);
 }
 
-function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null): THREE.BufferGeometry {
+function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null, borderSides = true): THREE.BufferGeometry {
   const terrain = map.terrain;
   const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
   const width = coast?.width ?? terrain.resolutionX;
@@ -1573,7 +1658,7 @@ function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null): 
       for (const triangle of triangles) pushUpwardTriangle(indices, vertices, ...triangle);
     }
   }
-  if (!coast) {
+  if (!coast && borderSides) {
     if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map);
     else addMaskBorderSides(vertices, uvs, indices, map);
   }
@@ -2439,15 +2524,22 @@ type TerrainTextureChannel = 'roughness' | 'bump';
 type TerrainRecipeDetailChannel = 'color' | TerrainTextureChannel;
 type TerrainDetailSurface = 'grass' | 'soil' | 'sand' | 'rocky' | 'paving' | 'snow';
 
+function resolveTerrainTextureSize(value: number | undefined): number {
+  return value === undefined
+    ? TERRAIN_TEXTURE_SIZE
+    : THREE.MathUtils.clamp(Math.round(value), 32, TERRAIN_TEXTURE_SIZE);
+}
+
 function createTerrainTextureSet(
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
-  palette?: ColorPalette
+  palette?: ColorPalette,
+  textureSize = TERRAIN_TEXTURE_SIZE
 ): TerrainTextureSet {
-  const bumpMap = createTerrainPropertyTexture(map, style, 'bump');
+  const bumpMap = createTerrainPropertyTexture(map, style, 'bump', textureSize);
   return {
-    map: createSurfaceTexture(map, 'terrain', undefined, style, palette),
-    roughnessMap: createTerrainPropertyTexture(map, style, 'roughness'),
+    map: createSurfaceTexture(map, 'terrain', undefined, style, palette, textureSize),
+    roughnessMap: createTerrainPropertyTexture(map, style, 'roughness', textureSize),
     bumpMap,
     normalMap: createTerrainNormalTexture(bumpMap, style)
   };
@@ -2457,10 +2549,11 @@ function replaceTerrainTextures(
   material: THREE.MeshStandardMaterial,
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
-  palette?: ColorPalette
+  palette?: ColorPalette,
+  textureSize = TERRAIN_TEXTURE_SIZE
 ): void {
   const previous = [material.map, material.roughnessMap, material.bumpMap, material.normalMap];
-  const textures = createTerrainTextureSet(map, style, palette);
+  const textures = createTerrainTextureSet(map, style, palette, textureSize);
   material.map = textures.map;
   material.roughnessMap = textures.roughnessMap;
   material.bumpMap = textures.bumpMap;
@@ -2546,11 +2639,12 @@ function createTerrainNormalTexture(
 function createTerrainPropertyTexture(
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
-  channel: TerrainTextureChannel
+  channel: TerrainTextureChannel,
+  textureSize = TERRAIN_TEXTURE_SIZE
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = TERRAIN_TEXTURE_SIZE;
-  canvas.height = TERRAIN_TEXTURE_SIZE;
+  canvas.width = textureSize;
+  canvas.height = textureSize;
   const ctx = canvas.getContext('2d');
   if (ctx) {
     ctx.fillStyle = channel === 'roughness' ? '#eeeeee' : '#808080';
@@ -2573,10 +2667,11 @@ function createSurfaceTexture(
   surface: MapSurface,
   segment?: RoomShellSegment,
   terrainStyle: RuntimeTerrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
-  palette?: ColorPalette
+  palette?: ColorPalette,
+  terrainTextureSize = TERRAIN_TEXTURE_SIZE
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  const textureSize = surface === 'terrain' ? TERRAIN_TEXTURE_SIZE : SURFACE_TEXTURE_SIZE;
+  const textureSize = surface === 'terrain' ? terrainTextureSize : SURFACE_TEXTURE_SIZE;
   canvas.width = textureSize;
   canvas.height = textureSize;
   const ctx = canvas.getContext('2d');

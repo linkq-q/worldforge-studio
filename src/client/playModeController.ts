@@ -28,6 +28,8 @@ export interface PlayModeControllerOptions {
   canvas: HTMLCanvasElement;
   camera: THREE.PerspectiveCamera;
   getMap: () => EditableMap | null;
+  /** Streaming worlds replace nearby collision BVHs as the player travels. */
+  getCollisionWorld?: () => MeshCollisionWorld | null;
   onActiveChange: (active: boolean) => void;
   onInteraction: (position: Vec3, speed: number, waterBodyId: string | null) => void;
 }
@@ -60,7 +62,7 @@ export class PlayModeController {
     if (!map || this.active) return false;
     const spawn = getSpawnPoints(map)[0];
     const { radius, height } = getMapPlayerMetrics(map);
-    this.collisionWorld = getMapMeshCollisionWorld(map);
+    this.collisionWorld = this.options.getCollisionWorld?.() ?? getMapMeshCollisionWorld(map);
     const resolved = this.collisionWorld.resolveCapsule(
       new THREE.Vector3(...spawn),
       radius,
@@ -116,6 +118,7 @@ export class PlayModeController {
     if (!this.active || !this.state || !map || document.pointerLockElement !== this.options.canvas) return;
     const input = this.inputState();
     const before = this.state.position;
+    this.collisionWorld = this.options.getCollisionWorld?.() ?? this.collisionWorld ?? getMapMeshCollisionWorld(map);
     this.state = stepPlayMotion(
       this.state,
       input,

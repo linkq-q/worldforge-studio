@@ -772,6 +772,8 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
   const sceneMode = normalizeMapSceneMode(input.sceneMode);
   const defaultBoxColors = sceneMode === 'indoor' ? DEFAULT_INDOOR_BOX_COLORS : DEFAULT_BOX_COLORS;
   const world = input.world === undefined ? undefined : validateWorldMapState(input.world);
+  if (world && (sceneMode !== 'outdoor' || boxSize[0] !== world.bundle.plan.recipe.size
+    || boxSize[2] !== world.bundle.plan.recipe.size)) throw new Error('world_map_extent_mismatch');
   const terrainFallback = world ? 2 : terrainResolutionForSize(boxSize);
   const terrain = normalizeTerrain(input.terrain, terrainFallback, terrainFallback);
   const playerHeight = input.playerHeight === undefined

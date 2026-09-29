@@ -1,6 +1,8 @@
 import type { MapCatalog } from '../shared/experiments';
 import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
+import type { WorldBundle } from '../shared/worldPlanning';
+import type { WorldAssetBinding } from '../shared/worldMapState';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import {
@@ -355,6 +357,9 @@ class MapEditor {
   private readonly adaptiveQuality = new AdaptiveRenderQuality();
   private renderQualityMode: RenderQualityMode = 'auto';
   private playMode: PlayModeController | null = null;
+  private worldWidth = 1600;
+  private worldGenerateAssets = true;
+  private worldPlaySpawn: [number, number, number] | null = null;
   private hdriFiles: string[] = [];
   private hdriTextures: HdriTexture[] = [];
   private orbit: OrbitControls | null = null;
@@ -1167,8 +1172,13 @@ class MapEditor {
     this.playMode = new PlayModeController({
       canvas: this.renderer.domElement,
       camera: this.camera,
-      getMap: () => this.state.map ? this.mapWithEditorAssets(this.state.map) : null,
+      getMap: () => {
+        if (!this.state.map) return null;
+        const map = this.mapWithEditorAssets(this.state.map);
+        return map.world && this.worldPlaySpawn ? {...map, spawnPoints: [this.worldPlaySpawn]} : map;
+      },
       onActiveChange: (active) => this.setPlayModeActive(active),
+      getCollisionWorld: () => this.renderedMap?.getCollisionWorld?.() ?? null,
       onInteraction: (position, speed, waterBodyId) => {
         if (speed <= 0.02) return;
         this.renderScene?.interact(position, performance.now() / 1000, waterBodyId);
@@ -1342,6 +1352,9 @@ class MapEditor {
     const draftRecovery = await this.prepareBrowserMapDraftRecovery(savedMap);
     this.clearMapAiPreview();
     this.state.map = savedMap;
+    this.worldPlaySpawn = null;
+    if (savedMap.world) this.worldWidth = savedMap.world.bundle.plan.recipe.size;
+    if (savedMap.world && ['terrain', 'grass', 'paint'].includes(this.state.tool)) this.state.tool = 'select';
     this.state.undoTransaction = transaction;
     this.state.redoTransaction = redoTransaction;
     this.state.selectedObjectId = null;
@@ -1357,6 +1370,7 @@ class MapEditor {
     }
     await this.refreshScene();
     if (!draftRecovery) {
+      if (savedMap.world) this.frameWorldTown(savedMap, new URLSearchParams(location.search).get('town') ?? undefined);
       try {
         const plan = await loadBrowserMapPlan(savedMap.id);
         if (plan && isBrowserMapPlanCurrent(savedMap, plan)) {
@@ -1742,6 +1756,14 @@ class MapEditor {
         <label for="map-ai-prompt">场景描述</label>
         <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
+        ${map.sceneMode === 'outdoor' ? `<details class="map-ai-advanced" ${map.world ? 'open' : ''}>
+          <summary>连续大世界</summary>
+          <label class="field compact"><span>世界宽度（米）</span><input id="world-width" type="number" min="500" max="256000" step="100" value="${this.worldWidth}" /></label>
+          <label class="field compact map-ai-toggle"><span>生成建筑资产 · DeepSeek</span><input id="world-assets" type="checkbox" ${this.worldGenerateAssets ? 'checked' : ''} /></label>
+          <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
+          <p class="empty inspector-note">先规划地形、聚落功能与交通，再生成街区和群落。大建筑沿用部件装配；地形和内容按附近区块加载。</p>
+          ${map.world ? `<label class="field compact"><span>前往聚落</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}</option>`).join('')}</select></label>` : ''}
+        </details>` : ''}
         <details class="map-ai-advanced" ${advancedOpen ? 'open' : ''}>
           <summary>高级设置</summary>
         <label class="field compact">
@@ -1925,6 +1947,8 @@ class MapEditor {
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
       if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
+      const worldButton = host.querySelector<HTMLButtonElement>('#generate-world-ai');
+      if (worldButton) worldButton.disabled = blocked || Boolean(this.mapAiSuggestion) || (!map.world && !isCompositionEmptyMap(map));
     });
     host.querySelector<HTMLInputElement>('#map-ai-focus-prompt')?.addEventListener('input', (event) => {
       this.mapAiFocusPrompt = (event.target as HTMLInputElement).value;
@@ -2005,6 +2029,16 @@ class MapEditor {
         || (map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent)) void this.generateCompositionPlanPreview();
       else void this.generateMapAiPreview('generate');
     });
+    host.querySelector<HTMLInputElement>('#world-width')?.addEventListener('change', event => {
+      this.worldWidth = Math.max(500, Math.min(256000, Number((event.target as HTMLInputElement).value) || 1600));
+    });
+    host.querySelector<HTMLInputElement>('#world-assets')?.addEventListener('change', event => {
+      this.worldGenerateAssets = (event.target as HTMLInputElement).checked;
+    });
+    host.querySelector('#generate-world-ai')?.addEventListener('click', () => void this.generateWorldPreview());
+    host.querySelector<HTMLSelectElement>('#world-town')?.addEventListener('change', event => {
+      if (this.state.map) this.frameWorldTown(this.state.map, (event.target as HTMLSelectElement).value);
+    });
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => {
       this.mapAiBaseTerrainOnly = false;
       this.mapAiTargetRegionId = '';
@@ -2080,6 +2114,7 @@ class MapEditor {
   }
 
   private renderMapLayoutHtml(map: EditableMap): string {
+    if (map.world) return `<section class="editor-section"><h2>连续世界</h2><p>${escapeHtml(map.world.bundle.plan.prompt)}</p><p class="empty inspector-note">${map.world.bundle.plan.towns.length} 处聚落 · ${map.world.bundle.plan.roads.length} 条区域道路 · ${map.world.bundle.plan.ecology.length} 类生态群落。地形与群落随世界规划保存，使用上方“连续大世界”调整。</p></section>`;
     const layout = this.mapLayoutSuggestion?.layout ?? map.layout;
     const regionLimit = maxMapRegionCount(map.box.size);
     const selected = layout.regions.find((region) => region.id === this.selectedEcologyRegionId)
@@ -2658,6 +2693,54 @@ class MapEditor {
   }
 
   private mapAiPanelRenderedAt = 0;
+
+  private async generateWorldPreview(): Promise<void> {
+    const map = this.state.map;
+    if (!map || map.sceneMode !== 'outdoor' || this.state.busy || this.state.dirty || !this.mapAiPrompt.trim()) return;
+    if (!map.world && !isCompositionEmptyMap(map)) {
+      this.state.message = '请新建空白室外地图，再生成连续世界';
+      this.renderPanels();
+      return;
+    }
+    this.mapAiAbortController = new AbortController();
+    this.setBusy(true, '正在规划地形、城镇功能与道路…');
+    try {
+      const library = this.state.assetLibraries.find(item => item.id === this.activeAssetLibraryId);
+      const result = await editorFetch<{
+        bundle: WorldBundle;
+        assetSources?: Array<{id: string; assetId: string; role: WorldAssetBinding['role']}>;
+        diagnostics?: Array<{townId: string; planningIssues: string[]}>;
+      }>('/api/editor/worlds/generate', {
+        method: 'POST', signal: this.mapAiAbortController.signal,
+        body: JSON.stringify({prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
+          generateAssets: this.worldGenerateAssets,
+          ...(this.mapAiReuseExistingAssets && library ? {reusableAssetIds: library.assetIds.slice(0, 64)} : {})})
+      });
+      const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role})) ?? [];
+      const generatedAssets = await Promise.all(bindings.map(async binding =>
+        (await editorFetch<{asset: MapAsset}>('/api/editor/assets/' + encodeURIComponent(binding.assetId))).asset));
+      const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings}}];
+      this.clearMapAiPreview();
+      this.mapAiSuggestion = {
+        summary: `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
+          + (result.diagnostics?.flatMap(item => item.planningIssues.map(issue => `${item.townId}: ${issue}`)).join('；') ?? ''),
+        operations, generatedAssets, renderPromptSuggestions: []
+      };
+      this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: [...(map.assets ?? []), ...generatedAssets]}, operations);
+      this.mapAiComparisonMap = map;
+      this.mapAiPreviewVisible = true;
+      this.state.selectedObjectId = null;
+      this.state.message = '世界已在原编辑器预览；确认后作为一次事务保存';
+      await this.refreshScene();
+      this.frameWorldTown(this.mapAiPreviewMap);
+    } catch (error) {
+      this.state.message = error instanceof Error && error.name === 'AbortError' ? '世界生成已取消' : `世界生成失败：${humanizeAgentError(error)}`;
+    } finally {
+      this.mapAiAbortController = null;
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
 
   private async generateCompositionPlanPreview(): Promise<void> {
     const map = this.state.map;
@@ -3750,6 +3833,10 @@ class MapEditor {
       ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
     this.bindSceneLightingPanel(host);
+    if (map.world) host.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-vector="box-size"], [data-map-scene-mode]').forEach(input => {
+      input.disabled = true;
+      input.title = '连续世界的尺寸由世界规划决定';
+    });
     host.querySelector<HTMLInputElement>('[data-map-name]')?.addEventListener('input', (event) => {
       map.name = (event.target as HTMLInputElement).value;
       this.markDirty(false);
@@ -6805,7 +6892,8 @@ class MapEditor {
     const atmosphere = this.renderScene?.getAtmosphereFxStats();
     const weather = this.renderScene?.getWeatherStats();
     return {
-      objects: this.state.map?.objects.length ?? 0,
+      streaming: mapStats?.streaming,
+      objects: (this.state.map?.objects.length ?? 0) + (mapStats?.streaming?.buildings ?? 0),
       waters: this.state.map?.waterBodies.length ?? 0,
       batchableParts: mapStats?.batchableParts ?? 0,
       instancedParts: mapStats?.instancedParts ?? 0,
@@ -6919,7 +7007,9 @@ class MapEditor {
       button.classList.toggle('active', button.dataset.tool === this.state.tool);
       const indoorTerrainTool = this.state.map?.sceneMode === 'indoor'
         && (button.dataset.tool === 'terrain' || button.dataset.tool === 'grass');
-      button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || indoorTerrainTool;
+      const worldTerrainTool = Boolean(this.state.map?.world) && ['terrain', 'grass', 'paint'].includes(button.dataset.tool ?? '');
+      button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || indoorTerrainTool || worldTerrainTool;
+      if (worldTerrainTool) button.title = '在生成面板的“连续大世界”中调整地形与群落';
     });
     const roomWallField = this.app.querySelector<HTMLElement>('#room-wall-display-field');
     if (roomWallField) roomWallField.hidden = !this.state.map?.room;
@@ -7231,9 +7321,29 @@ class MapEditor {
     return confirm('放弃当前未保存更改并继续吗？\n\n确定：放弃\n取消：留在当前地图');
   }
 
+  private frameWorldTown(map: EditableMap, townId?: string): void {
+    const towns = map.world?.bundle.plan.towns;
+    const town = towns?.find(item => item.id === townId) ?? towns?.reduce((largest, item) => item.radius > largest.radius ? item : largest, towns[0]);
+    if (!town || !this.camera || !this.orbit) return;
+    const y = sampleTerrainHeight(map, ...town.center);
+    this.orbit.target.set(town.center[0], y, town.center[1]);
+    this.camera.position.set(town.center[0] + town.radius * 1.25, y + town.radius * 1.5, town.center[1] + town.radius * 1.6);
+    this.orbit.update();
+    const port = town.ports[0]?.position ?? [0, 0];
+    const x = town.center[0] + port[0], z = town.center[1] + port[1];
+    this.worldPlaySpawn = [x, sampleTerrainHeight(map, x, z), z];
+    this.setViewName(town.name);
+  }
+
   private frameMap(): void {
     if (!this.state.map) return;
     const bounds = getMapBounds(this.state.map);
+    if (this.state.map.world) {
+      const size = this.state.map.world.bundle.plan.recipe.size;
+      this.frameBox(new THREE.Box3(new THREE.Vector3(-size / 2, -16, -size / 2), new THREE.Vector3(size / 2, size * 0.15, size / 2)));
+      this.setViewName('世界全景');
+      return;
+    }
     const box = new THREE.Box3(
       new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
       new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
@@ -7252,6 +7362,7 @@ class MapEditor {
   private setView(view: keyof typeof VIEW_DIRECTIONS): void {
     if (!this.state.map) return;
     const bounds = getMapBounds(this.state.map);
+    if (this.state.map.world) bounds.maxY = this.state.map.world.bundle.plan.recipe.size * 0.15;
     this.frameBox(
       new THREE.Box3(
         new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),

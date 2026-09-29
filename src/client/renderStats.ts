@@ -1,3 +1,5 @@
+import type { RenderedMapDebugStats } from './mapRenderer';
+
 export interface RendererInfoSource {
   autoReset: boolean;
   reset(): void;
@@ -12,6 +14,7 @@ export interface RendererInfoSource {
 }
 
 export interface RenderDebugDetails {
+  streaming?: RenderedMapDebugStats['streaming'];
   objects: number;
   waters: number;
   batchableParts: number;
@@ -173,6 +176,7 @@ export class RenderStats {
         <b>${fps.toFixed(0)} FPS</b><span>${this.smoothedFrameMs.toFixed(1)} ms</span>
         <span>calls ${formatCount(this.info.render.calls)}</span><span>tris ${formatCount(this.info.render.triangles)}</span>
       </button>
+      ${details.streaming ? `<small class="perf-world-streaming">地形 ${details.streaming.terrainTiles} 块 · 内容 ${details.streaming.contentChunks} 块 · 建筑 ${details.streaming.buildings} · 植物 ${details.streaming.ecologyInstances}<br>地形间距 ${details.streaming.finestTerrainSpacing.toFixed(1)} m · 待载入 ${details.streaming.pendingTiles} · 已卸载 ${details.streaming.unloadedTiles}</small>` : ''}
       <div class="perf-details" ${expanded ? '' : 'hidden'}>
         <div class="perf-grid">
           <span>物体 <b>${details.objects}</b></span><span>水体 <b>${details.waters}</b></span>
@@ -263,6 +267,7 @@ export function buildPerformanceReport(
     `atmosphereParticles: ${details.atmosphereParticles}`,
     `weatherParticles: ${details.weatherParticles}/${details.weatherCapacity}`,
     `adaptiveQuality: ${details.adaptiveQuality.toFixed(2)}`,
+    ...(details.streaming ? [`world.streaming: ${JSON.stringify(details.streaming)}`] : []),
     `composer: ${details.composerPasses.map((pass) => `${pass.name}=${pass.ms.toFixed(2)}ms`).join(', ') || 'none'}`
   ].join('\n');
 }

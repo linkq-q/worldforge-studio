@@ -130,6 +130,8 @@ export class RenderSceneRuntime {
   private baseFogDensity = 0;
   private rainRippleBudget = 0;
   private rainRippleSequence = 0;
+  private unsubscribeContentChanges: (() => void) | null = null;
+  private contentRefreshQueued = false;
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
@@ -172,7 +174,12 @@ export class RenderSceneRuntime {
 
   /** Re-fits the sun and its shadow camera to the current map. */
   updateLighting(): void {
-    if (this.map) configureSunLight(this.sunLight, this.sunTarget, this.map);
+    if (this.map) configureSunLight(
+      this.sunLight,
+      this.sunTarget,
+      this.map,
+      this.rendered?.getActiveLightingBounds?.() ?? undefined
+    );
   }
 
   /**
@@ -181,6 +188,8 @@ export class RenderSceneRuntime {
    * needs to control that around undo.
    */
   attach(rendered: RenderedMap | null): void {
+    this.unsubscribeContentChanges?.();
+    this.unsubscribeContentChanges = null;
     this.volumetricLight?.clear();
     this.meshRegistry.clear();
     this.adapter.setSceneRoots(
@@ -195,11 +204,9 @@ export class RenderSceneRuntime {
     this.syncAtmosphereFx();
     if (!rendered) return;
     rendered.setLightingQuality(this.adaptiveQuality);
-    rendered.modelsRoot.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (mesh.isMesh && object.userData.editorHelper !== true) this.meshRegistry.set(mesh.uuid, mesh);
-    });
+    this.indexRenderedMeshes(rendered);
     this.applySurfaceCapabilities();
+    this.unsubscribeContentChanges = rendered.subscribeContentChanges?.(() => this.queueContentRefresh(rendered)) ?? null;
   }
 
   setSize(width: number, height: number): void {
@@ -281,11 +288,33 @@ export class RenderSceneRuntime {
   }
 
   dispose(): void {
+    this.unsubscribeContentChanges?.();
+    this.unsubscribeContentChanges = null;
     this.weather.dispose();
     this.atmosphereFx.dispose();
     this.volumetricLight?.dispose();
     this.hdriSky.dispose();
     this.renderer.dispose();
+  }
+
+  private indexRenderedMeshes(rendered: RenderedMap): void {
+    rendered.modelsRoot.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (mesh.isMesh && object.userData.editorHelper !== true) this.meshRegistry.set(mesh.uuid, mesh);
+    });
+  }
+
+  private queueContentRefresh(rendered: RenderedMap): void {
+    if (this.contentRefreshQueued) return;
+    this.contentRefreshQueued = true;
+    queueMicrotask(() => {
+      this.contentRefreshQueued = false;
+      if (this.rendered !== rendered) return;
+      this.meshRegistry.clear();
+      this.indexRenderedMeshes(rendered);
+      this.applyScheme(this.currentScheme);
+      this.updateLighting();
+    });
   }
 
   private syncAtmosphereFx(): void {
