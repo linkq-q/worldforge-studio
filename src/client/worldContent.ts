@@ -3,7 +3,11 @@ import type { WorldRecipe, WorldSample } from '../shared/worldTerrain';
 import { ECOLOGY_CHUNK_SIZE, selectEcologyChunks, type EcologyRule, type EcologyInstance } from '../shared/worldEcology';
 import { worldRoadSampleSpacing, type WorldBundle } from '../shared/worldPlanning';
 import type { MapGuide } from '../shared/mapGuide';
-import { buildWorldAssetBuildings, type WorldAssetLibrary } from './worldAssets';
+import {
+  buildWorldAssetBuildingPlacements, buildWorldAssetBuildings, pickWorldAsset, pickWorldTreeAsset,
+  worldAssetBuildingMatrix, type WorldAssetLibrary, type WorldBuildingPlacement
+} from './worldAssets';
+import { createCollisionMeshInstance, MeshCollisionWorld } from './mapMeshCollision';
 
 export const DEFAULT_ECOLOGY_RULES: EcologyRule[] = [
   { id: 'forest-canopy', kind: 'broadleaf', biome: 'forest', density: 0.95, spacing: 18, maxSlope: 32, scale: [0.8, 1.6] },
@@ -63,7 +67,7 @@ export class WorldEcologyView {
         for (const coarse of [false, true]) for (const kind of ['broadleaf', 'pine', 'shrub', 'rock'] as const) {
           const entries = instances.filter(i => i.kind === kind);
           if (!entries.length) continue;
-          const tree = assets && (kind === 'broadleaf' || kind === 'pine') ? assets.tree : undefined;
+          const tree = assets && (kind === 'broadleaf' || kind === 'pine') ? pickWorldTreeAsset(assets, entries[0]?.id ?? kind) : undefined;
           const scale = tree ? 9 / Math.max(tree.size.x, tree.size.z) : 1;
           const shapes: Prototype[] = tree && !coarse ? [{geometry:tree.geometry,material:tree.material,y:0,scale:[scale,scale,scale]}] : prototypes(kind, coarse);
           for (const p of shapes) {
@@ -128,6 +132,187 @@ export class WorldEcologyView {
   dispose() { this.worker?.terminate(); for (const c of this.cache.values()) this.disposeChunk(c.root); this.cache.clear(); this.root.clear(); }
 }
 
+export const WORLD_CONTENT_CHUNK_SIZE = ECOLOGY_CHUNK_SIZE;
+export interface WorldContentChunk { x: number; z: number }
+export interface WorldBuildingCollider {
+  id: string; x: number; z: number; width: number; depth: number; rotation: number;
+}
+
+const contentKey = (chunk: WorldContentChunk) => chunk.x + ':' + chunk.z;
+
+/** The same bounded 5x5 residency window as ecology, with stable world-space chunk identities. */
+export function selectWorldContentChunks(worldSize: number, focusX: number, focusZ: number, distance: number): WorldContentChunk[] {
+  return selectEcologyChunks(worldSize, focusX, focusZ, distance);
+}
+
+function worldBuildingPlacements(bundle: WorldBundle): WorldBuildingPlacement[] {
+  return bundle.patches.flatMap(patch => {
+    const town = bundle.plan.towns.find(candidate => candidate.id === patch.townId)!;
+    return patch.buildings.map(building => ({
+      ...building, x: building.x + town.center[0], z: building.z + town.center[1], townId: town.id
+    }));
+  });
+}
+
+function worldRoads(bundle: WorldBundle): MapGuide[] {
+  const roads = [...bundle.plan.roads];
+  for (const patch of bundle.patches) {
+    const town = bundle.plan.towns.find(candidate => candidate.id === patch.townId)!;
+    roads.push(...patch.streets.map(road => ({
+      ...road, points: road.points.map(([x, z]): [number, number] => [x + town.center[0], z + town.center[1]])
+    })));
+  }
+  return roads;
+}
+
+function clipSegment(
+  a: [number, number], b: [number, number], minX: number, minZ: number, maxX: number, maxZ: number
+): [[number, number], [number, number]] | null {
+  const dx = b[0] - a[0], dz = b[1] - a[1]; let low = 0, high = 1;
+  for (const [p, q] of [[-dx, a[0] - minX], [dx, maxX - a[0]], [-dz, a[1] - minZ], [dz, maxZ - a[1]]]) {
+    if (p === 0) { if (q < 0) return null; continue; }
+    const ratio = q / p;
+    if (p < 0) low = Math.max(low, ratio); else high = Math.min(high, ratio);
+    if (low > high) return null;
+  }
+  return [[a[0] + dx * low, a[1] + dz * low], [a[0] + dx * high, a[1] + dz * high]];
+}
+
+function buildRoadChunk(
+  roads: MapGuide[], chunk: WorldContentChunk, sample: (x: number, z: number) => WorldSample, worldSize: number
+): { mesh?: THREE.Mesh; triangles: number } {
+  const positions: number[] = [], indices: number[] = [];
+  const minX = chunk.x * WORLD_CONTENT_CHUNK_SIZE, minZ = chunk.z * WORLD_CONTENT_CHUNK_SIZE;
+  const maxX = minX + WORLD_CONTENT_CHUNK_SIZE, maxZ = minZ + WORLD_CONTENT_CHUNK_SIZE;
+  const spacing = worldRoadSampleSpacing(worldSize), lift = worldSize < 2000 ? .12 : 1.2;
+  for (const road of roads) {
+    const points = road.closed ? [...road.points, road.points[0]] : road.points;
+    for (let i = 1; i < points.length; i++) {
+      const pad = road.width / 2;
+      const clipped = clipSegment(points[i - 1], points[i], minX - pad, minZ - pad, maxX + pad, maxZ + pad);
+      if (!clipped) continue;
+      const [[ax, az], [bx, bz]] = clipped, length = Math.hypot(bx - ax, bz - az);
+      if (length < 1e-6) continue;
+      const steps = Math.max(1, Math.ceil(length / spacing)), offsetX = (bz - az) / length * pad, offsetZ = (ax - bx) / length * pad;
+      const start = positions.length / 3;
+      for (let step = 0; step <= steps; step++) {
+        const x = ax + (bx - ax) * step / steps, z = az + (bz - az) * step / steps;
+        for (const sign of [-1, 1]) {
+          const px = x + offsetX * sign, pz = z + offsetZ * sign;
+          positions.push(px, sample(px, pz).height + lift, pz);
+        }
+        if (step) { const next = start + step * 2; indices.push(next - 2, next - 1, next, next, next - 1, next + 1); }
+      }
+    }
+  }
+  if (!indices.length) return { triangles: 0 };
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(indices);
+  geometry.computeVertexNormals(); geometry.computeBoundingSphere();
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: '#a78d67', roughness: 1, side: THREE.DoubleSide }));
+  mesh.receiveShadow = true; return { mesh, triangles: indices.length / 3 };
+}
+
+function buildFallbackBuildings(placements: WorldBuildingPlacement[], sample: (x: number, z: number) => WorldSample): THREE.Group {
+  const root = new THREE.Group();
+  if (!placements.length) return root;
+  const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#b4a887', roughness: 1 }), placements.length);
+  const roofs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#675b4b', roughness: 1 }), placements.length);
+  const matrix = new THREE.Object3D();
+  placements.forEach((building, index) => {
+    const y = sample(building.x, building.z).height; matrix.rotation.y = building.rotation ?? 0;
+    matrix.position.set(building.x, y + building.height / 2, building.z); matrix.scale.set(building.width, building.height, building.depth); matrix.updateMatrix(); walls.setMatrixAt(index, matrix.matrix);
+    matrix.position.y = y + building.height + .7; matrix.scale.set(building.width + 1.2, 1.4, building.depth + 1.2); matrix.updateMatrix(); roofs.setMatrixAt(index, matrix.matrix);
+  });
+  walls.instanceMatrix.needsUpdate = true; roofs.instanceMatrix.needsUpdate = true;
+  walls.computeBoundingSphere(); roofs.computeBoundingSphere(); root.add(walls, roofs); return root;
+}
+
+interface ActiveContentChunk {
+  root: THREE.Group; placements: WorldBuildingPlacement[]; buildingCount: number; roadTriangles: number;
+}
+
+/** GPU content exists only for the current fixed chunk window; inactive chunks are disposed, not hidden. */
+export class WorldContentView {
+  readonly root = new THREE.Group();
+  private bundle?: WorldBundle;
+  private sample?: (x: number, z: number) => WorldSample;
+  private assets?: WorldAssetLibrary;
+  private readonly active = new Map<string, ActiveContentChunk>();
+  private placements: WorldBuildingPlacement[] = [];
+  private roads: MapGuide[] = [];
+  private desired: WorldContentChunk[] = [];
+  private meshCollision = new MeshCollisionWorld();
+
+  reset(bundle: WorldBundle, sample: (x: number, z: number) => WorldSample, assets?: WorldAssetLibrary): void {
+    this.clear(); this.bundle = bundle; this.sample = sample; this.assets = assets;
+    this.placements = worldBuildingPlacements(bundle); this.roads = worldRoads(bundle);
+  }
+
+  update(focus: THREE.Vector3, camera: THREE.Vector3): void {
+    if (!this.bundle || !this.sample) return;
+    this.desired = selectWorldContentChunks(this.bundle.plan.recipe.size, focus.x, focus.z, camera.distanceTo(focus));
+    const wanted = new Set(this.desired.map(contentKey)); let changed = false;
+    for (const [key, chunk] of this.active) {
+      if (wanted.has(key)) continue;
+      this.root.remove(chunk.root); disposeWorldStructures(chunk.root); this.active.delete(key); changed = true;
+    }
+    for (const chunk of this.desired) {
+      const key = contentKey(chunk); if (this.active.has(key)) continue;
+      const built = this.buildChunk(chunk); this.active.set(key, built); this.root.add(built.root); changed = true;
+    }
+    if (changed) this.rebuildCollision();
+  }
+
+  get colliders(): WorldBuildingCollider[] {
+    return [...this.active.values()].flatMap(chunk => chunk.placements
+      .filter(building => !building.enterable)
+      .map(building => ({ id: building.id, x: building.x, z: building.z, width: building.width, depth: building.depth, rotation: building.rotation ?? 0 })));
+  }
+
+  get collisionWorld(): MeshCollisionWorld { return this.meshCollision; }
+
+  metrics() {
+    const chunks = [...this.active.values()];
+    return { contentChunks: chunks.length, contentDesired: this.desired.length,
+      contentBuildings: chunks.reduce((sum, chunk) => sum + chunk.buildingCount, 0),
+      contentRoadTriangles: chunks.reduce((sum, chunk) => sum + chunk.roadTriangles, 0),
+      contentMeshColliders: this.meshCollision.instances.length };
+  }
+
+  dispose(): void { this.clear(); this.bundle = undefined; this.sample = undefined; this.assets = undefined; }
+
+  private buildChunk(chunk: WorldContentChunk): ActiveContentChunk {
+    const root = new THREE.Group(), minX = chunk.x * WORLD_CONTENT_CHUNK_SIZE, minZ = chunk.z * WORLD_CONTENT_CHUNK_SIZE;
+    const placements = this.placements.filter(building => building.x >= minX && building.x < minX + WORLD_CONTENT_CHUNK_SIZE
+      && building.z >= minZ && building.z < minZ + WORLD_CONTENT_CHUNK_SIZE);
+    if (this.assets) root.add(buildWorldAssetBuildingPlacements(placements, this.sample!, this.assets));
+    const fallback = this.assets ? placements.filter(building => !pickWorldAsset(this.assets!, building)) : placements;
+    root.add(buildFallbackBuildings(fallback, this.sample!));
+    const road = buildRoadChunk(this.roads, chunk, this.sample!, this.bundle!.plan.recipe.size);
+    if (road.mesh) root.add(road.mesh);
+    return { root, placements, buildingCount: placements.length, roadTriangles: road.triangles };
+  }
+
+  private rebuildCollision(): void {
+    this.meshCollision.dispose();
+    if (!this.assets || !this.sample) { this.meshCollision = new MeshCollisionWorld(); return; }
+    const instances = [...this.active.values()].flatMap(chunk => chunk.placements.flatMap(building => {
+      if (!building.enterable) return [];
+      const model = pickWorldAsset(this.assets!, building); if (!model) return [];
+      return [createCollisionMeshInstance('world:' + building.id, 'scene', model.geometry,
+        worldAssetBuildingMatrix(building, this.sample!, model).clone())];
+    }));
+    this.meshCollision = new MeshCollisionWorld(instances);
+  }
+
+  private clear(): void {
+    this.meshCollision.dispose(); this.meshCollision = new MeshCollisionWorld();
+    for (const chunk of this.active.values()) disposeWorldStructures(chunk.root);
+    this.active.clear(); this.root.clear(); this.desired = []; this.placements = []; this.roads = [];
+  }
+}
+
 export function buildWorldStructures(bundle: WorldBundle, sample: (x: number, z: number) => WorldSample, assets?: WorldAssetLibrary): THREE.Group {
   const root = new THREE.Group();
   if (assets) root.add(buildWorldAssetBuildings(bundle,sample,assets));
@@ -187,4 +372,3 @@ export function disposeWorldStructures(root: THREE.Group) {
   });
   root.clear();
 }
-

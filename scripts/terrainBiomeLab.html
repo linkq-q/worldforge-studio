@@ -23,6 +23,8 @@
     #compass { display:flex;justify-content:space-between;color:#8caeab;font-size:11px;margin-bottom:3px }
     #status { position:absolute;left:20px;bottom:20px;max-width:calc(100% - 40px);background:#10262be8;padding:10px 14px;border:1px solid #395758; border-radius:6px;font:12px/1.7 ui-monospace,monospace;pointer-events:none;white-space:pre-line }
     #inspection { font-size:12px;color:#bbceca;min-height:42px } #progress { color:#e4d297 } #metrics { font-size:11px;color:#a9c3bb;white-space:pre-line }
+    .check { display:flex;align-items:center;gap:8px;margin:9px 0 0 }.check input { width:auto }.check span { color:#a5b9b7;font-size:11px }
+    #generate-world { width:100%;margin-top:8px } #play-help { position:absolute;left:50%;top:18px;transform:translateX(-50%);padding:7px 11px;border-radius:6px;background:#10262be8;font-size:12px;pointer-events:none }
     details { font-size:12px;color:#a5b9b7 } summary { cursor:pointer } a { color:#c9e7be }
     @media(max-width:850px) { main { grid-template-columns:265px 1fr } aside { padding:16px } #toolbar { top:100px;left:20px;right:auto;flex-wrap:wrap } }
   </style>
@@ -40,7 +42,9 @@
         <div><label for="seed">种子</label><input id="seed" type="number" min="0" max="4294967295" value="42" required></div>
         <div><label for="size">地图宽度</label><select id="size"><option value="500">500 米</option><option value="16000">16 km</option><option value="64000" selected>64 km</option><option value="256000">256 km</option></select></div>
       </div>
-      <button id="generate" type="submit">生成世界</button>
+      <button id="generate" type="submit">本地配方预览</button>
+      <label class="check"><input id="generate-assets" type="checkbox"><span>同时生成建筑资产（调用模型）</span></label>
+      <button id="generate-world" type="button">AI 规划世界</button>
     </form>
     <div id="error" role="alert"></div>
     <label for="example">示例描述</label>
@@ -53,6 +57,8 @@
     </select>
     <div class="section">
       <h2>世界规划 → 城镇任务 → 程序生态</h2>
+      <button id="oasis-demo" type="button" style="width:100%;background:#c9e7be;color:#16372b">绿洲海港 · 实际世界</button>
+      <button id="volcano-demo" type="button" style="width:100%;margin-top:8px">火山雪村 · 实际世界</button>
       <button id="compact-demo" type="button" style="width:100%;background:#c9e7be;color:#16372b">500 米 · 四聚落预览</button>
       <button id="demo" type="button" style="width:100%;margin-top:8px">加载原大地图样例</button>
       <p id="planning-status" style="white-space:pre-line;font-size:12px"></p>
@@ -80,7 +86,7 @@
     <details class="section"><summary>当前流式加载数据</summary><pre id="stream-metrics" style="white-space:pre-wrap;font-size:11px"></pre></details><details class="section"><summary>最近镜头巡检结果</summary><pre id="survey-results" style="white-space:pre-wrap;font-size:11px"></pre></details><div class="section row"><button id="export" type="button">导出世界配方</button><button id="survey" type="button">运行镜头巡检</button></div>
     <div class="section">
       <details><summary>实验边界与操作</summary>
-        <p>左键旋转，右键平移，滚轮缩放。点击群落图进入局部，双击地形可继续靠近。</p>
+        <p>左键旋转，右键平移，滚轮缩放。点击群落图进入局部，双击地形可继续靠近。“进入游玩”后使用 WASD 行走、Shift 加速、鼠标观察、Esc 退出。</p>
         <p>支持“方位＋海洋 / 森林 / 草原 / 沙漠 / 山脉 / 雪地”，支持中部和对角方位。当前是规则解析器；不支持的内容会报错。</p>
         <p>程序化高度场、气候权重和按需分块独立运行；不写入编辑器地图。高度只有一个地表，不含洞穴、真实河网和水蚀。分块使用裙边遮缝，切换精度仍可能跳变。</p>
       </details>
@@ -89,12 +95,11 @@
   <section id="viewport">
     <canvas id="world" aria-label="三维连续地形"></canvas>
     <div id="view-label"><span class="eyebrow">CONTINUOUS WORLD / SEEDED GENERATION</span><strong id="caption">正在生成世界…</strong><span id="progress">初始化连续地形</span></div>
-    <nav id="toolbar" aria-label="视图工具"><button id="overview">全图</button><button id="top">俯视</button><button id="wire">网格</button><button id="relief">高度 1×</button></nav>
+    <nav id="toolbar" aria-label="视图工具"><button id="overview">全图</button><button id="top">俯视</button><button id="wire">网格</button><button id="relief">高度 1×</button><button id="play">进入游玩</button></nav>
+    <div id="play-help" hidden>WASD 行走 · Shift 加速 · 鼠标观察 · Esc 退出</div>
     <div id="status" role="status">加载中…</div>
   </section>
 </main>
 <script type="module" src="/src/client/terrainBiomeLab.ts"></script>
 </body>
 </html>
-
-

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { buildWorldAssetLibrary, disposeWorldAssetLibrary, type WorldAssetLibrary } from './worldAssets';
+import { buildWorldAssetLibrary, disposeWorldAssetLibrary, type WorldAssetLibrary, type WorldAssetSource } from './worldAssets';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DEFAULT_ECOLOGY_RULES, WorldEcologyView, buildWorldStructures, disposeWorldStructures } from './worldContent';
+import { DEFAULT_ECOLOGY_RULES, WorldContentView, WorldEcologyView } from './worldContent';
+import { WorldWalkController, type WorldWalkState } from './worldWalkController';
 import { createPlannedWorldSampler, createTownTasks, validateWorldBundle, validateWorldPlan, mergeTownPatch, type WorldBundle, type WorldPlan, type TownPatch } from '../shared/worldPlanning';
 import { BIOME_LABELS, REGION_LABELS, WORLD_BIOMES, createWorldSampler, dominantBiome, parseWorldPrompt, selectWorldTiles, type WorldRecipe, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 
@@ -29,7 +30,7 @@ const sand = new THREE.Color('#c7b98a'), rock = new THREE.Color('#7f7d73');
 const cssColors = ['#286780', '#939858', '#335d3c', '#d8b879', '#858379', '#e5ebdf'];
 element('legend').innerHTML = WORLD_BIOMES.map((b, i) => '<span><i class="dot" style="background:' + cssColors[i] + '"></i>' + BIOME_LABELS[b] + '</span>').join('');
 const ecology = new WorldEcologyView(); scene.add(ecology.root);
-let structures = new THREE.Group(); scene.add(structures);
+const content = new WorldContentView(); scene.add(content.root);
 let bundle: WorldBundle | undefined;
 let assetLibrary: WorldAssetLibrary | undefined;
 let assetLoadMs=0;
@@ -49,6 +50,20 @@ let atlasImage: ImageData | undefined;
 let surveyRunning = false;
 const keyOf = (tile: WorldTile) => [tile.x, tile.z, tile.size].join(':');
 let lastError = '';
+let playerState: WorldWalkState | undefined;
+const walk = new WorldWalkController({
+  canvas, camera,
+  getWorld: () => generation ? { size: recipe.size, sample, colliders: content.colliders, meshCollision: content.collisionWorld } : undefined,
+  onActiveChange(active) {
+    controls.enabled = !active; element<HTMLButtonElement>('play').textContent = active ? '退出游玩' : '进入游玩';
+    element('play-help').hidden = !active; playerState = undefined; lodDirty = true;
+  },
+  onMove(state, speed) {
+    playerState = state; lodDirty = true;
+    element('inspection').textContent = '玩家 X ' + coordinateLabel(state.x) + ' · Z ' + coordinateLabel(state.z)
+      + ' · ' + state.y.toFixed(1) + ' m · ' + speed.toFixed(1) + ' m/s' + (state.wading ? ' · 涉水' : '');
+  }
+});
 function showError(error: unknown) {
   lastError = error instanceof Error ? error.message : String(error);
   const messages:Record<string,string> = {world_stale_patch:'这个城镇任务来自旧的世界计划，请重新导出任务后再规划。',world_building_outside:'建筑越出了所属城镇的边界，请修改该城镇计划。',world_buildings_overlap:'城镇中有建筑占地重叠，请调整布局。',world_building_intersects_street:'建筑占用了道路，请调整建筑或街道位置。',world_streets_disconnected:'城镇路网没有连通，请在连接处使用共同的道路顶点。',world_road_geometry_quota:'道路细分超过本轮预览预算，请简化过密或重复的道路。'};
@@ -101,7 +116,31 @@ function makeMesh(tile: WorldTile, data: WorldTileData): THREE.Mesh {
   mesh.position.set(tile.x, 0, tile.z);
   mesh.userData.tile = tile;
   mesh.receiveShadow=true;
+  const water = makeTileWater(tile, data);
+  if (water) mesh.add(water);
   return mesh;
+}
+function makeTileWater(tile: WorldTile, data: WorldTileData): THREE.Mesh | undefined {
+  const levels = data.waterLevels;
+  if (!levels?.some(Number.isFinite)) return undefined;
+  const n = data.resolution, positions: number[] = [], indices: number[] = [];
+  for (let z = 0; z < n - 1; z++) for (let x = 0; x < n - 1; x++) {
+    const corners = [z * n + x, z * n + x + 1, (z + 1) * n + x, (z + 1) * n + x + 1];
+    const finite = corners.map(index => levels[index]).filter(Number.isFinite);
+    if (finite.length < 3) continue;
+    const fallback = finite.reduce((sum, level) => sum + level, 0) / finite.length, start = positions.length / 3;
+    const point = (ix: number, iz: number, index: number) => positions.push(
+      ix * tile.size / (n - 1), (Number.isFinite(levels[index]) ? levels[index] : fallback) + .06, iz * tile.size / (n - 1)
+    );
+    point(x, z, corners[0]); point(x + 1, z, corners[1]); point(x, z + 1, corners[2]); point(x + 1, z + 1, corners[3]);
+    indices.push(start, start + 2, start + 1, start + 1, start + 2, start + 3);
+  }
+  if (!indices.length) return undefined;
+  const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(indices); geometry.computeVertexNormals(); geometry.computeBoundingSphere();
+  const water = new THREE.Mesh(geometry, waterMaterial); water.name = 'finite-world-water'; water.renderOrder = 2; return water;
+}
+function disposeTerrainMesh(mesh: THREE.Mesh): void {
+  mesh.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); });
 }
 function pump() {
   if (busy || !recipe) return;
@@ -122,12 +161,15 @@ function pump() {
   const keep = new Set(active);
   for (const [key, mesh] of cache) {
     if (cache.size <= 384) break;
-    if (!keep.has(mesh)) { mesh.geometry.dispose(); cache.delete(key); }
+    if (!keep.has(mesh)) { disposeTerrainMesh(mesh); cache.delete(key); }
   }
   element('progress').textContent = '已就绪 · 点击左侧群落图探索局部';
 }
 function updateCameraClip() {
   if (!recipe) return;
+  if (walk.isActive) {
+    camera.near = .08; camera.far = Math.max(2200, recipe.size * .35); camera.updateProjectionMatrix(); return;
+  }
   const distance = camera.position.distanceTo(controls.target);
   const near = Math.max(1, distance * 0.005);
   const far = Math.max(recipe.size * 2, distance + recipe.size * 1.5);
@@ -138,12 +180,12 @@ function updateCameraClip() {
 function updateLod() {
   updateCameraClip();
   if (!recipe) return;
-  const distance = camera.position.distanceTo(controls.target);
-  desired = selectWorldTiles(recipe.size, controls.target.x, controls.target.z, distance)
-    .sort((a, b) => Math.hypot(a.x + a.size / 2 - controls.target.x, a.z + a.size / 2 - controls.target.z)
-      - Math.hypot(b.x + b.size / 2 - controls.target.x, b.z + b.size / 2 - controls.target.z));
+  const focus = walk.position ?? controls.target, distance = walk.isActive ? 180 : camera.position.distanceTo(focus);
+  desired = selectWorldTiles(recipe.size, focus.x, focus.z, distance)
+    .sort((a, b) => Math.hypot(a.x + a.size / 2 - focus.x, a.z + a.size / 2 - focus.z)
+      - Math.hypot(b.x + b.size / 2 - focus.x, b.z + b.size / 2 - focus.z));
   lastLod = performance.now(); lodDirty = false;
-  pump(); ecology.update(controls.target, camera.position);
+  pump(); ecology.update(focus, camera.position); content.update(focus, camera.position);
 }
 function atlasDraw(data: { resolution: number; heights: Float32Array; weights: Float32Array; counts: Record<string, number>; min: number; max: number }) {
   const atlas = element<HTMLCanvasElement>('atlas');
@@ -193,11 +235,12 @@ function visit(x: number, z: number, distance = Math.min(2800,recipe.size*0.65))
 }
 function generate(nextBundle?: WorldBundle) {
   try {
+    walk.exit();
     const next = nextBundle?.plan.recipe ?? parseWorldPrompt(element<HTMLTextAreaElement>('prompt').value, Number(element<HTMLInputElement>('seed').value), Number(element<HTMLSelectElement>('size').value));
     lastError = ''; element('error').textContent = '';
     worker?.terminate();
     for (const mesh of active) terrainRoot.remove(mesh);
-    for (const mesh of cache.values()) mesh.geometry.dispose();
+    for (const mesh of cache.values()) disposeTerrainMesh(mesh);
     active = []; cache.clear(); desired = []; tileTimes.length = 0; frameTimes.length = 0;
     busy = false; started = performance.now(); firstReadyMs = 0; generation++;
     recipe = next; bundle = nextBundle;
@@ -212,9 +255,8 @@ function generate(nextBundle?: WorldBundle) {
       sizeSelect.value=String(recipe.size);
     }
     sample = bundle ? createPlannedWorldSampler(bundle.plan, bundle.patches) : createWorldSampler(recipe);
-    scene.remove(structures); disposeWorldStructures(structures);
-    structures = bundle ? buildWorldStructures(bundle, sample, bundle.plan.id==='compact-four-towns'?assetLibrary:undefined) : new THREE.Group(); structures.scale.y=exaggeration; scene.add(structures);
-    renderer.shadowMap.enabled = !!assetLibrary && bundle?.plan.id==='compact-four-towns';
+    content.dispose(); if (bundle) content.reset(bundle, sample, assetLibrary); content.root.scale.y = exaggeration;
+    renderer.shadowMap.enabled = !!assetLibrary && !!bundle;
     renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     sun.castShadow=renderer.shadowMap.enabled;
     if(sun.castShadow){
@@ -243,7 +285,7 @@ function generate(nextBundle?: WorldBundle) {
         const activeMeshes = new Set(active);
         for (const [key, mesh] of cache) {
           if (cache.size <= 512) break;
-          if (!protectedKeys.has(key) && !activeMeshes.has(mesh)) { mesh.geometry.dispose(); cache.delete(key); }
+          if (!protectedKeys.has(key) && !activeMeshes.has(mesh)) { disposeTerrainMesh(mesh); cache.delete(key); }
         }
         tileTimes.push(event.data.ms);
         if (tileTimes.length > 2000) tileTimes.shift();
@@ -260,8 +302,11 @@ function generate(nextBundle?: WorldBundle) {
 const percentile = (values: number[], p: number) => values.length ? [...values].sort((a,b) => a-b)[Math.floor((values.length - 1) * p)] : 0;
 function getMetrics() {
   const vertices = active.reduce((sum, mesh) => sum + mesh.geometry.getAttribute('position').count, 0);
-  const residentBytes = [...cache.values()].reduce((sum, mesh) => sum + Object.values(mesh.geometry.attributes).reduce((s, a) => s + a.array.byteLength, 0) + (mesh.geometry.index?.array.byteLength ?? 0), 0);
-  return { assetLoadMs, assetVariants: bundle?.plan.id==='compact-four-towns' && assetLibrary ? Object.keys(assetLibrary).length : 0, ...ecology.metrics(), drawCalls: renderer.info.render.calls, buildings: bundle?.patches.reduce((n,p)=>n+p.buildings.length,0) ?? 0, towns: bundle?.patches.length ?? 0, cameraPosition: camera.position.toArray(), target: controls.target.toArray(), generation, renderedGeneration, recipe, firstReadyMs, activeTiles: active.length, desiredTiles: desired.length,
+  const residentBytes = [...cache.values()].reduce((sum, mesh) => {
+    mesh.traverse(object => { if (object instanceof THREE.Mesh) sum += (Object.values(object.geometry.attributes) as THREE.BufferAttribute[]).reduce((bytes, attribute) => bytes + attribute.array.byteLength, 0) + (object.geometry.index?.array.byteLength ?? 0); });
+    return sum;
+  }, 0);
+  return { assetLoadMs, assetVariants: assetLibrary?.byId.size ?? 0, ...ecology.metrics(), ...content.metrics(), drawCalls: renderer.info.render.calls, buildings: bundle?.patches.reduce((n,p)=>n+p.buildings.length,0) ?? 0, towns: bundle?.patches.length ?? 0, cameraPosition: camera.position.toArray(), target: controls.target.toArray(), player: playerState, generation, renderedGeneration, recipe, firstReadyMs, activeTiles: active.length, desiredTiles: desired.length,
     ready: !busy && desired.every(t => cache.has(keyOf(t))), cacheTiles: cache.size, vertices,
     triangles: renderer.info.render.triangles, residentGeometryMiB: residentBytes / 1048576,
     nearestSpacing: active.length ? Math.min(...active.map(m => (m.userData.tile as WorldTile).size / 32)) : 0,
@@ -323,7 +368,7 @@ element('top').onclick = () => overview(true);
 element('wire').onclick = () => { landMaterial.wireframe = !landMaterial.wireframe; };
 element('relief').onclick = () => {
   exaggeration = exaggeration === 1 ? 2 : exaggeration === 2 ? 4 : 1;
-  terrainRoot.scale.y = exaggeration; structures.scale.y = exaggeration; ecology.root.scale.y = exaggeration;
+  terrainRoot.scale.y = exaggeration; content.root.scale.y = exaggeration; ecology.root.scale.y = exaggeration;
   element('relief').textContent = '高度 ' + exaggeration + '×';
 };
 element('export').onclick = () => download('world-recipe-' + recipe.seed + '.json', recipe);
@@ -349,10 +394,12 @@ function animate(now: number) {
   requestAnimationFrame(animate);
   const delta = now - previous; previous = now;
   if (delta > 0 && delta < 1000) { frameTimes.push(delta); if (frameTimes.length > 600) frameTimes.shift(); }
-  controls.update();
+  walk.update(delta / 1000); controls.update();
   if (lodDirty && now - lastLod > 500 && !surveyRunning) updateLod();
   updateCameraClip();
-  if (now-lastStats>500) ecology.update(controls.target,camera.position);
+  if (now-lastStats>500) {
+    const focus = walk.position ?? controls.target; ecology.update(focus,camera.position); content.update(focus,camera.position);
+  }
   renderer.render(scene, camera);
   if (now - lastStats > 500 && recipe) {
     lastStats = now;
@@ -360,7 +407,8 @@ function animate(now: number) {
     element('stream-metrics').textContent = JSON.stringify(m,null,2);
     element('status').textContent = m.activeTiles + ' 块 · ' + (m.vertices / 1000).toFixed(0) + 'k 顶点 · 最近格距 ' + m.nearestSpacing.toFixed(1) + ' m\n'
       + '帧时间 P50 / P95 ' + m.frameP50Ms.toFixed(1) + ' / ' + m.frameP95Ms.toFixed(1) + ' ms · 网格数据 ' + m.residentGeometryMiB.toFixed(1) + ' MiB\n'
-      + '植被 ' + m.ecologyInstances + ' 株 / ' + m.ecologyChunks + ' 块 · Draw calls ' + m.drawCalls + ' · 生态生成 P95 ' + m.ecologyP95Ms.toFixed(1) + ' ms\n'
+      + '植被 ' + m.ecologyInstances + ' 株 / ' + m.ecologyChunks + ' 块 · 内容 ' + m.contentBuildings + ' 建筑 / ' + m.contentChunks + ' 块 · Draw calls ' + m.drawCalls + '\n'
+      + '道路 ' + m.contentRoadTriangles + ' 三角形 · 实际网格碰撞 ' + m.contentMeshColliders + ' · 生态生成 P95 ' + m.ecologyP95Ms.toFixed(1) + ' ms\n'
       + '块生成 P50 / P95 ' + m.tileP50Ms.toFixed(1) + ' / ' + m.tileP95Ms.toFixed(1) + ' ms · 首屏 ' + (m.firstReadyMs / 1000).toFixed(2) + ' s';
     if (atlasImage) {
       const atlas = element<HTMLCanvasElement>('atlas'), ctx = atlas.getContext('2d')!;
@@ -371,13 +419,13 @@ function animate(now: number) {
     }
   }
 }
-window.addEventListener('pagehide', () => { worker?.terminate(); ecology.dispose(); disposeWorldStructures(structures); if(assetLibrary)disposeWorldAssetLibrary(assetLibrary); observer.disconnect(); controls.dispose(); renderer.dispose(); });
+window.addEventListener('pagehide', () => { worker?.terminate(); walk.dispose(); ecology.dispose(); content.dispose(); if(assetLibrary)disposeWorldAssetLibrary(assetLibrary); observer.disconnect(); controls.dispose(); renderer.dispose(); });
 
 
 function resetEcology() {
   const factor = Number(element<HTMLInputElement>('density').value);
   const rules = (bundle?.plan.ecology ?? DEFAULT_ECOLOGY_RULES).map(r=>({...r,density:Math.min(1,r.density*factor)}));
-  ecology.reset(recipe,rules,bundle,bundle?.plan.id==='compact-four-towns'?assetLibrary:undefined); ecology.root.scale.y=exaggeration;
+  ecology.reset(recipe,rules,bundle,assetLibrary); ecology.root.scale.y=exaggeration;
   element('density-label').textContent='植被密度预览 '+factor.toFixed(2)+'×';
   ecology.update(controls.target,camera.position);
 }
@@ -391,7 +439,7 @@ function refreshPlanningUi() {
   element('planning-status').textContent=bundle
     ? bundle.plan.prompt+'\n'+bundle.patches.length+'/'+bundle.plan.towns.length+' 个局部计划已合并 · 道路 '+bundle.plan.roads.length+' 条 · '+bundle.plan.ecology.length+' 条生态规则'
     : '地形预览模式。可加载分层样例，或导入 AI 编写的世界计划。';
-  for (const id of ['visit-town','export-tasks','export-bundle']) element<HTMLButtonElement>(id).disabled=!bundle;
+  for (const id of ['visit-town','export-tasks','export-bundle','play']) element<HTMLButtonElement>(id).disabled=!bundle;
 }
 function drawPlanAtlas(ctx: CanvasRenderingContext2D, size: number) {
   if (!bundle) return;
@@ -410,22 +458,25 @@ element('visit-town').onclick=()=>{
 };
 const coordinateLabel=(value:number)=>recipe.size<1000?value.toFixed(0)+' 米':(value/1000).toFixed(1)+' km';
 async function loadCompactDemo() {
+  return loadBundledDemo('compact','/scripts/fixtures/compact-world.json','/scripts/fixtures/medieval-assets.json');
+}
+async function loadBundledDemo(demo:string,worldPath:string,assetsPath:string,preferredTown?:string) {
   try {
-    if(!assetLibrary){
-      const loadStart=performance.now();
-      element('progress').textContent='装载中世纪资产…';
-      const assets=await fetch('/scripts/fixtures/medieval-assets.json');
-      if(!assets.ok)throw new Error('中世纪资产读取失败：'+assets.status);
-      assetLibrary=await buildWorldAssetLibrary((await assets.json()).assets);
-      assetLoadMs=performance.now()-loadStart;
-    }
-    const response=await fetch('/scripts/fixtures/compact-world.json');
-    if(!response.ok) throw new Error('紧凑样例读取失败：'+response.status);
-    generate(validateWorldBundle(await response.json()));
-    overview();
+    const loadStart=performance.now();element('progress').textContent='装载世界与建筑资产…';
+    const [worldResponse,assetResponse]=await Promise.all([fetch(worldPath),fetch(assetsPath)]);
+    if(!worldResponse.ok)throw new Error('世界样例读取失败：'+worldResponse.status);
+    if(!assetResponse.ok)throw new Error('建筑资产读取失败：'+assetResponse.status);
+    const rawAssets=await assetResponse.json() as {assets?:WorldAssetSource[]}|WorldAssetSource[];
+    await replaceAssetLibrary(Array.isArray(rawAssets)?rawAssets:rawAssets.assets);assetLoadMs=performance.now()-loadStart;
+    const next=validateWorldBundle(await worldResponse.json());generate(next);
+    const town=next.plan.towns.find(candidate=>candidate.id===preferredTown)??next.plan.towns[0];
+    if(town){element<HTMLSelectElement>('town').value=town.id;visit(town.center[0],town.center[1],Math.min(620,town.radius*3.6/Math.min(1,camera.aspect)));}else overview();
+    const url=new URL(location.href);url.searchParams.set('demo',demo);history.replaceState(null,'',url);
   } catch(error) { showError(error); }
 }
 element('compact-demo').onclick=()=>{ void loadCompactDemo(); };
+element('oasis-demo').onclick=()=>{void loadBundledDemo('oasis','/scripts/fixtures/oasis-world.json','/scripts/fixtures/desert-assets.json','oasis');};
+element('volcano-demo').onclick=()=>{void loadBundledDemo('volcano','/scripts/fixtures/volcano-world.json','/scripts/fixtures/volcano-assets.json');};
 element('demo').onclick=async()=>{
   try {
     const response=await fetch('/scripts/fixtures/hierarchical-world.json');
@@ -452,12 +503,51 @@ element('import-plan').onclick=()=>{
     element('planning-status').textContent += '\n导入通过：范围、版本、道路接口与建筑占地已验证';
   } catch(error) { showError(error); }
 };
-if(new URLSearchParams(location.search).get('demo')==='compact') void loadCompactDemo(); else generate();
+function worldApiBase(): string {
+  const override = new URLSearchParams(location.search).get('api');
+  return (override || (import.meta.env.DEV ? location.protocol + '//' + (location.hostname || '127.0.0.1') + ':8798' : location.origin)).replace(/\/$/, '');
+}
+async function replaceAssetLibrary(sources?: WorldAssetSource[]): Promise<void> {
+  const next = sources?.length ? await buildWorldAssetLibrary(sources) : undefined;
+  if (assetLibrary) disposeWorldAssetLibrary(assetLibrary);
+  assetLibrary = next;
+}
+element('generate-world').onclick=async()=>{
+  const button=element<HTMLButtonElement>('generate-world');
+  try {
+    button.disabled=true; element('progress').textContent='AI 正在规划世界…'; lastError=''; element('error').textContent='';
+    const startedAssets=performance.now();
+    const response=await fetch(worldApiBase()+'/api/editor/worlds/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      prompt:element<HTMLTextAreaElement>('prompt').value,
+      seed:Number(element<HTMLInputElement>('seed').value),size:Number(element<HTMLSelectElement>('size').value),
+      generateAssets:element<HTMLInputElement>('generate-assets').checked
+    })});
+    const value=await response.json() as {bundle?:unknown;diagnostics?:unknown;assetSources?:WorldAssetSource[];error?:string};
+    if(!response.ok)throw new Error(value.error??'世界生成失败：'+response.status);
+    await replaceAssetLibrary(value.assetSources); assetLoadMs=performance.now()-startedAssets;
+    generate(validateWorldBundle(value.bundle));
+    if(value.diagnostics)element('planning-status').textContent+='\n'+(typeof value.diagnostics==='string'?value.diagnostics:JSON.stringify(value.diagnostics));
+  } catch(error) { showError(error); element('progress').textContent='生成失败'; }
+  finally { button.disabled=false; }
+};
+element('generate-assets').onchange=()=>{
+  element<HTMLButtonElement>('generate-world').textContent=element<HTMLInputElement>('generate-assets').checked?'生成世界与资产':'AI 规划世界';
+};
+element('play').onclick=()=>{
+  if(walk.isActive){walk.exit();return;}
+  if(!bundle){showError('请先加载或生成包含聚落的世界');return;}
+  if(exaggeration!==1){exaggeration=1;terrainRoot.scale.y=1;content.root.scale.y=1;ecology.root.scale.y=1;element('relief').textContent='高度 1×';}
+  const town=bundle.plan.towns.find(candidate=>candidate.id===element<HTMLSelectElement>('town').value)??bundle.plan.towns[0];
+  if(!town){showError('世界中没有可进入的聚落');return;}
+  const patch=bundle.patches.find(candidate=>candidate.townId===town.id), local=patch?.streets[0]?.points[0]??[0,0];
+  const x=town.center[0]+local[0],z=town.center[1]+local[1],ground=sample(x,z).height;
+  const focus=new THREE.Vector3(x,ground,z);content.update(focus,new THREE.Vector3(x,ground+1.62,z));ecology.update(focus,new THREE.Vector3(x,ground+1.62,z));
+  const next=patch?.streets[0]?.points[1],yaw=next?Math.atan2(-(next[0]-local[0]),-(next[1]-local[1])):0;
+  walk.enter(x,z,yaw);lodDirty=true;
+};
+const initialDemo=new URLSearchParams(location.search).get('demo');
+if(initialDemo==='compact')void loadCompactDemo();
+else if(initialDemo==='oasis')void loadBundledDemo('oasis','/scripts/fixtures/oasis-world.json','/scripts/fixtures/desert-assets.json','oasis');
+else if(initialDemo==='volcano')void loadBundledDemo('volcano','/scripts/fixtures/volcano-world.json','/scripts/fixtures/volcano-assets.json');
+else generate();
 requestAnimationFrame(animate);
-
-
-
-
-
-
-

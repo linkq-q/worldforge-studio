@@ -1,7 +1,7 @@
 import {readFileSync} from 'node:fs';
 import {describe,it,expect,vi} from 'vitest';
 import * as THREE from 'three';
-import {buildWorldAssetLibrary,buildWorldAssetBuildings,disposeWorldAssetLibrary,type WorldAssetSource} from '../src/client/worldAssets';
+import {buildWorldAssetLibrary,buildWorldAssetBuildings,disposeWorldAssetLibrary,pickWorldAsset,type WorldAssetSource} from '../src/client/worldAssets';
 import {disposeWorldStructures} from '../src/client/worldContent';
 import {validateWorldBundle,createPlannedWorldSampler,townBuildingBounds} from '../src/shared/worldPlanning';
 const pack=JSON.parse(readFileSync(new URL('../scripts/fixtures/medieval-assets.json',import.meta.url),'utf8'));
@@ -12,7 +12,7 @@ describe('saved medieval assets in the continuous world',()=>{
     const library=await buildWorldAssetLibrary(pack.assets as WorldAssetSource[]);
     try {
       expect(request).not.toHaveBeenCalled();
-      for(const model of Object.values(library)){
+      for(const model of library.byId.values()){
         expect(model.geometry.getAttribute('position').count).toBeGreaterThan(500);
         expect(model.geometry.boundingBox!.min.y).toBeCloseTo(0,5);
         expect(model.geometry.getAttribute('color').count).toBe(model.geometry.getAttribute('position').count);
@@ -39,15 +39,28 @@ describe('saved medieval assets in the continuous world',()=>{
         }
       }
       expect(instances).toBe(75);
-      const disposed=vi.fn();library.house.geometry.addEventListener('dispose',disposed);
+      const disposed=vi.fn();library.byRole.house[0].geometry.addEventListener('dispose',disposed);
       disposeWorldStructures(root);expect(disposed).not.toHaveBeenCalled();
     } finally {disposeWorldAssetLibrary(library);request.mockRestore();}
   });
-  it('rejects missing roles and unsupported model shapes without substituting boxes',async()=>{
-    await expect(buildWorldAssetLibrary(pack.assets.slice(0,3))).rejects.toThrow('invalid_preview_asset_pack');
+  it('accepts partial generated packs but rejects empty packs and unsupported model shapes',async()=>{
+    const partial=await buildWorldAssetLibrary(pack.assets.slice(0,1));
+    disposeWorldAssetLibrary(partial);
+    await expect(buildWorldAssetLibrary([])).rejects.toThrow('invalid_preview_asset_pack');
     const broken=structuredClone(pack.assets);
     broken[0].modelJson.nodes.find((n:{mesh?:unknown})=>n.mesh).mesh.type='unknown-shape';
     await expect(buildWorldAssetLibrary(broken)).rejects.toThrow('unsupported_preview_asset');
+  });
+  it('supports deterministic role variants and exact asset keys',async()=>{
+    const second={...structuredClone(pack.assets.find((asset:WorldAssetSource)=>asset.role==='house')),id:'house-second',name:'第二套住宅'};
+    const landmark={...structuredClone(pack.assets.find((asset:WorldAssetSource)=>asset.role==='workshop')),id:'town-hall',name:'议事厅',role:'landmark'};
+    const library=await buildWorldAssetLibrary([...pack.assets,second,landmark] as WorldAssetSource[]);
+    try {
+      const building=structuredClone(bundle.patches[0].buildings[0]);
+      expect(pickWorldAsset(library,building)).toBe(pickWorldAsset(library,building));
+      expect(pickWorldAsset(library,{...building,assetKey:'town-hall'})).toBe(library.byId.get('town-hall'));
+      expect(library.byRole.house).toHaveLength(2);
+    } finally {disposeWorldAssetLibrary(library);}
   });
 });
 
