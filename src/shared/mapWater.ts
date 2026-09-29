@@ -6,6 +6,7 @@ import {
   type EditableMap,
   type MapWaterBody
 } from './map';
+import { waterShoreProfile } from './waterShore';
 
 /** Bank run in metres per metre of depth. Lower means a steeper basin wall. */
 const SHORE_SLOPE = 1.5;
@@ -165,14 +166,13 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
             nearest[0] + (world[0] - nearest[0]) * scale,
             nearest[1] + (world[2] - nearest[1]) * scale);
           if (farHeight > water.level + 0.1) {
-            const ceiling = top + (farHeight - top) * smoothstep(distance / outerShore);
+            const ceiling = waterShoreProfile(top, farHeight, distance, outerShore);
             terrain.heights[index] = Math.min(terrain.heights[index] ?? 0, ceiling);
           }
         }
         continue;
       }
-      const t = Math.min(1, distance / shore);
-      const ceiling = top + (bottom - top) * (t * t * (3 - 2 * t));
+      const ceiling = waterShoreProfile(top, bottom, distance, shore);
       terrain.heights[index] = bankWidth > 0 && distance < shore
         ? ceiling : Math.min(terrain.heights[index] ?? 0, ceiling);
     }

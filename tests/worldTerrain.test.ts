@@ -163,6 +163,26 @@ describe('composable world terrain operations', () => {
     expect(sample(0, 20).waterLevel).toBeNull();
   });
 
+  it('joins lake and river banks continuously to the surrounding terrain', () => {
+    const base = createWorldSampler(original);
+    for (const region of [
+      { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 40 },
+      { kind: 'path' as const, points: [[-100, 0], [100, 0]] as Array<[number, number]>, width: 80 }
+    ]) {
+      const level = base(0, 40).height - 20;
+      const sample = createWorldSampler({ ...original, waterBodies: [{
+        id: 'bank', type: region.kind === 'circle' ? 'lake' : 'river', region,
+        levels: region.kind === 'circle' ? [level] : [level, level], depth: 6
+      }] });
+      // A one-centimetre step across a shoreline must not become a twenty-metre wall.
+      expect(Math.abs(sample(0, 40.01).height - sample(0, 39.99).height)).toBeLessThan(0.01);
+      expect(sample(0, 41).waterLevel).toBeNull();
+      expect(sample(0, 50).height).toBeGreaterThan(level);
+      expect(sample(0, 50).height).toBeLessThan(base(0, 50).height);
+      expect(sample(0, 500).height).toBe(base(0, 500).height);
+    }
+  });
+
   it('rejects malformed or colliding operation identities', () => {
     expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
       { id: 'same', mode: 'raise', region: { kind: 'circle', center: [0, 0], radius: 10 }, amount: 2 }

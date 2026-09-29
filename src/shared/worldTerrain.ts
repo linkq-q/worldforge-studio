@@ -2,6 +2,7 @@
  * Experimental continuous world sampler. Metres, Y up, sea level 0, north = -Z.
  * No editor state, rendering style, network or mutable RNG enters this recipe.
  */
+import { waterShoreProfile } from './waterShore';
 export const WORLD_MIN_SIZE = 500;
 export const WORLD_BIOMES = ['ocean', 'grassland', 'forest', 'desert', 'mountains', 'snow'] as const;
 export type WorldBiome = typeof WORLD_BIOMES[number];
@@ -360,11 +361,19 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
     for (const water of recipe.waterBodies ?? []) {
       const area = regionSample(water.region, x, z);
       freshWaterDistance = Math.min(freshWaterDistance, Math.max(0, -area.edge));
-      if (!area.inside) continue;
       const level = interpolatePath(water.levels, area.t);
+      if (!area.inside) {
+        // Reuse the editor's outer bank profile. Carving only the inside of a
+        // water polygon creates a vertical wall exactly at its boundary.
+        const bankWidth = Math.max(4, water.depth * 4, (height - level) * 3);
+        if (height > level && -area.edge < bankWidth) {
+          height = waterShoreProfile(level, height, -area.edge, bankWidth);
+        }
+        continue;
+      }
       const reach = water.region.kind === 'circle' ? water.region.radius : water.region.width / 2;
-      const depthWeight = smooth(0, Math.min(reach, Math.max(1, water.depth * 2)), area.edge);
-      height = Math.min(height, level - water.depth * depthWeight);
+      height = Math.min(height, waterShoreProfile(level, level - water.depth,
+        area.edge, Math.min(reach, Math.max(1, water.depth * 2))));
       if (height < level && (waterLevel === null || level > waterLevel)) {
         waterLevel = level;
         waterBodyId = water.id;
