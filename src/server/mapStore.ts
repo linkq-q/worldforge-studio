@@ -531,6 +531,7 @@ export class MapStore {
     for (const operation of operations) {
       if (operation.type === 'object.add' && operation.object.assetId) ids.add(operation.object.assetId);
       if (operation.type === 'object.update' && operation.patch.assetId) ids.add(operation.patch.assetId);
+      if (operation.type === 'world.set') for (const binding of operation.world?.assets ?? []) ids.add(binding.assetId);
     }
     await Promise.all([...ids].map((id) => this.requireKnownAsset(id)));
   }
@@ -946,8 +947,14 @@ export class MapStore {
   async hydrateMap(map: EditableMap): Promise<EditableMap> {
     const normalized = normalizeMap(map);
     prepareStructuredWaterInPlace(normalized);
-    const ids = [...new Set(normalized.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)))];
+    const ids = [...new Set([
+      ...normalized.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)),
+      ...normalized.world?.assets.map(binding => binding.assetId) ?? []
+    ])];
     const assets = await Promise.all(ids.map(async (id) => this.loadAsset(id).catch(() => null)));
+    const present = new Set(assets.filter((asset): asset is MapAsset => Boolean(asset)).map(asset => asset.id));
+    const missing = normalized.world?.assets.find(binding => !present.has(binding.assetId));
+    if (missing) throw new Error('world_asset_missing:' + missing.assetId);
     const hydrated: EditableMap = {
       ...normalized,
       assets: assets.filter((asset): asset is MapAsset => Boolean(asset))
@@ -987,6 +994,7 @@ export class MapStore {
     if (source.objects.some((object) => object.assetId && !embeddedAssetIds.has(object.assetId))) {
       throw new Error('import_missing_embedded_asset');
     }
+    if (source.world?.assets.some(binding => !embeddedAssetIds.has(binding.assetId))) throw new Error('import_missing_embedded_asset');
     const assetIds = new Map<string, string>();
     for (const rawAsset of source.assets ?? []) {
       const asset = normalizeAsset(rawAsset);
@@ -1015,6 +1023,7 @@ export class MapStore {
         updatedAt: now,
         renderSchemeId,
         objects,
+        ...(source.world ? {world: {...source.world, assets: source.world.assets.map(binding => ({...binding, assetId: assetIds.get(binding.assetId)!}))}} : {}),
         assets: undefined
       });
       await atomicWriteJson(this.mapPath(map.id), map);

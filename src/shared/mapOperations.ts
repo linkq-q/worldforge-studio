@@ -25,6 +25,7 @@ import {
   type Transform3D
 } from './map';
 import { carveWaterBasinInPlace, ensureRiverSurfaceLevels, naturalShorelineProfile } from './mapWater';
+import { validateWorldMapState, worldMapSampler, type WorldMapState } from './worldMapState';
 import {
   applyTerrainModifierInPlace,
   applyTerrainSurfaceInPlace,
@@ -182,6 +183,7 @@ export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
 export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
+  | { type: 'world.set'; world: WorldMapState }
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; lighting?: Pick<MapLighting, 'pointLightBudget'>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; designSemantics?: MapDesignSemantics; layout?: MapLayout }
   | { type: 'room.set'; room: Partial<MapRoom> }
   | { type: 'interior.art-direction.set'; artDirection: InteriorArtDirectionInput }
@@ -270,11 +272,32 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
     if (!operation || typeof operation !== 'object' || typeof operation.type !== 'string') {
       throw new Error('invalid_operation');
     }
+    if (next.world && /^terrain\.(set|generate|modify|refine|brush|ramp)$/.test(operation.type)) {
+      throw new Error('world_terrain_requires_world_plan');
+    }
 
     switch (operation.type) {
+      case 'world.set': {
+        if (next.sceneMode !== 'outdoor') throw new Error('world_requires_outdoor_map');
+        next.world = validateWorldMapState(operation.world);
+        const {plan} = next.world.bundle;
+        next.seed = plan.recipe.seed;
+        next.box.size = [plan.recipe.size, Math.max(4096, next.box.size[1]), plan.recipe.size];
+        next.terrain = {resolutionX: 2, resolutionZ: 2, heights: [0, 0, 0, 0]};
+        const town = plan.towns[0];
+        if (town) {
+          const port = town.ports[0]?.position ?? [0, 0];
+          const x = town.center[0] + port[0], z = town.center[1] + port[1];
+          next.spawnPoints = [[x, worldMapSampler(next.world)(x, z).height, z]];
+        } else next.spawnPoints = [[0, worldMapSampler(next.world)(0, 0).height, 0]];
+        snapTerrainObjectsInPlace(next);
+        break;
+      }
       case 'map.update':
         if (operation.name !== undefined && typeof operation.name !== 'string') throw new Error('invalid_map_name');
         if (operation.size !== undefined) requireVec3(operation.size, 'invalid_map_size');
+        if (next.world && operation.size && (operation.size[0] !== next.world.bundle.plan.recipe.size
+          || operation.size[2] !== next.world.bundle.plan.recipe.size)) throw new Error('world_size_is_recipe_owned');
         if (operation.name !== undefined) next.name = operation.name;
         if (operation.lighting !== undefined) {
           const budget = operation.lighting?.pointLightBudget;

@@ -934,7 +934,7 @@ export function sceneZoneWorldRegion(zone: SceneCompositionZone, map: EditableMa
 }
 
 export function isCompositionEmptyMap(map: EditableMap): boolean {
-  return map.objects.length === 0
+  return !map.world && map.objects.length === 0
     && map.waterBodies.length === 0
     && map.paintStrokes.length === 0
     && map.grassLayers.every((layer) => layer.densities.every((density) => density <= 0.001))

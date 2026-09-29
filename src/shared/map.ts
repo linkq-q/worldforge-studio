@@ -9,6 +9,7 @@ import {
 import { rayAabbIntersection, stepVerticalMotion, wrapAngle, type VerticalMotionState } from './math';
 import { PLAYER_JUMP_SPEED, type Vec3 } from './protocol';
 import { seedFromString } from './mapSeed';
+import { validateWorldMapState, worldMapSampler, type WorldMapState } from './worldMapState';
 import {
   assetFootprintRadius,
   assetSizeClass,
@@ -265,6 +266,7 @@ export interface EditableMap {
   interiorArtDirection: InteriorArtDirection | null;
   lighting: MapLighting;
   terrain: MapTerrain;
+  world?: WorldMapState;
   grassLayers: MapGrassLayer[];
   waterBodies: MapWaterBody[];
   paintStrokes: MapPaintStroke[];
@@ -769,7 +771,8 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
   const boxSize = positiveVec3(input.box?.size, DEFAULT_MAP_SIZE);
   const sceneMode = normalizeMapSceneMode(input.sceneMode);
   const defaultBoxColors = sceneMode === 'indoor' ? DEFAULT_INDOOR_BOX_COLORS : DEFAULT_BOX_COLORS;
-  const terrainFallback = terrainResolutionForSize(boxSize);
+  const world = input.world === undefined ? undefined : validateWorldMapState(input.world);
+  const terrainFallback = world ? 2 : terrainResolutionForSize(boxSize);
   const terrain = normalizeTerrain(input.terrain, terrainFallback, terrainFallback);
   const playerHeight = input.playerHeight === undefined
     ? PLAYER_HEIGHT
@@ -779,6 +782,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     : clamp(finiteNumber(input.playerRadius, defaultPlayerRadius(playerHeight)), 0.2, 0.8);
   const map: EditableMap = {
     id,
+    ...(world ? {world} : {}),
     seed: Number.isFinite(Number(input.seed)) ? Math.trunc(Number(input.seed)) >>> 0 : seedFromString(id),
     name: cleanName(input.name, '未命名地图'),
     assetGenerationMode: normalizeModelGenerationMode(input.assetGenerationMode),
@@ -905,7 +909,7 @@ export function mapToSummary(map: EditableMap): MapSummary {
     width: map.box.size[0],
     height: map.box.size[1],
     depth: map.box.size[2],
-    objectCount: map.objects.length,
+    objectCount: map.objects.length + (map.world?.bundle.patches.reduce((sum, patch) => sum + patch.buildings.length, 0) ?? 0),
     sceneMode: map.sceneMode,
     assetGenerationMode: map.assetGenerationMode,
     confirmedAt: map.confirmedAt,
@@ -940,6 +944,7 @@ export function getSunPosition(map: EditableMap): Vec3 {
 }
 
 export function sampleTerrainHeight(map: EditableMap, x: number, z: number): number {
+  if (map.world) return worldMapSampler(map.world)(x, z).height;
   // EditableMap is normalized when loaded/saved. Re-normalizing here used to
   // allocate and copy the complete height field for every collision candidate
   // during every movement tick.
