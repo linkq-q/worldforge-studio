@@ -1,6 +1,6 @@
 import type { MapGuide } from './mapGuide';
 import { validateEcologyRules, type EcologyRule } from './worldEcology';
-import { createWorldSampler, validateWorldRecipe, type WorldRecipe, type WorldSample } from './worldTerrain';
+import { createWorldSampler, validateWorldRecipe, type WorldRecipe, type WorldSampler } from './worldTerrain';
 
 export interface WorldPlan {
   version: 1;
@@ -21,10 +21,14 @@ export interface TownIntent {
   blend: number;
   foundation: number;
   ports: TownPort[];
+  terrainMode?: 'platform' | 'conform';
 }
 export interface TownPort { id: string; guideId: string; position: [number, number]; width: number }
 export interface TownTask { worldKey: string; town: TownIntent; seed: number }
-export interface TownBuilding { id: string; x: number; z: number; width: number; depth: number; height: number; use: string; rotation?: number }
+export interface TownBuilding {
+  id: string; x: number; z: number; width: number; depth: number; height: number; use: string; rotation?: number;
+  assetKey?: string; enterable?: boolean;
+}
 export interface TownPatch { townId: string; worldKey: string; summary: string; streets: MapGuide[]; buildings: TownBuilding[] }
 export interface WorldBundle { plan: WorldPlan; patches: TownPatch[] }
 
@@ -33,10 +37,10 @@ export const WORLD_ROAD_VERTEX_BUDGET = 32768;
 export const worldRoadSampleSpacing = (size: number) => Math.min(WORLD_ROAD_SAMPLE_SPACING, size / 250);
 
 type Point = [number, number];
-type Sampler = (x: number, z: number) => WorldSample;
 const TOLERANCE = 1e-6;
 const MAX_TOWN_SLOPE = 0.65;
 const MAX_ROAD_SLOPE = 0.5;
+const MAX_BUILDING_CUT_FILL = 1.5;
 const byId = <T extends { id: string }>(a: T, b: T) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 function fail(code: string): never { throw new Error(code); }
 
@@ -121,7 +125,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   const roads = list(raw.roads, 32, 'world_road_quota').map(value => guide(value, bound)).sort(byId);
   const towns = list(raw.towns, 12, 'world_town_quota').map(value => {
     const item = record(value, 'world_invalid_town');
-    keys(item, ['id', 'name', 'prompt', 'center', 'radius', 'blend', 'foundation', 'ports'], 'world_unknown_town_field');
+    keys(item, ['id', 'name', 'prompt', 'center', 'radius', 'blend', 'foundation', 'ports', 'terrainMode'], 'world_unknown_town_field');
     const radius = number(item.radius, Math.min(100, recipe.size / 10), 1000, 'world_invalid_town_radius');
     const town: TownIntent = {
       id: safeId(item.id, 'world_invalid_town_id'),
@@ -145,6 +149,10 @@ export function validateWorldPlan(input: unknown): WorldPlan {
         };
       }).sort(byId)
     };
+    if (item.terrainMode !== undefined) {
+      if (item.terrainMode !== 'platform' && item.terrainMode !== 'conform') fail('world_invalid_terrain_mode');
+      town.terrainMode = item.terrainMode;
+    }
     if (town.center.some(value => Math.abs(value) + radius + town.blend > bound)) fail('world_town_outside');
     return town;
   }).sort(byId);
@@ -210,9 +218,9 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
   if (!town) fail('world_unknown_patch_town');
   if (raw.worldKey !== worldKey) fail('world_stale_patch');
   const streets = list(raw.streets, 48, 'world_street_quota').map(value => guide(value, town.radius)).sort(byId);
-  const buildings = list(raw.buildings, 128, 'world_building_quota').map(value => {
+  const buildings = list(raw.buildings, worldTownBuildingQuota(town), 'world_building_quota').map(value => {
     const b = record(value, 'world_invalid_building');
-    keys(b, ['id', 'x', 'z', 'width', 'depth', 'height', 'use', 'rotation'], 'world_unknown_building_field');
+    keys(b, ['id', 'x', 'z', 'width', 'depth', 'height', 'use', 'rotation', 'assetKey', 'enterable'], 'world_unknown_building_field');
     const building: TownBuilding = {
       id: text(b.id, 'world_invalid_building_id'),
       x: number(b.x, -town.radius, town.radius, 'world_building_outside'),
@@ -223,6 +231,11 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
       use: text(b.use, 'world_invalid_building_use', 120)
     };
     if (b.rotation !== undefined) building.rotation = number(b.rotation, -Math.PI, Math.PI, 'world_invalid_building_rotation');
+    if (b.assetKey !== undefined) building.assetKey = safeId(b.assetKey, 'world_invalid_building_asset_key');
+    if (b.enterable !== undefined) {
+      if (typeof b.enterable !== 'boolean') fail('world_invalid_building_enterable');
+      building.enterable = b.enterable;
+    }
     const bounds = townBuildingBounds(building);
     if (Math.abs(bounds.x) + bounds.width / 2 > town.radius
       || Math.abs(bounds.z) + bounds.depth / 2 > town.radius) fail('world_building_outside');
@@ -248,7 +261,13 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
       }
     }
   }
-  return { townId, worldKey, summary: text(raw.summary, 'world_invalid_patch_summary', 4000, true), streets, buildings };
+  const result = { townId, worldKey, summary: text(raw.summary, 'world_invalid_patch_summary', 4000, true), streets, buildings };
+  validatePatchTerrain(plan, town, result);
+  return result;
+}
+
+export function worldTownBuildingQuota(town: Pick<TownIntent, 'radius'>): number {
+  return Math.min(512, Math.max(128, Math.ceil((town.radius * 2) ** 2 / 900)));
 }
 
 /** A crossing counts as a junction only when both street graphs explicitly share a vertex. */
@@ -327,7 +346,7 @@ function townWeight(town: TownIntent, x: number, z: number): number {
   const t = (distance - town.radius) / town.blend;
   return 1 - t * t * t * (t * (t * 6 - 15) + 10);
 }
-function samplerFor(base: Sampler, towns: TownIntent[]): Sampler {
+function platformSampler(base: WorldSampler, towns: TownIntent[]): WorldSampler {
   return (x, z) => {
     const sample = base(x, z);
     let total = 0, height = 0;
@@ -342,20 +361,95 @@ function samplerFor(base: Sampler, towns: TownIntent[]): Sampler {
     return total === 0 ? sample : { ...sample, height: (sample.height + height) / (1 + total) };
   };
 }
-export function createPlannedWorldSampler(plan: WorldPlan, patches: TownPatch[] = []): Sampler {
+
+interface RoadGrade { points: Point[]; heights: number[]; width: number }
+interface BuildingPad { building: TownBuilding; x: number; z: number; target: number }
+function roadGradeAt(grade: RoadGrade, x: number, z: number): { distance: number; height: number } {
+  let nearest = { distance: Infinity, height: grade.heights[0] };
+  for (let i = 1; i < grade.points.length; i++) {
+    const a = grade.points[i - 1], b = grade.points[i], dx = b[0] - a[0], dz = b[1] - a[1], length2 = dx * dx + dz * dz;
+    const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / length2));
+    const distance = Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t);
+    if (distance < nearest.distance) nearest = { distance, height: grade.heights[i - 1] + (grade.heights[i] - grade.heights[i - 1]) * t };
+  }
+  return nearest;
+}
+function buildingLocal(building: TownBuilding, worldX: number, worldZ: number, centerX: number, centerZ: number): Point {
+  const angle = -(building.rotation ?? 0), c = Math.cos(angle), s = Math.sin(angle);
+  const dx = worldX - centerX, dz = worldZ - centerZ;
+  return [dx * c - dz * s, dx * s + dz * c];
+}
+function conformSampler(base: WorldSampler, plan: WorldPlan, patches: TownPatch[]): WorldSampler {
+  const platformTowns = patches.map(patch => plan.towns.find(town => town.id === patch.townId)!)
+    .filter(town => (town.terrainMode ?? 'platform') === 'platform');
+  const shapedBase = platformSampler(base, platformTowns), grades: RoadGrade[] = [], pads: BuildingPad[] = [];
+  for (const patch of patches) {
+    const town = plan.towns.find(candidate => candidate.id === patch.townId)!;
+    if ((town.terrainMode ?? 'platform') !== 'conform') continue;
+    for (const street of patch.streets) {
+      const points = street.points.map(point => [point[0] + town.center[0], point[1] + town.center[1]] as Point);
+      grades.push({ points, heights: points.map(point => shapedBase(point[0], point[1]).height), width: street.width });
+    }
+    for (const building of patch.buildings) {
+      const centerX = town.center[0] + building.x, centerZ = town.center[1] + building.z;
+      const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle);
+      const samples: number[] = [];
+      for (const lx of [-building.width / 2, 0, building.width / 2]) for (const lz of [-building.depth / 2, 0, building.depth / 2]) {
+        samples.push(shapedBase(centerX + lx * c - lz * s, centerZ + lx * s + lz * c).height);
+      }
+      samples.sort((a, b) => a - b);
+      pads.push({ building, x: centerX, z: centerZ, target: samples[Math.floor(samples.length / 2)] });
+    }
+  }
+  return (x, z) => {
+    const sample = shapedBase(x, z);
+    let height = sample.height;
+    for (const grade of grades) {
+      const point = roadGradeAt(grade, x, z), half = grade.width / 2, feather = 2;
+      if (point.distance >= half + feather) continue;
+      const weight = point.distance <= half ? 1 : townWeight1((half + feather - point.distance) / feather);
+      height += (point.height - height) * weight;
+    }
+    for (const pad of pads) {
+      const local = buildingLocal(pad.building, x, z, pad.x, pad.z);
+      const ox = Math.max(0, Math.abs(local[0]) - pad.building.width / 2);
+      const oz = Math.max(0, Math.abs(local[1]) - pad.building.depth / 2);
+      const distance = Math.hypot(ox, oz), feather = Math.min(4, Math.max(1, Math.min(pad.building.width, pad.building.depth) * 0.2));
+      if (distance >= feather) continue;
+      const weight = ox === 0 && oz === 0 ? 1 : townWeight1((feather - distance) / feather);
+      height += (pad.target - height) * weight;
+    }
+    return height === sample.height ? sample : { ...sample, height };
+  };
+}
+function townWeight1(value: number): number {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+export function createPlannedWorldSampler(plan: WorldPlan, patches: TownPatch[] = []): WorldSampler {
   const checked = validateWorldBundle({ plan, patches });
-  const ready = new Set(checked.patches.map(patch => patch.townId));
-  return samplerFor(createWorldSampler(checked.plan.recipe), checked.plan.towns.filter(town => ready.has(town.id)));
+  return conformSampler(createWorldSampler(checked.plan.recipe), checked.plan, checked.patches);
 }
 
 function validateTerrain(plan: WorldPlan): void {
-  const base = createWorldSampler(plan.recipe), planned = samplerFor(base, plan.towns);
+  const base = createWorldSampler(plan.recipe), platformTowns = plan.towns.filter(town => (town.terrainMode ?? 'platform') === 'platform');
+  const planned = platformSampler(base, platformTowns);
   for (const town of plan.towns) {
+    let drySamples = 0;
     for (let iz = -2; iz <= 2; iz++) for (let ix = -2; ix <= 2; ix++) {
-      const h = base(town.center[0] + ix * town.radius / 2, town.center[1] + iz * town.radius / 2).height;
-      if (h <= 2) fail('world_town_core_not_land');
-      if (Math.abs(h - town.foundation) > Math.min(350, town.blend * 0.2)) fail('world_foundation_height_budget');
+      const point = base(town.center[0] + ix * town.radius / 2, town.center[1] + iz * town.radius / 2);
+      if (point.waterLevel === null && point.height > 2) drySamples++;
+      if ((town.terrainMode ?? 'platform') === 'platform') {
+        if (point.waterLevel !== null || point.height <= 2) fail('world_town_core_not_land');
+        if (Math.abs(point.height - town.foundation) > Math.min(350, town.blend * 0.2)) fail('world_foundation_height_budget');
+      }
     }
+    if (town.terrainMode === 'conform') {
+      const center = base(town.center[0], town.center[1]);
+      if (center.waterLevel !== null || center.height <= 2 || drySamples < 13) fail('world_town_core_not_land');
+      if (Math.abs(center.height - town.foundation) > Math.min(350, town.blend * 0.2)) fail('world_foundation_height_budget');
+    }
+    if (town.terrainMode === 'conform') continue;
     // Bounded diagnostic stencil: 16 rays, nine samples in each transition collar.
     for (let ray = 0; ray < 16; ray++) {
       const angle = ray * Math.PI / 8, dx = Math.cos(angle), dz = Math.sin(angle);
@@ -371,13 +465,54 @@ function validateTerrain(plan: WorldPlan): void {
   }
   let sampleBudget = 0;
   for (const road of plan.roads) for (const [a, b] of segments(road)) {
-    const length = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.ceil(length / 128);
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.ceil(length / worldRoadSampleSpacing(plan.recipe.size));
     sampleBudget += steps + 1;
     if (sampleBudget > 8192) fail('world_road_sampling_quota');
     let previous: number | undefined;
+    const nx = -(b[1] - a[1]) / length, nz = (b[0] - a[0]) / length;
     for (let i = 0; i <= steps; i++) {
-      const t = i / steps, h = planned(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t).height;
-      if (h <= 1) fail('world_road_crosses_water');
+      const t = i / steps, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
+      const cross = [-road.width / 2, 0, road.width / 2].map(offset => planned(x + nx * offset, z + nz * offset));
+      if (cross.some(point => point.waterLevel !== null)) fail('world_road_crosses_water');
+      const h = cross[1].height;
+      if ((Math.max(...cross.map(point => point.height)) - Math.min(...cross.map(point => point.height))) / road.width > MAX_ROAD_SLOPE) fail('world_road_cross_slope');
+      if (previous !== undefined && Math.abs(h - previous) / (length / steps) > MAX_ROAD_SLOPE) fail('world_road_slope');
+      previous = h;
+    }
+  }
+}
+
+function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatch): void {
+  if ((town.terrainMode ?? 'platform') !== 'conform') return;
+  const base = createWorldSampler(plan.recipe);
+  for (const building of patch.buildings) {
+    const centerX = town.center[0] + building.x, centerZ = town.center[1] + building.z;
+    const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle), heights: number[] = [];
+    for (const lx of [-building.width / 2, 0, building.width / 2]) for (const lz of [-building.depth / 2, 0, building.depth / 2]) {
+      const point = base(centerX + lx * c - lz * s, centerZ + lx * s + lz * c);
+      if (point.waterLevel !== null) fail('world_building_on_water');
+      heights.push(point.height);
+    }
+    heights.sort((a, b) => a - b);
+    const target = heights[Math.floor(heights.length / 2)];
+    if (heights.some(height => Math.abs(height - target) > MAX_BUILDING_CUT_FILL)) fail('world_building_earthwork_budget');
+  }
+  const adjusted = conformSampler(base, plan, [patch]);
+  for (const street of patch.streets) for (const [localA, localB] of segments(street)) {
+    const a: Point = [localA[0] + town.center[0], localA[1] + town.center[1]];
+    const b: Point = [localB[0] + town.center[0], localB[1] + town.center[1]];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.max(1, Math.ceil(length / 12));
+    const nx = -(b[1] - a[1]) / length, nz = (b[0] - a[0]) / length;
+    let previous: number | undefined;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
+      const cross = [-street.width / 2, 0, street.width / 2].map(offset => ({
+        raw: base(x + nx * offset, z + nz * offset), adjusted: adjusted(x + nx * offset, z + nz * offset)
+      }));
+      if (cross.some(point => point.raw.waterLevel !== null)) fail('world_road_crosses_water');
+      if (cross.some(point => Math.abs(point.adjusted.height - point.raw.height) > MAX_BUILDING_CUT_FILL)) fail('world_road_earthwork_budget');
+      const heights = cross.map(point => point.adjusted.height), h = heights[1];
+      if ((Math.max(...heights) - Math.min(...heights)) / street.width > MAX_ROAD_SLOPE) fail('world_road_cross_slope');
       if (previous !== undefined && Math.abs(h - previous) / (length / steps) > MAX_ROAD_SLOPE) fail('world_road_slope');
       previous = h;
     }
@@ -457,6 +592,3 @@ export function createWorldEcologyDensity(plan: WorldPlan, patches: TownPatch[] 
     return density;
   };
 }
-
-
-

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWorldSampler, dominantBiome, parseWorldPrompt, sampleWorldTile, selectWorldTiles, validateWorldRecipe, WORLD_BIOMES } from '../src/shared/worldTerrain';
+import { createWorldSampler, dominantBiome, parseWorldPrompt, sampleWorldSlope, sampleWorldTile, selectWorldTiles, validateWorldRecipe, WORLD_BIOMES } from '../src/shared/worldTerrain';
 
 describe('continuous biome world experiment', () => {
   it('turns the requested sentence into explicit directional constraints', () => {
@@ -116,6 +116,83 @@ describe('local continuous landforms',()=>{
     expect(validateWorldRecipe(recipe)).toEqual(recipe);
     expect(()=>validateWorldRecipe({...recipe,landforms:[{...recipe.landforms[0],radius:[0,60]}]})).toThrow('invalid_world_landform');
     expect(()=>validateWorldRecipe({...recipe,landforms:Array(17).fill(recipe.landforms[0])})).toThrow('invalid_world_landform');
+  });
+});
+
+describe('composable world terrain operations', () => {
+  const original = parseWorldPrompt('中央是草原', 77, 8000);
+
+  it('applies bounded circle and path grades through the shared sampler', () => {
+    const base = createWorldSampler(original), start = base(-100, 0).height, end = start - 20;
+    const recipe = validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'harbor-pad', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 30 }, height: start, feather: 10 },
+      { id: 'ski-run', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 12 },
+        heights: [start, start - 10, end], feather: 4 }
+    ] });
+    const sample = createWorldSampler(recipe);
+    expect(sample(-100, 0).height).toBeCloseTo(start, 10);
+    expect(sample(0, 0).height).toBeCloseTo(start - 10, 10);
+    expect(sample(100, 0).height).toBeCloseTo(end, 10);
+    expect(sample(0, 50)).toEqual(base(0, 50));
+    expect(sampleWorldSlope(sample, 50, 0)).toBeCloseTo(0.1, 2);
+  });
+
+  it('carves finite water, exposes tile water levels and applies local biome patches', () => {
+    const base = createWorldSampler(original), level = base(0, 0).height + 2;
+    const recipe = validateWorldRecipe({ ...original,
+      waterBodies: [{ id: 'oasis', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 }, levels: [level], depth: 6 }],
+      biomePatches: [{ id: 'oasis-green', region: { kind: 'circle', center: [0, 0], radius: 90 }, biome: 'forest', feather: 20 }]
+    });
+    const sample = createWorldSampler(recipe), center = sample(0, 0), outside = sample(200, 0);
+    expect(center).toMatchObject({ waterLevel: level, waterBodyId: 'oasis' });
+    expect(center.height).toBeCloseTo(level - 6, 10);
+    expect(outside).toEqual(base(200, 0));
+    expect(sample(70, 0).weights.forest).toBe(1);
+    const tile = sampleWorldTile(recipe, { x: -50, z: -50, size: 100 }, 11, sample);
+    expect(tile.waterLevels[5 * 11 + 5]).toBeCloseTo(level, 4);
+    expect(Number.isNaN(tile.waterLevels[0])).toBe(true);
+  });
+
+  it('interpolates river levels along path control points', () => {
+    const recipe = validateWorldRecipe({ ...original, waterBodies: [{ id: 'river', type: 'river',
+      region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 20 }, levels: [30, 20, 5], depth: 3 }] });
+    const sample = createWorldSampler(recipe);
+    expect(sample(-100, 0).waterLevel).toBeCloseTo(30, 10);
+    expect(sample(-50, 0).waterLevel).toBeCloseTo(25, 10);
+    expect(sample(50, 0).waterLevel).toBeCloseTo(12.5, 10);
+    expect(sample(0, 20).waterLevel).toBeNull();
+  });
+
+  it('rejects malformed or colliding operation identities', () => {
+    expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'same', mode: 'raise', region: { kind: 'circle', center: [0, 0], radius: 10 }, amount: 2 }
+    ], waterBodies: [
+      { id: 'same', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 10 }, levels: [1], depth: 2 }
+    ] })).toThrow('invalid_world_terrain_id');
+    expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'bad-grade', mode: 'grade', region: { kind: 'path', points: [[0, 0], [10, 0]], width: 4 }, heights: [1] }
+    ] })).toThrow('invalid_world_terrain_brush');
+  });
+
+  it('scales macro relief before applying authored local landforms', () => {
+    const scaled = validateWorldRecipe({ ...original, heightScale: 0.1,
+      landforms: [{ center: [0, 0], radius: [40, 40], height: 20 }] });
+    const baseHeight = createWorldSampler(original)(0, 0).height;
+    expect(createWorldSampler(scaled)(0, 0).height).toBeCloseTo(baseHeight * 0.1 + 20, 10);
+    expect(() => validateWorldRecipe({ ...original, heightScale: 0 })).toThrow('invalid_world_height_scale');
+  });
+
+  it('makes the reproduced kilometre coast traversable without removing its sea-to-land transition', () => {
+    const recipe = validateWorldRecipe({ version: 1, seed: 2309, size: 1600, heightScale: 0.1, constraints: [
+      { region: 'west', biome: 'ocean' }, { region: 'center', biome: 'desert' },
+      { region: 'east', biome: 'desert' }, { region: 'north', biome: 'desert' }, { region: 'south', biome: 'desert' }
+    ] });
+    const sample = createWorldSampler(recipe);
+    expect(sample(-450, 0).waterLevel).toBe(0);
+    expect(sample(-250, 0).waterLevel).toBeNull();
+    let maxSlope = 0;
+    for (let x = -700; x <= 300; x += 4) maxSlope = Math.max(maxSlope, sampleWorldSlope(sample, x, 0));
+    expect(maxSlope).toBeLessThan(0.5);
   });
 });
 

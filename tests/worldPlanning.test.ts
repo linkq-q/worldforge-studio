@@ -3,7 +3,7 @@ import type { MapGuide } from '../src/shared/mapGuide';
 import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
 import {
   createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
-  validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey,
+  validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldTownBuildingQuota,
   type TownPatch, type WorldBundle, type WorldPlan
 } from '../src/shared/worldPlanning';
 
@@ -112,7 +112,17 @@ describe('hierarchical world planning contracts', () => {
       ...ocean, recipe: { version: 1, seed: 42, size: 16000, constraints: [{ region: 'center', biome: 'mountains' }] },
       roads: [road('steep-road', [[-6000, -6000], [-5872, -6000]])]
     };
-    expect(() => validateWorldPlan(steep)).toThrow('world_road_slope');
+    expect(() => validateWorldPlan(steep)).toThrow('world_road_cross_slope');
+  });
+
+  it('uses finite water for road rejection while allowing a conform coastal town with a dry majority', () => {
+    const recipe:WorldRecipe={version:1,seed:42,size:16000,constraints:[{region:'center',biome:'grassland'}],
+      waterBodies:[{id:'harbor',type:'lake',region:{kind:'circle',center:[-180,0],radius:80},levels:[150],depth:8}]};
+    const roadPlan:WorldPlan={...fixture(),recipe,towns:[],roads:[road('wet-road',[[-220,0],[-140,0]])]};
+    expect(()=>validateWorldPlan(roadPlan)).toThrow('world_road_crosses_water');
+    const sample=createWorldSampler(recipe),town={...fixture().towns[0],id:'coast',center:[0,0] as [number,number],
+      foundation:sample(0,0).height,terrainMode:'conform' as const,ports:[]};
+    expect(validateWorldPlan({...fixture(),recipe,towns:[town],roads:[]} as WorldPlan).towns[0].terrainMode).toBe('conform');
   });
 
   it('requires actual shared graph vertices and every port connected at the matching width', () => {
@@ -147,7 +157,7 @@ describe('hierarchical world planning contracts', () => {
     const plan = fixture(), initial: WorldBundle = { plan, patches: [] };
     const streets = patch(plan, 0); streets.streets = Array.from({ length: 49 }, () => streets.streets[0]);
     expect(() => validateTownPatch(plan, streets)).toThrow('world_street_quota');
-    const buildings = patch(plan, 0); buildings.buildings = Array.from({ length: 129 }, () => buildings.buildings[0]);
+    const buildings = patch(plan, 0); buildings.buildings = Array.from({ length: worldTownBuildingQuota(plan.towns[0]) + 1 }, () => buildings.buildings[0]);
     expect(() => validateTownPatch(plan, buildings)).toThrow('world_building_quota');
     const worldCollision = patch(plan, 0); worldCollision.buildings[0].id = 'highway';
     expect(() => validateTownPatch(plan, worldCollision)).toThrow('world_duplicate_id');
@@ -279,6 +289,25 @@ describe('organic settlement integration',()=>{
     expect(createWorldEcologyDensity(plan,[done])(-1880,120)).toBeGreaterThan(0);
     expect(createWorldEcologyDensity(plan,[done])(2000,0)).toBe(0);
   });
+  it('keeps conform settlements on local road grades and building pads instead of flattening the town core',()=>{
+    const plan=fixture(),town=plan.towns[0],base=createWorldSampler(plan.recipe);
+    town.terrainMode='conform';
+    const local:TownPatch={
+      townId:town.id,worldKey:worldPlanKey(plan),summary:'terrain conforming village',
+      streets:[road('conform-street',[
+        ...Array.from({length:21},(_,i):[number,number]=>[200-i*10,0]),
+        ...Array.from({length:10},(_,i):[number,number]=>[0,(i+1)*10])
+      ])],
+      buildings:[{id:'conform-house',x:-70,z:-70,width:4,depth:4,height:12,use:'home',assetKey:'house-kit',enterable:true}]
+    };
+    const checked=validateTownPatch(plan,local),sample=createPlannedWorldSampler(plan,[checked]);
+    expect(checked.buildings[0]).toMatchObject({assetKey:'house-kit',enterable:true});
+    const bx=town.center[0]-70,bz=-70,h=sample(bx,bz).height;
+    expect(sample(bx-2,bz-2).height).toBeCloseTo(h,10);
+    expect(sample(bx+2,bz+2).height).toBeCloseTo(h,10);
+    expect(sample(town.center[0]+100,5).height).toBeCloseTo(sample(town.center[0]+100,-5).height,10);
+    expect(sample(town.center[0]+150,150)).toEqual(base(town.center[0]+150,150));
+  });
   it('preserves building orientation and checks its rotated footprint',()=>{
     const plan=fixture(), rotated=patch(plan,0);
     Object.assign(rotated.buildings[0],{rotation:Math.PI/4});
@@ -300,4 +329,3 @@ describe('organic settlement integration',()=>{
     }
   });
 });
-

@@ -1,4 +1,4 @@
-import { createWorldSampler, validateWorldRecipe, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample } from './worldTerrain';
+import { createWorldSampler, validateWorldRecipe, worldRegionWeight, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample, type WorldTerrainRegion } from './worldTerrain';
 
 export type EcologyKind = 'broadleaf' | 'pine' | 'shrub' | 'rock';
 export interface EcologyRule {
@@ -9,6 +9,8 @@ export interface EcologyRule {
   spacing: number;
   maxSlope: number;
   scale: [number, number];
+  region?: WorldTerrainRegion;
+  regionFeather?: number;
 }
 export interface EcologyInstance {
   id: string;
@@ -34,10 +36,24 @@ export function validateEcologyRules(input: unknown): EcologyRule[] {
       || !Number.isFinite(rule.spacing) || rule.spacing < 6 || rule.spacing > 100
       || !Number.isFinite(rule.maxSlope) || rule.maxSlope < 0 || rule.maxSlope > 60
       || !Array.isArray(rule.scale) || rule.scale.length !== 2 || !rule.scale.every(Number.isFinite)
-      || rule.scale[0] <= 0 || rule.scale[1] < rule.scale[0] || rule.scale[1] > 8) throw new Error('invalid_ecology_rule');
+      || rule.scale[0] <= 0 || rule.scale[1] < rule.scale[0] || rule.scale[1] > 8
+      || rule.regionFeather !== undefined && (!Number.isFinite(rule.regionFeather) || rule.regionFeather < 0 || rule.regionFeather > 2000)) throw new Error('invalid_ecology_rule');
+    let region: WorldTerrainRegion | undefined;
+    if (rule.region !== undefined) {
+      if (!rule.region || typeof rule.region !== 'object') throw new Error('invalid_ecology_rule');
+      if (rule.region.kind === 'circle' && Array.isArray(rule.region.center) && rule.region.center.length === 2
+        && rule.region.center.every(Number.isFinite) && Number.isFinite(rule.region.radius) && rule.region.radius >= 1 && rule.region.radius <= 256000) {
+        region = { kind: 'circle', center: [rule.region.center[0], rule.region.center[1]], radius: rule.region.radius };
+      } else if (rule.region.kind === 'path' && Array.isArray(rule.region.points) && rule.region.points.length >= 2 && rule.region.points.length <= 64
+        && rule.region.points.every(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))
+        && Number.isFinite(rule.region.width) && rule.region.width >= 1 && rule.region.width <= 1000) {
+        region = { kind: 'path', points: rule.region.points.map(point => [point[0], point[1]]), width: rule.region.width };
+      } else throw new Error('invalid_ecology_rule');
+    }
     seen.add(rule.id);
     return { id: rule.id, kind: rule.kind, biome: rule.biome, density: rule.density,
-      spacing: rule.spacing, maxSlope: rule.maxSlope, scale: [rule.scale[0], rule.scale[1]] };
+      spacing: rule.spacing, maxSlope: rule.maxSlope, scale: [rule.scale[0], rule.scale[1]],
+      ...(region ? { region } : {}), ...(rule.regionFeather === undefined ? {} : { regionFeather: rule.regionFeather }) };
   });
   return rules.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
@@ -143,10 +159,11 @@ export function generateEcologyChunk(
         const localDensity = options.density ? options.density(point.x, point.z) : 1;
         if (!Number.isFinite(localDensity)) throw new Error('invalid_ecology_density');
         const density = rule.density * Math.max(0, Math.min(1, localDensity));
-        if (point.threshold >= density) continue;
+        const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
+        if (point.threshold >= density * regionDensity) continue;
         const environment = sample(point.x, point.z);
         const weight = environment.weights[rule.biome];
-        if (!Number.isFinite(environment.height) || environment.height < 0
+        if (!Number.isFinite(environment.height) || environment.height < 0 || environment.waterLevel !== null
           || !Number.isFinite(environment.weights.ocean) || environment.weights.ocean >= 0.5
           || !Number.isFinite(weight) || point.threshold >= density * Math.max(0, Math.min(1, weight))) continue;
         // Same world-space central difference as terrain normals, including across chunk borders.

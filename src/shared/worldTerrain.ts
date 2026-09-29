@@ -12,12 +12,38 @@ export const WORLD_REGIONS = {
 } as const;
 export type WorldRegion = keyof typeof WORLD_REGIONS;
 export interface WorldConstraint { region: WorldRegion; biome: WorldBiome }
+export type WorldTerrainRegion =
+  | { kind: 'circle'; center: [number, number]; radius: number }
+  | { kind: 'path'; points: Array<[number, number]>; width: number };
+type WorldTerrainBrushBase = { id: string; region: WorldTerrainRegion; feather?: number };
+export type WorldTerrainBrush =
+  | (WorldTerrainBrushBase & { mode: 'raise'; amount: number })
+  | (WorldTerrainBrushBase & { mode: 'lower'; amount: number })
+  | (WorldTerrainBrushBase & { mode: 'flatten'; height: number; strength?: number })
+  | (WorldTerrainBrushBase & { mode: 'grade'; region: Extract<WorldTerrainRegion, { kind: 'path' }>; heights: number[]; strength?: number });
+export interface WorldWaterBody {
+  id: string;
+  type: 'lake' | 'river';
+  region: WorldTerrainRegion;
+  levels: number[];
+  depth: number;
+}
+export interface WorldBiomePatch {
+  id: string;
+  region: WorldTerrainRegion;
+  biome: WorldBiome;
+  feather?: number;
+}
 export interface WorldRecipe {
   version: 1;
   seed: number;
   size: number;
+  heightScale?: number;
   constraints: WorldConstraint[];
   landforms?: Array<{ center: [number, number]; radius: [number, number]; height: number }>;
+  terrainBrushes?: WorldTerrainBrush[];
+  waterBodies?: WorldWaterBody[];
+  biomePatches?: WorldBiomePatch[];
 }
 export interface WorldSample {
   height: number;
@@ -25,12 +51,16 @@ export interface WorldSample {
   moisture: number;
   continentalness: number;
   weights: Record<WorldBiome, number>;
+  waterLevel: number | null;
+  waterBodyId: string | null;
 }
+export type WorldSampler = (x: number, z: number) => WorldSample;
 export interface WorldTile { x: number; z: number; size: number }
 export interface WorldTileData {
   heights: Float32Array;
   normals: Float32Array;
   weights: Float32Array;
+  waterLevels: Float32Array;
   resolution: number;
 }
 
@@ -96,6 +126,10 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
     seen.add(item.region);
   }
   const recipe: WorldRecipe = { version: 1, seed: input.seed, size: input.size, constraints: input.constraints.map(item => ({ ...item })) };
+  if (input.heightScale !== undefined) {
+    if (!Number.isFinite(input.heightScale) || input.heightScale < 0.02 || input.heightScale > 4) throw new Error('invalid_world_height_scale');
+    recipe.heightScale = input.heightScale;
+  }
   if (input.landforms !== undefined) {
     if (!Array.isArray(input.landforms) || input.landforms.length > 16) throw new Error('invalid_world_landform');
     recipe.landforms = input.landforms.map(form => {
@@ -106,12 +140,118 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
       return { center: [...form.center], radius: [...form.radius], height: form.height };
     });
   }
+  const ids = new Set<string>();
+  const safeId = (value: unknown) => {
+    if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(value) || ids.has(value)) throw new Error('invalid_world_terrain_id');
+    ids.add(value);
+    return value;
+  };
+  const point = (value: unknown): [number, number] => {
+    if (!Array.isArray(value) || value.length !== 2 || !value.every(n => Number.isFinite(n) && Math.abs(n) <= input.size / 2)) {
+      throw new Error('invalid_world_terrain_region');
+    }
+    return [value[0], value[1]];
+  };
+  const region = (value: unknown): WorldTerrainRegion => {
+    if (!value || typeof value !== 'object') throw new Error('invalid_world_terrain_region');
+    const raw = value as Partial<WorldTerrainRegion>;
+    if (raw.kind === 'circle') {
+      if (!Number.isFinite(raw.radius) || raw.radius! < 1 || raw.radius! > input.size) throw new Error('invalid_world_terrain_region');
+      return { kind: 'circle', center: point(raw.center), radius: raw.radius! };
+    }
+    if (raw.kind === 'path' && Array.isArray(raw.points) && raw.points.length >= 2 && raw.points.length <= 64
+      && Number.isFinite(raw.width) && raw.width! >= 1 && raw.width! <= 1000) {
+      return { kind: 'path', points: raw.points.map(point), width: raw.width! };
+    }
+    throw new Error('invalid_world_terrain_region');
+  };
+  if (input.terrainBrushes !== undefined) {
+    if (!Array.isArray(input.terrainBrushes) || input.terrainBrushes.length > 32) throw new Error('invalid_world_terrain_brush');
+    recipe.terrainBrushes = input.terrainBrushes.map(value => {
+      if (!value || typeof value !== 'object') throw new Error('invalid_world_terrain_brush');
+      const raw = value as WorldTerrainBrush;
+      const common = { id: safeId(raw.id), region: region(raw.region), feather: raw.feather };
+      if (common.feather !== undefined && (!Number.isFinite(common.feather) || common.feather < 0 || common.feather > 2000)) throw new Error('invalid_world_terrain_brush');
+      if (raw.mode === 'raise' || raw.mode === 'lower') {
+        if (!Number.isFinite(raw.amount) || raw.amount <= 0 || raw.amount > 1000) throw new Error('invalid_world_terrain_brush');
+        return { ...common, mode: raw.mode, amount: raw.amount };
+      }
+      if (raw.mode === 'flatten') {
+        if (!Number.isFinite(raw.height) || raw.height < -1000 || raw.height > 5000
+          || raw.strength !== undefined && (!Number.isFinite(raw.strength) || raw.strength < 0 || raw.strength > 1)) throw new Error('invalid_world_terrain_brush');
+        return { ...common, mode: raw.mode, height: raw.height, strength: raw.strength };
+      }
+      if (raw.mode === 'grade' && common.region.kind === 'path' && Array.isArray(raw.heights)
+        && raw.heights.length === common.region.points.length && raw.heights.every(n => Number.isFinite(n) && n >= -1000 && n <= 5000)
+        && (raw.strength === undefined || Number.isFinite(raw.strength) && raw.strength >= 0 && raw.strength <= 1)) {
+        return { ...common, mode: raw.mode, region: common.region, heights: [...raw.heights], strength: raw.strength };
+      }
+      throw new Error('invalid_world_terrain_brush');
+    });
+  }
+  if (input.waterBodies !== undefined) {
+    if (!Array.isArray(input.waterBodies) || input.waterBodies.length > 32) throw new Error('invalid_world_water_body');
+    recipe.waterBodies = input.waterBodies.map(value => {
+      if (!value || typeof value !== 'object') throw new Error('invalid_world_water_body');
+      const raw = value as WorldWaterBody, shape = region(raw.region);
+      const levelCount = shape.kind === 'circle' ? 1 : shape.points.length;
+      if ((raw.type !== 'lake' && raw.type !== 'river') || !Array.isArray(raw.levels) || raw.levels.length !== levelCount
+        || !raw.levels.every(n => Number.isFinite(n) && n >= -1000 && n <= 5000)
+        || !Number.isFinite(raw.depth) || raw.depth < 0.1 || raw.depth > 500) throw new Error('invalid_world_water_body');
+      return { id: safeId(raw.id), type: raw.type, region: shape, levels: [...raw.levels], depth: raw.depth };
+    });
+  }
+  if (input.biomePatches !== undefined) {
+    if (!Array.isArray(input.biomePatches) || input.biomePatches.length > 32) throw new Error('invalid_world_biome_patch');
+    recipe.biomePatches = input.biomePatches.map(value => {
+      if (!value || typeof value !== 'object') throw new Error('invalid_world_biome_patch');
+      const raw = value as WorldBiomePatch;
+      if (!WORLD_BIOMES.includes(raw.biome) || raw.feather !== undefined
+        && (!Number.isFinite(raw.feather) || raw.feather < 0 || raw.feather > 2000)) throw new Error('invalid_world_biome_patch');
+      return { id: safeId(raw.id), region: region(raw.region), biome: raw.biome, feather: raw.feather };
+    });
+  }
   return recipe;
 }
 
 const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+
+function pathSample(points: Array<[number, number]>, x: number, z: number): { distance: number; t: number } {
+  let distance = Infinity, along = 0;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], dx = b[0] - a[0], dz = b[1] - a[1], length2 = dx * dx + dz * dz;
+    const local = length2 === 0 ? 0 : clamp(((x - a[0]) * dx + (z - a[1]) * dz) / length2);
+    const d = Math.hypot(x - mix(a[0], b[0], local), z - mix(a[1], b[1], local));
+    if (d < distance) {
+      distance = d;
+      along = (i - 1 + local) / (points.length - 1);
+    }
+  }
+  return { distance, t: along };
+}
+
+function regionSample(region: WorldTerrainRegion, x: number, z: number): { inside: boolean; edge: number; t: number } {
+  if (region.kind === 'circle') {
+    const distance = Math.hypot(x - region.center[0], z - region.center[1]);
+    return { inside: distance <= region.radius, edge: region.radius - distance, t: 0 };
+  }
+  const result = pathSample(region.points, x, z), halfWidth = region.width / 2;
+  return { inside: result.distance <= halfWidth, edge: halfWidth - result.distance, t: result.t };
+}
+
+export function worldRegionWeight(region: WorldTerrainRegion, x: number, z: number, feather = 0): number {
+  if (![x, z, feather].every(Number.isFinite) || feather < 0) throw new Error('invalid_world_region_query');
+  const area = regionSample(region, x, z);
+  return area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
+}
+
+function interpolatePath(values: number[], t: number): number {
+  if (values.length === 1) return values[0];
+  const scaled = clamp(t) * (values.length - 1), index = Math.min(values.length - 2, Math.floor(scaled));
+  return mix(values[index], values[index + 1], scaled - index);
+}
 
 function hash(x: number, z: number, seed: number): number {
   let h = Math.imul(x, 374761393) + Math.imul(z, 668265263) + Math.imul(seed, 69069);
@@ -148,7 +288,7 @@ const targets: Record<WorldBiome, readonly [number, number, number, number]> = {
   snow: [0.8, 0.03, 0.5, 0.6]
 };
 
-export function createWorldSampler(input: WorldRecipe): (x: number, z: number) => WorldSample {
+export function createWorldSampler(input: WorldRecipe): WorldSampler {
   const recipe = validateWorldRecipe(input);
   const { seed, size, constraints } = recipe;
   return (x: number, z: number): WorldSample => {
@@ -187,25 +327,68 @@ export function createWorldSampler(input: WorldRecipe): (x: number, z: number) =
     const rolling = fbm(wx / 1200, wz / 1200, seed + 311, 4) * 115;
     const dunes = (0.5 + 0.5 * Math.sin(wx / 85 + wz / 160 + noise(wx / 1100, wz / 1100, seed + 505) * 4)) ** 1.5 * 28;
     const base = continentalness < 0 ? continentalness * 1050 : Math.pow(continentalness, 1.4) * 400;
-    let height = base + land * (mountain * ridge * 3100 + rolling * (1 - dry * 0.8) + dry * dunes);
+    let height = (base + land * (mountain * ridge * 3100 + rolling * (1 - dry * 0.8) + dry * dunes)) * (recipe.heightScale ?? 1);
     for (const form of recipe.landforms ?? []) {
       const d2 = ((x - form.center[0]) / form.radius[0]) ** 2 + ((z - form.center[1]) / form.radius[1]) ** 2;
       // Compact support with zero first and second derivatives at the boundary.
       if (d2 < 1) height += form.height * (1 - d2) ** 3;
     }
+    for (const brush of recipe.terrainBrushes ?? []) {
+      const area = regionSample(brush.region, x, z), feather = brush.feather ?? 0;
+      const influence = area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
+      if (influence <= 0) continue;
+      if (brush.mode === 'raise' || brush.mode === 'lower') {
+        height += brush.amount * influence * (brush.mode === 'raise' ? 1 : -1);
+        continue;
+      }
+      const target = brush.mode === 'flatten' ? brush.height : interpolatePath(brush.heights, area.t);
+      height = mix(height, target, influence * (brush.strength ?? 1));
+    }
+    let waterLevel: number | null = null, waterBodyId: string | null = null;
+    for (const water of recipe.waterBodies ?? []) {
+      const area = regionSample(water.region, x, z);
+      if (!area.inside) continue;
+      const level = interpolatePath(water.levels, area.t);
+      const reach = water.region.kind === 'circle' ? water.region.radius : water.region.width / 2;
+      const depthWeight = smooth(0, Math.min(reach, Math.max(1, water.depth * 2)), area.edge);
+      height = Math.min(height, level - water.depth * depthWeight);
+      if (height < level && (waterLevel === null || level > waterLevel)) {
+        waterLevel = level;
+        waterBodyId = water.id;
+      }
+    }
+    if (height < 0 && (waterLevel === null || waterLevel < 0)) {
+      waterLevel = 0;
+      waterBodyId = null;
+    }
     const localTemp = clamp(temperature - Math.max(0, height - 300) * 0.00012);
-    const ocean = 1 - smooth(-12, 8, height);
-    const snow = smooth(0.28, 0.1, localTemp) * (1 - ocean);
-    const rock = smooth(0.24, 0.65, mountain) * (1 - ocean) * (1 - snow);
+    let ocean = 1 - smooth(-12, 8, height);
+    let snow = smooth(0.28, 0.1, localTemp) * (1 - ocean);
+    let rock = smooth(0.24, 0.65, mountain) * (1 - ocean) * (1 - snow);
     const remainder = Math.max(0, 1 - ocean - snow - rock);
-    const desert = dry * remainder;
-    const forest = smooth(0.5, 0.82, moisture) * (remainder - desert);
-    const grassland = Math.max(0, remainder - desert - forest);
+    let desert = dry * remainder;
+    let forest = smooth(0.5, 0.82, moisture) * (remainder - desert);
+    let grassland = Math.max(0, remainder - desert - forest);
+    const weights = { ocean, grassland, forest, desert, mountains: rock, snow };
+    if (waterLevel === null) for (const patch of recipe.biomePatches ?? []) {
+      const influence = worldRegionWeight(patch.region, x, z, patch.feather ?? 0);
+      if (influence <= 0) continue;
+      for (const biome of WORLD_BIOMES) weights[biome] *= 1 - influence;
+      weights[patch.biome] += influence;
+    }
     return {
       height, continentalness, temperature: localTemp, moisture,
-      weights: { ocean, grassland, forest, desert, mountains: rock, snow }
+      weights, waterLevel, waterBodyId
     };
   };
+}
+
+/** Rise/run gradient sampled in world metres. */
+export function sampleWorldSlope(sample: WorldSampler, x: number, z: number, epsilon = 4): number {
+  if (![x, z, epsilon].every(Number.isFinite) || epsilon <= 0 || epsilon > 1000) throw new Error('invalid_world_slope_query');
+  const dx = (sample(x + epsilon, z).height - sample(x - epsilon, z).height) / (2 * epsilon);
+  const dz = (sample(x, z + epsilon).height - sample(x, z - epsilon).height) / (2 * epsilon);
+  return Math.hypot(dx, dz);
 }
 
 export function dominantBiome(sample: WorldSample): WorldBiome {
@@ -220,6 +403,7 @@ export function sampleWorldTile(recipe: WorldRecipe, tile: WorldTile, resolution
   const heights = new Float32Array(resolution * resolution);
   const normals = new Float32Array(resolution * resolution * 3);
   const weights = new Float32Array(resolution * resolution * WORLD_BIOMES.length);
+  const waterLevels = new Float32Array(resolution * resolution).fill(NaN);
   // A fixed world-space stencil gives identical normals at every LOD's shared vertices.
   const epsilon = 4;
   for (let iz = 0; iz < resolution; iz++) for (let ix = 0; ix < resolution; ix++) {
@@ -228,13 +412,14 @@ export function sampleWorldTile(recipe: WorldRecipe, tile: WorldTile, resolution
     const z = tile.z + iz * tile.size / (resolution - 1);
     const point = sample(x, z);
     heights[i] = point.height;
+    if (point.waterLevel !== null) waterLevels[i] = point.waterLevel;
     const dx = sample(x + epsilon, z).height - sample(x - epsilon, z).height;
     const dz = sample(x, z + epsilon).height - sample(x, z - epsilon).height;
     const length = Math.hypot(dx, epsilon * 2, dz);
     normals.set([-dx / length, epsilon * 2 / length, -dz / length], i * 3);
     for (let j = 0; j < WORLD_BIOMES.length; j++) weights[i * WORLD_BIOMES.length + j] = point.weights[WORLD_BIOMES[j]];
   }
-  return { heights, normals, weights, resolution };
+  return { heights, normals, weights, waterLevels, resolution };
 }
 
 /** Bounded quadtree covering the whole world; detail follows the camera and its orbit target. */
@@ -261,4 +446,3 @@ export function selectWorldTiles(size: number, focusX: number, focusZ: number, d
   }
   return tiles;
 }
-

@@ -9,7 +9,8 @@ const trees: EcologyRule[] = [
 ];
 const flat = (_x: number, _z: number): WorldSample => ({
   height: 50, temperature: 0.6, moisture: 0.8, continentalness: 0.7,
-  weights: { ocean: 0, grassland: 0, forest: 1, desert: 0, mountains: 0, snow: 0 }
+  weights: { ocean: 0, grassland: 0, forest: 1, desert: 0, mountains: 0, snow: 0 },
+  waterLevel: null, waterBodyId: null
 });
 
 describe('deterministic chunk ecology', () => {
@@ -189,6 +190,21 @@ describe('ecology residency', () => {
     }
     for (const args of [[499, 0, 0, 0], [64000, NaN, 0, 0], [64000, 0, Infinity, 0], [64000, 0, 0, -1]]) {
       expect(() => selectEcologyChunks(args[0], args[1], args[2], args[3])).toThrow();
+    }
+  });
+});
+
+describe('localized ecology rules', () => {
+  it('uses bounded procedural regions and keeps vegetation out of finite water', () => {
+    const rule: EcologyRule = { ...trees[0], spacing: 6, region: { kind: 'circle', center: [128, 128], radius: 45 }, regionFeather: 10 };
+    const result = generateEcologyChunk(recipe, [rule], { x: 0, z: 0 }, {
+      sample: (x, z) => ({ ...flat(x, z), waterLevel: Math.hypot(x - 128, z - 128) < 15 ? 49 : null,
+        waterBodyId: Math.hypot(x - 128, z - 128) < 15 ? 'oasis' : null })
+    });
+    expect(result.instances.length).toBeGreaterThan(0);
+    for (const point of result.instances) {
+      expect(Math.hypot(point.x - 128, point.z - 128)).toBeLessThan(55);
+      expect(Math.hypot(point.x - 128, point.z - 128)).toBeGreaterThanOrEqual(15);
     }
   });
 });
