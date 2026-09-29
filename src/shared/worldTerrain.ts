@@ -488,15 +488,15 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         const influence = (1 - d2) ** 3;
         height += form.height * influence;
         if (form.height > 0) {
-          const slopeBand = 16 * d2 ** 2 * (1 - d2) ** 2;
+          const slopeBand = 64 * d2 ** 3 * (1 - d2) ** 3;
           authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
-            slopeBand * Math.min(10, form.height * 0.06));
+            slopeBand * Math.min(14, form.height * 0.16));
         }
       }
     }
     if (compactRelief) {
       const proceduralAmplitude = land * smooth(0.28, 0.68, uplift)
-        * 260 * terrainScale * (recipe.heightScale ?? 1);
+        * 360 * terrainScale * (recipe.heightScale ?? 1);
       height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude);
     }
     for (const brush of recipe.terrainBrushes ?? []) {

@@ -369,6 +369,41 @@ describe('composable world terrain operations', () => {
     expect(mean(ridgeShares)).toBeGreaterThan(0.27);
   });
 
+  it('keeps compact island slopes visibly folded at streamed mesh scale across seeds', () => {
+    const medianResiduals: number[] = [], grooveShares: number[] = [], ridgeShares: number[] = [];
+    for (const seed of [1, 42, 2309, 9012902, 99173]) {
+      const sample = createWorldSampler({
+        version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.035,
+        constraints: [
+          { region: 'center', biome: 'mountains' }, { region: 'northwest', biome: 'snow' },
+          { region: 'southwest', biome: 'forest' }, { region: 'east', biome: 'ocean' }
+        ],
+        landforms: [
+          { center: [-60, -55], radius: [160, 180], height: 42 },
+          { center: [-60, -55], radius: [50, 45], height: -15 }
+        ]
+      });
+      const slopes: number[] = [], residuals: number[] = [];
+      for (let z = -220; z <= 180; z += 8) for (let x = -220; x <= 120; x += 8) {
+        const dx = (x + 60) / 160, dz = (z + 55) / 180, d2 = dx * dx + dz * dz;
+        if (d2 < 0.15 || d2 > 0.9) continue;
+        slopes.push(sampleWorldSlope(sample, x, z));
+        residuals.push(sample(x, z).height - (sample(x + 16, z).height + sample(x - 16, z).height
+          + sample(x, z + 16).height + sample(x, z - 16).height) / 4);
+      }
+      const absolute = residuals.map(Math.abs).sort((a, b) => a - b);
+      medianResiduals.push(absolute[Math.floor(absolute.length / 2)]);
+      grooveShares.push(residuals.filter(value => value < -0.35).length / residuals.length);
+      ridgeShares.push(residuals.filter(value => value > 0.35).length / residuals.length);
+      slopes.sort((a, b) => a - b);
+      expect(slopes[Math.floor(slopes.length * 0.95)]).toBeLessThan(0.68);
+    }
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    expect(mean(medianResiduals)).toBeGreaterThan(0.53);
+    expect(mean(grooveShares)).toBeGreaterThan(0.33);
+    expect(mean(ridgeShares)).toBeGreaterThan(0.28);
+  });
+
   it('keeps missing and explicit legacy relief profiles sample-identical', () => {
     const recipe: WorldRecipe = { version: 1, seed: 147, size: 500, constraints: [
       { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' }
