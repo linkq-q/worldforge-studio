@@ -290,7 +290,9 @@ describe('organic settlement integration',()=>{
     expect(createWorldEcologyDensity(plan,[done])(2000,0)).toBe(0);
   });
   it('keeps conform settlements on local road grades and building pads instead of flattening the town core',()=>{
-    const plan=fixture(),town=plan.towns[0],base=createWorldSampler(plan.recipe);
+    const plan=fixture(); plan.recipe={...plan.recipe,heightScale:.1};
+    const town=plan.towns[0],base=createWorldSampler(plan.recipe);
+    plan.towns.forEach(item=>{item.foundation=base(item.center[0],item.center[1]).height;});
     town.terrainMode='conform';
     const local:TownPatch={
       townId:town.id,worldKey:worldPlanKey(plan),summary:'terrain conforming village',
@@ -298,15 +300,45 @@ describe('organic settlement integration',()=>{
         ...Array.from({length:21},(_,i):[number,number]=>[200-i*10,0]),
         ...Array.from({length:10},(_,i):[number,number]=>[0,(i+1)*10])
       ])],
-      buildings:[{id:'conform-house',x:-70,z:-70,width:4,depth:4,height:12,use:'home',assetKey:'house-kit',enterable:true}]
+      buildings:[
+        {id:'conform-house',x:-48,z:-70,width:8,depth:8,height:12,use:'home',assetKey:'house-kit',enterable:true},
+        {id:'conform-neighbor',x:-39,z:-70,width:8,depth:8,height:12,use:'home'}
+      ]
     };
     const checked=validateTownPatch(plan,local),sample=createPlannedWorldSampler(plan,[checked]);
     expect(checked.buildings[0]).toMatchObject({assetKey:'house-kit',enterable:true});
-    const bx=town.center[0]-70,bz=-70,h=sample(bx,bz).height;
-    expect(sample(bx-2,bz-2).height).toBeCloseTo(h,10);
-    expect(sample(bx+2,bz+2).height).toBeCloseTo(h,10);
+    const bx=town.center[0]-48,bz=-70,h=sample(bx,bz).height;
+    expect(sample(bx-4,bz-4).height).toBeCloseTo(h,10);
+    expect(sample(bx+4,bz+4).height).toBeCloseTo(h,10);
     expect(sample(town.center[0]+100,5).height).toBeCloseTo(sample(town.center[0]+100,-5).height,10);
     expect(sample(town.center[0]+150,150)).toEqual(base(town.center[0]+150,150));
+  });
+  it('keeps a short street playable where its centerline leaves another street endpoint cap',()=>{
+    const recipe:WorldRecipe={version:1,seed:2309,size:1600,heightScale:.12,constraints:[
+      {region:'center',biome:'desert'},{region:'east',biome:'desert'},{region:'north',biome:'desert'},
+      {region:'south',biome:'desert'},{region:'west',biome:'ocean'}
+    ]};
+    const base=createWorldSampler(recipe),center:[number,number]=[-360,370];
+    const plan:WorldPlan={version:1,id:'harbor-grade',revision:1,prompt:'Playable harbor junction',recipe,ecology:[],roads:[],towns:[{
+      id:'harbor',name:'Harbor',prompt:'Shore-side streets',center,radius:110,blend:100,
+      foundation:base(center[0],center[1]).height,ports:[],terrainMode:'conform'
+    }]};
+    const junction:[number,number]=[0,-92.4],spur=road('harbor-spur',[junction,[7.70958194384224,-90.8664688040429]],4.6);
+    const local:TownPatch={townId:'harbor',worldKey:worldPlanKey(plan),summary:'Two connected harbor streets',buildings:[],streets:[
+      road('harbor-approach',[[-35.35994915053436,-85.3664688040428],[-19.09939117826633,-88.6008948852209],junction],4.6),spur
+    ]};
+    const sample=createPlannedWorldSampler(plan,[local]),a=spur.points[0],b=spur.points[1];
+    const length=Math.hypot(b[0]-a[0],b[1]-a[1]),steps=Math.ceil(length),nx=-(b[1]-a[1])/length,nz=(b[0]-a[0])/length;
+    let previous:number|undefined,maxLongitudinal=0,maxCross=0;
+    for(let i=0;i<=steps;i++){
+      const t=i/steps,x=center[0]+a[0]+(b[0]-a[0])*t,z=center[1]+a[1]+(b[1]-a[1])*t;
+      const heights=[-spur.width/2,0,spur.width/2].map(offset=>sample(x+nx*offset,z+nz*offset).height);
+      maxCross=Math.max(maxCross,(Math.max(...heights)-Math.min(...heights))/spur.width);
+      if(previous!==undefined)maxLongitudinal=Math.max(maxLongitudinal,Math.abs(heights[1]-previous)/(length/steps));
+      previous=heights[1];
+    }
+    expect(maxLongitudinal).toBeLessThanOrEqual(.5);
+    expect(maxCross).toBeLessThanOrEqual(.5);
   });
   it('preserves building orientation and checks its rotated footprint',()=>{
     const plan=fixture(), rotated=patch(plan,0);

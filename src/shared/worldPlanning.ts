@@ -364,6 +364,20 @@ function platformSampler(base: WorldSampler, towns: TownIntent[]): WorldSampler 
 
 interface RoadGrade { points: Point[]; heights: number[]; width: number }
 interface BuildingPad { building: TownBuilding; x: number; z: number; target: number }
+const CONFORM_INDEX_CELL_SIZE = 64;
+type ConformFeatureIndex = Map<string, number[]>;
+function conformCellKey(x: number, z: number): string {
+  return Math.floor(x / CONFORM_INDEX_CELL_SIZE) + ',' + Math.floor(z / CONFORM_INDEX_CELL_SIZE);
+}
+function addConformFeature(index: ConformFeatureIndex, item: number, minX: number, minZ: number, maxX: number, maxZ: number): void {
+  for (let z = Math.floor(minZ / CONFORM_INDEX_CELL_SIZE); z <= Math.floor(maxZ / CONFORM_INDEX_CELL_SIZE); z++) {
+    for (let x = Math.floor(minX / CONFORM_INDEX_CELL_SIZE); x <= Math.floor(maxX / CONFORM_INDEX_CELL_SIZE); x++) {
+      const key = x + ',' + z, items = index.get(key);
+      if (!items) index.set(key, [item]);
+      else if (!items.includes(item)) items.push(item);
+    }
+  }
+}
 function roadGradeAt(grade: RoadGrade, x: number, z: number): { distance: number; height: number } {
   let nearest = { distance: Infinity, height: grade.heights[0] };
   for (let i = 1; i < grade.points.length; i++) {
@@ -401,24 +415,49 @@ function conformSampler(base: WorldSampler, plan: WorldPlan, patches: TownPatch[
       pads.push({ building, x: centerX, z: centerZ, target: samples[Math.floor(samples.length / 2)] });
     }
   }
+  const gradeIndex: ConformFeatureIndex = new Map(), padIndex: ConformFeatureIndex = new Map();
+  grades.forEach((grade, index) => {
+    const reach = grade.width / 2 + 2;
+    for (let i = 1; i < grade.points.length; i++) {
+      const a = grade.points[i - 1], b = grade.points[i];
+      addConformFeature(gradeIndex, index, Math.min(a[0], b[0]) - reach, Math.min(a[1], b[1]) - reach,
+        Math.max(a[0], b[0]) + reach, Math.max(a[1], b[1]) + reach);
+    }
+  });
+  pads.forEach((pad, index) => {
+    const angle = pad.building.rotation ?? 0, c = Math.abs(Math.cos(angle)), s = Math.abs(Math.sin(angle));
+    const feather = Math.min(4, Math.max(1, Math.min(pad.building.width, pad.building.depth) * 0.2));
+    const reachX = (c * pad.building.width + s * pad.building.depth) / 2 + feather;
+    const reachZ = (s * pad.building.width + c * pad.building.depth) / 2 + feather;
+    addConformFeature(padIndex, index, pad.x - reachX, pad.z - reachZ, pad.x + reachX, pad.z + reachZ);
+  });
   return (x, z) => {
     const sample = shapedBase(x, z);
     let height = sample.height;
-    for (const grade of grades) {
+    let roadInfluence = 0, roadTargetWeight = 0, roadTarget = 0;
+    for (const index of gradeIndex.get(conformCellKey(x, z)) ?? []) {
+      const grade = grades[index];
       const point = roadGradeAt(grade, x, z), half = grade.width / 2, feather = 2;
       if (point.distance >= half + feather) continue;
       const weight = point.distance <= half ? 1 : townWeight1((half + feather - point.distance) / feather);
-      height += (point.height - height) * weight;
+      roadInfluence = 1 - (1 - roadInfluence) * (1 - weight);
+      const targetWeight = weight / Math.max(0.01, point.distance);
+      roadTargetWeight += targetWeight;
+      roadTarget += point.height * targetWeight;
     }
-    for (const pad of pads) {
+    if (roadTargetWeight > 0) height += (roadTarget / roadTargetWeight - height) * roadInfluence;
+    let padWeight = 0, padTarget = height;
+    for (const index of padIndex.get(conformCellKey(x, z)) ?? []) {
+      const pad = pads[index];
       const local = buildingLocal(pad.building, x, z, pad.x, pad.z);
       const ox = Math.max(0, Math.abs(local[0]) - pad.building.width / 2);
       const oz = Math.max(0, Math.abs(local[1]) - pad.building.depth / 2);
       const distance = Math.hypot(ox, oz), feather = Math.min(4, Math.max(1, Math.min(pad.building.width, pad.building.depth) * 0.2));
       if (distance >= feather) continue;
       const weight = ox === 0 && oz === 0 ? 1 : townWeight1((feather - distance) / feather);
-      height += (pad.target - height) * weight;
+      if (weight > padWeight) { padWeight = weight; padTarget = pad.target; }
     }
+    height += (padTarget - height) * padWeight;
     return height === sample.height ? sample : { ...sample, height };
   };
 }
