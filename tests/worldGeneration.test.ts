@@ -140,14 +140,21 @@ describe('world generation compiler', () => {
     expect(parseWorldIntentDraft(intent,request).plan.prompt).toBe(request.prompt);
   });
 
-  it('keeps all intent fields when GPT places towns and roads beside plan', () => {
+  it('keeps intent fields when GPT places ecology, towns, and roads beside plan', () => {
     const source = rawSoloIntent();
-    const { towns, roads, ...plan } = source.plan;
-    const parsed = parseWorldIntentDraft({ plan, towns, roads }, request);
+    const { ecology, towns, roads, ...plan } = source.plan;
+    const parsed = parseWorldIntentDraft({ plan, ecology, towns, roads }, request);
+    expect(parsed.plan.ecology).toEqual(ecology);
     expect(parsed.plan.towns.map(town => town.id)).toEqual(['market-town']);
     expect(parsed.plan.roads).toEqual([]);
-    expect(() => parseWorldIntentDraft({ plan, towns, roads, extra: true }, request))
-      .toThrow('world_unknown_intent_field:towns');
+    expect(() => parseWorldIntentDraft({ plan, ecology, towns, roads, extra: true }, request))
+      .toThrow('world_unknown_intent_field:extra');
+  });
+
+  it('rejects duplicate intent fields inside and beside plan', () => {
+    const source = rawSoloIntent();
+    expect(() => parseWorldIntentDraft({ ...source, ecology: source.plan.ecology }, request))
+      .toThrow('world_unknown_intent_field:ecology');
   });
 
   it('accepts one surplus closing brace only when the remaining JSON is complete', async () => {

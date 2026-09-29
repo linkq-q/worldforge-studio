@@ -197,16 +197,17 @@ function worldIntentError(error: unknown, input: unknown): Error {
 export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRequest): WorldIntentDraft {
   const candidate = structuredClone(input);
   const wrapper = record(candidate, 'invalid_world_intent');
-  if (Object.keys(wrapper).length === 3 && Object.hasOwn(wrapper, 'plan')
-    && Object.hasOwn(wrapper, 'towns') && Object.hasOwn(wrapper, 'roads')) {
+  if (Object.hasOwn(wrapper, 'plan')) {
     const plan = record(wrapper.plan, 'invalid_world_intent');
-    if (!Object.hasOwn(plan, 'towns') && !Object.hasOwn(plan, 'roads')) {
-      plan.towns = wrapper.towns;
-      plan.roads = wrapper.roads;
-      delete wrapper.towns;
-      delete wrapper.roads;
-      recordGenerationTrace('world.intent-wrapper-corrected', { moved: ['towns', 'roads'] });
+    const moved: string[] = [];
+    for (const field of ['ecology','towns','roads']) {
+      if (Object.hasOwn(wrapper, field) && !Object.hasOwn(plan, field)) {
+        plan[field] = wrapper[field];
+        delete wrapper[field];
+        moved.push(field);
+      }
     }
+    if (moved.length) recordGenerationTrace('world.intent-wrapper-corrected', { moved });
   }
   const root = exactRecord(wrapper, ['plan'], 'invalid_world_intent', 'world_unknown_intent_field');
   const raw = exactRecord(root.plan, ['version','id','revision','prompt','recipe','ecology','towns','roads'],
