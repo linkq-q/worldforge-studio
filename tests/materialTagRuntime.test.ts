@@ -324,6 +324,36 @@ describe('WorldForge material tag runtime', () => {
 
     result.dispose();
   });
+
+  it('gives the browser a render frame between large-map build slices', async () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const objectGroup = new THREE.Group();
+    modelsRoot.add(objectGroup);
+    scene.add(modelsRoot);
+    const renderFrames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      renderFrames.push(callback);
+      queueMicrotask(() => callback(performance.now()));
+      return renderFrames.length;
+    }));
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'frame-sliced-asset', name: 'frame sliced asset', prompt: 'cube', tags: [],
+      modelJson: { nodes: [{ id: 'part', mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+
+    const result = await buildMapPrimitiveBatches(
+      [{ objectId: 'frame-sliced-object', objectGroup, asset, assetTags: [] }],
+      { scene, modelsRoot, materialTagPolicy: { disabled: [] }, workSliceMs: 0 }
+    );
+
+    expect(requestAnimationFrame).toHaveBeenCalled();
+    expect(result.getStats().buildYieldCount).toBeGreaterThan(0);
+    result.dispose();
+  });
 });
 
 function createRuntime(

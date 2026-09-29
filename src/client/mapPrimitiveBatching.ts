@@ -151,7 +151,10 @@ export async function buildMapPrimitiveBatches(
   const handledObjectIds = new Set<string>();
   const objectGroups = new Map<string, THREE.Group>();
   let fallbackVisualClones = 0;
-  const workSliceMs = Math.max(0, options.workSliceMs ?? 12);
+  // Leave enough of a 16.7ms frame for the old scene to keep rendering while a
+  // large replacement scene is assembled.  Twelve milliseconds of JS plus the
+  // existing render pass routinely missed several consecutive frames.
+  const workSliceMs = Math.max(0, options.workSliceMs ?? 6);
   const yieldTask = options.yieldTask ?? yieldMainThread;
   let sliceStartedAt = performance.now();
   let buildYieldCount = 0;
@@ -292,10 +295,9 @@ export async function buildMapPrimitiveBatches(
 }
 
 function yieldMainThread(): Promise<void> {
-  const scheduler = (globalThis as typeof globalThis & {
-    scheduler?: { yield?: () => Promise<void> };
-  }).scheduler;
-  if (scheduler?.yield) return scheduler.yield();
+  if (typeof requestAnimationFrame === 'function') {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  }
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
