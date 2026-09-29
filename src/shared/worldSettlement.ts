@@ -593,12 +593,16 @@ function placeBuildings(
 ): TownBuilding[] {
   const result: TownBuilding[] = settings.landmarks.map(building => ({ ...building }));
   const city = settings.kind === 'city';
-  const areaBudget = Math.floor((2 * town.radius) ** 2 / (city ? 600 : 3_000) * settings.density);
-  const target = Math.min(worldTownBuildingQuota(town), Math.max(city ? 24 : 8, areaBudget));
   const localRoads = streets.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width, road })));
   const worldRoads = plan.roads.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width })));
   const candidateSegments = localRoads.filter(segment => !segment.road.tags.includes('port'))
     .sort((a, b) => distance(mix(a.a, a.b, 0.5), [0, 0]) - distance(mix(b.a, b.b, 0.5), [0, 0]));
+  const frontageSlots = candidateSegments.reduce((sum, segment) => {
+    const length = distance(segment.a, segment.b), spacing = settings.parcelWidth + settings.buildingGap;
+    return sum + Math.max(0, Math.floor((length - settings.parcelWidth) / spacing) + 1) * 2;
+  }, 0);
+  const ordinaryTarget = Math.max(city ? 24 : 8, Math.round(frontageSlots * settings.density));
+  const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
   const uses = city ? ['home', 'home', 'shop', 'workshop'] : ['home', 'home', 'farmhouse', 'workshop'];
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);

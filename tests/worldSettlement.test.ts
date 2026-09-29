@@ -137,7 +137,7 @@ describe('world settlement growth', () => {
   });
 
   it.each([
-    [100, 7, 50], [150, 19, 100], [200, 31, 140]
+    [100, 7, 110], [150, 19, 120], [200, 31, 160]
   ] as const)('fills compact city blocks across radius %sm and seed %s', (radius, seed, minimumBuildings) => {
     const plan = fixture(), town = plan.towns[0];
     town.radius = radius;
