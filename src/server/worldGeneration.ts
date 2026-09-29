@@ -283,7 +283,8 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     for(const site of evidence.candidates) {
       const plan:WorldPlan={version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,
         recipe:intent.plan.recipe,ecology:intent.plan.ecology,roads:[],towns:[{id:town.id,name:town.name,prompt:town.prompt,
-          center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[]}]};
+          center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[],
+          ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})}]};
       try {
         let patch=generateWorldSettlement(plan,town.id,sample,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
         const layouts:WorldSitingEvidence['landmarkLayouts']=[];
@@ -337,7 +338,8 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     const plan:WorldPlan={version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,recipe,
       ecology:intent.plan.ecology,roads,towns:intent.plan.towns.filter(town=>connectedTownIds.has(town.id)).map(town=>{
         const site=selected.get(town.id)!;return {id:town.id,name:town.name,prompt:town.prompt,center:site.center,
-          radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:ports.get(town.id)??[]};})};
+          radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:ports.get(town.id)??[],
+          ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})};})};
     const planned=cachedWorldSampler(createWorldSampler(recipe)),layouts:WorldSitingEvidence['landmarkLayouts']=[];
     try {
       const plannedTowns=intent.plan.towns.filter(item=>connectedTownIds.has(item.id))
@@ -449,7 +451,8 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
     return {id:road.id,name:road.name,points:route.points,curve:'polyline' as const,closed:false,width:road.width,tags:road.tags};
   });
   const towns=intent.plan.towns.map(town=>{const site=chosen.get(town.id)!;return {id:town.id,name:town.name,prompt:town.prompt,
-    center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform' as const,ports:ports.get(town.id)??[]};});
+    center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform' as const,ports:ports.get(town.id)??[],
+    ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})};});
   const recipe={...intent.plan.recipe,terrainBrushes:[...(intent.plan.recipe.terrainBrushes??[]),...construction]};
   const plan={version:1 as const,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,
     recipe,ecology:intent.plan.ecology,towns,roads};

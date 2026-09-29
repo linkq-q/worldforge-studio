@@ -55,6 +55,14 @@ describe('hierarchical world planning contracts', () => {
     }
   });
 
+  it('persists an explicit sea target while rejecting a water body absent from the recipe', () => {
+    const plan = fixture();
+    plan.towns[0].targetWaterBodyId = 'sea';
+    expect(validateWorldPlan(plan).towns[0].targetWaterBodyId).toBe('sea');
+    plan.towns[0].targetWaterBodyId = 'missing-lake';
+    expect(() => validateWorldPlan(plan)).toThrow('world_unknown_town_water_target');
+  });
+
   it('creates deterministic independent tasks and refuses patches from any prior plan content', () => {
     const plan = fixture(), result = createTownTasks(plan);
     expect(result).toEqual(createTownTasks(plan));

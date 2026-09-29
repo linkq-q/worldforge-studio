@@ -314,6 +314,7 @@ describe('world generation compiler', () => {
     const candidate=evidence.towns[0].candidates[0],layout={towns:[{townId:'bay-town',candidateId:candidate.id}],
       settlements:[{townId:'bay-town',options:{kind:'city',pattern:'organic',density:.83,waterfrontBias:.9}}],assets:[]};
     const compiled=materializeWorldIntent(intent,evidence,layout,input),patch=compiled.bundle.patches[0];
+    expect(compiled.bundle.plan.towns[0].targetWaterBodyId).toBe('sea');
     expect(patch.streets.some(street=>street.tags.includes('waterfront'))).toBe(true);
     expect(patch.buildings.length).toBeGreaterThan(0);
 
