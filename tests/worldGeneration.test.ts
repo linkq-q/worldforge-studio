@@ -217,6 +217,7 @@ describe('world generation compiler', () => {
     const messages = mocks.llmChat.mock.calls[0][0] as Array<{ role: string; content: string }>;
     expect(messages[0].content).toContain('Copy request.prompt byte-for-byte into plan.prompt');
     expect(messages[0].content).toContain('under 5000 characters');
+    expect(messages[0].content).toContain('for size 500: -250..250');
     expect(messages[0].content).toContain("reliefProfile:'compact'");
     expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
