@@ -27,7 +27,12 @@ import {
 import { buildModelGroup } from './modelRenderer';
 import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
 import { buildTerrainSnowLayer, createTerrainSnowTexture } from './terrainSnow';
-import { terrainSemanticSurfaceWeight, terrainVertexColor, type TerrainPaletteColors } from './terrainAppearance';
+import {
+  terrainSemanticSurfaceWeight,
+  terrainVertexColor,
+  type TerrainPaletteColors,
+  type TerrainSurfaceWeightSampler
+} from './terrainAppearance';
 import { buildMapGrassField, deriveContactAwareGrassMap, grassSurfaceCoverage } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
 import { foundationBoundary, foundationStepRange, foundationTopHeight, type MapFoundation } from '../shared/mapFoundation';
@@ -54,6 +59,7 @@ import type {
   SceneVisualZone,
   TerrainSurfaceRecipe,
   VisualTimeOfDay,
+  VisualZoneTag,
   VisualZoneRegion
 } from '../shared/visualDirection';
 import {
@@ -156,6 +162,18 @@ export interface MapRenderOptions {
   terrainTextureSize?: number;
   /** Streamed interior chunks omit the closed-map vertical border skirt. */
   terrainBorderSides?: boolean;
+  /** Optional shallow streamed-tile skirt depth; ordinary maps retain their authored base. */
+  terrainBorderDepth?: number;
+  /** Content-only chunks keep the original object/road renderer without drawing duplicate terrain. */
+  terrainVisible?: boolean;
+  /** Streamed tiles do not apply a whole-map ocean apron to each local tile. */
+  oceanCoast?: boolean;
+  /** Render-only continuous semantic weights, expressed in this map's local XZ coordinates. */
+  terrainSurfaceWeight?: TerrainSurfaceWeightSampler;
+  /** Camera-derived world focus used before the first streamed renderer frame. */
+  worldInitialView?: { x: number; z: number; distance: number };
+  /** Derived object-free terrain chunks skip object, light, grass, and culling updates. */
+  terrainOnly?: boolean;
 }
 
 export interface MapMotionController {
@@ -212,13 +230,15 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
   if (proceduralRugs) modelsRoot.add(proceduralRugs);
 
   let grassMap = deriveContactAwareGrassMap(map);
-  const coast = mapOceanCoast(map);
+  const coast = options.oceanCoast === false ? null : mapOceanCoast(map);
   const terrainTextureSize = resolveTerrainTextureSize(options.terrainTextureSize);
   const terrainBorderSides = options.terrainBorderSides ?? true;
-  const terrain = buildTerrain(map, coast, terrainTextureSize, terrainBorderSides);
-  terrain.visible = map.sceneMode !== 'indoor';
+  const terrainBorderDepth = options.terrainBorderDepth;
+  const terrainSurfaceWeight = options.terrainSurfaceWeight;
+  const terrain = buildTerrain(map, coast, terrainTextureSize, terrainBorderSides, terrainBorderDepth, terrainSurfaceWeight);
+  terrain.visible = map.sceneMode !== 'indoor' && options.terrainVisible !== false;
   const sandFlow = terrain.userData.sandFlow as TerrainSandFlowState;
-  applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
+  applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE, undefined, terrainSurfaceWeight);
   root.add(terrain);
   pickables.push(terrain);
   let snowLayer = buildTerrainSnowLayer(map, sandFlow.snowSurface, terrain.material as THREE.MeshStandardMaterial);
@@ -265,7 +285,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     grass?.dispose();
     grass = buildMapGrassField(grassMap, grassStyle);
     if (grass) root.add(grass.group);
-    applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
+    applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight);
     applySceneArt();
   };
 
@@ -382,6 +402,13 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     buildProfile,
     syncObjectTransform: (id) => { instancing.syncObjectTransform(id); if (artPlan?.lights.length) setArtLights(); },
     update: (deltaTime, camera, maxDistance) => {
+      if (options.terrainOnly) {
+        if (sandFlow.strength > 0) {
+          sandFlow.time += deltaTime;
+          syncTerrainSandShader(sandFlow);
+        }
+        return;
+      }
       materialElapsedSeconds += deltaTime;
       sceneArt.update(materialElapsedSeconds);
       sandFlow.time += deltaTime;
@@ -399,7 +426,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       sceneArt.clear();
       grassStyle = style;
       grass?.setStyle(style);
-      applyTerrainGrassTint(terrain, grassMap, style, terrainPalette);
+      applyTerrainGrassTint(terrain, grassMap, style, terrainPalette, terrainSurfaceWeight);
       applySceneArt();
     },
     setSceneArt: (plan, palette) => {
@@ -418,7 +445,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       sandFlow.soilMoist = style.soilRecipe === 'moist' ? 1 : 0;
       sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined, terrainTextureSize);
+      replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined, terrainTextureSize, terrainSurfaceWeight);
       rebuildRoadMaterials(currentMap);
       snowLayer?.material.copy(material);
       terrain.userData.terrainMaterialStyle = { ...style };
@@ -431,10 +458,10 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       terrainPalette = paletteTerrainColors(palette ?? undefined);
       const report = palette ? paletteMaterials.apply(palette) : (paletteMaterials.clear(), paletteMaterials.report());
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined, terrainTextureSize);
+      replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined, terrainTextureSize, terrainSurfaceWeight);
       snowLayer?.material.copy(material);
       if (roomShell) applyRoomShellPalette(roomShell, currentMap, palette);
-      applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
+      applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight);
       applySceneArt();
       return report;
     },
@@ -473,15 +500,15 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       currentMap = next;
       terrain.geometry.dispose();
       const nextCoast = mapOceanCoast(next);
-      terrain.geometry = buildTerrainGeometry(next, nextCoast, terrainBorderSides);
+      terrain.geometry = buildTerrainGeometry(next, nextCoast, terrainBorderSides, terrainBorderDepth, terrainSurfaceWeight);
       refreshStructuredWaterTerrain(waterRoot, next, nextCoast);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined, terrainTextureSize);
+      replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined, terrainTextureSize, terrainSurfaceWeight);
       sandFlow.snowSurface.dispose();
       sandFlow.snowSurface = createTerrainSnowTexture(next);
       sandFlow.sandSurface.dispose();
-      sandFlow.sandSurface = createTerrainSandSurface(next, Math.min(512, terrainTextureSize));
+      sandFlow.sandSurface = createTerrainSandSurface(next, Math.min(512, terrainTextureSize), terrainSurfaceWeight);
       sandFlow.mapSize.set(next.box.size[0], next.box.size[2]);
       updateTerrainSandZones(sandFlow, next);
       disposeSnowLayer();
@@ -615,7 +642,8 @@ function applyTerrainGrassTint(
   mesh: THREE.Mesh,
   map: EditableMap,
   style: RuntimeGrassStyle,
-  palette?: TerrainPaletteColors
+  palette?: TerrainPaletteColors,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): void {
   const geometry = mesh.geometry;
   const positions = geometry.getAttribute('position');
@@ -628,7 +656,7 @@ function applyTerrainGrassTint(
     const x = positions.getX(index);
     const y = positions.getY(index);
     const z = positions.getZ(index);
-    const base = terrainVertexColor(map, x, y, z, palette, geometry.userData.oceanCoast ? y : undefined, false);
+    const base = terrainVertexColor(map, x, y, z, palette, geometry.userData.oceanCoast ? y : undefined, false, surfaceWeight);
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
@@ -741,13 +769,23 @@ function roadSlabGeometry(recipe: { spacing: number; width: number; height: numb
   });
 }
 
+type RuntimeRoadZone = SceneVisualZone & {
+  roadDistanceOffset?: number;
+  roadContinuesBefore?: boolean;
+  roadContinuesAfter?: boolean;
+  forceRoadOverlay?: boolean;
+};
+
 function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE): THREE.Group {
   const group = new THREE.Group();
   group.name = 'road-surface-overlays';
   let textures: ReturnType<typeof createBrickRoadOverlayTextures> | undefined;
   for (const zone of map.visualSemantics.zones) {
-    if (zone.material !== 'brick-paver' || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
-    textures ??= createBrickRoadOverlayTextures(style);
+    const runtime = zone as RuntimeRoadZone;
+    const isBrick = zone.material === 'brick-paver';
+    if ((!isBrick && !runtime.forceRoadOverlay) || !zone.material || zone.material === 'default'
+      || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
+    if (isBrick) textures ??= createBrickRoadOverlayTextures(style);
     const points = zone.region.points;
     const samples = pathSamplesWithDistance(points, Math.max(0.85, zone.region.width * 0.24));
     if (samples.length < 2) continue;
@@ -798,7 +836,7 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
         vertices.push(x, sampleTerrainHeight(map, x, z) + 0.025, z);
         // World-space repeats keep pavers at 60 x 35 cm regardless of road width.
         const textureScale = style.roadTextureScale ?? 1;
-        uvs.push(sample.distance / (2.4 * textureScale), across / (1.05 * textureScale));
+        uvs.push((sample.distance + (runtime.roadDistanceOffset ?? 0)) / (2.4 * textureScale), across / (1.05 * textureScale));
       }
       if (index > 0) {
         const previousRow = (index - 1) * (crossSegments + 1);
@@ -818,14 +856,14 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
     const material = new THREE.MeshStandardMaterial({
-      map: textures.map,
-      bumpMap: textures.bumpMap,
+      map: isBrick ? textures!.map : null,
+      bumpMap: isBrick ? textures!.bumpMap : null,
       bumpScale: 0.035 * roadDetailStrength(style),
-      normalMap: textures.normalMap,
+      normalMap: isBrick ? textures!.normalMap : null,
       normalMapType: THREE.TangentSpaceNormalMap,
       normalScale: new THREE.Vector2(0.5, 0.5).multiplyScalar(roadDetailStrength(style)),
-      color: roadRecipeColor('brick-paver', style),
-      roughness: 0.9,
+      color: roadRecipeColor(zone.material, style),
+      roughness: zone.material === 'compacted-earth' ? 1 : 0.9,
       metalness: 0,
       side: THREE.DoubleSide,
       polygonOffset: true,
@@ -833,7 +871,7 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
       polygonOffsetUnits: -1
     });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = `brick-road-surface:${zone.id}`;
+    mesh.name = `${isBrick ? 'brick-road-surface' : 'road-surface'}:${zone.id}`;
     mesh.receiveShadow = true;
     group.add(mesh);
   }
@@ -885,9 +923,16 @@ function createBrickRoadOverlayTextures(style: RuntimeTerrainMaterialStyle): { m
   return { map: mapTexture, bumpMap: bumpTexture, normalMap: normalTexture };
 }
 
-function buildTerrain(map: EditableMap, coast: OceanCoastField | null, textureSize: number, borderSides: boolean): THREE.Mesh {
-  const geometry = buildTerrainGeometry(map, coast, borderSides);
-  const textures = createTerrainTextureSet(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, undefined, textureSize);
+function buildTerrain(
+  map: EditableMap,
+  coast: OceanCoastField | null,
+  textureSize: number,
+  borderSides: boolean,
+  borderDepth: number | undefined,
+  surfaceWeight?: TerrainSurfaceWeightSampler
+): THREE.Mesh {
+  const geometry = buildTerrainGeometry(map, coast, borderSides, borderDepth, surfaceWeight);
+  const textures = createTerrainTextureSet(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, undefined, textureSize, surfaceWeight);
   const material = new THREE.MeshStandardMaterial({
     map: textures.map,
     roughnessMap: textures.roughnessMap,
@@ -907,7 +952,7 @@ function buildTerrain(map: EditableMap, coast: OceanCoastField | null, textureSi
   mesh.receiveShadow = true;
   mesh.userData.surface = 'terrain';
   mesh.userData.terrainTextureChannels = ['color', 'roughness', 'bump', 'normal'];
-  mesh.userData.sandFlow = installTerrainSandShader(material, map, textureSize);
+  mesh.userData.sandFlow = installTerrainSandShader(material, map, textureSize, surfaceWeight);
   return mesh;
 }
 
@@ -927,7 +972,12 @@ interface TerrainSandFlowState {
   shader: THREE.WebGLProgramParametersWithUniforms | null;
 }
 
-function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: EditableMap, textureSize: number): TerrainSandFlowState {
+function installTerrainSandShader(
+  material: THREE.MeshStandardMaterial,
+  map: EditableMap,
+  textureSize: number,
+  surfaceWeight?: TerrainSurfaceWeightSampler
+): TerrainSandFlowState {
   const state: TerrainSandFlowState = {
     time: 0,
     strength: 0,
@@ -938,7 +988,7 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
     wetness: 0,
     snowCover: 0,
     snowSurface: createTerrainSnowTexture(map),
-    sandSurface: createTerrainSandSurface(map, Math.min(512, textureSize)),
+    sandSurface: createTerrainSandSurface(map, Math.min(512, textureSize), surfaceWeight),
     mapSize: new THREE.Vector2(map.box.size[0], map.box.size[2]),
     oceanLevel: -100000,
     shader: null
@@ -1061,16 +1111,19 @@ function updateTerrainSandZones(state: TerrainSandFlowState, map: EditableMap): 
 }
 
 /** hAIde's verified sand mask, generalized to semantic sand with paving/soil exclusion. */
-function createTerrainSandSurface(map: EditableMap, size: number): THREE.DataTexture {
+function createTerrainSandSurface(map: EditableMap, size: number, surfaceWeight?: TerrainSurfaceWeightSampler): THREE.DataTexture {
   const pixels = new Uint8Array(size * size);
   const oceanLevel = Math.max(-Infinity, ...map.waterBodies.filter(water => water.type === 'ocean').map(water => water.level));
   for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
     const worldX = ((x + 0.5) / size - 0.5) * map.box.size[0];
     const worldZ = ((z + 0.5) / size - 0.5) * map.box.size[2];
-    const sand = terrainSemanticSurfaceWeight(map, worldX, worldZ, ['sand']);
+    const weight = (tags: readonly VisualZoneTag[]) => surfaceWeight
+      ? surfaceWeight(worldX, worldZ, tags)
+      : terrainSemanticSurfaceWeight(map, worldX, worldZ, tags);
+    const sand = weight(['sand']);
     const cover = Math.max(
-      terrainSemanticSurfaceWeight(map, worldX, worldZ, ['paving']),
-      terrainSemanticSurfaceWeight(map, worldX, worldZ, ['soil'])
+      weight(['paving']),
+      weight(['soil'])
     );
     const submerged = Number.isFinite(oceanLevel)
       && sampleTerrainHeight(map, worldX, worldZ) <= oceanLevel + 0.03;
@@ -1632,7 +1685,13 @@ function pushUpwardTriangle(
   else indices.push(a, c, b);
 }
 
-function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null, borderSides = true): THREE.BufferGeometry {
+function buildTerrainGeometry(
+  map: EditableMap,
+  coast: OceanCoastField | null,
+  borderSides = true,
+  borderDepth?: number,
+  surfaceWeight?: TerrainSurfaceWeightSampler
+): THREE.BufferGeometry {
   const terrain = map.terrain;
   const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
   const width = coast?.width ?? terrain.resolutionX;
@@ -1659,13 +1718,22 @@ function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null, b
     }
   }
   if (!coast && borderSides) {
-    if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map);
+    if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map, borderDepth);
     else addMaskBorderSides(vertices, uvs, indices, map);
   }
   const colors: number[] = [];
   for (let index = 0; index < vertices.length; index += 3) {
     // A derived underwater slope is a top surface, not a dark vertical skirt.
-    colors.push(...terrainVertexColor(map, vertices[index], vertices[index + 1], vertices[index + 2], undefined, coast ? vertices[index + 1] : undefined, false));
+    colors.push(...terrainVertexColor(
+      map,
+      vertices[index],
+      vertices[index + 1],
+      vertices[index + 2],
+      undefined,
+      coast ? vertices[index + 1] : undefined,
+      false,
+      surfaceWeight
+    ));
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -1691,18 +1759,28 @@ interface OceanTerrainBinding {
 
 
 
-function addBorderSides(vertices: number[], uvs: number[], indices: number[], map: EditableMap): void {
+function addBorderSides(
+  vertices: number[],
+  uvs: number[],
+  indices: number[],
+  map: EditableMap,
+  depth?: number
+): void {
   const terrain = map.terrain;
   // Carved lake basins push heights below zero, so the skirt has to reach the
   // lowest point on the map instead of always stopping at y=0.
-  const base = terrain.heights.reduce((lowest, height) => Math.min(lowest, height), 0);
+  const base = depth === undefined ? terrain.heights.reduce((lowest, height) => Math.min(lowest, height), 0) : 0;
+  const addBorder = (a: number[], b: number[]): void => {
+    const edgeBase = depth === undefined ? base : Math.min(a[1], b[1]) - Math.max(0.1, depth);
+    addSideToBase(vertices, uvs, indices, map, edgeBase, a, b);
+  };
   for (let x = 0; x < terrain.resolutionX - 1; x += 1) {
-    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, x, 0), terrainPointAt(map, x + 1, 0));
-    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, x, terrain.resolutionZ - 1), terrainPointAt(map, x + 1, terrain.resolutionZ - 1));
+    addBorder(terrainPointAt(map, x, 0), terrainPointAt(map, x + 1, 0));
+    addBorder(terrainPointAt(map, x, terrain.resolutionZ - 1), terrainPointAt(map, x + 1, terrain.resolutionZ - 1));
   }
   for (let z = 0; z < terrain.resolutionZ - 1; z += 1) {
-    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, 0, z), terrainPointAt(map, 0, z + 1));
-    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, terrain.resolutionX - 1, z), terrainPointAt(map, terrain.resolutionX - 1, z + 1));
+    addBorder(terrainPointAt(map, 0, z), terrainPointAt(map, 0, z + 1));
+    addBorder(terrainPointAt(map, terrain.resolutionX - 1, z), terrainPointAt(map, terrain.resolutionX - 1, z + 1));
   }
 }
 
@@ -2534,12 +2612,13 @@ function createTerrainTextureSet(
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
   palette?: ColorPalette,
-  textureSize = TERRAIN_TEXTURE_SIZE
+  textureSize = TERRAIN_TEXTURE_SIZE,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): TerrainTextureSet {
-  const bumpMap = createTerrainPropertyTexture(map, style, 'bump', textureSize);
+  const bumpMap = createTerrainPropertyTexture(map, style, 'bump', textureSize, surfaceWeight);
   return {
-    map: createSurfaceTexture(map, 'terrain', undefined, style, palette, textureSize),
-    roughnessMap: createTerrainPropertyTexture(map, style, 'roughness', textureSize),
+    map: createSurfaceTexture(map, 'terrain', undefined, style, palette, textureSize, surfaceWeight),
+    roughnessMap: createTerrainPropertyTexture(map, style, 'roughness', textureSize, surfaceWeight),
     bumpMap,
     normalMap: createTerrainNormalTexture(bumpMap, style)
   };
@@ -2550,10 +2629,11 @@ function replaceTerrainTextures(
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
   palette?: ColorPalette,
-  textureSize = TERRAIN_TEXTURE_SIZE
+  textureSize = TERRAIN_TEXTURE_SIZE,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): void {
   const previous = [material.map, material.roughnessMap, material.bumpMap, material.normalMap];
-  const textures = createTerrainTextureSet(map, style, palette, textureSize);
+  const textures = createTerrainTextureSet(map, style, palette, textureSize, surfaceWeight);
   material.map = textures.map;
   material.roughnessMap = textures.roughnessMap;
   material.bumpMap = textures.bumpMap;
@@ -2640,7 +2720,8 @@ function createTerrainPropertyTexture(
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
   channel: TerrainTextureChannel,
-  textureSize = TERRAIN_TEXTURE_SIZE
+  textureSize = TERRAIN_TEXTURE_SIZE,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = textureSize;
@@ -2650,7 +2731,7 @@ function createTerrainPropertyTexture(
     ctx.fillStyle = channel === 'roughness' ? '#eeeeee' : '#808080';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawTerrainMaterialZones(ctx, map, style, channel, canvas.width, canvas.height);
-    drawProceduralTerrainPropertyDetail(ctx, map, style, channel, canvas.width, canvas.height);
+    drawProceduralTerrainPropertyDetail(ctx, map, style, channel, canvas.width, canvas.height, surfaceWeight);
     drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, channel, style);
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -2668,7 +2749,8 @@ function createSurfaceTexture(
   segment?: RoomShellSegment,
   terrainStyle: RuntimeTerrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
   palette?: ColorPalette,
-  terrainTextureSize = TERRAIN_TEXTURE_SIZE
+  terrainTextureSize = TERRAIN_TEXTURE_SIZE,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   const textureSize = surface === 'terrain' ? terrainTextureSize : SURFACE_TEXTURE_SIZE;
@@ -2682,7 +2764,7 @@ function createSurfaceTexture(
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (surface === 'terrain') {
       drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height, terrainStyle);
-      drawProceduralTerrainDetail(ctx, map, terrainStyle, canvas.width, canvas.height);
+      drawProceduralTerrainDetail(ctx, map, terrainStyle, canvas.width, canvas.height, surfaceWeight);
       drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, 'color', terrainStyle);
     }
     const finish = surface !== 'terrain'
@@ -3688,13 +3770,15 @@ function roadConnectedEnds(
   map: EditableMap,
   zone: SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> }
 ): [boolean, boolean] {
+  const runtime = zone as RuntimeRoadZone;
   const endpoints = [zone.region.points[0], zone.region.points[zone.region.points.length - 1]];
-  return endpoints.map((endpoint) => map.visualSemantics.zones.some((other) => (
+  const detected = endpoints.map((endpoint) => map.visualSemantics.zones.some((other) => (
     other !== zone
     && Boolean(other.material)
     && other.region?.kind === 'path'
     && distanceToPolyline(endpoint[0], endpoint[1], other.region.points) <= Math.max(zone.region.width, other.region.width) * 0.56
   ))) as [boolean, boolean];
+  return [runtime.roadContinuesBefore ?? detected[0], runtime.roadContinuesAfter ?? detected[1]];
 }
 
 function drawProceduralTerrainDetail(
@@ -3702,9 +3786,14 @@ function drawProceduralTerrainDetail(
   map: EditableMap,
   style: RuntimeTerrainMaterialStyle,
   width: number,
-  height: number
+  height: number,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): void {
   if (style.detailStrength <= 0) return;
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const metresPerPixel = 1 / Math.max(0.0001, pixelsPerMetre);
+  const footprintFade = 1 - smoothRoadFade((metresPerPixel - 0.35) / 1.2);
+  if (footprintFade <= 0.001) return;
   const random = seededRandom(map.seed ^ 0x74a91d3);
   const palettes = {
     grass: ['#4e7046', '#7f9a5e'],
@@ -3714,29 +3803,31 @@ function drawProceduralTerrainDetail(
     paving: ['#777b79', '#b8b6af'],
     snow: ['#dbe6ee', '#ffffff']
   } as const;
-  const count = Math.round(700 + style.detailStrength * 1600);
+  const count = Math.round((700 + style.detailStrength * 1600) * footprintFade);
   ctx.save();
   ctx.lineCap = 'round';
   for (let index = 0; index < count; index += 1) {
     const x = (random() - 0.5) * map.box.size[0];
     const z = (random() - 0.5) * map.box.size[2];
-    const { surface: selected, weight: selectedWeight } = terrainDetailSurfaceAt(map, x, z);
+    const { surface: selected, weight: selectedWeight } = terrainDetailSurfaceAt(map, x, z, surfaceWeight);
     if (roadMaterialAt(map, x, z)) continue;
     if (selected === 'grass' && selectedWeight <= 0.001) continue;
     const point = surfaceCanvasPoint(map, [x, z], width, height);
     const palette = palettes[selected];
     ctx.strokeStyle = palette[random() > 0.5 ? 0 : 1];
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.globalAlpha = style.detailStrength * (0.1 + Math.max(0.25, selectedWeight) * 0.24);
+    ctx.globalAlpha = style.detailStrength * footprintFade * (0.1 + Math.max(0.25, selectedWeight) * 0.24);
     if (selected === 'soil' || selected === 'rocky') {
-      const radius = selected === 'rocky' ? 1.1 + random() * 2.2 : 0.6 + random() * 1.4;
+      const radius = pixelsPerMetre * (selected === 'rocky' ? 0.05 + random() * 0.12 : 0.03 + random() * 0.08);
       ctx.fillRect(point[0], point[1], radius, radius * (0.5 + random()));
     } else {
-      const length = selected === 'sand' ? 3 + random() * 6 : selected === 'paving' ? 2 + random() * 4 : 1 + random() * 3;
+      const length = pixelsPerMetre * (selected === 'sand'
+        ? 0.12 + random() * 0.28
+        : selected === 'paving' ? 0.08 + random() * 0.18 : 0.04 + random() * 0.12);
       const angle = selected === 'sand'
         ? (style.sandRecipe === 'beach' ? 0.12 : -0.42)
         : random() * Math.PI;
-      ctx.lineWidth = selected === 'paving' ? 1.2 : 0.7;
+      ctx.lineWidth = Math.max(0.25, pixelsPerMetre * (selected === 'paving' ? 0.05 : 0.03));
       ctx.beginPath();
       ctx.moveTo(point[0] - Math.cos(angle) * length * 0.5, point[1] - Math.sin(angle) * length * 0.5);
       ctx.lineTo(point[0] + Math.cos(angle) * length * 0.5, point[1] + Math.sin(angle) * length * 0.5);
@@ -3752,9 +3843,14 @@ function drawProceduralTerrainPropertyDetail(
   style: RuntimeTerrainMaterialStyle,
   channel: TerrainTextureChannel,
   width: number,
-  height: number
+  height: number,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): void {
   if (style.detailStrength <= 0) return;
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const metresPerPixel = 1 / Math.max(0.0001, pixelsPerMetre);
+  const footprintFade = 1 - smoothRoadFade((metresPerPixel - 0.35) / 1.2);
+  if (footprintFade <= 0.001) return;
   const random = seededRandom(map.seed ^ (channel === 'roughness' ? 0x34b72a1 : 0x58d194f));
   const roughness = {
     grass: ['#d8d8d8', '#ffffff'],
@@ -3773,30 +3869,32 @@ function drawProceduralTerrainPropertyDetail(
     snow: ['#7c7c7c', '#848484']
   } as const;
   const palettes = channel === 'roughness' ? roughness : bump;
-  const count = Math.round(900 + style.detailStrength * 2100);
+  const count = Math.round((900 + style.detailStrength * 2100) * footprintFade);
   ctx.save();
   ctx.lineCap = 'round';
   for (let index = 0; index < count; index += 1) {
     const x = (random() - 0.5) * map.box.size[0];
     const z = (random() - 0.5) * map.box.size[2];
-    const { surface, weight } = terrainDetailSurfaceAt(map, x, z);
+    const { surface, weight } = terrainDetailSurfaceAt(map, x, z, surfaceWeight);
     if (roadMaterialAt(map, x, z)) continue;
     if (surface === 'grass' && weight <= 0.001) continue;
     const point = surfaceCanvasPoint(map, [x, z], width, height);
     const palette = palettes[surface];
     ctx.strokeStyle = palette[random() > 0.5 ? 0 : 1];
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.globalAlpha = style.detailStrength * (0.24 + Math.max(0.2, weight) * 0.4);
+    ctx.globalAlpha = style.detailStrength * footprintFade * (0.24 + Math.max(0.2, weight) * 0.4);
     if (surface === 'soil' || surface === 'rocky') {
-      const radius = surface === 'rocky' ? 1.4 + random() * 3.4 : 0.8 + random() * 2.2;
+      const radius = pixelsPerMetre * (surface === 'rocky' ? 0.06 + random() * 0.16 : 0.035 + random() * 0.1);
       ctx.fillRect(point[0], point[1], radius, radius * (0.45 + random() * 0.8));
       continue;
     }
-    const length = surface === 'sand' ? 3 + random() * 7 : surface === 'paving' ? 2.5 + random() * 5 : 1 + random() * 3;
+    const length = pixelsPerMetre * (surface === 'sand'
+      ? 0.12 + random() * 0.3
+      : surface === 'paving' ? 0.09 + random() * 0.2 : 0.04 + random() * 0.12);
     const angle = surface === 'sand'
       ? (style.sandRecipe === 'beach' ? 0.12 : -0.42)
       : random() * Math.PI;
-    ctx.lineWidth = surface === 'paving' ? 1.3 : 0.8;
+    ctx.lineWidth = Math.max(0.25, pixelsPerMetre * (surface === 'paving' ? 0.055 : 0.032));
     ctx.beginPath();
     ctx.moveTo(point[0] - Math.cos(angle) * length * 0.5, point[1] - Math.sin(angle) * length * 0.5);
     ctx.lineTo(point[0] + Math.cos(angle) * length * 0.5, point[1] + Math.sin(angle) * length * 0.5);
@@ -3808,13 +3906,16 @@ function drawProceduralTerrainPropertyDetail(
 function terrainDetailSurfaceAt(
   map: EditableMap,
   x: number,
-  z: number
+  z: number,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): { surface: TerrainDetailSurface; weight: number } {
   const tags: readonly TerrainDetailSurface[] = ['grass', 'soil', 'sand', 'rocky', 'paving', 'snow'];
   let surface: TerrainDetailSurface = 'grass';
   let weight = combinedGrassDensity(map, x, z) * grassSurfaceCoverage(map, x, z);
   for (const tag of tags) {
-    const candidate = terrainSemanticSurfaceWeight(map, x, z, [tag]);
+    const candidate = surfaceWeight
+      ? surfaceWeight(x, z, [tag])
+      : terrainSemanticSurfaceWeight(map, x, z, [tag]);
     if (candidate > weight || (tag === 'snow' && candidate > 0 && candidate === weight && surface !== 'soil' && surface !== 'paving')) {
       surface = tag;
       weight = candidate;

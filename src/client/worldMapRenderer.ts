@@ -10,9 +10,9 @@ import { DEFAULT_MAP_DESIGN_SEMANTICS } from '../shared/mapDesign';
 import { createDefaultMapLayout } from '../shared/mapLayout';
 import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag } from '../shared/visualDirection';
-import { generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
+import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
 import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding } from '../shared/worldPlanning';
-import { dominantBiome, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile } from '../shared/worldTerrain';
+import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { worldMapSampler, type WorldAssetBinding } from '../shared/worldMapState';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
@@ -29,11 +29,13 @@ import {
 import {
   buildMapMeshCollisionWorld,
   createCollisionMeshInstance,
-  MeshCollisionWorld
+  MeshCollisionWorld,
+  type CollisionMeshKind
 } from './mapMeshCollision';
 
 const TERRAIN_TILE_BUDGET = 128;
 const CONTENT_DISTANCE_LIMIT = 3_000;
+const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   strictMaterials: 0,
   approximateMaterials: 0,
@@ -53,6 +55,17 @@ interface TileEntry {
   rendered: RenderedMap;
   terrainMount: THREE.Group;
   collision: MeshCollisionWorld | null;
+  buildings: number;
+  ecology: number;
+  texturePixels: number;
+}
+interface ContentEntry {
+  chunk: EcologyChunk;
+  signature: string;
+  map: EditableMap;
+  rendered: RenderedMap;
+  mount: THREE.Group;
+  collision: MeshCollisionWorld;
   buildings: number;
   ecology: number;
   texturePixels: number;
@@ -153,6 +166,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   const exclusion = createWorldExclusion(bundle.plan, bundle.patches);
   const density = createWorldEcologyDensity(bundle.plan, bundle.patches);
   const entries = new Map<string, TileEntry>();
+  const contentEntries = new Map<string, ContentEntry>();
   const objectGroups = new Map<string, THREE.Group>();
   const pickables: THREE.Object3D[] = [];
   const listeners = new Set<() => void>();
@@ -164,6 +178,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   let desiredRequest: ReconcileRequest | null = null;
   let appliedRequest: ReconcileRequest | null = null;
   let failedRequest: { key: string; at: number } | null = null;
+  let requestRevision = 0;
+  let completionTimer: ReturnType<typeof setTimeout> | null = null;
   let reconciling = false;
   let activeCenter: Vec3 = [map.spawnPoints[0]?.[0] ?? 0, 0, map.spawnPoints[0]?.[2] ?? 0];
   let activeLightingSize: Vec3 = [1280, 256, 1280];
@@ -183,12 +199,24 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     waterEnvironment: null
   };
 
-  const initialX = map.spawnPoints[0]?.[0] ?? 0;
-  const initialZ = map.spawnPoints[0]?.[2] ?? 0;
-  await reconcile(initialX, initialZ, 50);
-  appliedRequest = desiredRequest = normalizedReconcileRequest(initialX, initialZ, 50);
+  const initialRequest = normalizedReconcileRequest(
+    options.worldInitialView?.x ?? map.spawnPoints[0]?.[0] ?? 0,
+    options.worldInitialView?.z ?? map.spawnPoints[0]?.[2] ?? 0,
+    options.worldInitialView?.distance ?? 50
+  );
+  await reconcile(initialRequest.x, initialRequest.z, initialRequest.distance, requestRevision, { terrain: 16, content: 9 });
+  completionTimer = setTimeout(() => {
+    completionTimer = null;
+    if (!desiredRequest) requestReconcile(initialRequest.x, initialRequest.z, initialRequest.distance);
+  }, 0);
 
-  async function reconcile(focusX: number, focusZ: number, distance: number): Promise<void> {
+  async function reconcile(
+    focusX: number,
+    focusZ: number,
+    distance: number,
+    revision: number,
+    limits?: { terrain: number; content: number }
+  ): Promise<boolean> {
     const tiles = selectWorldTiles(bundle.plan.recipe.size, focusX, focusZ, distance, TERRAIN_TILE_BUDGET);
     const contentChunks = selectEcologyChunks(
       bundle.plan.recipe.size,
@@ -196,78 +224,121 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       focusZ,
       distance > CONTENT_DISTANCE_LIMIT ? distance : 0
     );
-    const contentKeys = new Set(contentChunks.map(ecologyKey));
     const oceanOwner = tiles.find(tile => tileContains(tile, focusX, focusZ));
-    const desired = new Map(tiles.map(tile => {
+    const desiredTerrain = new Map(tiles.map(tile => {
       const logicalKey = tileKey(tile);
-      const localContent = contentChunks.filter(chunk => chunkIntersectsTile(chunk, tile));
-      const signature = `${logicalKey}|${localContent.map(ecologyKey).join(',')}|o${oceanOwner === tile ? 1 : 0}`;
-      return [logicalKey, { tile, signature, localContent, ocean: oceanOwner === tile }] as const;
+      const signature = `${logicalKey}|o${oceanOwner === tile ? 1 : 0}`;
+      return [logicalKey, { tile, signature, ocean: oceanOwner === tile }] as const;
     }));
-    const missing = [...desired.entries()]
+    const desiredContent = new Map(contentChunks.map(chunk => [ecologyKey(chunk), chunk] as const));
+    const allMissingTerrain = [...desiredTerrain.entries()]
       .filter(([key, value]) => entries.get(key)?.signature !== value.signature)
       .sort(([, left], [, right]) => tileDistanceSquared(left.tile, focusX, focusZ) - tileDistanceSquared(right.tile, focusX, focusZ));
-    pendingTiles = missing.length;
-    const built = new Map<string, TileEntry>();
-    for (let index = 0; index < missing.length && !disposed; index += 4) {
-      const batch = missing.slice(index, index + 4);
-      const results = await Promise.allSettled(batch.map(async ([key, value]) => [key, await buildEntry(value.tile, value.signature, value.localContent, value.ocean)] as const));
-      for (const result of results) if (result.status === 'fulfilled') built.set(result.value[0], result.value[1]);
+    const allMissingContent = [...desiredContent.entries()]
+      .filter(([key]) => !contentEntries.has(key))
+      .sort(([, left], [, right]) => chunkDistanceSquared(left, focusX, focusZ) - chunkDistanceSquared(right, focusX, focusZ));
+    const missingTerrain = limits ? allMissingTerrain.slice(0, limits.terrain) : allMissingTerrain;
+    const missingContent = limits ? allMissingContent.slice(0, limits.content) : allMissingContent;
+    pendingTiles = allMissingTerrain.length + allMissingContent.length;
+    const builtTerrain = new Map<string, TileEntry>();
+    const builtContent = new Map<string, ContentEntry>();
+    const discardBuilt = (): void => {
+      builtTerrain.forEach(disposeEntry);
+      builtContent.forEach(disposeContentEntry);
+    };
+    const contentBatchSize = limits ? 3 : 1;
+    const terrainBatchSize = limits ? 4 : 1;
+    for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
+      const batch = missingContent.slice(index, index + contentBatchSize);
+      const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [key, await buildContentEntry(chunk)] as const));
+      for (const result of results) if (result.status === 'fulfilled') builtContent.set(result.value[0], result.value[1]);
       pendingTiles -= results.length;
       const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
       if (failure) {
-        built.forEach(disposeEntry);
+        discardBuilt();
         pendingTiles = 0;
         throw failure.reason;
       }
+      await yieldWorldBuild();
+      if (revision !== requestRevision) { discardBuilt(); return false; }
+    }
+    for (let index = 0; index < missingTerrain.length && !disposed; index += terrainBatchSize) {
+      const batch = missingTerrain.slice(index, index + terrainBatchSize);
+      const results = await Promise.allSettled(batch.map(async ([key, value]) => [key, await buildTerrainEntry(value.tile, value.signature, value.ocean)] as const));
+      for (const result of results) if (result.status === 'fulfilled') builtTerrain.set(result.value[0], result.value[1]);
+      pendingTiles -= results.length;
+      const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+      if (failure) {
+        discardBuilt();
+        pendingTiles = 0;
+        throw failure.reason;
+      }
+      await yieldWorldBuild();
+      if (revision !== requestRevision) { discardBuilt(); return false; }
     }
     if (disposed) {
-      built.forEach(disposeEntry);
-      return;
+      discardBuilt();
+      return false;
     }
     for (const [key, entry] of entries) {
-      const replacement = built.get(key);
-      if (!desired.has(key) || replacement) {
+      const replacement = builtTerrain.get(key);
+      if (!desiredTerrain.has(key) || replacement) {
         unmountEntry(entry);
         disposeEntry(entry);
         entries.delete(key);
         unloadedTiles += 1;
       }
     }
-    for (const [key, entry] of built) {
-      if (!desired.has(key)) { disposeEntry(entry); continue; }
+    for (const [key, entry] of builtTerrain) {
+      if (!desiredTerrain.has(key)) { disposeEntry(entry); continue; }
       entries.set(key, entry);
       mountEntry(entry);
+    }
+    for (const [key, entry] of contentEntries) {
+      if (desiredContent.has(key)) continue;
+      unmountContentEntry(entry);
+      disposeContentEntry(entry);
+      contentEntries.delete(key);
+      unloadedTiles += 1;
+    }
+    for (const [key, entry] of builtContent) {
+      if (!desiredContent.has(key)) { disposeContentEntry(entry); continue; }
+      contentEntries.set(key, entry);
+      mountContentEntry(entry);
     }
     rebuildPublicIndexes();
     rebuildCollision();
     updateLightingBounds(focusX, focusZ);
     listeners.forEach(listener => listener());
+    return true;
   }
 
-  async function buildEntry(
+  async function buildTerrainEntry(
     tile: WorldTile,
     signature: string,
-    contentChunks: EcologyChunk[],
     includeOcean: boolean
   ): Promise<TileEntry> {
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
     const resolution = tile.size <= 256 ? 65 : tile.size <= 2_048 ? 33 : 17;
     const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample);
-    const tileMap = makeTileMap(tile, sampled.heights, contentChunks, includeOcean);
+    const tileMap = makeTerrainTileMap(tile, sampled.heights, includeOcean);
     const textureSize = tile.size <= 256 ? 256 : tile.size <= 2_048 ? 128 : 64;
     const rendered = await buildNormalizedEditableMapGroupCore(tileMap, {
       ...options,
       editorHelpers: false,
       terrainTextureSize: textureSize,
-      terrainBorderSides: false
+      terrainBorderSides: true,
+      terrainBorderDepth: 4,
+      oceanCoast: false,
+      terrainOnly: true,
+      terrainSurfaceWeight: (x, z, tags) => tileBiomeSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
     });
     applyStyle(rendered, tileMap, tile);
     const terrainMount = new THREE.Group();
     terrainMount.name = `world-tile:${tileKey(tile)}`;
     terrainMount.position.set(centerX, 0, centerZ);
-    const collision = tile.size <= 256 ? buildMapMeshCollisionWorld(tileMap) : null;
+    const collision = tile.size <= 256 ? buildGlobalCollision(tileMap, centerX, centerZ, new Set(['terrain'])) : null;
     return {
       tile,
       signature,
@@ -275,37 +346,57 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       rendered,
       terrainMount,
       collision,
-      buildings: tileMap.objects.filter(object => object.id.startsWith('world-building:')).length,
-      ecology: tileMap.objects.filter(object => object.id.startsWith('world-ecology:')).length,
+      buildings: 0,
+      ecology: 0,
       texturePixels: textureSize * textureSize * 4
     };
   }
 
-  function makeTileMap(
+  async function buildContentEntry(chunk: EcologyChunk): Promise<ContentEntry> {
+    const tile: WorldTile = { x: chunk.x * ECOLOGY_CHUNK_SIZE, z: chunk.z * ECOLOGY_CHUNK_SIZE, size: ECOLOGY_CHUNK_SIZE };
+    const centerX = tile.x + tile.size / 2;
+    const centerZ = tile.z + tile.size / 2;
+    const sampled = sampleWorldTile(bundle.plan.recipe, tile, 65, sample);
+    const contentMap = makeContentMap(tile, sampled.heights, chunk);
+    const rendered = await buildNormalizedEditableMapGroupCore(contentMap, {
+      ...options,
+      editorHelpers: false,
+      terrainTextureSize: 32,
+      terrainBorderSides: false,
+      terrainVisible: false,
+      oceanCoast: false
+    });
+    applyStyle(rendered, contentMap, tile);
+    const mount = new THREE.Group();
+    mount.name = `world-content:${ecologyKey(chunk)}`;
+    mount.position.set(centerX, 0, centerZ);
+    return {
+      chunk,
+      signature: ecologyKey(chunk),
+      map: contentMap,
+      rendered,
+      mount,
+      collision: buildGlobalCollision(contentMap, centerX, centerZ, new Set(['scene'])),
+      buildings: contentMap.objects.filter(object => object.id.startsWith('world-building:')).length,
+      ecology: contentMap.objects.filter(object => object.id.startsWith('world-ecology:')).length,
+      texturePixels: 32 * 32 * 4
+    };
+  }
+
+  function makeTerrainTileMap(
     tile: WorldTile,
     heights: Float32Array,
-    contentChunks: EcologyChunk[],
     includeOcean: boolean
   ): EditableMap {
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
-    const contentKeys = new Set(contentChunks.map(ecologyKey));
-    const tileBuildings = buildings.filter(building => contentKeys.has(pointEcologyKey(building.x, building.z))
-      && tileContains(tile, building.x, building.z));
-    const ecology = contentChunks.flatMap(chunk => ecologyForChunk(chunk))
-      .filter(instance => tileContains(tile, instance.x, instance.z));
-    const objects = [
-      ...tileBuildings.map(building => buildingObject(building, centerX, centerZ)),
-      ...ecology.map(instance => ecologyObject(instance, centerX, centerZ)),
-      ...manualObjectsForTile(manualObjectTrees, tile, contentKeys, centerX, centerZ)
-    ];
-    const usedAssetIds = new Set(objects.flatMap(object => object.assetId ? [object.assetId] : []));
     const boxSize: Vec3 = [tile.size, map.box.size[1], tile.size];
     const waterBodies = tileWaterBodies(tile, includeOcean);
     return {
       ...map,
       id: `${map.id}:world:${tileKey(tile)}`,
       name: `${map.name} ${tileKey(tile)}`,
+      seed: map.seed ^ stringSeed(tileKey(tile)),
       world: undefined,
       box: { ...map.box, size: boxSize },
       sceneMode: 'outdoor',
@@ -315,11 +406,53 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       grassLayers: [],
       waterBodies,
       paintStrokes: [],
+      objects: [],
+      spawnPoints: [[0, sample(centerX, centerZ).height, 0]],
+      visualSemantics: {
+        version: 1,
+        zones: [],
+        wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind }
+      },
+      layout: createDefaultMapLayout(boxSize),
+      guides: [],
+      designSemantics: DEFAULT_MAP_DESIGN_SEMANTICS,
+      assets: [],
+      collisionBake: undefined
+    };
+  }
+
+  function makeContentMap(tile: WorldTile, heights: Float32Array, chunk: EcologyChunk): EditableMap {
+    const centerX = tile.x + tile.size / 2;
+    const centerZ = tile.z + tile.size / 2;
+    const contentKeys = new Set([ecologyKey(chunk)]);
+    const tileBuildings = buildings.filter(building => pointEcologyKey(building.x, building.z) === ecologyKey(chunk));
+    const ecology = ecologyForChunk(chunk);
+    const objects = [
+      ...tileBuildings.map(building => buildingObject(building, centerX, centerZ)),
+      ...ecology.map(instance => ecologyObject(instance, centerX, centerZ)),
+      ...manualObjectsForTile(manualObjectTrees, tile, contentKeys, centerX, centerZ)
+    ];
+    const usedAssetIds = new Set(objects.flatMap(object => object.assetId ? [object.assetId] : []));
+    const boxSize: Vec3 = [tile.size, map.box.size[1], tile.size];
+    return {
+      ...map,
+      id: `${map.id}:content:${ecologyKey(chunk)}`,
+      name: `${map.name} content ${ecologyKey(chunk)}`,
+      seed: map.seed ^ stringSeed(ecologyKey(chunk)),
+      world: undefined,
+      box: { ...map.box, size: boxSize },
+      sceneMode: 'outdoor',
+      room: null,
+      interiorArtDirection: null,
+      terrain: { resolutionX: 65, resolutionZ: 65, heights: Array.from(heights) },
+      grassLayers: [],
+      waterBodies: [],
+      paintStrokes: [],
       objects,
       spawnPoints: [[0, sample(centerX, centerZ).height, 0]],
       visualSemantics: {
         version: 1,
-        zones: [...biomeZones(tile), ...roadZones(tile)],
+        zones: roadZones(tile),
         wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind }
       },
       layout: createDefaultMapLayout(boxSize),
@@ -328,6 +461,21 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       assets: (map.assets ?? []).filter(asset => usedAssetIds.has(asset.id)),
       collisionBake: undefined
     };
+  }
+
+  function buildGlobalCollision(
+    localMap: EditableMap,
+    centerX: number,
+    centerZ: number,
+    kinds: ReadonlySet<CollisionMeshKind>
+  ): MeshCollisionWorld {
+    const local = buildMapMeshCollisionWorld(localMap, kinds);
+    const transform = new THREE.Matrix4().makeTranslation(centerX, 0, centerZ);
+    const instances = local.instances
+      .filter(instance => kinds.has(instance.kind))
+      .map(instance => createCollisionMeshInstance(`${localMap.id}:${instance.id}`, instance.kind, instance.geometry, transform));
+    local.dispose();
+    return new MeshCollisionWorld(instances);
   }
 
   function ecologyForChunk(chunk: EcologyChunk): EcologyInstance[] {
@@ -412,49 +560,33 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     return asset;
   }
 
-  function biomeZones(tile: WorldTile): SceneVisualZone[] {
-    const zones: SceneVisualZone[] = [];
-    const cells = tile.size <= 2_048 ? 4 : 2;
-    for (let z = 0; z < cells; z++) for (let x = 0; x < cells; x++) {
-      const worldX = tile.x + (x + 0.5) * tile.size / cells;
-      const worldZ = tile.z + (z + 0.5) * tile.size / cells;
-      const localX = worldX - tile.x - tile.size / 2;
-      const localZ = worldZ - tile.z - tile.size / 2;
-      const radius = tile.size / cells * 0.78;
-      const tags = biomeTags(dominantBiome(sample(worldX, worldZ)));
-      zones.push({
-        id: `world-biome:${tileKey(tile)}:${x}:${z}`,
-        tags,
-        center: [localX, localZ],
-        radius,
-        intensity: 0.92,
-        region: { kind: 'circle', x: localX, z: localZ, radius }
-      });
-    }
-    return zones;
-  }
-
   function roadZones(tile: WorldTile): SceneVisualZone[] {
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
     const result: SceneVisualZone[] = [];
     for (const road of roads) {
       const points = road.closed ? [...road.points, road.points[0]] : road.points;
-      for (let index = 1; index < points.length; index++) {
-        const clipped = clipSegment(points[index - 1], points[index], tile.x, tile.z, tile.x + tile.size, tile.z + tile.size);
-        if (!clipped) continue;
-        const local = clipped.map(([x, z]) => [x - centerX, z - centerZ] as [number, number]);
+      const fragments = clipPolylineToRect(points, tile.x, tile.z, tile.x + tile.size, tile.z + tile.size, Boolean(road.closed));
+      fragments.forEach((fragment, index) => {
+        const local = fragment.points.map(([x, z]) => [x - centerX, z - centerZ] as [number, number]);
+        const minX = Math.min(...local.map(point => point[0])), maxX = Math.max(...local.map(point => point[0]));
+        const minZ = Math.min(...local.map(point => point[1])), maxZ = Math.max(...local.map(point => point[1]));
+        const zoneX = (minX + maxX) / 2, zoneZ = (minZ + maxZ) / 2;
         const settlement = road.id.startsWith('town:') || road.tags.some(tag => /street|settlement|town/i.test(tag));
         result.push({
           id: `world-road:${road.id}:${index}:${tileKey(tile)}`,
           tags: ['paving', 'settlement'],
-          center: [(local[0][0] + local[1][0]) / 2, (local[0][1] + local[1][1]) / 2],
-          radius: Math.hypot(local[1][0] - local[0][0], local[1][1] - local[0][1]) / 2 + road.width,
+          center: [zoneX, zoneZ],
+          radius: Math.max(...local.map(point => Math.hypot(point[0] - zoneX, point[1] - zoneZ))) + road.width,
           intensity: 1,
           material: settlement ? 'brick-paver' : 'compacted-earth',
-          region: { kind: 'path', points: local, width: road.width }
-        });
-      }
+          region: { kind: 'path', points: local, width: road.width },
+          roadDistanceOffset: fragment.distanceOffset,
+          roadContinuesBefore: fragment.continuesBefore,
+          roadContinuesAfter: fragment.continuesAfter,
+          forceRoadOverlay: true
+        } as SceneVisualZone);
+      });
     }
     return result;
   }
@@ -543,29 +675,47 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     entry.rendered.dispose();
   }
 
+  function mountContentEntry(entry: ContentEntry): void {
+    const centerX = entry.chunk.x * ECOLOGY_CHUNK_SIZE + ECOLOGY_CHUNK_SIZE / 2;
+    const centerZ = entry.chunk.z * ECOLOGY_CHUNK_SIZE + ECOLOGY_CHUNK_SIZE / 2;
+    entry.mount.add(entry.rendered.group);
+    root.add(entry.mount);
+    entry.rendered.modelsRoot.position.set(centerX, 0, centerZ);
+    modelsRoot.add(entry.rendered.modelsRoot);
+  }
+
+  function unmountContentEntry(entry: ContentEntry): void {
+    entry.mount.removeFromParent();
+    entry.rendered.modelsRoot.removeFromParent();
+    entry.rendered.modelsRoot.position.set(0, 0, 0);
+    entry.rendered.group.add(entry.rendered.modelsRoot);
+  }
+
+  function disposeContentEntry(entry: ContentEntry): void {
+    entry.collision.dispose();
+    entry.rendered.dispose();
+  }
+
+  function renderedEntries(): Array<TileEntry | ContentEntry> {
+    return [...entries.values(), ...contentEntries.values()];
+  }
+
   function rebuildPublicIndexes(): void {
     objectGroups.clear();
     pickables.length = 0;
-    for (const entry of entries.values()) {
+    for (const entry of renderedEntries()) {
       for (const [id, group] of entry.rendered.objectGroups) objectGroups.set(id, group);
       pickables.push(...entry.rendered.pickables);
     }
   }
 
   function rebuildCollision(): void {
-    const instances = [...entries.values()].flatMap(entry => {
-      if (!entry.collision) return [];
-      const transform = new THREE.Matrix4().makeTranslation(
-        entry.tile.x + entry.tile.size / 2,
-        0,
-        entry.tile.z + entry.tile.size / 2
-      );
-      return entry.collision.instances
-        .filter(instance => instance.kind !== 'boundary')
-        .map(instance => createCollisionMeshInstance(`${tileKey(entry.tile)}:${instance.id}`, instance.kind, instance.geometry, transform));
-    });
+    const instances = [
+      ...[...entries.values()].flatMap(entry => entry.collision?.instances ?? []),
+      ...[...contentEntries.values()].flatMap(entry => entry.collision.instances)
+    ];
     collisionWorld?.dispose();
-    collisionWorld = new MeshCollisionWorld(instances);
+    collisionWorld = new MeshCollisionWorld(instances, false);
   }
 
   function updateLightingBounds(focusX: number, focusZ: number): void {
@@ -584,21 +734,23 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   }
 
   function requestReconcile(x: number, z: number, distance: number): void {
-    const next = normalizedReconcileRequest(x, z, distance);
+    const next = normalizedReconcileRequest(x, z, distance, desiredRequest ?? appliedRequest);
     const nextKey = reconcileRequestKey(next);
     if (sameReconcileRequest(desiredRequest, next)) {
       if (!failedRequest || failedRequest.key !== nextKey || performance.now() - failedRequest.at < 5_000) return;
     }
     desiredRequest = next;
+    requestRevision += 1;
     if (reconciling) return;
     reconciling = true;
     void (async () => {
       try {
         while (desiredRequest && !disposed && !sameReconcileRequest(appliedRequest, desiredRequest)) {
           const current = desiredRequest;
+          const revision = requestRevision;
           try {
-            await reconcile(current.x, current.z, current.distance);
-            appliedRequest = current;
+            const completed = await reconcile(current.x, current.z, current.distance, revision);
+            if (completed) appliedRequest = current;
             failedRequest = null;
           } catch (error) {
             const key = reconcileRequestKey(current);
@@ -614,7 +766,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   }
 
   const aggregatePaletteReport = (): PaletteCoverageReport => {
-    const reports = [...entries.values()].map(entry => entry.rendered.getColorPaletteCoverage());
+    const reports = renderedEntries().map(entry => entry.rendered.getColorPaletteCoverage());
     const usedColors = new Set<string>();
     const roleCounts: Record<string, number> = {};
     const report = { ...EMPTY_PALETTE_REPORT, usedColors: [] as string[], roleCounts };
@@ -639,7 +791,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       grassLayers: 0, grassBlades: 0, grassFlowers: 0, grassDrawCalls: 0
     };
     const sumKeys = Object.keys(base) as Array<Exclude<keyof RenderedMapDebugStats, 'streaming'>>;
-    for (const entry of entries.values()) {
+    for (const entry of renderedEntries()) {
       const child = entry.rendered.getDebugStats();
       for (const key of sumKeys) {
         base[key] = key === 'maxBuildSliceMs' ? Math.max(base[key], child[key]) : base[key] + child[key];
@@ -647,10 +799,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     }
     base.streaming = {
       terrainTiles: entries.size,
-      contentChunks: new Set([...entries.values()].flatMap(entry => entry.signature.split('|')[1]?.split(',').filter(Boolean) ?? [])).size,
-      buildings: [...entries.values()].reduce((sum, entry) => sum + entry.buildings, 0),
-      ecologyInstances: [...entries.values()].reduce((sum, entry) => sum + entry.ecology, 0),
-      texturePixels: [...entries.values()].reduce((sum, entry) => sum + entry.texturePixels, 0),
+      contentChunks: contentEntries.size,
+      buildings: [...contentEntries.values()].reduce((sum, entry) => sum + entry.buildings, 0),
+      ecologyInstances: [...contentEntries.values()].reduce((sum, entry) => sum + entry.ecology, 0),
+      texturePixels: renderedEntries().reduce((sum, entry) => sum + entry.texturePixels, 0),
       collisionTriangles: collisionWorld?.instances.reduce((sum, instance) => sum + instance.triangleCount, 0) ?? 0,
       collisionMeshes: collisionWorld?.instances.length ?? 0,
       pendingTiles,
@@ -662,7 +814,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     return base;
   };
 
-  const buildProfile = (): RenderedMap['buildProfile'] => [...entries.values()].reduce((total, entry) => ({
+  const buildProfile = (): RenderedMap['buildProfile'] => renderedEntries().reduce((total, entry) => ({
     setupMs: total.setupMs + entry.rendered.buildProfile.setupMs,
     primitiveBatchMs: total.primitiveBatchMs + entry.rendered.buildProfile.primitiveBatchMs,
     objectVisualMs: total.objectVisualMs + entry.rendered.buildProfile.objectVisualMs,
@@ -677,40 +829,46 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     objectGroups,
     pickables,
     buildProfile: buildProfile(),
-    syncObjectTransform: id => entries.forEach(entry => entry.rendered.syncObjectTransform(id)),
+    syncObjectTransform: id => renderedEntries().forEach(entry => entry.rendered.syncObjectTransform(id)),
     update: (deltaTime, camera, maxDistance) => {
-      entries.forEach(entry => entry.rendered.update(deltaTime, camera, maxDistance));
       const focus = worldFocusFromCamera(camera, sample);
+      entries.forEach(entry => {
+        if (tileDistanceSquared(entry.tile, focus.x, focus.z) <= (3_000 + entry.tile.size) ** 2) {
+          entry.rendered.update(deltaTime, camera, maxDistance);
+        }
+      });
+      contentEntries.forEach(entry => entry.rendered.update(deltaTime, camera, maxDistance));
       const height = sample(focus.x, focus.z).height;
       requestReconcile(focus.x, focus.z, Math.abs(camera.position.y - height));
     },
-    restoreMaterialEffects: () => entries.forEach(entry => entry.rendered.restoreMaterialEffects()),
+    restoreMaterialEffects: () => renderedEntries().forEach(entry => entry.rendered.restoreMaterialEffects()),
     syncMaterialEnvironment: (environment, waterEnvironment) => {
       style.environment = environment;
       style.waterEnvironment = waterEnvironment;
-      entries.forEach(entry => entry.rendered.syncMaterialEnvironment(environment, waterEnvironment));
+      renderedEntries().forEach(entry => entry.rendered.syncMaterialEnvironment(environment, waterEnvironment));
     },
-    getRuntimeBatchMeshes: () => [...entries.values()].flatMap(entry => entry.rendered.getRuntimeBatchMeshes()),
+    getRuntimeBatchMeshes: () => renderedEntries().flatMap(entry => entry.rendered.getRuntimeBatchMeshes()),
     setGrassStyle: value => {
       if (sameValue(style.grass, value)) return;
       style.grass = value;
-      entries.forEach(entry => entry.rendered.setGrassStyle(value));
+      renderedEntries().forEach(entry => entry.rendered.setGrassStyle(value));
     },
     setSceneArt: (plan, palette) => {
       if (sameValue(style.sceneArt, plan) && sameValue(style.sceneArtPalette, palette)) return;
       style.sceneArt = plan;
       style.sceneArtPalette = palette;
       entries.forEach(entry => entry.rendered.setSceneArt(localSceneArt(plan, entry.map, entry.tile), palette));
+      contentEntries.forEach(entry => entry.rendered.setSceneArt(localSceneArt(plan, entry.map, contentEntryTile(entry)), palette));
     },
     setTerrainMaterialStyle: value => {
       if (sameValue(style.terrain, value)) return;
       style.terrain = value;
-      entries.forEach(entry => entry.rendered.setTerrainMaterialStyle(value));
+      renderedEntries().forEach(entry => entry.rendered.setTerrainMaterialStyle(value));
     },
     setColorPalette: palette => {
       if (sameValue(style.palette, palette)) return aggregatePaletteReport();
       style.palette = palette;
-      entries.forEach(entry => entry.rendered.setColorPalette(palette));
+      renderedEntries().forEach(entry => entry.rendered.setColorPalette(palette));
       return aggregatePaletteReport();
     },
     getColorPaletteCoverage: aggregatePaletteReport,
@@ -718,18 +876,18 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       if (style.wetness === wetness && style.snowCover === snowCover) return;
       style.wetness = wetness;
       style.snowCover = snowCover;
-      entries.forEach(entry => entry.rendered.setWeatherSurface(wetness, snowCover));
+      renderedEntries().forEach(entry => entry.rendered.setWeatherSurface(wetness, snowCover));
     },
     setSandFlowStrength: strength => {
       if (style.sandFlow === strength) return;
       style.sandFlow = strength;
-      entries.forEach(entry => entry.rendered.setSandFlowStrength(strength));
+      renderedEntries().forEach(entry => entry.rendered.setSandFlowStrength(strength));
     },
-    setRoomWallDisplayMode: (mode, camera) => entries.forEach(entry => entry.rendered.setRoomWallDisplayMode(mode, camera)),
-    setLightingTimeOfDay: value => { style.timeOfDay = value; entries.forEach(entry => entry.rendered.setLightingTimeOfDay(value)); },
-    setLightingQuality: value => { style.lightingQuality = value; entries.forEach(entry => entry.rendered.setLightingQuality(value)); },
-    setLightingSoloObjectId: value => { style.lightingSoloObjectId = value; entries.forEach(entry => entry.rendered.setLightingSoloObjectId(value)); },
-    setLightingHelpersVisible: value => { style.lightingHelpersVisible = value; entries.forEach(entry => entry.rendered.setLightingHelpersVisible(value)); },
+    setRoomWallDisplayMode: (mode, camera) => renderedEntries().forEach(entry => entry.rendered.setRoomWallDisplayMode(mode, camera)),
+    setLightingTimeOfDay: value => { style.timeOfDay = value; renderedEntries().forEach(entry => entry.rendered.setLightingTimeOfDay(value)); },
+    setLightingQuality: value => { style.lightingQuality = value; renderedEntries().forEach(entry => entry.rendered.setLightingQuality(value)); },
+    setLightingSoloObjectId: value => { style.lightingSoloObjectId = value; renderedEntries().forEach(entry => entry.rendered.setLightingSoloObjectId(value)); },
+    setLightingHelpersVisible: value => { style.lightingHelpersVisible = value; renderedEntries().forEach(entry => entry.rendered.setLightingHelpersVisible(value)); },
     interactGrass: (position, elapsedSeconds) => {
       for (const entry of entries.values()) if (tileContains(entry.tile, position[0], position[2])) {
         entry.rendered.interactGrass([
@@ -739,7 +897,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         ], elapsedSeconds);
       }
     },
-    clearGrassInteraction: () => entries.forEach(entry => entry.rendered.clearGrassInteraction()),
+    clearGrassInteraction: () => renderedEntries().forEach(entry => entry.rendered.clearGrassInteraction()),
     getDebugStats: aggregateDebugStats,
     getCollisionWorld: () => collisionWorld,
     subscribeContentChanges: listener => { listeners.add(listener); return () => listeners.delete(listener); },
@@ -749,11 +907,15 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     dispose: () => {
       disposed = true;
       desiredRequest = null;
+      if (completionTimer) clearTimeout(completionTimer);
+      completionTimer = null;
       listeners.clear();
       collisionWorld?.dispose();
       collisionWorld = null;
       entries.forEach(entry => { unmountEntry(entry); disposeEntry(entry); });
       entries.clear();
+      contentEntries.forEach(entry => { unmountContentEntry(entry); disposeContentEntry(entry); });
+      contentEntries.clear();
       root.clear();
     }
   };
@@ -833,8 +995,17 @@ function stableIndex(id: string, count: number): number {
   return count ? (hash >>> 0) % count : 0;
 }
 
+function stringSeed(id: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index += 1) hash = Math.imul(hash ^ id.charCodeAt(index), 16777619);
+  return hash >>> 0;
+}
+
 function tileKey(tile: WorldTile): string { return `${tile.x}:${tile.z}:${tile.size}`; }
 function ecologyKey(chunk: EcologyChunk): string { return `${chunk.x}:${chunk.z}`; }
+function contentEntryTile(entry: ContentEntry): WorldTile {
+  return { x: entry.chunk.x * ECOLOGY_CHUNK_SIZE, z: entry.chunk.z * ECOLOGY_CHUNK_SIZE, size: ECOLOGY_CHUNK_SIZE };
+}
 function pointEcologyKey(x: number, z: number): string { return `${Math.floor(x / 256)}:${Math.floor(z / 256)}`; }
 function tileContains(tile: WorldTile, x: number, z: number): boolean {
   return x >= tile.x && x < tile.x + tile.size && z >= tile.z && z < tile.z + tile.size;
@@ -848,14 +1019,76 @@ function tileDistanceSquared(tile: WorldTile, x: number, z: number): number {
   const dz = Math.max(0, tile.z - z, z - tile.z - tile.size);
   return dx * dx + dz * dz;
 }
+function chunkDistanceSquared(chunk: EcologyChunk, x: number, z: number): number {
+  const tile = { x: chunk.x * ECOLOGY_CHUNK_SIZE, z: chunk.z * ECOLOGY_CHUNK_SIZE, size: ECOLOGY_CHUNK_SIZE };
+  return tileDistanceSquared(tile, x, z);
+}
 
-function biomeTags(biome: WorldBiome): VisualZoneTag[] {
-  if (biome === 'ocean') return ['water', 'lowland'];
-  if (biome === 'forest') return ['grass', 'forest'];
-  if (biome === 'desert') return ['dry', 'sand'];
-  if (biome === 'mountains') return ['rocky'];
-  if (biome === 'snow') return ['snow', 'rocky'];
-  return ['grass'];
+function tileBiomeSurfaceWeight(
+  data: WorldTileData,
+  tile: WorldTile,
+  worldX: number,
+  worldZ: number,
+  tags: readonly VisualZoneTag[]
+): number {
+  const gridX = THREE.MathUtils.clamp((worldX - tile.x) / tile.size * (data.resolution - 1), 0, data.resolution - 1);
+  const gridZ = THREE.MathUtils.clamp((worldZ - tile.z) / tile.size * (data.resolution - 1), 0, data.resolution - 1);
+  const x0 = Math.floor(gridX), z0 = Math.floor(gridZ);
+  const x1 = Math.min(data.resolution - 1, x0 + 1), z1 = Math.min(data.resolution - 1, z0 + 1);
+  const tx = gridX - x0, tz = gridZ - z0;
+  let weight = 0;
+  for (const tag of tags) {
+    if (tag === 'dry' || tag === 'sand') {
+      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert));
+    } else if (tag === 'rocky') {
+      weight = Math.max(
+        weight,
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.mountains),
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow) * 0.35
+      );
+    } else if (tag === 'snow') {
+      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow));
+    } else if (tag === 'grass') {
+      weight = Math.max(
+        weight,
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland),
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest)
+      );
+    } else if (tag === 'forest') {
+      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest));
+    } else if (tag === 'water') {
+      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean));
+    } else if (tag === 'lowland') {
+      weight = Math.max(
+        weight,
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean),
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland)
+      );
+    }
+  }
+  return THREE.MathUtils.clamp(weight, 0, 1);
+}
+
+function interpolateTileBiome(
+  data: WorldTileData,
+  x0: number,
+  z0: number,
+  x1: number,
+  z1: number,
+  tx: number,
+  tz: number,
+  channel: number
+): number {
+  const channels = WORLD_BIOMES.length;
+  const topLeft = data.weights[(z0 * data.resolution + x0) * channels + channel];
+  const topRight = data.weights[(z0 * data.resolution + x1) * channels + channel];
+  const bottomLeft = data.weights[(z1 * data.resolution + x0) * channels + channel];
+  const bottomRight = data.weights[(z1 * data.resolution + x1) * channels + channel];
+  return THREE.MathUtils.lerp(
+    THREE.MathUtils.lerp(topLeft, topRight, tx),
+    THREE.MathUtils.lerp(bottomLeft, bottomRight, tx),
+    tz
+  );
 }
 
 function clipSegment(
@@ -870,6 +1103,58 @@ function clipSegment(
     if (low > high) return null;
   }
   return [[start[0] + dx * low, start[1] + dz * low], [start[0] + dx * high, start[1] + dz * high]];
+}
+
+interface ClippedRoadFragment {
+  points: Array<[number, number]>;
+  distanceOffset: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+}
+
+function clipPolylineToRect(
+  points: Array<[number, number]>,
+  minX: number,
+  minZ: number,
+  maxX: number,
+  maxZ: number,
+  closed: boolean
+): ClippedRoadFragment[] {
+  const fragments: ClippedRoadFragment[] = [];
+  let current: ClippedRoadFragment | null = null;
+  let distance = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1], end = points[index];
+    const length = Math.hypot(end[0] - start[0], end[1] - start[1]);
+    const clipped = clipSegment(start, end, minX, minZ, maxX, maxZ);
+    if (clipped) {
+      const startsLater = Math.hypot(clipped[0][0] - start[0], clipped[0][1] - start[1]) > 1e-5;
+      const endsEarlier = Math.hypot(clipped[1][0] - end[0], clipped[1][1] - end[1]) > 1e-5;
+      const joinsCurrent = current && pointsNear(current.points[current.points.length - 1], clipped[0]);
+      if (!joinsCurrent) {
+        if (current) fragments.push(current);
+        current = {
+          points: [clipped[0], clipped[1]],
+          distanceOffset: distance + Math.hypot(clipped[0][0] - start[0], clipped[0][1] - start[1]),
+          continuesBefore: closed || index > 1 || startsLater,
+          continuesAfter: closed || index < points.length - 1 || endsEarlier
+        };
+      } else {
+        if (!pointsNear(current!.points[current!.points.length - 1], clipped[1])) current!.points.push(clipped[1]);
+        current!.continuesAfter = closed || index < points.length - 1 || endsEarlier;
+      }
+    } else if (current) {
+      fragments.push(current);
+      current = null;
+    }
+    distance += length;
+  }
+  if (current) fragments.push(current);
+  return fragments.filter(fragment => fragment.points.length >= 2);
+}
+
+function pointsNear(left: [number, number], right: [number, number]): boolean {
+  return Math.hypot(left[0] - right[0], left[1] - right[1]) <= 1e-5;
 }
 
 function localSceneArt(plan: SceneArtPlan | null, map: EditableMap, tile: WorldTile): SceneArtPlan | null {
@@ -901,9 +1186,18 @@ function offsetWorldWaterBindings(root: THREE.Object3D, x: number, z: number): v
 
 function worldFocusFromCamera(camera: THREE.Camera, sample: (x: number, z: number) => { height: number }): { x: number; z: number } {
   const direction = camera.getWorldDirection(new THREE.Vector3());
-  if (direction.y >= -0.08) return { x: camera.position.x, z: camera.position.z };
   const ground = sample(camera.position.x, camera.position.z).height;
-  const distance = THREE.MathUtils.clamp((ground - camera.position.y) / direction.y, 0, 20_000);
+  const height = Math.max(0, camera.position.y - ground);
+  const projectionBlend = THREE.MathUtils.smoothstep(-direction.y, 0.02, 0.22);
+  const maxDistance = THREE.MathUtils.clamp(height * 4, 256, 3_000);
+  let rayDistance = direction.y < -0.001 ? (ground - camera.position.y) / direction.y : 0;
+  for (let iteration = 0; iteration < 3 && direction.y < -0.001; iteration += 1) {
+    rayDistance = THREE.MathUtils.clamp(rayDistance, 0, maxDistance);
+    const x = camera.position.x + direction.x * rayDistance;
+    const z = camera.position.z + direction.z * rayDistance;
+    rayDistance = (sample(x, z).height - camera.position.y) / direction.y;
+  }
+  const distance = THREE.MathUtils.clamp(rayDistance, 0, maxDistance) * projectionBlend;
   return {
     x: camera.position.x + direction.x * distance,
     z: camera.position.z + direction.z * distance
@@ -914,12 +1208,25 @@ function sameValue(left: unknown, right: unknown): boolean {
   return left === right || JSON.stringify(left) === JSON.stringify(right);
 }
 
-function normalizedReconcileRequest(x: number, z: number, distance: number): ReconcileRequest {
-  return {
+function normalizedReconcileRequest(
+  x: number,
+  z: number,
+  distance: number,
+  previous: ReconcileRequest | null = null
+): ReconcileRequest {
+  const next = {
     x: Math.round(x / 64) * 64,
     z: Math.round(z / 64) * 64,
-    distance: distance > CONTENT_DISTANCE_LIMIT ? Math.round(distance / 500) * 500 : 50
+    distance: distance > CONTENT_DISTANCE_LIMIT
+      ? Math.round(distance / 500) * 500
+      : Math.max(50, Math.round(distance / 100) * 100)
   };
+  if (previous) {
+    if (Math.abs(x - previous.x) < 128) next.x = previous.x;
+    if (Math.abs(z - previous.z) < 128) next.z = previous.z;
+    if (Math.abs(distance - previous.distance) < 200) next.distance = previous.distance;
+  }
+  return next;
 }
 
 function sameReconcileRequest(left: ReconcileRequest | null, right: ReconcileRequest | null): boolean {
@@ -928,4 +1235,11 @@ function sameReconcileRequest(left: ReconcileRequest | null, right: ReconcileReq
 
 function reconcileRequestKey(request: ReconcileRequest): string {
   return `${request.x}:${request.z}:${request.distance}`;
+}
+
+function yieldWorldBuild(): Promise<void> {
+  return new Promise(resolve => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+    else setTimeout(resolve, 0);
+  });
 }

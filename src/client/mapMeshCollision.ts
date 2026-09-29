@@ -96,7 +96,7 @@ export class MeshCollisionWorld {
   private readonly cells = new Map<string, number[]>();
   private readonly globalIndices: number[] = [];
 
-  constructor(instances: readonly CollisionMeshInstance[] = []) {
+  constructor(instances: readonly CollisionMeshInstance[] = [], private readonly ownsInstances = true) {
     this.instances = [...instances];
     this.rebuildIndex();
   }
@@ -281,7 +281,7 @@ export class MeshCollisionWorld {
   }
 
   dispose(): void {
-    for (const instance of this.instances) instance.geometry.dispose();
+    if (this.ownsInstances) for (const instance of this.instances) instance.geometry.dispose();
   }
 
   private rebuildIndex(): void {
@@ -333,23 +333,31 @@ function mapCollisionCacheKey(map: EditableMap): string {
   return `${map.id}:${map.version}:${map.updatedAt}:${assets}`;
 }
 
-export function buildMapMeshCollisionWorld(map: EditableMap): MeshCollisionWorld {
+export function buildMapMeshCollisionWorld(
+  map: EditableMap,
+  kinds: ReadonlySet<CollisionMeshKind> = new Set(['terrain', 'boundary', 'scene', 'dynamic'])
+): MeshCollisionWorld {
   const instances: CollisionMeshInstance[] = [];
 
-  const terrain = buildTerrainCollisionGeometry(map);
-  instances.push(createCollisionMeshInstance('__terrain__', 'terrain', terrain));
-  terrain.dispose();
-
-  const boundary = buildBoundaryCollisionGeometry(map);
-  instances.push(createCollisionMeshInstance('__map_boundary__', 'boundary', boundary));
-  boundary.dispose();
-
-  const shell = collisionGeometryFromBoxes(getRoomShellAabbs(map));
-  if (shell) {
-    instances.push(createCollisionMeshInstance('__map_shell__', 'boundary', shell));
-    shell.dispose();
+  if (kinds.has('terrain')) {
+    const terrain = buildTerrainCollisionGeometry(map);
+    instances.push(createCollisionMeshInstance('__terrain__', 'terrain', terrain));
+    terrain.dispose();
   }
 
+  if (kinds.has('boundary')) {
+    const boundary = buildBoundaryCollisionGeometry(map);
+    instances.push(createCollisionMeshInstance('__map_boundary__', 'boundary', boundary));
+    boundary.dispose();
+
+    const shell = collisionGeometryFromBoxes(getRoomShellAabbs(map));
+    if (shell) {
+      instances.push(createCollisionMeshInstance('__map_shell__', 'boundary', shell));
+      shell.dispose();
+    }
+  }
+
+  if (!kinds.has('scene')) return new MeshCollisionWorld(instances);
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const matrices = getObjectWorldMatrices(map);
   const proxyIds = new Set(map.objects

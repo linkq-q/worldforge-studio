@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
+import { describe, expect, it, vi } from 'vitest';
 import { createEmptyMap, getMapCollisionBake, movePlayerPositionForMap } from '../src/shared/map';
 import { MAP_ASSET_COLLIDER_PROFILE, buildModelColliderPlan } from '../src/shared/modelBounds';
-import { getMapMeshCollisionWorld } from '../src/client/mapMeshCollision';
+import { createCollisionMeshInstance, getMapMeshCollisionWorld, MeshCollisionWorld } from '../src/client/mapMeshCollision';
 
 const VERTICAL_RING = {
   format: 2,
@@ -18,6 +19,17 @@ const VERTICAL_RING = {
 };
 
 describe('map mesh collision', () => {
+  it('does not dispose resident instance geometry from a non-owning aggregate index', () => {
+    const source = new THREE.BoxGeometry(1, 1, 1);
+    const instance = createCollisionMeshInstance('shared', 'scene', source);
+    source.dispose();
+    const dispose = vi.spyOn(instance.geometry, 'dispose');
+    new MeshCollisionWorld([instance], false).dispose();
+    expect(dispose).not.toHaveBeenCalled();
+    new MeshCollisionWorld([instance]).dispose();
+    expect(dispose).toHaveBeenCalledOnce();
+  });
+
   it('preserves a visible model opening that the legacy AABB bake seals', () => {
     const map = createEmptyMap('mesh opening');
     map.assets = [{

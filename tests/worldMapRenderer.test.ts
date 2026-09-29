@@ -15,6 +15,14 @@ beforeEach(() => vi.stubGlobal('document', {
 }));
 afterEach(() => vi.unstubAllGlobals());
 
+async function waitFor(predicate: () => boolean): Promise<void> {
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    if (predicate()) return;
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  throw new Error('streaming_timeout');
+}
+
 describe('main editor streamed world renderer', () => {
   it('bounds resident terrain/content and keeps manual objects in the live collision world', async () => {
     const map = createEmptyMap();
@@ -49,7 +57,10 @@ describe('main editor streamed world renderer', () => {
       const position = rendered.objectGroups.get('manual-root')!.getWorldPosition(new THREE.Vector3());
       expect(position.x).toBeCloseTo(town.center[0] + 4);
       expect(position.z).toBeCloseTo(town.center[1]);
+      await waitFor(() => rendered.getDebugStats().streaming?.pendingTiles === 0);
       const collision = rendered.getCollisionWorld?.();
+      const manualGroup = rendered.objectGroups.get('manual-root');
+      const manualCollision = collision?.instances.find(instance => instance.id.includes('manual-root'));
       let contentChanges = 0;
       const unsubscribe = rendered.subscribeContentChanges?.(() => { contentChanges += 1; });
       const camera = new THREE.PerspectiveCamera();
@@ -60,6 +71,20 @@ describe('main editor streamed world renderer', () => {
       await Promise.resolve();
       expect(rendered.getCollisionWorld?.()).toBe(collision);
       expect(contentChanges).toBe(0);
+      camera.position.x += 24;
+      camera.lookAt(town.center[0] + 24, sample(town.center[0] + 24, town.center[1]).height, town.center[1]);
+      rendered.update(1 / 60, camera, 1_000);
+      await Promise.resolve();
+      expect(rendered.getCollisionWorld?.()).toBe(collision);
+      expect(contentChanges).toBe(0);
+      const localX = town.center[0] - Math.floor(town.center[0] / 256) * 256;
+      const movedX = town.center[0] + (localX <= 128 ? 160 : -160);
+      camera.position.set(movedX, sample(movedX, town.center[1]).height + 100, town.center[1]);
+      camera.lookAt(movedX, sample(movedX, town.center[1]).height, town.center[1]);
+      rendered.update(1 / 60, camera, 1_000);
+      await waitFor(() => contentChanges > 0 && rendered.getDebugStats().streaming?.pendingTiles === 0);
+      expect(rendered.objectGroups.get('manual-root')).toBe(manualGroup);
+      expect(rendered.getCollisionWorld?.()?.instances.find(instance => instance.id.includes('manual-root'))).toBe(manualCollision);
       unsubscribe?.();
     } finally {
       rendered.dispose();

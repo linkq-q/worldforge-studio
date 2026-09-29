@@ -23,6 +23,8 @@ export interface TerrainPaletteColors {
   settlement: string;
 }
 
+export type TerrainSurfaceWeightSampler = (x: number, z: number, tags: readonly VisualZoneTag[]) => number;
+
 export function terrainVertexColor(
   map: EditableMap,
   x: number,
@@ -30,7 +32,8 @@ export function terrainVertexColor(
   z: number,
   palette?: TerrainPaletteColors,
   renderSurfaceHeight?: number,
-  includeSnow = true
+  includeSnow = true,
+  surfaceWeight?: TerrainSurfaceWeightSampler
 ): [number, number, number] {
   const surfaceY = renderSurfaceHeight ?? sampleTerrainHeight(map, x, z);
   const base = new THREE.Color(palette?.base ?? map.box.colors.floor);
@@ -41,12 +44,15 @@ export function terrainVertexColor(
   if (surfaceY < 0.35) base.lerp(new THREE.Color('#9c9470'), clamp01((0.35 - surfaceY) / 0.7));
   if (slope > 24) base.lerp(new THREE.Color('#777b74'), clamp01((slope - 24) / 28));
   if (heightRatio > 0.58) base.lerp(new THREE.Color('#c8cec4'), clamp01((heightRatio - 0.58) / 0.28));
-  base.lerp(new THREE.Color(palette?.dry ?? DRY_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['dry']) * 0.62);
-  base.lerp(new THREE.Color(palette?.rock ?? ROCK_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['rocky']) * 0.88);
-  base.lerp(new THREE.Color(palette?.sand ?? SAND_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['sand']) * 0.96);
-  if (includeSnow) base.lerp(SNOW_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['snow']) * 0.98);
-  base.lerp(new THREE.Color(palette?.soil ?? SOIL_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['soil']) * 0.92);
-  base.lerp(new THREE.Color(palette?.paving ?? PAVING_COLOR), terrainSemanticSurfaceWeight(map, x, z, ['paving']) * 0.94);
+  const weight = (tags: readonly VisualZoneTag[]) => surfaceWeight
+    ? surfaceWeight(x, z, tags)
+    : terrainSemanticSurfaceWeight(map, x, z, tags);
+  base.lerp(new THREE.Color(palette?.dry ?? DRY_COLOR), weight(['dry']) * 0.62);
+  base.lerp(new THREE.Color(palette?.rock ?? ROCK_COLOR), weight(['rocky']) * 0.88);
+  base.lerp(new THREE.Color(palette?.sand ?? SAND_COLOR), weight(['sand']) * 0.96);
+  if (includeSnow) base.lerp(SNOW_COLOR, weight(['snow']) * 0.98);
+  base.lerp(new THREE.Color(palette?.soil ?? SOIL_COLOR), weight(['soil']) * 0.92);
+  base.lerp(new THREE.Color(palette?.paving ?? PAVING_COLOR), weight(['paving']) * 0.94);
   return colorTuple(base);
 }
 
