@@ -248,6 +248,9 @@ describe('world generation compiler', () => {
     expect(planningInput.reusableAssets).toEqual([expect.objectContaining({ id: asset.id, name: asset.name })]);
     expect(planningInput.reusableAssets[0].visualSize).toEqual([8,7,9]);
     expect(planningInput.reusableAssets[0]).not.toHaveProperty('modelJson');
+    const layoutMessages = mocks.llmChat.mock.calls[1][0] as Array<{ role: string; content: string }>;
+    expect(layoutMessages[0].content).toContain("strategy:'single' is invalid for every enterable asset");
+    expect(layoutMessages[0].content).toContain('match its assetKey and authored [width,height,depth] exactly');
   });
 
   it('allows a terrain-only intent without inventing a town', () => {
