@@ -7,7 +7,7 @@ import type { WorldPlan } from '../src/shared/worldPlanning';
 describe('world siting', () => {
   it('scores the circular town footprint without letting an outside corner hill displace it', () => {
     for (const [seed, biome] of [[42, 'grassland'], [2309, 'desert'], [99173, 'forest']] as const) {
-      const recipe: WorldRecipe = { version: 1, seed, size: 500, heightScale: 0.035,
+      const recipe: WorldRecipe = { version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.035,
         constraints: [{ region: 'center', biome }] };
       const intent = { id: 'town', radius: 55, blend: 20, region: 'center' as const };
       const first = findWorldSiteCandidates(recipe, intent)[0];

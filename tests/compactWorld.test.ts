@@ -5,6 +5,7 @@ describe('500 metre preview scale',()=>{
   it('accepts a 500x500 metre world while preserving the supported bounds',()=>{
     const recipe=parseWorldPrompt('中央是草原',42,500);
     expect(recipe.size).toBe(500);
+    expect(recipe.reliefProfile).toBe('compact');
     expect(Number.isFinite(createWorldSampler(recipe)(0,0).height)).toBe(true);
     expect(()=>validateWorldRecipe({...recipe,size:499})).toThrow();
     expect(()=>validateWorldRecipe({...recipe,size:256001})).toThrow();
@@ -25,6 +26,7 @@ import { generateEcologyChunk } from '../src/shared/worldEcology';
 const compact=validateWorldBundle(JSON.parse(readFileSync(new URL('../scripts/fixtures/compact-world.json',import.meta.url),'utf8').replace(/^\uFEFF/,'')));
 it('ships four substantial close settlements in the requested physical extent',()=>{
   expect(compact.plan.recipe.size).toBe(500);
+  expect(compact.plan.recipe.reliefProfile).toBeUndefined();
   expect(compact.plan.towns).toHaveLength(4);
   expect(compact.patches).toHaveLength(4);
   const buildings=compact.patches.flatMap(p=>p.buildings);
@@ -52,4 +54,3 @@ it('clips nearby vegetation to the 500m map and keeps it off settlement footprin
     expect(exclusion(p.x,p.z,0)).toBe(false);expect(p.y).toBe(sample(p.x,p.z).height);
   }
 });
-

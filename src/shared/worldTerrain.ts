@@ -53,6 +53,7 @@ export interface WorldRecipe {
   version: 1;
   seed: number;
   size: number;
+  reliefProfile?: 'legacy' | 'compact';
   heightScale?: number;
   constraints: WorldConstraint[];
   landforms?: Array<{ center: [number, number]; radius: [number, number]; height: number }>;
@@ -136,7 +137,7 @@ export function parseWorldPrompt(prompt: string, seed = 42, size = 64000): World
     if (existing && existing.biome !== found[0]) throw new Error(REGION_LABELS[region] + '存在冲突，请只指定一个群落。');
     if (!existing) constraints.push({ region, biome: found[0] });
   }
-  return validateWorldRecipe({ version: 1, seed, size, constraints });
+  return validateWorldRecipe({ version: 1, seed, size, reliefProfile: 'compact', constraints });
 }
 
 export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
@@ -153,6 +154,10 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
     seen.add(item.region);
   }
   const recipe: WorldRecipe = { version: 1, seed: input.seed, size: input.size, constraints: input.constraints.map(item => ({ ...item })) };
+  if (input.reliefProfile !== undefined) {
+    if (input.reliefProfile !== 'legacy' && input.reliefProfile !== 'compact') throw new Error('invalid_world_relief_profile');
+    recipe.reliefProfile = input.reliefProfile;
+  }
   if (input.heightScale !== undefined) {
     if (!Number.isFinite(input.heightScale) || input.heightScale < 0.02 || input.heightScale > 4) throw new Error('invalid_world_height_scale');
     recipe.heightScale = input.heightScale;
@@ -424,8 +429,9 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
 export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainContext {
   const recipe = validateWorldRecipe(input);
   const { seed, size, constraints } = recipe;
-  // Keep compact worlds from sampling one nearly constant slice of kilometre-scale fields.
-  const terrainScale = clamp(size / 6400, 0.125, 1);
+  // Stored recipes without a profile predate scale-aware relief and must replay exactly.
+  const compactRelief = recipe.reliefProfile === 'compact';
+  const terrainScale = compactRelief ? clamp(size / 6400, 0.125, 1) : 1;
   const waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed);
   const sample = (x: number, z: number): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
@@ -546,7 +552,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       for (const biome of WORLD_BIOMES) weights[biome] *= 1 - influence;
       weights[patch.biome] += influence;
     }
-    if (finiteWaterWeight > weights.ocean) {
+    if (compactRelief && finiteWaterWeight > weights.ocean) {
       const scale = (1 - finiteWaterWeight) / Math.max(0.000001, 1 - weights.ocean);
       for (const biome of WORLD_BIOMES) if (biome !== 'ocean') weights[biome] *= scale;
       weights.ocean = finiteWaterWeight;

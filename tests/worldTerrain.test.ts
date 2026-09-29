@@ -20,6 +20,9 @@ describe('continuous biome world experiment', () => {
     expect(() => parseWorldPrompt('西方是海洋', -1)).toThrow();
     expect(() => parseWorldPrompt('西方是海洋', 42, Infinity)).toThrow();
     expect(() => validateWorldRecipe({ version: 1, seed: 1, size: 64000, constraints: [{ region: '__proto__' as never, biome: 'forest' }] })).toThrow();
+    expect(() => validateWorldRecipe({ version: 1, seed: 1, size: 500,
+      reliefProfile: 'unknown' as never, constraints: [{ region: 'center', biome: 'grassland' }] }))
+      .toThrow('invalid_world_relief_profile');
   });
 
   it('keeps west below sea level and east dry across seeds, including the mirror description', () => {
@@ -233,7 +236,7 @@ describe('composable world terrain operations', () => {
 
   it('blends finite water material through the carved lake bank', () => {
     const base = createWorldSampler(original), level = base(0, 0).height + 2;
-    const sample = createWorldSampler({ ...original, waterBodies: [{
+    const sample = createWorldSampler({ ...original, reliefProfile: 'compact', waterBodies: [{
       id: 'lake-bank', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },
       levels: [level], depth: 6, shorelineSmoothness: 0, shorelineIrregularity: 0
     }] });
@@ -321,7 +324,9 @@ describe('composable world terrain operations', () => {
       ]
     ];
     for (const constraints of scenarios) for (const seed of [1, 42, 2309, 99173]) {
-      const sample = createWorldSampler({ version: 1, seed, size: 500, heightScale: 0.035, constraints });
+      const sample = createWorldSampler({
+        version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.035, constraints
+      });
       const slopes: number[] = [];
       for (let z = -240; z <= 240; z += 8) for (let x = -240; x <= 240; x += 8) {
         slopes.push(sampleWorldSlope(sample, x, z));
