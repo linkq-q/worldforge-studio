@@ -55,6 +55,7 @@ interface WorldIntentTown extends WorldSiteIntent {
   prompt: string;
   terrainMode: 'conform';
   kind: WorldSettlementKind;
+  pattern: 'organic' | 'grid';
   density: number;
   publicBuildings: WorldLandmarkRequirement[];
 }
@@ -88,14 +89,14 @@ const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. R
 This is terrain intent, not final geometry. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
 recipe={version:1,seed,size,heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Regions: west/east/north/south/northwest/northeast/southwest/southeast/center. Biomes: ocean/grassland/forest/desert/mountains/snow. Constraints blend continuously and express broad intent. For playable 500..2000m worlds, prefer heightScale around 0.08..0.15; raise exceptional volcanoes and other local relief with landforms=[{center:[x,z],radius:[rx,rz],height}] instead of globally exaggerating terrain.
 Brush region is {kind:'circle',center:[x,z],radius} or {kind:'path',points:[[x,z],...],width}. terrainBrushes are {id,mode:'raise'|'lower',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:PATH,heights:[one per path point],strength?,feather?}. Use bounded local refinement only. Do not guess road or settlement grade heights: the server samples and grades their access after choosing sites. waterBodies=[{id,type:'lake'|'river',region,levels:[one for circle or one per path point],depth,shorelineSmoothness?:0..1,shorelineIrregularity?:0..0.4,shorelineProfile?:'steep'|'gentle',seed?:uint32}]. Lakes require circle regions and usually use smoothness 0.7..0.95 and irregularity 0.08..0.28; rivers require path regions, smoothness 0.65..0.9 and irregularity 0. shorelineProfile controls bank width and slope. Sea is terrain below zero. biomePatches=[{id,region,biome,feather?}].
-towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. Public buildings declare program and footprint only. No center, foundation, ports, rotation or landmark coordinates.
+towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. Choose pattern from the requested culture and terrain before siting; the server validates that exact pattern. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. Public buildings declare program and footprint only. No center, foundation, ports, rotation or landmark coordinates.
 roads=[{id,name,fromTownId,toTownId,width,tags}]. They express topology and purpose only; the server routes them over sampled terrain. No points or invented elevations.
 ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?}]. Never enumerate ordinary buildings or vegetation. Preserve the user's named destinations and relations. Limits: <=12 towns, <=32 roads, <=8 ecology rules, <=16 landforms.`;
 
 const WORLD_LAYOUT_PROMPT = `Choose only from supplied sampled site candidates. Return JSON only:
 {towns:[{townId,candidateId,landmarkLayoutId?}],settlements:[{townId,options}],assets:[]}.
 Choose exactly one candidate per town and only the available:true road pairs, which form one jointly validated candidate graph. A town with publicBuildings must choose a supplied landmarkLayoutId for that candidate and matching pattern. Never return recipe, terrain heights, centers, ports, world-road points, landmark coordinates or rotations. The server materializes those from actual samples.
-options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?}. kind and density must preserve intent. Invalid or unreachable public footprints are omitted from candidates, never faked.
+options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?}. kind, pattern and density must exactly preserve intent. Invalid or unreachable public footprints are omitted from candidates, never faked.
 Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?}], at most 12. existingAssetId may reference only an id in reusableAssets, whose visualSize is its authoritative measured [width,height,depth]. Omit existingAssetId when requesting a new asset; not every asset must be reused.`;
 
 export const WORLD_GENERATION_PROMPT = `You design a playable continuous world in metres. Return JSON only: {plan,settlements,assets}. GPT owns spatial intent and unique architecture; deterministic tools grow ordinary streets/buildings and stream vegetation. Never enumerate trees or ordinary houses. No final rendering style in the world data.
@@ -165,7 +166,7 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
   }
   const townIds = new Set<string>();
   const towns = raw.towns.map(value => {
-    const item = exactRecord(value, ['id','name','prompt','radius','blend','terrainMode','region','kind','density','waterfrontBias','targetWaterBodyId','publicBuildings'],
+    const item = exactRecord(value, ['id','name','prompt','radius','blend','terrainMode','region','kind','pattern','density','waterfrontBias','targetWaterBodyId','publicBuildings'],
       'invalid_world_intent_town','world_unknown_intent_town_field');
     const id = generationId(item.id, 'invalid_world_intent_town');
     if (townIds.has(id) || typeof item.name !== 'string' || !item.name.trim() || typeof item.prompt !== 'string'
@@ -181,6 +182,8 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
     const radius=finite(item.radius,Math.min(100,recipe.size/10),1000,'invalid_world_intent_town');
     const kind:WorldSettlementKind=item.kind===undefined?(radius>=120?'city':'village'):item.kind as WorldSettlementKind;
     if(kind!=='city'&&kind!=='village') throw new Error('invalid_world_intent_town');
+    const pattern=item.pattern??'organic';
+    if(pattern!=='organic'&&pattern!=='grid') throw new Error('invalid_world_intent_town');
     const publicIds=new Set<string>();
     const publicBuildings=item.publicBuildings===undefined?[]:(Array.isArray(item.publicBuildings)?item.publicBuildings:[]).map(value=>{
       const building=exactRecord(value,['id','use','width','depth','height','assetKey','enterable'],
@@ -196,6 +199,7 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
     if(item.publicBuildings!==undefined&&!Array.isArray(item.publicBuildings)) throw new Error('invalid_world_public_building');
     return {id,name:item.name,prompt:item.prompt,radius,
       blend:finite(item.blend,Math.min(100,recipe.size/25),2000,'invalid_world_intent_town'),terrainMode:'conform' as const,kind,
+      pattern:pattern as 'organic'|'grid',
       density:finite(item.density??(kind==='city'?.82:.38),.05,1,'invalid_world_intent_town'),publicBuildings,
       region:item.region as WorldRegion,
       ...(item.waterfrontBias===undefined?{}:{waterfrontBias:finite(item.waterfrontBias,0,1,'invalid_world_intent_town')}),
@@ -240,8 +244,19 @@ function gradeAccess(id:string,points:Array<[number,number]>,width:number,sample
   return {id,mode:'grade',region:{kind:'path',points:dense,width},heights:dense.map(point=>sample(point[0],point[1]).height),feather:2};
 }
 
+function cachedWorldSampler(sample:ReturnType<typeof createWorldSampler>):ReturnType<typeof createWorldSampler> {
+  const cache=new Map<string,ReturnType<typeof sample>>();
+  return (x,z)=>{
+    const key=`${x},${z}`,known=cache.get(key);
+    if(known) return known;
+    const result=sample(x,z);
+    if(cache.size<50_000) cache.set(key,result);
+    return result;
+  };
+}
+
 export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
-  const sample=createWorldSampler(intent.plan.recipe);
+  const sample=cachedWorldSampler(createWorldSampler(intent.plan.recipe));
   const towns=intent.plan.towns.map(town=>({id:town.id,candidates:findWorldSiteCandidates(intent.plan.recipe,town)}));
   for(const town of towns) if(!town.candidates.length) throw new Error('world_no_site_candidates:'+town.id);
   const connections:WorldSitingEvidence['connections']=[],landmarkLayouts:WorldSitingEvidence['landmarkLayouts']=[];
@@ -253,13 +268,13 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
         recipe:intent.plan.recipe,ecology:intent.plan.ecology,roads:[],towns:[{id:town.id,name:town.name,prompt:town.prompt,
           center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[]}]};
       try {
-        generateWorldSettlement(plan,town.id,sample,{kind:town.kind,pattern:'organic',density:town.density,waterfrontBias:town.waterfrontBias??0});
+        generateWorldSettlement(plan,town.id,sample,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
         const layouts:WorldSitingEvidence['landmarkLayouts']=[];
-        for(const pattern of ['organic','grid'] as const) try {
+        try {
           const result=createWorldSettlementLandmarkLayout(plan,town.id,sample,
-            {kind:town.kind,pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings);
-          if(town.publicBuildings.length) layouts.push({id:`${town.id}-${site.id}-${pattern}-landmarks`,townId:town.id,
-            candidateId:site.id,pattern,landmarks:result.landmarks});
+            {kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings);
+          if(town.publicBuildings.length) layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,
+            candidateId:site.id,pattern:town.pattern,landmarks:result.landmarks});
         } catch {}
         if(town.publicBuildings.length&&!layouts.length) continue;
         viable.push(site);landmarkLayouts.push(...layouts);
@@ -273,11 +288,12 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     fromLocal:NonNullable<ReturnType<typeof findWorldRoute>>;toLocal:NonNullable<ReturnType<typeof findWorldRoute>>;
     route:NonNullable<ReturnType<typeof findWorldRoute>>};
   const candidateRoutes=new Map<string,CandidateRoute|null>(),selected=new Map<string,WorldSiteCandidate>();
+  const landmarkCache=new Map<string,TownBuilding[]|null>();
   let routeChecks=0,planChecks=0,lastFailure='world_no_candidate_graph';
   const candidateRoute=(road:WorldIntentRoad,from:WorldSiteCandidate,to:WorldSiteCandidate):CandidateRoute|null=>{
     const key=`${road.id}:${from.id}:${to.id}`;
     if(candidateRoutes.has(key)) return candidateRoutes.get(key)!;
-    if(routeChecks++>=128) return null;
+    if(routeChecks++>=64) return null;
     const fromTown=intent.plan.towns.find(t=>t.id===road.fromTownId)!,toTown=intent.plan.towns.find(t=>t.id===road.toTownId)!;
     const fp=portToward(from,to,fromTown.radius),tp=portToward(to,from,toTown.radius);
     const fromPort:[number,number]=[from.center[0]+fp[0],from.center[1]+fp[1]],toPort:[number,number]=[to.center[0]+tp[0],to.center[1]+tp[1]];
@@ -286,8 +302,9 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     const result=fromLocal&&toLocal&&route?{from,to,fromPort:fp,toPort:tp,fromLocal,toLocal,route}:null;
     candidateRoutes.set(key,result);return result;
   };
-  const validateGraph=():WorldSitingEvidence['landmarkLayouts']|null=>{
-    if(planChecks++>=32) return null;
+  type ValidatedGraph={plan:WorldPlan;sample:ReturnType<typeof createWorldSampler>;layouts:WorldSitingEvidence['landmarkLayouts']};
+  const validateGraph=():ValidatedGraph|null=>{
+    if(planChecks++>=16) return null;
     const construction:WorldTerrainBrush[]=[],ports=new Map<string,WorldPlan['towns'][number]['ports']>();
     const roads=intent.plan.roads.map(road=>{
       const pair=candidateRoute(road,selected.get(road.fromTownId)!,selected.get(road.toTownId)!);
@@ -303,28 +320,44 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
       ecology:intent.plan.ecology,roads,towns:intent.plan.towns.filter(town=>connectedTownIds.has(town.id)).map(town=>{
         const site=selected.get(town.id)!;return {id:town.id,name:town.name,prompt:town.prompt,center:site.center,
           radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:ports.get(town.id)??[]};})};
-    const planned=createWorldSampler(recipe),layouts:WorldSitingEvidence['landmarkLayouts']=[];
+    const planned=cachedWorldSampler(createWorldSampler(recipe)),layouts:WorldSitingEvidence['landmarkLayouts']=[];
     try {
-      for(const town of intent.plan.towns.filter(item=>connectedTownIds.has(item.id))) {
-        generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:'organic',density:town.density,waterfrontBias:town.waterfrontBias??0});
+      const plannedTowns=intent.plan.towns.filter(item=>connectedTownIds.has(item.id))
+        .sort((a,b)=>a.publicBuildings.length-b.publicBuildings.length);
+      for(const town of plannedTowns) {
+        generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
         if(!town.publicBuildings.length) continue;
-        const site=selected.get(town.id)!;
-        for(const pattern of ['organic','grid'] as const) try {
-          const result=createWorldSettlementLandmarkLayout(plan,town.id,planned,
-            {kind:town.kind,pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings);
-          layouts.push({id:`${town.id}-${site.id}-${pattern}-landmarks`,townId:town.id,candidateId:site.id,pattern,landmarks:result.landmarks});
-        } catch {}
-        if(!layouts.some(item=>item.townId===town.id)) throw new Error('world_no_landmark_layout:'+town.id);
+        const site=selected.get(town.id)!,townPlan=plan.towns.find(item=>item.id===town.id)!;
+        const key=`${town.id}:${site.id}:${town.pattern}:${townPlan.ports.map(port=>`${port.position[0]},${port.position[1]},${port.width}`).join('|')}`;
+        let landmarks=landmarkCache.get(key);
+        if(landmarks===undefined&&!landmarkCache.has(key)) {
+          try {
+            landmarks=createWorldSettlementLandmarkLayout(plan,town.id,planned,
+              {kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},town.publicBuildings).landmarks;
+            landmarkCache.set(key,landmarks);
+          } catch {landmarkCache.set(key,null);landmarks=null;}
+        } else if(landmarks) {
+          generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,
+            waterfrontBias:town.waterfrontBias??0,landmarks});
+        }
+        if(!landmarks) throw new Error('world_no_landmark_layout:'+town.id);
+        layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,candidateId:site.id,
+          pattern:town.pattern,landmarks});
       }
-      return layouts;
+      return {plan,sample:planned,layouts};
     } catch(error) {lastFailure=error instanceof Error?error.message:String(error);return null;}
   };
-  const chooseGraph=(roadIndex:number):WorldSitingEvidence['landmarkLayouts']|null=>{
+  const chooseGraph=(roadIndex:number):ValidatedGraph|null=>{
     if(roadIndex===intent.plan.roads.length) return validateGraph();
     const road=intent.plan.roads[roadIndex],fromExisting=selected.get(road.fromTownId),toExisting=selected.get(road.toTownId);
     const fromCandidates=fromExisting?[fromExisting]:towns.find(t=>t.id===road.fromTownId)!.candidates;
     const toCandidates=toExisting?[toExisting]:towns.find(t=>t.id===road.toTownId)!.candidates;
-    for(const from of fromCandidates) for(const to of toCandidates) {
+    const pairs:Array<[WorldSiteCandidate,WorldSiteCandidate]>=[];
+    for(let rank=0;rank<fromCandidates.length+toCandidates.length-1;rank++) for(let fromIndex=0;fromIndex<fromCandidates.length;fromIndex++) {
+      const toIndex=rank-fromIndex;
+      if(toIndex>=0&&toIndex<toCandidates.length) pairs.push([fromCandidates[fromIndex],toCandidates[toIndex]]);
+    }
+    for(const [from,to] of pairs) {
       const fits=(townId:string,candidate:WorldSiteCandidate)=>{const town=intent.plan.towns.find(item=>item.id===townId)!;return [...selected].every(([otherId,other])=>{
         if(otherId===townId) return true;
         const otherTown=intent.plan.towns.find(item=>item.id===otherId)!;
@@ -343,9 +376,9 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     return null;
   };
   if(intent.plan.roads.length) {
-    const layouts=chooseGraph(0);
-    if(!layouts) throw new Error(`${routeChecks>=128?'world_siting_search_budget':'world_no_candidate_graph'}:${lastFailure}`);
-    landmarkLayouts.push(...layouts);
+    const graph=chooseGraph(0);
+    if(!graph) throw new Error(`${routeChecks>=64||planChecks>=16?'world_siting_search_budget':'world_no_candidate_graph'}:${lastFailure}`);
+    landmarkLayouts.push(...graph.layouts);
     for(const town of towns) if(connectedTownIds.has(town.id)) town.candidates=[selected.get(town.id)!];
     for(const road of intent.plan.roads) {
       const pair=candidateRoute(road,selected.get(road.fromTownId)!,selected.get(road.toTownId)!)!;
@@ -377,7 +410,7 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
     } else if(item.landmarkLayoutId!==undefined) throw new Error('world_unexpected_landmark_layout:'+town.id);
   }
   if(chosen.size!==intent.plan.towns.length||intent.plan.towns.some(t=>!chosen.has(t.id))) throw new Error('world_site_choice_mismatch');
-  const sample=createWorldSampler(intent.plan.recipe),ports=new Map<string,Array<{id:string;guideId:string;position:[number,number];width:number}>>(),construction:WorldTerrainBrush[]=[];
+  const sample=cachedWorldSampler(createWorldSampler(intent.plan.recipe)),ports=new Map<string,Array<{id:string;guideId:string;position:[number,number];width:number}>>(),construction:WorldTerrainBrush[]=[];
   const roads=intent.plan.roads.map(road=>{
     const from=chosen.get(road.fromTownId)!,to=chosen.get(road.toTownId)!;
     if(!evidence.connections.some(item=>item.roadId===road.id&&item.fromCandidateId===from.id
@@ -405,11 +438,11 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
     const command=record(value,'invalid_world_settlement_command');
     if(typeof command.townId!=='string'||!command.options||typeof command.options!=='object') return command;
     const town=intent.plan.towns.find(item=>item.id===command.townId),layout=chosenLayouts.get(command.townId);
-    if(!town||!layout) return command;
+    if(!town) return command;
     const options=record(command.options,'invalid_world_settlement_options');
     if(options.landmarks!==undefined) throw new Error('world_layout_landmark_coordinates_forbidden:'+town.id);
-    if(options.kind!==town.kind||options.pattern!==layout.pattern||options.density!==town.density) throw new Error('world_layout_settlement_intent_mismatch:'+town.id);
-    return {...command,options:{...options,landmarks:layout.landmarks}};
+    if(options.kind!==town.kind||options.pattern!==town.pattern||options.density!==town.density) throw new Error('world_layout_settlement_intent_mismatch:'+town.id);
+    return layout?{...command,options:{...options,landmarks:layout.landmarks}}:command;
   });
   const draftInput={plan,settlements:selectedSettlements,assets:root.assets};
   try {return compileWorldDraft(draftInput,request);}
@@ -435,7 +468,7 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
   if (rawPlan.prompt !== request.prompt) throw new Error('world_prompt_request_mismatch');
   if (rawRecipe.seed !== request.seed || rawRecipe.size !== request.size) throw new Error('world_recipe_request_mismatch');
   const recipe = validateWorldRecipe(rawRecipe as unknown as WorldPlan['recipe']);
-  const sample = createWorldSampler(recipe);
+  const sample = cachedWorldSampler(createWorldSampler(recipe));
   if (!Array.isArray(rawPlan.towns)) throw new Error('invalid_world_draft');
   const towns = rawPlan.towns.map(townInput => {
     const town = record(townInput, 'invalid_world_draft');
@@ -582,10 +615,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     let draft:unknown;
     try {
       draft=parseJson(content);
-      const object=draft&&typeof draft==='object'&&!Array.isArray(draft)?draft as Record<string,unknown>:undefined;
-      // Accept stored pre-siting drafts through the strict legacy compiler; new generations use intent -> sampled choice.
-      if(object&&Array.isArray(object.settlements)&&Array.isArray(object.assets)) compiled=compileWorldDraft(draft,request);
-      else intent=parseWorldIntentDraft(draft,request);
+      intent=parseWorldIntentDraft(draft,request);
       break;
     }
     catch(error) {

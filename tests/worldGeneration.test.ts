@@ -51,12 +51,25 @@ function rawSeedIntent() {
     },
     ecology: [],
     towns: [
-      {id:'spring-town',name:'Spring Town',prompt:'A compact caravan town beside the spring',radius:130,blend:80,terrainMode:'conform',region:'center',kind:'city',density:.45,waterfrontBias:.7,targetWaterBodyId:'fresh-spring',
+      {id:'spring-town',name:'Spring Town',prompt:'A compact caravan town beside the spring',radius:130,blend:80,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.45,waterfrontBias:.7,targetWaterBodyId:'fresh-spring',
         publicBuildings:[{id:'market',use:'public market',width:12,depth:10,height:6,assetKey:'market',enterable:true}]},
-      {id:'fishing-village',name:'Fishing Village',prompt:'A small fishing village on the landward side of the coast',radius:100,blend:80,terrainMode:'conform',region:'west',kind:'village',density:.4,waterfrontBias:.85,targetWaterBodyId:'sea',publicBuildings:[]}
+      {id:'fishing-village',name:'Fishing Village',prompt:'A small fishing village on the landward side of the coast',radius:100,blend:80,terrainMode:'conform',region:'west',kind:'village',pattern:'organic',density:.4,waterfrontBias:.85,targetWaterBodyId:'sea',publicBuildings:[]}
     ],
     roads: [{id:'trade-road',name:'Fish and caravan road',fromTownId:'fishing-village',toTownId:'spring-town',width:4,tags:['trade-route']}]
   }};
+}
+
+function rawSoloIntent(input:WorldGenerationRequest=request) {
+  return {plan:{version:1,id:'generated-world',revision:1,prompt:input.prompt,
+    recipe:{version:1,seed:input.seed,size:input.size,heightScale:.1,constraints:[{region:'center',biome:'grassland'}]},
+    ecology:[],roads:[],towns:[{id:'market-town',name:'Market Town',prompt:'A compact market town',radius:100,
+      blend:64,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.8,publicBuildings:[]}]}};
+}
+
+function soloLayout(input:WorldGenerationRequest=request) {
+  const intent=parseWorldIntentDraft(rawSoloIntent(input),input),evidence=createWorldSitingEvidence(intent);
+  return {intent,evidence,layout:{towns:[{townId:'market-town',candidateId:evidence.towns[0].candidates[0].id}],
+    settlements:[{townId:'market-town',options:{kind:'city',pattern:'organic',density:.8}}],assets:[]}};
 }
 
 function reusableAsset(id = 'asset-existing'): MapAsset {
@@ -124,16 +137,18 @@ describe('world generation compiler', () => {
       .toThrow('invalid_world_generation_request');
   });
 
-  it('repairs an invalid GPT draft once and returns geometry audits', async () => {
-    const draft = validDraft();
+  it('repairs an invalid GPT intent once and returns geometry audits', async () => {
+    const {intent,layout}=soloLayout();
     mocks.llmChat
-      .mockResolvedValueOnce(JSON.stringify({ ...draft, accidentalTopology: true }))
-      .mockResolvedValueOnce(JSON.stringify(draft));
+      .mockResolvedValueOnce(JSON.stringify({ ...rawSoloIntent(), accidentalTopology: true }))
+      .mockResolvedValueOnce(JSON.stringify(rawSoloIntent()))
+      .mockResolvedValueOnce(JSON.stringify(layout));
 
     const result = await generateWorld({...request,repairAttempts:1}, {} as MapStore);
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     const repairMessages = mocks.llmChat.mock.calls[1][0] as Array<{ role: string; content: string }>;
-    expect(JSON.parse(repairMessages.at(-1)!.content).error).toBe('world_unknown_draft_field:accidentalTopology');
+    expect(JSON.parse(repairMessages.at(-1)!.content).error).toBe('world_unknown_intent_field:accidentalTopology');
+    expect(result.bundle.plan.id).toBe(intent.plan.id);
     expect(result.bundle.plan.recipe.heightScale).toBe(0.1);
     expect(result.diagnostics[0]).toEqual(expect.objectContaining({
       townId: 'market-town', buildingCount: expect.any(Number), roadSurfaceArea: expect.any(Number),
@@ -150,7 +165,8 @@ describe('world generation compiler', () => {
   });
 
   it('shows GPT only the requested reusable catalog without model payloads', async () => {
-    mocks.llmChat.mockResolvedValue(JSON.stringify(validDraft()));
+    const {layout}=soloLayout();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(layout));
     const asset = reusableAsset();
     const store = { loadAsset: vi.fn().mockResolvedValue(asset) } as unknown as MapStore;
     await generateWorld({ ...request, reusableAssetIds: [asset.id] }, store);
@@ -173,12 +189,19 @@ describe('world generation compiler', () => {
     expect(result.bundle.patches).toEqual([]);
   });
 
+  it('normalizes a pre-pattern Stage1 town to organic before enforcing the layout choice', () => {
+    const raw=rawSoloIntent() as any;
+    delete raw.plan.towns[0].pattern;
+    const intent=parseWorldIntentDraft(raw,request);
+    expect(intent.plan.towns[0].pattern).toBe('organic');
+  });
+
   it('offers sampled public-building layouts for a town without external roads', () => {
     const input:WorldGenerationRequest={prompt:'A self-contained hill market',seed:2309,size:1600,generateAssets:false};
     const raw={plan:{version:1,id:'solo-market',revision:1,prompt:input.prompt,
       recipe:{version:1,seed:input.seed,size:input.size,heightScale:.1,constraints:[{region:'center',biome:'grassland'}]},
       ecology:[],roads:[],towns:[{id:'market-town',name:'Market Town',prompt:'A compact inland market town',
-        radius:100,blend:64,terrainMode:'conform',region:'center',kind:'city',density:.65,publicBuildings:[
+        radius:100,blend:64,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.65,publicBuildings:[
           {id:'market',use:'covered public market',width:12,depth:10,height:6,assetKey:'market',enterable:true}
         ]}]}};
     const intent=parseWorldIntentDraft(raw,input),evidence=createWorldSitingEvidence(intent);
@@ -195,12 +218,12 @@ describe('world generation compiler', () => {
   it('keeps one shared candidate graph for a three-town chain at 500 metres', () => {
     const input:WorldGenerationRequest={prompt:'Three close grassland settlements linked in a chain',seed:91,size:500,generateAssets:false};
     const makeTown=(id:string,region:'west'|'center'|'east',publicBuildings:unknown[]=[])=>({id,name:id,prompt:id,
-      radius:50,blend:50,terrainMode:'conform',region,kind:'village',density:.3,publicBuildings});
+      radius:50,blend:50,terrainMode:'conform',region,kind:'village',pattern:'organic',density:.3,publicBuildings});
     const raw={plan:{version:1,id:'three-town-chain',revision:1,prompt:input.prompt,
       recipe:{version:1,seed:input.seed,size:input.size,heightScale:.02,constraints:[
         {region:'west',biome:'grassland'},{region:'center',biome:'grassland'},{region:'east',biome:'grassland'}]},
-      ecology:[],towns:[makeTown('a','west'),makeTown('b','center',[{id:'well',use:'public well',width:6,depth:6,height:4,assetKey:'well'}]),
-        makeTown('c','east')],roads:[
+      ecology:[],towns:[makeTown('a','west'),makeTown('b','center',[
+        {id:'well',use:'public well',width:6,depth:6,height:4,assetKey:'well'}]),makeTown('c','east')],roads:[
         {id:'ab',name:'A to B',fromTownId:'a',toTownId:'b',width:3,tags:['path']},
         {id:'bc',name:'B to C',fromTownId:'b',toTownId:'c',width:3,tags:['path']}
       ]}};
@@ -211,24 +234,40 @@ describe('world generation compiler', () => {
       .toBe(evidence.connections.find(connection=>connection.roadId==='bc')!.fromCandidateId);
     expect(evidence.towns.every(town=>town.candidates.length===1)).toBe(true);
     const landmarkLayout=evidence.landmarkLayouts.find(item=>item.townId==='b'&&item.pattern==='organic')!;
+    expect(landmarkLayout.landmarks).toEqual([expect.objectContaining({id:'well',assetKey:'well'})]);
     const choices=evidence.towns.map(town=>({townId:town.id,candidateId:town.candidates[0].id,
       ...(town.id==='b'?{landmarkLayoutId:landmarkLayout.id}:{})}));
-    expect(()=>materializeWorldIntent(intent,evidence,{towns:choices,settlements:intent.plan.towns.map(town=>({townId:town.id,
+    const layout={towns:choices,settlements:intent.plan.towns.map(town=>({townId:town.id,
       options:{kind:'village',pattern:'organic',density:.3}})),assets:[{key:'well',name:'Well',role:'landmark',
-      prompt:'A small public well',dimensions:[6,4,6],strategy:'single'}]},input)).not.toThrow();
+        prompt:'A small public well',dimensions:[6,4,6],strategy:'single'}]};
+    expect(()=>materializeWorldIntent(intent,evidence,layout,input)).not.toThrow();
+    const changed=structuredClone(layout);
+    changed.settlements[0].options.density=.9;
+    expect(()=>materializeWorldIntent(intent,evidence,changed,input)).toThrow('world_layout_settlement_intent_mismatch:a');
+  },15_000);
+
+  it('validates a no-public grid town and rejects a Stage2 pattern change', () => {
+    const raw=rawSoloIntent() as any;
+    raw.plan.towns[0].pattern='grid';
+    const intent=parseWorldIntentDraft(raw,request),evidence=createWorldSitingEvidence(intent),candidate=evidence.towns[0].candidates[0];
+    const layout={towns:[{townId:'market-town',candidateId:candidate.id}],settlements:[{townId:'market-town',
+      options:{kind:'city',pattern:'grid',density:.8}}],assets:[]};
+    expect(()=>materializeWorldIntent(intent,evidence,layout,request)).not.toThrow();
+    layout.settlements[0].options.pattern='organic';
+    expect(()=>materializeWorldIntent(intent,evidence,layout,request)).toThrow('world_layout_settlement_intent_mismatch:market-town');
   },15_000);
 
   it('fails after the single repair instead of accepting changed request semantics', async () => {
-    const draft = validDraft();
-    draft.plan.prompt = 'Silently changed destination';
-    mocks.llmChat.mockResolvedValue(JSON.stringify(draft));
+    const intent = rawSoloIntent();
+    intent.plan.prompt = 'Silently changed destination';
+    mocks.llmChat.mockResolvedValue(JSON.stringify(intent));
     await expect(generateWorld({...request,repairAttempts:1}, {} as MapStore)).rejects.toThrow('world_prompt_request_mismatch');
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps the first rejected output without a hidden retry by default', async () => {
-    mocks.llmChat.mockResolvedValue(JSON.stringify({...validDraft(), unexpected: true}));
-    await expect(generateWorld(request, {} as MapStore)).rejects.toThrow('world_unknown_draft_field:unexpected');
+  it('rejects a legacy-shaped live response instead of bypassing sampled siting', async () => {
+    mocks.llmChat.mockResolvedValue(JSON.stringify(validDraft()));
+    await expect(generateWorld(request, {} as MapStore)).rejects.toThrow('world_unknown_intent_field:settlements');
     expect(mocks.llmChat).toHaveBeenCalledTimes(1);
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
   });
