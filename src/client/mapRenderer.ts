@@ -166,7 +166,7 @@ export interface MapRenderOptions {
   /** Derived world chunks use smaller bounded textures; ordinary maps keep the 1536 default. */
   terrainTextureSize?: number;
   /** Streamed interior chunks omit the closed-map vertical border skirt. */
-  terrainBorderSides?: boolean;
+  terrainBorderSides?: boolean | readonly TerrainBorderSide[];
   /** Optional shallow streamed-tile skirt depth; ordinary maps retain their authored base. */
   terrainBorderDepth?: number;
   /** Content-only chunks keep the original object/road renderer without drawing duplicate terrain. */
@@ -180,6 +180,8 @@ export interface MapRenderOptions {
   /** Derived object-free terrain chunks skip object, light, grass, and culling updates. */
   terrainOnly?: boolean;
 }
+
+export type TerrainBorderSide = 'north' | 'south' | 'west' | 'east';
 
 export interface MapMotionController {
   update(deltaTime: number, elapsedSeconds: number): void;
@@ -505,7 +507,8 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       currentMap = next;
       terrain.geometry.dispose();
       const nextCoast = mapOceanCoast(next);
-      terrain.geometry = buildTerrainGeometry(next, nextCoast, terrainBorderSides, terrainBorderDepth, terrainSurfaceWeight);
+      terrain.geometry = buildTerrainGeometry(next, nextCoast, terrainSurfaceWeight);
+      replaceTerrainSkirt(terrain, next, terrainBorderSides, terrainBorderDepth, terrainSurfaceWeight);
       refreshStructuredWaterTerrain(waterRoot, next, nextCoast);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
@@ -934,11 +937,11 @@ function buildTerrain(
   map: EditableMap,
   coast: OceanCoastField | null,
   textureSize: number,
-  borderSides: boolean,
+  borderSides: boolean | readonly TerrainBorderSide[],
   borderDepth: number | undefined,
   surfaceWeight?: TerrainSurfaceWeightSampler
 ): THREE.Mesh {
-  const geometry = buildTerrainGeometry(map, coast, borderSides, borderDepth, surfaceWeight);
+  const geometry = buildTerrainGeometry(map, coast, surfaceWeight);
   const textures = createTerrainTextureSet(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, undefined, textureSize, surfaceWeight);
   const material = new THREE.MeshStandardMaterial({
     map: textures.map,
@@ -960,7 +963,30 @@ function buildTerrain(
   mesh.userData.surface = 'terrain';
   mesh.userData.terrainTextureChannels = ['color', 'roughness', 'bump', 'normal'];
   mesh.userData.sandFlow = installTerrainSandShader(material, map, textureSize, surfaceWeight);
+  replaceTerrainSkirt(mesh, map, borderSides, borderDepth, surfaceWeight);
   return mesh;
+}
+
+function replaceTerrainSkirt(
+  terrain: THREE.Mesh,
+  map: EditableMap,
+  borderSides: boolean | readonly TerrainBorderSide[],
+  borderDepth: number | undefined,
+  surfaceWeight?: TerrainSurfaceWeightSampler
+): void {
+  const previous = terrain.getObjectByName('terrain-skirt') as THREE.Mesh | undefined;
+  if (previous) {
+    previous.removeFromParent();
+    previous.geometry.dispose();
+  }
+  const geometry = buildTerrainSkirtGeometry(map, borderSides, borderDepth, surfaceWeight);
+  if (!geometry) return;
+  const skirt = new THREE.Mesh(geometry, terrain.material);
+  skirt.name = 'terrain-skirt';
+  skirt.castShadow = false;
+  skirt.receiveShadow = true;
+  skirt.raycast = () => {};
+  terrain.add(skirt);
 }
 
 interface TerrainSandFlowState {
@@ -1695,8 +1721,6 @@ function pushUpwardTriangle(
 function buildTerrainGeometry(
   map: EditableMap,
   coast: OceanCoastField | null,
-  borderSides = true,
-  borderDepth?: number,
   surfaceWeight?: TerrainSurfaceWeightSampler
 ): THREE.BufferGeometry {
   const terrain = map.terrain;
@@ -1724,10 +1748,6 @@ function buildTerrainGeometry(
       for (const triangle of triangles) pushUpwardTriangle(indices, vertices, ...triangle);
     }
   }
-  if (!coast && borderSides) {
-    if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map, borderDepth);
-    else addMaskBorderSides(vertices, uvs, indices, map);
-  }
   const colors: number[] = [];
   for (let index = 0; index < vertices.length; index += 3) {
     // A derived underwater slope is a top surface, not a dark vertical skirt.
@@ -1752,6 +1772,33 @@ function buildTerrainGeometry(
   return geometry;
 }
 
+function buildTerrainSkirtGeometry(
+  map: EditableMap,
+  borderSides: boolean | readonly TerrainBorderSide[],
+  borderDepth?: number,
+  surfaceWeight?: TerrainSurfaceWeightSampler
+): THREE.BufferGeometry | null {
+  if (borderSides === false || (Array.isArray(borderSides) && borderSides.length === 0)) return null;
+  const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
+  if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map, borderDepth, borderSides);
+  else addMaskBorderSides(vertices, uvs, indices, map);
+  if (!indices.length) return null;
+  const colors: number[] = [];
+  for (let index = 0; index < vertices.length; index += 3) {
+    colors.push(...terrainVertexColor(
+      map, vertices[index], vertices[index + 1], vertices[index + 2], undefined, undefined,
+      Boolean(surfaceWeight), surfaceWeight
+    ));
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 interface OceanTerrainBinding {
   texture: THREE.DataTexture;
   terrainSize: [number, number];
@@ -1771,7 +1818,8 @@ function addBorderSides(
   uvs: number[],
   indices: number[],
   map: EditableMap,
-  depth?: number
+  depth?: number,
+  sides: boolean | readonly TerrainBorderSide[] = true
 ): void {
   const terrain = map.terrain;
   // Carved lake basins push heights below zero, so the skirt has to reach the
@@ -1781,13 +1829,15 @@ function addBorderSides(
     const edgeBase = depth === undefined ? base : Math.min(a[1], b[1]) - Math.max(0.1, depth);
     addSideToBase(vertices, uvs, indices, map, edgeBase, a, b);
   };
+  const hasSide = (side: TerrainBorderSide): boolean => sides === true
+    || (sides !== false && sides.includes(side));
   for (let x = 0; x < terrain.resolutionX - 1; x += 1) {
-    addBorder(terrainPointAt(map, x, 0), terrainPointAt(map, x + 1, 0));
-    addBorder(terrainPointAt(map, x, terrain.resolutionZ - 1), terrainPointAt(map, x + 1, terrain.resolutionZ - 1));
+    if (hasSide('north')) addBorder(terrainPointAt(map, x, 0), terrainPointAt(map, x + 1, 0));
+    if (hasSide('south')) addBorder(terrainPointAt(map, x, terrain.resolutionZ - 1), terrainPointAt(map, x + 1, terrain.resolutionZ - 1));
   }
   for (let z = 0; z < terrain.resolutionZ - 1; z += 1) {
-    addBorder(terrainPointAt(map, 0, z), terrainPointAt(map, 0, z + 1));
-    addBorder(terrainPointAt(map, terrain.resolutionX - 1, z), terrainPointAt(map, terrain.resolutionX - 1, z + 1));
+    if (hasSide('west')) addBorder(terrainPointAt(map, 0, z), terrainPointAt(map, 0, z + 1));
+    if (hasSide('east')) addBorder(terrainPointAt(map, terrain.resolutionX - 1, z), terrainPointAt(map, terrain.resolutionX - 1, z + 1));
   }
 }
 
@@ -3120,7 +3170,10 @@ function drawSemanticTerrainSurface(
       : Math.min(0.24, 0.08 + zone.intensity * 0.12);
     drawSemanticZoneShape(ctx, map, zone, recipeColor ?? SEMANTIC_SURFACE_COLORS[tag], opacity, width, height);
   }
-  for (const water of map.waterBodies) drawWetShore(ctx, map, water, width, height);
+  for (const water of map.waterBodies) {
+    // Streamed ocean ownership is a render-runtime detail, not an authored shoreline.
+    if (water.id !== 'world-ocean') drawWetShore(ctx, map, water, width, height);
+  }
 }
 
 function drawTerrainMaterialZones(

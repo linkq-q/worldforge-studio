@@ -253,6 +253,51 @@ describe('procedural foundation rendering', () => {
 });
 
 describe('structured map water rendering', () => {
+  it('does not paint the streamed ocean-owner tile as an authored wet shoreline', async () => {
+    let strokes = 0;
+    vi.stubGlobal('document', {
+      createElement: () => {
+        const canvas = { width: 0, height: 0 } as HTMLCanvasElement;
+        const context = new Proxy({ canvas } as unknown as CanvasRenderingContext2D, {
+          get: (target, property) => {
+            if (property === 'stroke') return () => { strokes += 1; };
+            if (property === 'getImageData' || property === 'createImageData') {
+              return () => ({ data: new Uint8ClampedArray(canvas.width * canvas.height * 4), width: canvas.width, height: canvas.height });
+            }
+            if (property === 'createLinearGradient' || property === 'createRadialGradient') return () => ({ addColorStop: () => {} });
+            if (property === 'measureText') return () => ({ width: 0 });
+            return Reflect.get(target, property) ?? (() => {});
+          },
+          set: (target, property, value) => { Reflect.set(target, property, value); return true; }
+        });
+        Object.assign(canvas, { getContext: () => context });
+        return canvas;
+      }
+    });
+    const render = async (waterBodies: ReturnType<typeof createEmptyMap>['waterBodies']): Promise<number> => {
+      strokes = 0;
+      const map = createEmptyMap();
+      map.waterBodies = waterBodies;
+      const rendered = await buildEditableMapGroup(map, {
+        terrainOnly: true, terrainTextureSize: 32, terrainBorderSides: false, oceanCoast: false
+      });
+      rendered.dispose();
+      return strokes;
+    };
+    const baseline = await render([]);
+    const ocean = await render([{
+      id: 'world-ocean', name: 'ocean owner', type: 'ocean', level: 0, depth: 12, width: 64,
+      points: [[-32, -32], [32, -32], [32, 32], [-32, 32]]
+    }]);
+    const lake = await render([{
+      id: 'lake', name: 'lake', type: 'lake', level: 2, depth: 3, width: 1,
+      points: [[-8, -8], [8, -8], [8, 8], [-8, 8]]
+    }]);
+
+    expect(ocean).toBe(baseline);
+    expect(lake).toBeGreaterThan(baseline);
+  });
+
   it('renders the map as an open terrain plane without enclosure faces', async () => {
     const rendered = await buildEditableMapGroup(createEmptyMap('open-map', 'map-open-plane'));
     const surfaces: string[] = [];

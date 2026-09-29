@@ -24,7 +24,8 @@ import {
   buildNormalizedEditableMapGroupCore,
   type MapRenderOptions,
   type RenderedMap,
-  type RenderedMapDebugStats
+  type RenderedMapDebugStats,
+  type TerrainBorderSide
 } from './mapRenderer';
 import {
   buildMapMeshCollisionWorld,
@@ -239,8 +240,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const oceanOwner = tiles.find(tile => tileContains(tile, focusX, focusZ));
     const desiredTerrain = new Map(tiles.map(tile => {
       const logicalKey = tileKey(tile);
-      const signature = `${logicalKey}|o${oceanOwner === tile ? 1 : 0}`;
-      return [logicalKey, { tile, signature, ocean: oceanOwner === tile }] as const;
+      const skirtSides = terrainSkirtSides(tile, tiles);
+      const signature = `${logicalKey}|o${oceanOwner === tile ? 1 : 0}|s${skirtSides.join('.')}`;
+      return [logicalKey, { tile, signature, ocean: oceanOwner === tile, skirtSides }] as const;
     }));
     const desiredContent = new Map(contentChunks.map(chunk => [ecologyKey(chunk), chunk] as const));
     const allMissingTerrain = [...desiredTerrain.entries()]
@@ -276,7 +278,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     }
     for (let index = 0; index < missingTerrain.length && !disposed; index += terrainBatchSize) {
       const batch = missingTerrain.slice(index, index + terrainBatchSize);
-      const results = await Promise.allSettled(batch.map(async ([key, value]) => [key, await buildTerrainEntry(value.tile, value.signature, value.ocean)] as const));
+      const results = await Promise.allSettled(batch.map(async ([key, value]) => [key, await buildTerrainEntry(
+        value.tile, value.signature, value.ocean, value.skirtSides
+      )] as const));
       for (const result of results) if (result.status === 'fulfilled') builtTerrain.set(result.value[0], result.value[1]);
       pendingTiles -= results.length;
       const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
@@ -328,7 +332,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   async function buildTerrainEntry(
     tile: WorldTile,
     signature: string,
-    includeOcean: boolean
+    includeOcean: boolean,
+    skirtSides: readonly TerrainBorderSide[]
   ): Promise<TileEntry> {
     const buildStartedAt = performance.now();
     const centerX = tile.x + tile.size / 2;
@@ -342,12 +347,13 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       ...options,
       editorHelpers: false,
       terrainTextureSize: textureSize,
-      terrainBorderSides: true,
+      terrainBorderSides: skirtSides,
       terrainBorderDepth: 4,
       oceanCoast: false,
       terrainOnly: true,
       terrainSurfaceWeight: (x, z, tags) => tileBiomeSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
     });
+    applyWorldTerrainEdgeNormals(rendered.group, tile, centerX, centerZ);
     const renderedAt = performance.now();
     applyStyle(rendered, tileMap, tile);
     const terrainMount = new THREE.Group();
@@ -440,6 +446,25 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       assets: [],
       collisionBake: undefined
     };
+  }
+
+  function applyWorldTerrainEdgeNormals(group: THREE.Object3D, tile: WorldTile, centerX: number, centerZ: number): void {
+    const terrain = group.getObjectByName('terrain') as THREE.Mesh | undefined;
+    const positions = terrain?.geometry.getAttribute('position');
+    const normals = terrain?.geometry.getAttribute('normal');
+    if (!terrain || !positions || !normals) return;
+    const half = tile.size / 2;
+    const epsilon = 4;
+    for (let index = 0; index < positions.count; index += 1) {
+      const x = positions.getX(index), z = positions.getZ(index);
+      if (Math.abs(Math.abs(x) - half) > 1e-5 && Math.abs(Math.abs(z) - half) > 1e-5) continue;
+      const worldX = centerX + x, worldZ = centerZ + z;
+      const dx = sample(worldX + epsilon, worldZ).height - sample(worldX - epsilon, worldZ).height;
+      const dz = sample(worldX, worldZ + epsilon).height - sample(worldX, worldZ - epsilon).height;
+      const length = Math.hypot(dx, epsilon * 2, dz);
+      normals.setXYZ(index, -dx / length, epsilon * 2 / length, -dz / length);
+    }
+    normals.needsUpdate = true;
   }
 
   function makeContentMap(tile: WorldTile, heights: Float32Array, chunk: EcologyChunk): EditableMap {
@@ -1017,6 +1042,23 @@ function contentEntryTile(entry: ContentEntry): WorldTile {
 function pointEcologyKey(x: number, z: number): string { return `${Math.floor(x / 256)}:${Math.floor(z / 256)}`; }
 function tileContains(tile: WorldTile, x: number, z: number): boolean {
   return x >= tile.x && x < tile.x + tile.size && z >= tile.z && z < tile.z + tile.size;
+}
+function terrainSkirtSides(tile: WorldTile, tiles: readonly WorldTile[]): TerrainBorderSide[] {
+  const result = new Set<TerrainBorderSide>();
+  const epsilon = 1e-6;
+  const overlaps = (a0: number, a1: number, b0: number, b1: number): boolean => Math.min(a1, b1) - Math.max(a0, b0) > epsilon;
+  for (const neighbor of tiles) {
+    if (neighbor === tile || neighbor.size <= tile.size) continue;
+    if (Math.abs(tile.z - (neighbor.z + neighbor.size)) <= epsilon
+      && overlaps(tile.x, tile.x + tile.size, neighbor.x, neighbor.x + neighbor.size)) result.add('north');
+    if (Math.abs(tile.z + tile.size - neighbor.z) <= epsilon
+      && overlaps(tile.x, tile.x + tile.size, neighbor.x, neighbor.x + neighbor.size)) result.add('south');
+    if (Math.abs(tile.x - (neighbor.x + neighbor.size)) <= epsilon
+      && overlaps(tile.z, tile.z + tile.size, neighbor.z, neighbor.z + neighbor.size)) result.add('west');
+    if (Math.abs(tile.x + tile.size - neighbor.x) <= epsilon
+      && overlaps(tile.z, tile.z + tile.size, neighbor.z, neighbor.z + neighbor.size)) result.add('east');
+  }
+  return (['north', 'south', 'west', 'east'] as const).filter(side => result.has(side));
 }
 function chunkIntersectsTile(chunk: EcologyChunk, tile: WorldTile): boolean {
   const x = chunk.x * 256, z = chunk.z * 256;
