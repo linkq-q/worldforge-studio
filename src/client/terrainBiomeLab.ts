@@ -53,7 +53,7 @@ let lastError = '';
 let playerState: WorldWalkState | undefined;
 const walk = new WorldWalkController({
   canvas, camera,
-  getWorld: () => generation ? { size: recipe.size, sample, colliders: content.colliders, meshCollision: content.collisionWorld } : undefined,
+  getWorld: () => generation ? { size: recipe.size, sample:content.sampleSurface, colliders: content.colliders, meshCollision: content.collisionWorld } : undefined,
   onActiveChange(active) {
     controls.enabled = !active; element<HTMLButtonElement>('play').textContent = active ? '退出游玩' : '进入游玩';
     element('play-help').hidden = !active; playerState = undefined; lodDirty = true;
