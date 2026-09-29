@@ -79,6 +79,11 @@ describe('main editor streamed world renderer', () => {
   });
 
   it('does not add terrain skirts between equal-LOD tiles', async () => {
+    let paintYields = 0;
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      setTimeout(() => { paintYields += 1; callback(performance.now()); }, 0);
+      return paintYields + 1;
+    }));
     const map = createEmptyMap();
     map.world = { bundle: smallBundle, assets: [] };
     map.box.size = [500, 4096, 500];
@@ -89,6 +94,7 @@ describe('main editor streamed world renderer', () => {
         if (object.name === 'terrain' && object.visible) terrains.push(object as THREE.Mesh);
       });
       expect(terrains).toHaveLength(16);
+      expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);
       const edges = new Map<string, { y: number; normal: THREE.Vector3 }>();
