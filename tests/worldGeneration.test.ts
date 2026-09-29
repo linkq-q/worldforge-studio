@@ -117,6 +117,24 @@ describe('world generation compiler', () => {
     expect(intent.plan.recipe).not.toHaveProperty('reliefProfile');
   });
 
+  it('keeps all intent fields when GPT places towns and roads beside plan', () => {
+    const source = rawSoloIntent();
+    const { towns, roads, ...plan } = source.plan;
+    const parsed = parseWorldIntentDraft({ plan, towns, roads }, request);
+    expect(parsed.plan.towns.map(town => town.id)).toEqual(['market-town']);
+    expect(parsed.plan.roads).toEqual([]);
+    expect(() => parseWorldIntentDraft({ plan, towns, roads, extra: true }, request))
+      .toThrow('world_unknown_intent_field:towns');
+  });
+
+  it('accepts one surplus closing brace only when the remaining JSON is complete', async () => {
+    const { layout } = soloLayout();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent()) + '}')
+      .mockResolvedValueOnce(JSON.stringify(layout));
+    const result = await generateWorld(request, {} as MapStore);
+    expect(result.bundle.plan.towns).toHaveLength(1);
+  });
+
   it('rejects semantic fields that would otherwise be silently overwritten or ignored', () => {
     const extra = { ...validDraft(), topology: 'keep me' };
     expect(() => compileWorldDraft(extra, request)).toThrow('world_unknown_draft_field:topology');

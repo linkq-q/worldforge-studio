@@ -117,7 +117,15 @@ assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimens
 Limits: <=12 towns, <=8 ecology rules, <=32 world roads, <=16 landforms. Return a new preview, never assume visual acceptance. A failed first output is preserved without retry by default. Only an explicitly enabled repair can provide sampled terrain evidence for one correction; never invent sampled values.`;
 
 function parseJson(text: string): unknown {
-  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+  const content = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  try { return JSON.parse(content); }
+  catch (error) {
+    // A complete JSON object followed by one surplus closer changes no field.
+    if (content.endsWith('}')) {
+      try { return JSON.parse(content.slice(0, -1).trimEnd()); } catch { /* keep the original error */ }
+    }
+    throw error;
+  }
 }
 function record(input: unknown, code: string): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error(code);
@@ -159,7 +167,20 @@ function finite(input: unknown, min: number, max: number, code: string): number 
 }
 
 export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRequest): WorldIntentDraft {
-  const root = exactRecord(structuredClone(input), ['plan'], 'invalid_world_intent', 'world_unknown_intent_field');
+  const candidate = structuredClone(input);
+  const wrapper = record(candidate, 'invalid_world_intent');
+  if (Object.keys(wrapper).length === 3 && Object.hasOwn(wrapper, 'plan')
+    && Object.hasOwn(wrapper, 'towns') && Object.hasOwn(wrapper, 'roads')) {
+    const plan = record(wrapper.plan, 'invalid_world_intent');
+    if (!Object.hasOwn(plan, 'towns') && !Object.hasOwn(plan, 'roads')) {
+      plan.towns = wrapper.towns;
+      plan.roads = wrapper.roads;
+      delete wrapper.towns;
+      delete wrapper.roads;
+      recordGenerationTrace('world.intent-wrapper-corrected', { moved: ['towns', 'roads'] });
+    }
+  }
+  const root = exactRecord(wrapper, ['plan'], 'invalid_world_intent', 'world_unknown_intent_field');
   const raw = exactRecord(root.plan, ['version','id','revision','prompt','recipe','ecology','towns','roads'],
     'invalid_world_intent','world_unknown_intent_plan_field');
   if (raw.version !== 1 || raw.prompt !== request.prompt) throw new Error('world_prompt_request_mismatch');
