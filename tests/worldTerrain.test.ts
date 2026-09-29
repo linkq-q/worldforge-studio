@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createWorldSampler, dominantBiome, parseWorldPrompt, sampleWorldSlope, sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES, type WorldRecipe } from '../src/shared/worldTerrain';
+import { createWorldSampler, createWorldTerrainContext, dominantBiome, parseWorldPrompt, sampleWorldSlope,
+  sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
+  type WorldRecipe } from '../src/shared/worldTerrain';
+import { waterBoundaryContainsPoint, waterBoundaryDistance } from '../src/shared/mapWater';
 
 describe('continuous biome world experiment', () => {
   it('turns the requested sentence into explicit directional constraints', () => {
@@ -143,14 +146,43 @@ describe('composable world terrain operations', () => {
       waterBodies: [{ id: 'oasis', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 }, levels: [level], depth: 6 }],
       biomePatches: [{ id: 'oasis-green', region: { kind: 'circle', center: [0, 0], radius: 90 }, biome: 'forest', feather: 20 }]
     });
-    const sample = createWorldSampler(recipe), center = sample(0, 0), outside = sample(200, 0);
+    const sample = createWorldSampler(recipe), center = sample(0, 0), outside = sample(250, 0);
     expect(center).toMatchObject({ waterLevel: level, waterBodyId: 'oasis' });
     expect(center.height).toBeCloseTo(level - 6, 10);
-    expect(outside).toEqual(base(200, 0));
+    expect(outside).toEqual(base(250, 0));
     expect(sample(70, 0).weights.forest).toBe(1);
     const tile = sampleWorldTile(recipe, { x: -50, z: -50, size: 100 }, 11, sample);
     expect(tile.waterLevels[5 * 11 + 5]).toBeCloseTo(level, 4);
     expect(Number.isNaN(tile.waterLevels[0])).toBe(true);
+  });
+
+  it('shares one deterministic natural lake boundary across sampling, water geometry, ecology distance and tile seams', () => {
+    const recipe = validateWorldRecipe({ ...original, waterBodies: [{
+      id: 'oasis', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },
+      levels: [100], depth: 6
+    }] });
+    expect(recipe.waterBodies?.[0]).toMatchObject({
+      shorelineSmoothness: 0.82,
+      shorelineIrregularity: 0.16
+    });
+    const context = createWorldTerrainContext(recipe), water = context.waterBodies[0];
+    expect(water.boundary).toEqual(water.mapWater.points);
+    const radii = water.boundary.map(([x, z]) => Math.hypot(x, z));
+    expect(Math.max(...radii) - Math.min(...radii)).toBeGreaterThan(2);
+    for (let index = 0; index < 16; index += 1) for (const radius of [30, 36, 44, 50]) {
+      const angle = index / 16 * Math.PI * 2, x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
+      expect(context.sample(x, z).waterBodyId === 'oasis')
+        .toBe(waterBoundaryContainsPoint(water.boundary, x, z));
+    }
+    const outside: [number, number] = [60, 0];
+    expect(context.freshWaterDistance(...outside)).toBeCloseTo(
+      waterBoundaryDistance(water.boundary, ...outside), 10
+    );
+    const left = sampleWorldTile(recipe, { x: -100, z: -50, size: 100 }, 11, context.sample);
+    const right = sampleWorldTile(recipe, { x: 0, z: -50, size: 100 }, 11, context.sample);
+    expect(left.waterLevels[5 * 11 + 10]).toBe(right.waterLevels[5 * 11]);
+    const changed = createWorldTerrainContext({ ...recipe, waterBodies: [{ ...recipe.waterBodies![0], seed: 123 }] });
+    expect(changed.waterBodies[0].boundary).not.toEqual(water.boundary);
   });
 
   it('interpolates river levels along path control points', () => {
@@ -172,7 +204,8 @@ describe('composable world terrain operations', () => {
       const level = base(0, 40).height - 20;
       const sample = createWorldSampler({ ...original, waterBodies: [{
         id: 'bank', type: region.kind === 'circle' ? 'lake' : 'river', region,
-        levels: region.kind === 'circle' ? [level] : [level, level], depth: 6
+        levels: region.kind === 'circle' ? [level] : [level, level], depth: 6,
+        shorelineSmoothness: 0, shorelineIrregularity: 0
       }] });
       // A one-centimetre step across a shoreline must not become a twenty-metre wall.
       expect(Math.abs(sample(0, 40.01).height - sample(0, 39.99).height)).toBeLessThan(0.01);
@@ -224,7 +257,10 @@ describe('composable world terrain operations', () => {
     ]};
     const lake={id:'spring',type:'lake' as const,region:{kind:'circle' as const,center:[180,0] as [number,number],radius:30},levels:[30],depth:3};
     const recipe={...base,waterBodies:[lake]},dry=createWorldSampler(base),wet=createWorldSampler(recipe);
-    expect(worldFreshWaterDistance(recipe,220,0)).toBeCloseTo(10,10);
+    const spring = createWorldTerrainContext(recipe).waterBodies[0];
+    expect(worldFreshWaterDistance(recipe,220,0)).toBeCloseTo(
+      waterBoundaryDistance(spring.boundary, 220, 0), 10
+    );
     expect(worldFreshWaterDistance(recipe,180,0)).toBe(0);
     expect(worldFreshWaterDistance(base,-450,0)).toBe(Infinity);
     expect(wet(220,0).moisture).toBeGreaterThan(dry(220,0).moisture);

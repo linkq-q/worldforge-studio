@@ -3,6 +3,16 @@
  * No editor state, rendering style, network or mutable RNG enters this recipe.
  */
 import { waterShoreProfile } from './waterShore';
+import {
+  riverPathSamples,
+  sampleRiverProfile,
+  waterBoundaryContainsPoint,
+  waterBoundaryDistance,
+  waterBoundaryPoints,
+  waterSeed,
+  type RiverPathSample
+} from './mapWater';
+import type { MapWaterBody } from './map';
 export const WORLD_MIN_SIZE = 500;
 export const WORLD_BIOMES = ['ocean', 'grassland', 'forest', 'desert', 'mountains', 'snow'] as const;
 export type WorldBiome = typeof WORLD_BIOMES[number];
@@ -28,6 +38,10 @@ export interface WorldWaterBody {
   region: WorldTerrainRegion;
   levels: number[];
   depth: number;
+  shorelineSmoothness?: number;
+  shorelineIrregularity?: number;
+  shorelineProfile?: 'steep' | 'gentle';
+  seed?: number;
 }
 export interface WorldBiomePatch {
   id: string;
@@ -63,6 +77,18 @@ export interface WorldTileData {
   weights: Float32Array;
   waterLevels: Float32Array;
   resolution: number;
+}
+export interface PreparedWorldWaterBody {
+  source: WorldWaterBody;
+  mapWater: MapWaterBody;
+  boundary: Array<[number, number]>;
+  riverSamples: RiverPathSample[];
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+}
+export interface WorldTerrainContext {
+  sample: WorldSampler;
+  waterBodies: PreparedWorldWaterBody[];
+  freshWaterDistance: (x: number, z: number) => number;
 }
 
 const regionWords: Record<WorldRegion, string> = {
@@ -198,8 +224,20 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
       const levelCount = shape.kind === 'circle' ? 1 : shape.points.length;
       if ((raw.type !== 'lake' && raw.type !== 'river') || !Array.isArray(raw.levels) || raw.levels.length !== levelCount
         || !raw.levels.every(n => Number.isFinite(n) && n >= -1000 && n <= 5000)
-        || !Number.isFinite(raw.depth) || raw.depth < 0.1 || raw.depth > 500) throw new Error('invalid_world_water_body');
-      return { id: safeId(raw.id), type: raw.type, region: shape, levels: [...raw.levels], depth: raw.depth };
+        || !Number.isFinite(raw.depth) || raw.depth < 0.1 || raw.depth > 500
+        || raw.type === 'lake' && shape.kind !== 'circle' || raw.type === 'river' && shape.kind !== 'path'
+        || raw.shorelineSmoothness !== undefined && (!Number.isFinite(raw.shorelineSmoothness) || raw.shorelineSmoothness < 0 || raw.shorelineSmoothness > 1)
+        || raw.shorelineIrregularity !== undefined && (!Number.isFinite(raw.shorelineIrregularity) || raw.shorelineIrregularity < 0 || raw.shorelineIrregularity > 0.4)
+        || raw.shorelineProfile !== undefined && raw.shorelineProfile !== 'steep' && raw.shorelineProfile !== 'gentle'
+        || raw.seed !== undefined && (!Number.isInteger(raw.seed) || raw.seed < 0 || raw.seed > 0xffffffff)) throw new Error('invalid_world_water_body');
+      const id = safeId(raw.id);
+      return {
+        id, type: raw.type, region: shape, levels: [...raw.levels], depth: raw.depth,
+        shorelineSmoothness: raw.shorelineSmoothness ?? 0.82,
+        shorelineIrregularity: raw.shorelineIrregularity ?? (raw.type === 'lake' ? 0.16 : 0),
+        ...(raw.shorelineProfile ? { shorelineProfile: raw.shorelineProfile } : {}),
+        seed: raw.seed ?? waterSeed(input.seed, id)
+      };
     });
   }
   if (input.biomePatches !== undefined) {
@@ -248,15 +286,94 @@ export function worldRegionWeight(region: WorldTerrainRegion, x: number, z: numb
   return area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
 }
 
-/** Distance to authored fresh water. The implicit height<0 ocean is salt water and is deliberately excluded. */
-export function worldFreshWaterDistance(recipe: Pick<WorldRecipe, 'waterBodies'>, x: number, z: number): number {
+/** Precomputes the original editor shoreline workflow once in global coordinates. */
+export function prepareWorldWaterBodies(input: WorldRecipe): PreparedWorldWaterBody[] {
+  const recipe = validateWorldRecipe(input);
+  return prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], recipe.seed);
+}
+
+function prepareValidatedWorldWaterBodies(waters: WorldWaterBody[], worldSeed: number): PreparedWorldWaterBody[] {
+  return waters.map((source) => {
+    const region = source.region;
+    const seed = source.seed ?? waterSeed(worldSeed, source.id);
+    const points = region.kind === 'circle'
+      ? Array.from({ length: 32 }, (_, index): [number, number] => {
+          const angle = index / 32 * Math.PI * 2;
+          return [
+            region.center[0] + Math.cos(angle) * region.radius,
+            region.center[1] + Math.sin(angle) * region.radius
+          ];
+        })
+      : region.points.map((point) => [...point] as [number, number]);
+    const width = region.kind === 'circle' ? region.radius * 2 : region.width;
+    const authored: MapWaterBody = {
+      id: source.id,
+      name: source.id,
+      type: source.type,
+      level: source.levels.reduce((sum, value) => sum + value, 0) / source.levels.length,
+      levels: [...source.levels],
+      ...(region.kind === 'path' ? { widths: region.points.map(() => region.width) } : {}),
+      depth: source.depth,
+      width,
+      points,
+      shorelineSmoothness: source.shorelineSmoothness ?? 0.82,
+      shorelineIrregularity: source.shorelineIrregularity ?? (source.type === 'lake' ? 0.16 : 0),
+      shorelineProfile: source.shorelineProfile,
+      seed
+    };
+    const smoothedRiver = authored.type === 'river' ? riverPathSamples(authored) : [];
+    const mapWater: MapWaterBody = authored.type === 'river'
+      ? {
+          ...authored,
+          points: smoothedRiver.map((sample) => [...sample.point]),
+          levels: smoothedRiver.map((sample) => sample.level),
+          widths: smoothedRiver.map((sample) => sample.width),
+          shorelineSmoothness: 0,
+          shorelineIrregularity: 0
+        }
+      : {
+          ...authored,
+          points: waterBoundaryPoints(authored),
+          shorelineSmoothness: 0,
+          shorelineIrregularity: 0
+        };
+    const riverSamples = mapWater.type === 'river' ? riverPathSamples(mapWater) : [];
+    const boundary = waterBoundaryPoints(mapWater);
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (const [x, z] of boundary) {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    }
+    return { source: { ...source, seed }, mapWater, boundary, riverSamples, bounds: { minX, maxX, minZ, maxZ } };
+  });
+}
+
+function distanceToPreparedWater(water: PreparedWorldWaterBody, x: number, z: number): number {
+  const dx = x < water.bounds.minX ? water.bounds.minX - x : x > water.bounds.maxX ? x - water.bounds.maxX : 0;
+  const dz = z < water.bounds.minZ ? water.bounds.minZ - z : z > water.bounds.maxZ ? z - water.bounds.maxZ : 0;
+  return Math.hypot(dx, dz);
+}
+
+export function preparedWorldFreshWaterDistance(waters: readonly PreparedWorldWaterBody[], x: number, z: number): number {
   if (![x, z].every(Number.isFinite)) throw new Error('invalid_world_water_query');
   let distance = Infinity;
-  for (const water of recipe.waterBodies ?? []) {
-    const area = regionSample(water.region, x, z);
-    distance = Math.min(distance, Math.max(0, -area.edge));
+  for (const water of waters) {
+    if (distanceToPreparedWater(water, x, z) >= distance) continue;
+    if (waterBoundaryContainsPoint(water.boundary, x, z)) return 0;
+    distance = Math.min(distance, waterBoundaryDistance(water.boundary, x, z));
   }
   return distance;
+}
+
+/** Distance to authored fresh water. The implicit height<0 ocean is salt water and is deliberately excluded. */
+export function worldFreshWaterDistance(
+  recipe: Pick<WorldRecipe, 'waterBodies'> & Partial<Pick<WorldRecipe, 'seed'>>,
+  x: number,
+  z: number
+): number {
+  return preparedWorldFreshWaterDistance(
+    prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], recipe.seed ?? 0), x, z
+  );
 }
 
 function interpolatePath(values: number[], t: number): number {
@@ -301,9 +418,14 @@ const targets: Record<WorldBiome, readonly [number, number, number, number]> = {
 };
 
 export function createWorldSampler(input: WorldRecipe): WorldSampler {
+  return createWorldTerrainContext(input).sample;
+}
+
+export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainContext {
   const recipe = validateWorldRecipe(input);
   const { seed, size, constraints } = recipe;
-  return (x: number, z: number): WorldSample => {
+  const waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed);
+  const sample = (x: number, z: number): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
     const warpX = fbm(x / 13000 + 17, z / 13000, seed + 41, 2);
     const warpZ = fbm(x / 13000, z / 13000 - 23, seed + 73, 2);
@@ -358,25 +480,40 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
       height = mix(height, target, influence * (brush.strength ?? 1));
     }
     let waterLevel: number | null = null, waterBodyId: string | null = null, freshWaterDistance = Infinity;
-    for (const water of recipe.waterBodies ?? []) {
-      const area = regionSample(water.region, x, z);
-      freshWaterDistance = Math.min(freshWaterDistance, Math.max(0, -area.edge));
-      const level = interpolatePath(water.levels, area.t);
-      if (!area.inside) {
+    for (const prepared of waterBodies) {
+      const water = prepared.mapWater;
+      const river = water.type === 'river' ? sampleRiverProfile(x, z, prepared.riverSamples) : null;
+      const level = river?.level ?? water.level;
+      const outerBankWidth = water.shorelineProfile === 'steep'
+        ? Math.max(2, water.depth * 0.6)
+        : water.shorelineProfile === 'gentle'
+          ? Math.max(4, water.depth * 4)
+          : Math.max(4, water.depth * 4, (height - level) * 3);
+      if (distanceToPreparedWater(prepared, x, z) > Math.max(160, outerBankWidth)) continue;
+      const inside = waterBoundaryContainsPoint(prepared.boundary, x, z);
+      const boundaryDistance = waterBoundaryDistance(prepared.boundary, x, z);
+      freshWaterDistance = Math.min(freshWaterDistance, inside ? 0 : boundaryDistance);
+      if (!inside) {
         // Reuse the editor's outer bank profile. Carving only the inside of a
         // water polygon creates a vertical wall exactly at its boundary.
-        const bankWidth = Math.max(4, water.depth * 4, (height - level) * 3);
-        if (height > level && -area.edge < bankWidth) {
-          height = waterShoreProfile(level, height, -area.edge, bankWidth);
+        if (height > level && boundaryDistance < outerBankWidth) {
+          height = waterShoreProfile(level, height, boundaryDistance, outerBankWidth);
         }
         continue;
       }
-      const reach = water.region.kind === 'circle' ? water.region.radius : water.region.width / 2;
+      const reach = prepared.source.region.kind === 'circle'
+        ? prepared.source.region.radius
+        : (river?.width ?? water.width) / 2;
+      const innerShoreWidth = water.shorelineProfile === 'steep'
+        ? Math.max(1, water.depth * 0.6)
+        : water.shorelineProfile === 'gentle'
+          ? Math.max(4, water.depth * 4)
+          : Math.max(1, water.depth * 2);
       height = Math.min(height, waterShoreProfile(level, level - water.depth,
-        area.edge, Math.min(reach, Math.max(1, water.depth * 2))));
-      if (height < level && (waterLevel === null || level > waterLevel)) {
+        boundaryDistance, Math.min(reach, innerShoreWidth)));
+      if (height <= level + 0.000001 && (waterLevel === null || level > waterLevel)) {
         waterLevel = level;
-        waterBodyId = water.id;
+        waterBodyId = prepared.source.id;
       }
     }
     if (height < 0 && (waterLevel === null || waterLevel < 0)) {
@@ -405,6 +542,11 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
       height, continentalness, temperature: localTemp, moisture,
       weights, waterLevel, waterBodyId
     };
+  };
+  return {
+    sample,
+    waterBodies,
+    freshWaterDistance: (x, z) => preparedWorldFreshWaterDistance(waterBodies, x, z)
   };
 }
 

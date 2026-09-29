@@ -39,7 +39,7 @@ const pathLength = (points: Point[]) => points.slice(1).reduce((sum, point, inde
 function nearestWater(recipe: WorldRecipe, sample: WorldSampler, center: Point, maxDistance: number, target?: string) {
   let best: WorldSiteCandidate['water'] = null;
   const body=target&&target!=='sea'?recipe.waterBodies?.find(item=>item.id===target):undefined;
-  const knownDistance=body?worldFreshWaterDistance({waterBodies:[body]},center[0],center[1]):undefined;
+  const knownDistance=body?worldFreshWaterDistance({seed:recipe.seed,waterBodies:[body]},center[0],center[1]):undefined;
   if(knownDistance!==undefined&&knownDistance>maxDistance) return null;
   const start=knownDistance===undefined?12:Math.max(0,Math.floor(knownDistance/12)*12);
   const end=knownDistance===undefined?maxDistance:Math.min(maxDistance,knownDistance+24);

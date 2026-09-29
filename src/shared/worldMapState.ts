@@ -1,5 +1,5 @@
-import { createPlannedWorldSampler, validateWorldBundle, type WorldBundle } from './worldPlanning';
-import type { WorldSampler } from './worldTerrain';
+import { createPlannedWorldTerrainContext, validateWorldBundle, type WorldBundle } from './worldPlanning';
+import type { WorldSampler, WorldTerrainContext } from './worldTerrain';
 
 export interface WorldAssetBinding {
   key: string;
@@ -33,9 +33,15 @@ export function validateWorldMapState(input: unknown): WorldMapState {
   return {bundle, assets};
 }
 
-const samplers = new WeakMap<WorldMapState, WorldSampler>();
+const contexts = new WeakMap<WorldMapState, WorldTerrainContext>();
+export function worldMapTerrainContext(world: WorldMapState): WorldTerrainContext {
+  let context = contexts.get(world);
+  if (!context) {
+    context = createPlannedWorldTerrainContext(world.bundle.plan, world.bundle.patches);
+    contexts.set(world, context);
+  }
+  return context;
+}
 export function worldMapSampler(world: WorldMapState): WorldSampler {
-  let sample = samplers.get(world);
-  if (!sample) { sample = createPlannedWorldSampler(world.bundle.plan, world.bundle.patches); samplers.set(world, sample); }
-  return sample;
+  return worldMapTerrainContext(world).sample;
 }

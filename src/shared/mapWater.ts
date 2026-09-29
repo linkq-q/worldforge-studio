@@ -391,13 +391,23 @@ function seededUnit(seed: number, salt: number): number {
   return (value >>> 0) / 4294967295;
 }
 
-function waterSeed(seed: number, id: string): number {
+export function waterSeed(seed: number, id: string): number {
   let hash = Math.trunc(seed) >>> 0;
   for (let index = 0; index < id.length; index += 1) {
     hash ^= id.charCodeAt(index);
     hash = Math.imul(hash, 16777619) >>> 0;
   }
   return hash;
+}
+
+/** Queries a boundary already produced by waterBoundaryPoints without rebuilding it. */
+export function waterBoundaryContainsPoint(points: Array<[number, number]>, x: number, z: number): boolean {
+  return polygonEdgeDistance(x, z, points) <= 0.000001 || pointInPolygon(x, z, points);
+}
+
+/** Distance in world metres to a boundary already produced by waterBoundaryPoints. */
+export function waterBoundaryDistance(points: Array<[number, number]>, x: number, z: number): number {
+  return polygonEdgeDistance(x, z, points);
 }
 
 function smoothstep(value: number): number {

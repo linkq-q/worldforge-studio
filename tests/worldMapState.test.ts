@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, it } from 'vitest';
 import { createEmptyMap, normalizeMap, sampleTerrainHeight } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
-import { validateWorldMapState, type WorldMapState } from '../src/shared/worldMapState';
+import { validateWorldMapState, worldMapSampler, worldMapTerrainContext, type WorldMapState } from '../src/shared/worldMapState';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import { MapStore } from '../src/server/mapStore';
 
@@ -17,6 +17,9 @@ function world(): WorldMapState {
 
 it('keeps the continuous sampler and a tiny persisted placeholder through normalization', () => {
   const state = world(), expected = createWorldSampler(state.bundle.plan.recipe)(53, -127).height;
+  const context = worldMapTerrainContext(state);
+  expect(worldMapTerrainContext(state)).toBe(context);
+  expect(worldMapSampler(state)).toBe(context.sample);
   const map = applyMapOperations(createEmptyMap(), [{type: 'world.set', world: state}]);
   const reloaded = normalizeMap(JSON.parse(JSON.stringify(map)));
   expect(reloaded.terrain.heights).toHaveLength(4);

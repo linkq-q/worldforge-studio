@@ -13,7 +13,7 @@ import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag 
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
 import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
-import { worldMapSampler, type WorldAssetBinding } from '../shared/worldMapState';
+import { worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
@@ -147,7 +147,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   if (!map.world) throw new Error('world_renderer_requires_world');
   const world = map.world;
   const bundle = world.bundle;
-  const sample = worldMapSampler(world);
+  const terrainContext = worldMapTerrainContext(world);
+  const sample = terrainContext.sample;
   const root = new THREE.Group();
   root.name = `world-map:${map.id}`;
   const modelsRoot = new THREE.Group();
@@ -482,7 +483,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const key = ecologyKey(chunk);
     const cached = ecologyCache.get(key);
     if (cached) return cached;
-    const generated = generateEcologyChunk(bundle.plan.recipe, bundle.plan.ecology, chunk, { sample, exclusion, density }).instances;
+    const generated = generateEcologyChunk(bundle.plan.recipe, bundle.plan.ecology, chunk, {
+      sample, exclusion, density, freshWaterDistance: terrainContext.freshWaterDistance
+    }).instances;
     ecologyCache.set(key, generated);
     return generated;
   }
@@ -594,37 +597,17 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   function tileWaterBodies(tile: WorldTile, includeOcean: boolean): MapWaterBody[] {
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
-    const bodies = (bundle.plan.recipe.waterBodies ?? []).flatMap((water): MapWaterBody[] => {
+    const bodies = terrainContext.waterBodies.flatMap((prepared): MapWaterBody[] => {
+      const water = prepared.source;
       const owner = water.region.kind === 'circle'
         ? water.region.center
         : water.region.points[Math.floor(water.region.points.length / 2)];
       if (!tileContains(tile, owner[0], owner[1])) return [];
-      if (water.region.kind === 'circle') {
-        const region = water.region;
-        const points = Array.from({ length: 32 }, (_, index): [number, number] => {
-          const angle = index / 32 * Math.PI * 2;
-          return [region.center[0] + Math.cos(angle) * region.radius - centerX,
-            region.center[1] + Math.sin(angle) * region.radius - centerZ];
-        });
-        return [{
-          id: water.id,
-          name: water.id,
-          type: 'lake',
-          level: water.levels[0] ?? 0,
-          depth: water.depth,
-          width: region.radius * 2,
-          points
-        }];
-      }
       return [{
-        id: water.id,
-        name: water.id,
-        type: 'river',
-        level: water.levels.reduce((sum, level) => sum + level, 0) / water.levels.length,
-        levels: [...water.levels],
-        depth: water.depth,
-        width: water.region.width,
-        points: water.region.points.map(([x, z]) => [x - centerX, z - centerZ])
+        ...prepared.mapWater,
+        points: prepared.mapWater.points.map(([x, z]) => [x - centerX, z - centerZ]),
+        levels: prepared.mapWater.levels ? [...prepared.mapWater.levels] : undefined,
+        widths: prepared.mapWater.widths ? [...prepared.mapWater.widths] : undefined
       }];
     });
     if (includeOcean) bodies.push({

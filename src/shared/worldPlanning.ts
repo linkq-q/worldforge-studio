@@ -1,6 +1,7 @@
 import type { MapGuide } from './mapGuide';
 import { validateEcologyRules, type EcologyRule } from './worldEcology';
-import { createWorldSampler, validateWorldRecipe, type WorldRecipe, type WorldSampler } from './worldTerrain';
+import { createWorldSampler, createWorldTerrainContext, validateWorldRecipe,
+  type WorldRecipe, type WorldSampler, type WorldTerrainContext } from './worldTerrain';
 
 export interface WorldPlan {
   version: 1;
@@ -466,8 +467,13 @@ function townWeight1(value: number): number {
   return t * t * t * (t * (t * 6 - 15) + 10);
 }
 export function createPlannedWorldSampler(plan: WorldPlan, patches: TownPatch[] = []): WorldSampler {
+  return createPlannedWorldTerrainContext(plan, patches).sample;
+}
+
+export function createPlannedWorldTerrainContext(plan: WorldPlan, patches: TownPatch[] = []): WorldTerrainContext {
   const checked = validateWorldBundle({ plan, patches });
-  return conformSampler(createWorldSampler(checked.plan.recipe), checked.plan, checked.patches);
+  const context = createWorldTerrainContext(checked.plan.recipe);
+  return { ...context, sample: conformSampler(context.sample, checked.plan, checked.patches) };
 }
 
 function validateTerrain(plan: WorldPlan): void {

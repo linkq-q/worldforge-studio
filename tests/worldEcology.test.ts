@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, validateEcologyRules, type EcologyRule } from '../src/shared/worldEcology';
-import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
+import { createWorldSampler, worldFreshWaterDistance, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
 
 const recipe: WorldRecipe = { version: 1, seed: 42, size: 64000, constraints: [{ region: 'center', biome: 'forest' }] };
 const trees: EcologyRule[] = [
@@ -216,7 +216,7 @@ describe('localized ecology rules', () => {
     const fresh=generateEcologyChunk(freshRecipe,[riparian],{x:0,z:0},{sample:flat});
     expect(fresh.instances.length).toBeGreaterThan(0);
     for(const point of fresh.instances){
-      const distance=Math.max(0,Math.hypot(point.x-128,point.z-128)-24);
+      const distance=worldFreshWaterDistance(freshRecipe,point.x,point.z);
       expect(distance).toBeGreaterThanOrEqual(4);
       expect(distance).toBeLessThanOrEqual(72);
     }

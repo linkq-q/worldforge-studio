@@ -1,5 +1,6 @@
 import { habitatBandSuitability, normalizeHabitatBand, type HabitatBand } from './mapHabitat';
-import { createWorldSampler, validateWorldRecipe, worldFreshWaterDistance, worldRegionWeight, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample, type WorldTerrainRegion } from './worldTerrain';
+import { createWorldSampler, prepareWorldWaterBodies, preparedWorldFreshWaterDistance, validateWorldRecipe,
+  worldRegionWeight, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample, type WorldTerrainRegion } from './worldTerrain';
 
 export type EcologyKind = 'broadleaf' | 'pine' | 'shrub' | 'rock';
 export interface EcologyRule {
@@ -105,7 +106,12 @@ export function generateEcologyChunk(
   input: WorldRecipe,
   inputRules: EcologyRule[],
   chunk: EcologyChunk,
-  options: { sample?: (x: number, z: number) => WorldSample; exclusion?: (x: number, z: number, radius: number) => boolean; density?: (x: number, z: number) => number } = {}
+  options: {
+    sample?: (x: number, z: number) => WorldSample;
+    exclusion?: (x: number, z: number, radius: number) => boolean;
+    density?: (x: number, z: number) => number;
+    freshWaterDistance?: (x: number, z: number) => number;
+  } = {}
 ): { instances: EcologyInstance[]; candidateCount: number; rejectedCount: number } {
   const recipe = validateWorldRecipe(input), rules = validateEcologyRules(inputRules);
   if (!chunk || !Number.isSafeInteger(chunk.x) || !Number.isSafeInteger(chunk.z)) throw new Error('invalid_ecology_chunk');
@@ -115,6 +121,9 @@ export function generateEcologyChunk(
   const maxZ = Math.min(recipe.size / 2, (chunk.z + 1) * ECOLOGY_CHUNK_SIZE);
   if (minX >= maxX || minZ >= maxZ || !rules.length) return { instances: [], candidateCount: 0, rejectedCount: 0 };
   const sample = options.sample ?? createWorldSampler(recipe);
+  const waterBodies = options.freshWaterDistance ? [] : prepareWorldWaterBodies(recipe);
+  const freshWaterDistance = options.freshWaterDistance
+    ?? ((x: number, z: number) => preparedWorldFreshWaterDistance(waterBodies, x, z));
   const contexts = rules.map(rule => {
     const seed = ruleSeed(recipe.seed, rule.id), cache = new Map<string, Candidate>();
     return { rule, at: (ix: number, iz: number): Candidate => {
@@ -168,7 +177,7 @@ export function generateEcologyChunk(
         const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
         if (point.threshold >= density * regionDensity) continue;
         if (rule.waterDistance && point.threshold >= density * habitatBandSuitability(
-          worldFreshWaterDistance(recipe, point.x, point.z), rule.waterDistance
+          freshWaterDistance(point.x, point.z), rule.waterDistance
         )) continue;
         const environment = sample(point.x, point.z);
         const weight = environment.weights[rule.biome];
