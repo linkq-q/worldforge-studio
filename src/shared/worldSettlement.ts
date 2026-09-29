@@ -94,11 +94,11 @@ export function generateWorldSettlement(
     : contourAngle(sample, town, site, random);
   const region = Array.from({ length: 16 }, (_, index): Point => {
     const angle = index / 16 * TAU;
-    return [Math.cos(angle) * town.radius * 0.84, Math.sin(angle) * town.radius * 0.84];
+    return [Math.cos(angle) * town.radius * 0.94, Math.sin(angle) * town.radius * 0.94];
   });
   const layout = createUrbanLayout({
     id: `${town.id}-fabric`, pattern: settings.pattern, center: site,
-    size: [town.radius * 1.58, town.radius * 1.58], region,
+    size: [town.radius * 1.82, town.radius * 1.82], region,
     rotation: rotation * 180 / Math.PI, blockSize: settings.blockSize,
     roadWidth: settings.roadWidth, arterialWidth: settings.arterialWidth,
     parcelWidth: settings.parcelWidth, parcelDepth: settings.parcelDepth,
@@ -119,8 +119,9 @@ export function generateWorldSettlement(
   if (shore) {
     const shorePoints = traceShore(shore, town, sample, settings, roadSafe);
     if (shorePoints.length >= 2) {
-      const shoreRoad = guide(`${town.id}-waterfront`, shorePoints, settings.arterialWidth,
-        ['settlement', settings.kind, 'arterial', 'waterfront']);
+      const workingWidth=Math.max(6.4,settings.arterialWidth);
+      const shoreRoad = guide(`${town.id}-waterfront`, shorePoints, workingWidth,
+        ['settlement', settings.kind, 'arterial', 'waterfront','working-waterfront']);
       const link = routeToNetwork(shorePoints[Math.floor(shorePoints.length / 2)], roadNodes(streets), roadSafe, settings.roadWidth);
       if (link) {
         streets.push(shoreRoad);
@@ -130,7 +131,7 @@ export function generateWorldSettlement(
         }
         if(town.targetWaterBodyId==='sea') {
           const landing=shoreLanding(shorePoints,town,sample,settings,roadSafe);
-          if(landing) streets.push(guide(`${town.id}-sea-landing`,landing,settings.roadWidth,
+          if(landing) streets.push(guide(`${town.id}-sea-landing`,landing,workingWidth,
             ['settlement',settings.kind,'street','waterfront','sea-landing']));
         }
       }
@@ -387,6 +388,7 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     return result;
   };
   const density = number(options.density, city ? 0.82 : 0.38, 0.05, 1, 'world_settlement_invalid_density');
+  const villageGrowth=Math.max(0,town.radius-60);
   return {
     kind: options.kind,
     pattern: options.pattern ?? 'organic',
@@ -399,11 +401,12 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     waterSetback: number(options.waterSetback, city ? 7 : 5, 0, town.radius / 2, 'world_settlement_invalid_water_setback'),
     roadWidth: city ? 4.2 : 3,
     arterialWidth: city ? 6.4 : 4.6,
-    blockSize: Math.max(city ? 34 : 52, Math.min(city ? 76 : 110, town.radius * (city ? 0.22 : 0.32))),
-    parcelWidth: city ? 5.8 : 9,
-    parcelDepth: city ? 8.5 : 10,
+    blockSize: city?Math.max(34,Math.min(76,town.radius*.22)):Math.max(38,Math.min(80,town.radius*.38)),
+    parcelWidth: city ? 5.8 : town.radius>=90?7.2:9,
+    parcelDepth: city ? 8.5 : town.radius>=90?9:10,
     buildingGap: city ? 1.2 : 7,
-    roadBudget: city ? Math.round(24 + density * 10) : Math.max(7, Math.round(6 + density * 8))
+    roadBudget: city ? Math.round(26+density*10+Math.max(0,town.radius-100)/20)
+      : Math.max(7,Math.round(6+density*8+villageGrowth/16))
   };
 }
 
@@ -473,15 +476,20 @@ function shoreLanding(
   shore:Point[],town:TownIntent,sample:WorldSettlementSampler,settings:Settings,
   safe:(a:Point,b:Point,width:number)=>boolean
 ):Point[]|undefined {
-  const clearance=settings.waterSetback+settings.roadWidth/2+1;
+  const width=Math.max(6.4,settings.arterialWidth),clearance=settings.waterSetback+width/2+1;
   const candidates=shore.map(point=>({point,water:nearestWater(sample,town,point,Math.min(180,town.radius*.58),'sea')}))
     .filter((item):item is {point:Point;water:{direction:Point;distance:number}}=>Boolean(item.water))
     .sort((a,b)=>a.water.distance-b.water.distance||distance(a.point,[0,0])-distance(b.point,[0,0]));
   for(const {point,water} of candidates) {
-    const length=water.distance-clearance;
-    if(length<3) continue;
-    const end=add(point,scale(water.direction,length));
-    if(safe(point,end,settings.roadWidth)) return [point,end];
+    let low=0,high=Math.max(0,water.distance-clearance);
+    for(let attempt=0;attempt<10;attempt++) {
+      const length=(low+high)/2,end=add(point,scale(water.direction,length));
+      if(safe(point,end,width)) low=length; else high=length;
+    }
+    if(low<=EPS) continue;
+    const end=add(point,scale(water.direction,low));
+    const remaining=nearestWater(sample,town,end,Math.min(24,town.radius*.58),'sea')?.distance;
+    if(safe(point,end,width)&&remaining!==undefined&&remaining<water.distance-EPS&&remaining<=20) return [point,end];
   }
   return undefined;
 }
@@ -621,7 +629,8 @@ function traceShore(
   settings: Settings,
   safe: (a: Point, b: Point, width: number) => boolean
 ): Point[] {
-  const desired = Math.max(settings.waterSetback + settings.arterialWidth / 2 + 2, shore.waterDistance);
+  const width=Math.max(6.4,settings.arterialWidth);
+  const desired = settings.waterSetback + width / 2 + 2;
   const step = Math.max(18, Math.min(settings.blockSize * 0.72, 48));
   const extend = (direction: Point): Point[] => {
     const points: Point[] = [];
@@ -631,7 +640,7 @@ function traceShore(
       for (const turn of [-0.42, -0.2, 0, 0.2, 0.42]) {
         const nextHeading = rotate(heading, turn);
         const next = add(current, scale(nextHeading, step));
-        if (!inside(town, next, settings.arterialWidth / 2) || !safe(current, next, settings.arterialWidth)) continue;
+        if (!inside(town, next, width / 2) || !safe(current, next, width)) continue;
         const water = nearestWater(sample, town, next, Math.min(180, town.radius * 0.58),town.targetWaterBodyId);
         if (!water) continue;
         const score = Math.abs(water.distance - desired) + sampleSlope(sample, town, next) * 80 + Math.abs(turn) * 6;
@@ -706,7 +715,8 @@ function placeBuildings(
   };
   candidates.sort((a, b) => score(a) - score(b) || a.blockId.localeCompare(b.blockId)
     || a.roadId.localeCompare(b.roadId) || a.id.localeCompare(b.id));
-  const ordinaryTarget = Math.max(city ? 24 : 8, Math.round(candidates.length * settings.density));
+  const villageFloor=Math.round(8+Math.max(0,town.radius-60)*settings.density*.42);
+  const ordinaryTarget = Math.max(city ? 24 : villageFloor, Math.round(candidates.length * settings.density));
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);

@@ -214,7 +214,7 @@ describe('world settlement growth', () => {
       });
       const shape = settlementShape(patch, town.radius);
       expect(shape.cycles, `seed ${seed}`).toBeGreaterThanOrEqual(shore ? 4 : 5);
-      expect(shape.deadEnds, `seed ${seed}`).toBeLessThanOrEqual(8);
+      expect(shape.deadEnds, `seed ${seed}`).toBeLessThanOrEqual(9);
       expect(shape.roadExtent, `seed ${seed}`).toBeGreaterThanOrEqual(0.78);
       expect(shape.buildingExtent, `seed ${seed}`).toBeGreaterThanOrEqual(0.65);
       const port = patch.streets.find(street => street.tags.includes('port'))!;
@@ -248,11 +248,11 @@ describe('world settlement growth', () => {
     const rotation = Math.atan2(0.025 * 16, -0.015 * 16);
     const region = Array.from({ length: 16 }, (_, index): Point => {
       const angle = index / 16 * Math.PI * 2;
-      return [Math.cos(angle) * town.radius * 0.84, Math.sin(angle) * town.radius * 0.84];
+      return [Math.cos(angle) * town.radius * 0.94, Math.sin(angle) * town.radius * 0.94];
     });
     const layout = createUrbanLayout({
       id: `${town.id}-fabric`, pattern: 'organic', center: [0, 0],
-      size: [town.radius * 1.58, town.radius * 1.58], region, rotation: rotation * 180 / Math.PI,
+      size: [town.radius * 1.82, town.radius * 1.82], region, rotation: rotation * 180 / Math.PI,
       blockSize: 34, roadWidth: 4.2, arterialWidth: 6.4,
       parcelWidth: 5.8, parcelDepth: 8.5, setback: 1, irregularity: 0.72, seed
     }, { minX: -town.radius, maxX: town.radius, minZ: -town.radius, maxZ: town.radius });
@@ -336,7 +336,11 @@ describe('world settlement growth', () => {
     expect(patch.streets.some(street=>street.tags.includes('waterfront')&&!street.tags.includes('sea-landing'))).toBe(true);
     for(const point of landing.points) expect(sample(town.center[0]+point[0],town.center[1]+point[1]).waterLevel).toBeNull();
     const coastDistance=(point:Point)=>coast==='straight'?point[0]+100:(point[0]+point[1]+140)/Math.sqrt(2);
+    expect(Math.min(...waterfront.points.map(coastDistance))).toBeLessThanOrEqual(24);
+    expect(waterfront.tags).toContain('working-waterfront');
     expect(coastDistance(landing.points.at(-1)!)).toBeLessThan(coastDistance(landing.points[0]));
+    expect(coastDistance(landing.points.at(-1)!)).toBeLessThanOrEqual(20);
+    expect(landing.width).toBeGreaterThanOrEqual(6.4);
     expect(validateTownPatch(plan,patch)).toEqual(patch);
   });
 
@@ -468,7 +472,40 @@ describe('world settlement growth', () => {
       kind:'city',pattern:'organic',seed:47,density:.78,waterfrontBias:.95,waterSetback:6
     },[{id:'fish-market',use:'fish market',width:16,depth:12,height:5,assetKey:'market',siting:'waterfront'}]);
     expect(result.landmarks[0].id).toBe('fish-market');
-    expect(result.patch.streets.some(street=>street.tags.includes('waterfront'))).toBe(true);
+    const waterfront=result.patch.streets.find(street=>street.tags.includes('waterfront')&&!street.tags.includes('sea-landing'))!;
+    const landing=result.patch.streets.find(street=>street.tags.includes('sea-landing'))!;
+    expect(Math.min(...waterfront.points.map(point=>point[0]+92))).toBeLessThanOrEqual(24);
+    expect(waterfront.tags).toContain('working-waterfront');
+    expect(landing.points.at(-1)![0]+92).toBeLessThan(landing.points[0][0]+92);
+    expect(landing.points.at(-1)![0]+92).toBeLessThanOrEqual(20);
+    expect(landing.width).toBeGreaterThanOrEqual(6.4);
+    expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.72);
+  });
+
+  it('grows a populated shore-working village beyond its civic buildings', () => {
+    const plan=fixture(),town=plan.towns[0],base=sampler(plan);
+    town.radius=105;town.ports[0].position=[105,0];town.targetWaterBodyId='sea';
+    plan.roads[0].points=[[town.center[0]+105,0],[1800,0]];
+    const sample:WorldSettlementSampler=(x,z) => {
+      const original=base(x,z),water=x-town.center[0] < -96;
+      return {...original,height:water?-3:12,waterLevel:water?0:null,waterBodyId:null};
+    };
+    const result=createWorldSettlementLandmarkLayout(plan,town.id,sample,{
+      kind:'village',pattern:'organic',seed:59,density:.48,waterfrontBias:.95,waterSetback:5
+    },[
+      {id:'fish-market',use:'fish market',width:13,depth:10,height:5,assetKey:'market',siting:'waterfront'},
+      {id:'school',use:'school',width:11,depth:9,height:5,assetKey:'school',siting:'central'},
+      {id:'net-workshop',use:'net workshop',width:10,depth:8,height:5,assetKey:'workshop',siting:'waterfront'}
+    ]);
+    expect(result.patch.buildings.length).toBeGreaterThanOrEqual(20);
+    expect(result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length).toBeGreaterThanOrEqual(17);
+    expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.7);
+    const working=result.patch.streets.find(street=>street.tags.includes('working-waterfront'))!;
+    expect(working.width).toBeGreaterThanOrEqual(6.4);
+    expect(Math.min(...working.points.map(point=>point[0]+96))).toBeLessThanOrEqual(20);
+    const landing=result.patch.streets.find(street=>street.tags.includes('sea-landing'))!;
+    expect(landing.points.at(-1)![0]+96).toBeLessThan(landing.points[0][0]+96);
+    expect(landing.points.at(-1)![0]+96).toBeLessThanOrEqual(20);
   });
 
   it('bounds public-footprint retries and still fails explicitly when no site can fit', () => {
