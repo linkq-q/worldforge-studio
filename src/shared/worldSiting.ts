@@ -161,6 +161,122 @@ function routeSafe(sample: WorldSampler, points: Point[], width: number): { maxS
   return { maxSlope };
 }
 
+function routeGradeable(sample: WorldSampler, a: Point, b: Point, width: number): { maxSlope: number } | null {
+  const length = distance(a, b), steps = Math.max(1, Math.ceil(length / 8));
+  if (!length) return null;
+  const nx = -(b[1] - a[1]) / length, nz = (b[0] - a[0]) / length;
+  let previous: number | undefined, maxSlope = 0;
+  for (let i = 0; i <= steps; i++) {
+    const point = mix(a, b, i / steps);
+    const cross = [-width / 2, 0, width / 2].map(offset => sample(point[0] + nx * offset, point[1] + nz * offset));
+    const centerHeight = cross[1].height;
+    if (cross.some(value => value.waterLevel !== null || value.height <= 2
+      || Math.abs(value.height - centerHeight) > 1.5)) return null;
+    if (previous !== undefined) maxSlope = Math.max(maxSlope, Math.abs(cross[1].height - previous) / (length / steps));
+    if (maxSlope > 0.5) return null;
+    previous = cross[1].height;
+  }
+  return { maxSlope };
+}
+
+function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, width: number): WorldRouteResult | null {
+  const directLength = distance(start, end);
+  if (directLength > 4096) return null;
+  const alongSteps = Math.max(6, Math.min(28, Math.ceil(directLength / Math.max(12, width * 2.4))));
+  const step = directLength / alongSteps;
+  const lateralSteps = Math.max(3, Math.min(10, Math.ceil(Math.min(128, Math.max(48, directLength * 0.48)) / step)));
+  const rows = lateralSteps * 2 + 1;
+  const tangent: Point = [(end[0] - start[0]) / directLength, (end[1] - start[1]) / directLength];
+  const normal: Point = [-tangent[1], tangent[0]];
+  const nodes: Point[] = [];
+  for (let column = 0; column <= alongSteps; column++) for (let row = -lateralSteps; row <= lateralSteps; row++) {
+    nodes.push([
+      start[0] + tangent[0] * step * column + normal[0] * step * row,
+      start[1] + tangent[1] * step * column + normal[1] * step * row
+    ]);
+  }
+  const nodeIndex = (column: number, row: number) => column * rows + row + lateralSteps;
+  const startIndex = nodeIndex(0, 0), endIndex = nodeIndex(alongSteps, 0);
+  const endProbes = Array.from({ length: 32 }, (_, index): Point => {
+    const angle = index * Math.PI / 16;
+    return [end[0] + Math.cos(angle) * step * 3, end[1] + Math.sin(angle) * step * 3];
+  }).map(point => ({ point, safe: routeGradeable(sample, end, point, width) }))
+    .filter((item): item is { point: Point; safe: { maxSlope: number } } => !!item.safe);
+  const cost = nodes.map(() => Number.POSITIVE_INFINITY), previous = nodes.map(() => -1);
+  const open = new Set([startIndex]), edgeCache = new Map<string, { maxSlope: number } | null>();
+  const terminalEdgeCache = new Map<string, { maxSlope: number } | null>();
+  let endApproach: Point | null = null;
+  cost[startIndex] = 0;
+  while (open.size) {
+    let current = -1, best = Number.POSITIVE_INFINITY;
+    for (const index of open) {
+      const score = cost[index] + distance(nodes[index], end);
+      if (score < best || score === best && index < current) { current = index; best = score; }
+    }
+    if (current === endIndex) break;
+    open.delete(current);
+    const column = Math.floor(current / rows), row = current % rows - lateralSteps;
+    const visit = (next: number, gradeable = false) => {
+      if (next === current) return;
+      const key = current < next ? `${current}:${next}` : `${next}:${current}`;
+      const cache = gradeable ? terminalEdgeCache : edgeCache;
+      let safe = cache.get(key);
+      if (safe === undefined) {
+        safe = gradeable ? routeGradeable(sample, nodes[current], nodes[next], width)
+          : routeSafe(sample, [nodes[current], nodes[next]], width);
+        cache.set(key, safe);
+      }
+      if (!safe) return;
+      const nextCost = cost[current] + distance(nodes[current], nodes[next]) * (1 + safe.maxSlope);
+      if (nextCost + 1e-9 >= cost[next]) return;
+      cost[next] = nextCost; previous[next] = current; if (next === endIndex) endApproach = null; open.add(next);
+    };
+    for (let dr = -1; dr <= 1; dr++) {
+      const dc = 1;
+      const nextColumn = column + dc, nextRow = row + dr;
+      if (nextColumn < 0 || nextColumn > alongSteps || nextRow < -lateralSteps || nextRow > lateralSteps) continue;
+      visit(nodeIndex(nextColumn, nextRow));
+    }
+    if (distance(nodes[current], end) <= step * 3) visit(endIndex, true);
+    if (distance(nodes[current], end) <= step * 6) for (const probe of endProbes) {
+      const approach = routeSafe(sample, [nodes[current], probe.point], width);
+      if (!approach) continue;
+      const nextCost = cost[current] + distance(nodes[current], probe.point) * (1 + approach.maxSlope)
+        + distance(probe.point, end) * (1 + probe.safe.maxSlope);
+      if (nextCost + 1e-9 >= cost[endIndex]) continue;
+      cost[endIndex] = nextCost; previous[endIndex] = current; endApproach = probe.point; open.add(endIndex);
+    }
+  }
+  if (previous[endIndex] < 0) return null;
+  const path: Point[] = [];
+  for (let index = endIndex; index >= 0; index = previous[index]) {
+    path.push(index === startIndex ? start : index === endIndex ? end : nodes[index]);
+    if (index === startIndex) break;
+  }
+  path.reverse();
+  if (endApproach) path.splice(path.length - 1, 0, endApproach);
+  const simplified: Point[] = [path[0]];
+  for (let from = 0; from < path.length - 1;) {
+    let next = from + 1;
+    for (let candidate = path.length - 1; candidate > from + 1; candidate--) {
+      const terminal = (from === 0 || candidate === path.length - 1) && distance(path[from], path[candidate]) <= step * 3;
+      if ((terminal ? routeGradeable(sample, path[from], path[candidate], width)
+        : routeSafe(sample, [path[from], path[candidate]], width))) { next = candidate; break; }
+    }
+    simplified.push(path[next]); from = next;
+  }
+  let maxSlope = 0;
+  for (let index = 1; index < simplified.length; index++) {
+    const terminal = (index === 1 || index === simplified.length - 1)
+      && distance(simplified[index - 1], simplified[index]) <= step * 3;
+    const safe = terminal ? routeGradeable(sample, simplified[index - 1], simplified[index], width)
+      : routeSafe(sample, [simplified[index - 1], simplified[index]], width);
+    if (!safe) return null;
+    maxSlope = Math.max(maxSlope, safe.maxSlope);
+  }
+  return { points: simplified, length: pathLength(simplified), maxSlope };
+}
+
 /** Small candidate set matching the settlement kernel's existing direct/elbow/offset routing strategy. */
 export function findWorldRoute(sample: WorldSampler, start: Point, end: Point, width: number): WorldRouteResult | null {
   const middle = mix(start, end, 0.5), dx = end[0] - start[0], dz = end[1] - start[1], length = Math.hypot(dx, dz);
@@ -168,11 +284,12 @@ export function findWorldRoute(sample: WorldSampler, start: Point, end: Point, w
   const normal: Point = [-dz / length, dx / length], offsets = [0, 0.12, -0.12, 0.24, -0.24];
   const routes: Point[][] = [[start, [start[0], end[1]], end], [start, [end[0], start[1]], end],
     ...offsets.map(offset => [start, [middle[0] + normal[0] * length * offset, middle[1] + normal[1] * length * offset] as Point, end])];
-  return routes.map(points => {
+  const shortcut = routes.map(points => {
     const clean=points.filter((p, i) => !i || distance(p, points[i - 1]) > 1e-6);
     return {points:clean,safe:routeSafe(sample,clean,width)};
   })
     .filter((item): item is { points: Point[]; safe: { maxSlope: number } } => !!item.safe)
     .map(item => ({ points: item.points, length: pathLength(item.points), maxSlope: item.safe.maxSlope }))
     .sort((a, b) => a.length - b.length)[0] ?? null;
+  return shortcut ?? findTerrainAwareRoute(sample, start, end, width);
 }
