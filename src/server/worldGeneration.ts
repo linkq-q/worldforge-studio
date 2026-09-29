@@ -103,7 +103,7 @@ const WORLD_ASSET_FAMILY_LIMIT = 16;
 const WORLD_LAYOUT_PROMPT = `Choose only from supplied sampled site candidates. Return JSON only:
 {towns:[{townId,candidateId,landmarkLayoutId?}],settlements:[{townId,options}],assets:[]}.
 Choose exactly one candidate per town and only the available:true road pairs, which form one jointly validated candidate graph. A town with publicBuildings must choose a supplied landmarkLayoutId for that candidate and matching pattern. Never return recipe, terrain heights, centers, ports, world-road points, landmark coordinates or rotations. The server materializes those from actual samples.
-options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?}. kind, pattern and density must exactly preserve intent. Invalid or unreachable public footprints are omitted from candidates, never faked.
+options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?:0..1}. Copy these values from intent exactly; do not add slope, setback, seed or landmark overrides after the server has sampled viable sites. Invalid or unreachable public footprints are omitted from candidates, never faked.
 Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?,ecologyKind?,ecologyRuleId?}], at most ${WORLD_ASSET_FAMILY_LIMIT}. If assets will be generated, include at least one asset family for every ordinary-building role used by the generated settlement: house, shop and/or workshop. Do not substitute a landmark family for ordinary buildings. If enterable:true, use strategy:'assembly' or omit strategy so the server routes to assembly; strategy:'single' is invalid for every enterable asset, including reused ones. For each public building, match its assetKey and authored [width,height,depth] exactly in the landmark asset request. Include one role:'tree' asset binding for every intent.plan.ecology rule, including shrub and rock rules. Every role:'tree' asset must name exactly one intent.plan.ecology rule through ecologyRuleId and copy that rule's kind into ecologyKind; this keeps palms, broadleaf trees, pines, shrubs and rocks attached to their authored habitat. Non-tree assets omit both fields. existingAssetId may reference only an id in reusableAssets, whose visualSize is its authoritative measured [width,height,depth]. Omit existingAssetId when requesting a new asset; not every asset must be reused.
 For a requested harbor, the waterfront landmark program and matching asset prompt must show a boat-facing mooring/unloading edge connected to the dry working street; market stalls alone do not constitute a port. Keep the quay structure within its authored footprint and describe how people and cargo reach it. Do not invent a water crossing or place ordinary buildings in water.`;
 
@@ -506,7 +506,10 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
     if(!town) return command;
     const options=record(command.options,'invalid_world_settlement_options');
     if(options.landmarks!==undefined) throw new Error('world_layout_landmark_coordinates_forbidden:'+town.id);
-    if(options.kind!==town.kind||options.pattern!==town.pattern||options.density!==town.density) throw new Error('world_layout_settlement_intent_mismatch:'+town.id);
+    const unsupported=Object.keys(options).find(key=>!['kind','pattern','density','waterfrontBias'].includes(key));
+    if(unsupported) throw new Error('world_layout_unsupported_option:'+town.id+':'+unsupported);
+    if(options.kind!==town.kind||options.pattern!==town.pattern||options.density!==town.density
+      ||(options.waterfrontBias??0)!==(town.waterfrontBias??0)) throw new Error('world_layout_settlement_intent_mismatch:'+town.id);
     return layout?{...command,options:{...options,landmarks:layout.landmarks}}:command;
   });
   const draftInput={plan,settlements:selectedSettlements,assets:root.assets};
@@ -767,16 +770,21 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     catch(error) {
       const reason=error instanceof Error?error.message:String(error);
       recordGenerationTrace('world.rejected',{stage:'layout',layout,error:reason});
-      if(request.generateAssets===false||!/^world_missing_(?:asset_roles|ecology_assets):/.test(reason)||!layout) throw error;
+      const assetRepair=/^world_missing_(?:asset_roles|ecology_assets):/.test(reason);
+      const optionsRepair=/^world_layout_(?:unsupported_option|settlement_intent_mismatch):/.test(reason);
+      if(!assetRepair&&!optionsRepair||!layout) throw error;
       const first=record(layout,'invalid_world_layout');
       layoutMessages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:reason,
-        instruction:'Repair only the assets array. Copy towns and settlements exactly from the previous response. Add the missing ordinary-building role family or ecology-rule binding requested by the error while keeping all existing valid landmark assets. Return one complete JSON object with only towns, settlements and assets. Do not change site choices, settlement options, intent, terrain, roads or geography.'})});
+        instruction:assetRepair
+          ? 'Repair only the assets array. Copy towns and settlements exactly from the previous response. Add the missing ordinary-building role family or ecology-rule binding requested by the error while keeping all existing valid landmark assets. Return one complete JSON object with only towns, settlements and assets. Do not change site choices, settlement options, intent, terrain, roads or geography.'
+          : 'Repair only the settlements array. Copy towns and assets exactly from the previous response. Each options object must contain only kind, pattern, density and optional waterfrontBias, copied exactly from intent. Do not add slope, setback, seed or landmark overrides. Do not change site choices, assets, intent, terrain, roads or geography.'})});
       const repairedContent=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,traceStage:'world.layout-repair',signal});
       let repaired:unknown;
       try {
         repaired=parseJson(repairedContent);recordGenerationTrace('world.layout.repair.raw',{layout:repaired});
         const next=record(repaired,'invalid_world_layout');
-        if(JSON.stringify(next.towns)!==JSON.stringify(first.towns)||JSON.stringify(next.settlements)!==JSON.stringify(first.settlements)) {
+        if(JSON.stringify(next.towns)!==JSON.stringify(first.towns)
+          ||JSON.stringify(assetRepair?next.settlements:next.assets)!==JSON.stringify(assetRepair?first.settlements:first.assets)) {
           throw new Error('world_layout_repair_changed_spatial_choice');
         }
         compiled=materializeWorldIntent(intent,evidence,repaired,request);

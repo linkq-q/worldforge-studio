@@ -263,6 +263,29 @@ describe('world generation compiler', () => {
     expect(repairPrompt.instruction).toContain('Copy towns and settlements exactly');
   });
 
+  it('repairs layout-only terrain overrides without changing sampled site or asset choices', async () => {
+    const {intent,evidence,layout}=soloLayout();
+    const invalid=structuredClone(layout) as any;
+    invalid.settlements[0].options.waterSetback=48;
+    expect(() => materializeWorldIntent(intent,evidence,invalid,request))
+      .toThrow('world_layout_unsupported_option:market-town:waterSetback');
+    invalid.settlements[0].options.waterfrontBias=.9;
+    delete invalid.settlements[0].options.waterSetback;
+    expect(() => materializeWorldIntent(intent,evidence,invalid,request))
+      .toThrow('world_layout_settlement_intent_mismatch:market-town');
+
+    invalid.settlements[0].options.waterSetback=48;
+    delete invalid.settlements[0].options.waterfrontBias;
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent()))
+      .mockResolvedValueOnce(JSON.stringify(invalid)).mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld(request,{} as MapStore);
+    expect(result.bundle.plan.towns).toHaveLength(1);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.raw',{layout:invalid});
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.repair.raw',{layout});
+    const repairPrompt=JSON.parse((mocks.llmChat.mock.calls[2][0] as Array<{role:string;content:string}>).at(-1)!.content);
+    expect(repairPrompt.instruction).toContain('Copy towns and assets exactly');
+  });
+
   it('repairs an invalid GPT intent once and returns geometry audits', async () => {
     const {intent,layout}=soloLayout();
     mocks.llmChat
