@@ -4,7 +4,7 @@ import {
   auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, type WorldSettlementSampler
 } from '../src/shared/worldSettlement';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
-import { segmentBox, townBuildingBounds, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
+import { segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
 
 type Point = [number, number];
 
@@ -163,7 +163,7 @@ describe('world settlement growth', () => {
     const plan = fixture(), sample = sampler(plan);
     const landmark: TownBuilding = {
       id: 'cathedral', x: -35, z: 45, width: 28, depth: 42, height: 36,
-      use: 'cathedral', rotation: 0.18, assetKey: 'cathedral-modular', enterable: true
+      use: 'cathedral', rotation: Math.PI / 4, assetKey: 'cathedral-modular', enterable: true
     };
     const patch = generateWorldSettlement(plan, 'town', sample, {
       kind: 'city', pattern: 'organic', seed: 71, landmarks: [landmark]
@@ -176,9 +176,27 @@ describe('world settlement growth', () => {
       expect(Math.abs(bounds.x - landmarkBounds.x) < (bounds.width + landmarkBounds.width) / 2
         && Math.abs(bounds.z - landmarkBounds.z) < (bounds.depth + landmarkBounds.depth) / 2).toBe(false);
     }
-    for (const edge of segments(patch)) expect(segmentBox(edge.a, edge.b, landmarkBounds, edge.width / 2)).toBe(false);
     const access = patch.streets.find(street => street.tags.includes('landmark-access'))!;
-    expect(Math.min(...access.points.map(point => pointDistance(point, [landmark.x, landmark.z], [landmark.x, landmark.z])))).toBeLessThan(50);
+    for (const street of patch.streets) for (let index = 1; index < street.points.length; index++) {
+      const [a, b] = [street.points[index - 1], street.points[index]];
+      expect(street === access
+        ? segmentBuildingFootprint(a, b, landmark, street.width / 2)
+        : segmentBox(a, b, landmarkBounds, street.width / 2)).toBe(false);
+    }
+    const direction: Point = [Math.sin(landmark.rotation!), Math.cos(landmark.rotation!)];
+    const door: Point = [
+      landmark.x + direction[0] * landmark.depth / 2,
+      landmark.z + direction[1] * landmark.depth / 2
+    ];
+    expect(pointDistance(door, access.points[0], access.points[1])).toBeCloseTo(access.width / 2, 5);
+    expect(Math.hypot(access.points[0][0] - door[0], access.points[0][1] - door[1])).toBeCloseTo(access.width / 2, 5);
+    const networkEnd = access.points.at(-1)!;
+    expect(patch.streets.some(street => street !== access && street.points.some(point =>
+      Math.hypot(point[0] - networkEnd[0], point[1] - networkEnd[1]) < 1e-6))).toBe(true);
+
+    const penetrating = structuredClone(patch);
+    penetrating.streets.find(street => street.id === access.id)!.points[0] = [landmark.x, landmark.z];
+    expect(() => validateTownPatch(plan, penetrating)).toThrow('world_building_intersects_street');
   });
 
   it('places a required public footprint on reachable sampled street frontage', () => {
@@ -197,6 +215,16 @@ describe('world settlement growth', () => {
     expect(result.patch.streets.some(street => street.tags.includes('landmark-access'))).toBe(true);
     expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
   });
+
+  it('bounds public-footprint retries and still fails explicitly when no site can fit', () => {
+    const plan = fixture(), sample = sampler(plan);
+    expect(() => createWorldSettlementLandmarkLayout(plan, 'town', sample, {
+      kind: 'city', pattern: 'organic', seed: 71, density: 0.78
+    }, [{
+      id: 'oversized-hall', use: 'oversized public hall', width: 380, depth: 380, height: 20,
+      assetKey: 'oversized-hall'
+    }])).toThrow(/^world_settlement_no_landmark_site:oversized-hall:/);
+  }, 5_000);
 
   it('fails explicitly when no settlement can be built', () => {
     const plan = fixture(), base = sampler(plan);

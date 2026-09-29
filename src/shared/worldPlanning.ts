@@ -251,7 +251,11 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
         && Math.abs(a.z - b.z) < (a.depth + b.depth) / 2) fail('world_buildings_overlap');
     }
     for (const street of streets) {
-      if (segments(street).some(([p, q]) => segmentBox(p, q, a, street.width / 2))) {
+      const ownLandmarkAccess = street.id === `${town.id}-landmark-${buildings[i].id}`
+        && street.tags.includes('landmark-access');
+      if (segments(street).some(([p, q]) => ownLandmarkAccess
+        ? segmentBuildingFootprint(p, q, buildings[i], street.width / 2)
+        : segmentBox(p, q, a, street.width / 2))) {
         fail('world_building_intersects_street');
       }
     }
@@ -568,6 +572,21 @@ function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatc
 export function townBuildingBounds(b: TownBuilding): Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'> {
   const c = Math.abs(Math.cos(b.rotation ?? 0)), s = Math.abs(Math.sin(b.rotation ?? 0));
   return { x: b.x, z: b.z, width: c * b.width + s * b.depth, depth: s * b.width + c * b.depth };
+}
+
+/** Exact Y-rotated footprint test. Touching the padded boundary is safe for a road ending at an entrance. */
+export function segmentBuildingFootprint(a: Point, b: Point, building: TownBuilding, padding = 0): boolean {
+  const rotation = building.rotation ?? 0, c = Math.cos(rotation), s = Math.sin(rotation);
+  const local = (point: Point): Point => {
+    const x = point[0] - building.x, z = point[1] - building.z;
+    return [c * x - s * z, s * x + c * z];
+  };
+  return segmentBox(local(a), local(b), {
+    x: 0,
+    z: 0,
+    width: building.width,
+    depth: building.depth
+  }, Math.max(0, padding - TOLERANCE * 2));
 }
 
 /** Exact slab intersection, with the bounding box expanded by half the road width. */

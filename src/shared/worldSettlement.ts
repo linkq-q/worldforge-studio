@@ -1,7 +1,7 @@
 import type { MapGuide } from './mapGuide';
 import { createUrbanLayout, type UrbanPoint, type UrbanRoad } from './mapUrbanLayout';
 import {
-  createTownTasks, segmentBox, townBuildingBounds, validateTownPatch, worldPlanKey, worldTownBuildingQuota,
+  createTownTasks, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, worldPlanKey, worldTownBuildingQuota,
   type TownBuilding, type TownIntent, type TownPatch, type WorldPlan
 } from './worldPlanning';
 import { sampleWorldSlope, type WorldSample, type WorldSampler } from './worldTerrain';
@@ -54,6 +54,7 @@ type Shore = { point: Point; tangent: Point; waterDistance: number };
 const EPS = 1e-6;
 const TAU = Math.PI * 2;
 const MAX_LOCAL_EARTHWORK = 1.5;
+const LANDMARK_SITE_ATTEMPT_LIMIT = 24;
 
 /**
  * Builds one deterministic TownPatch from the shared urban geometry kernel, then adapts it to sampled terrain.
@@ -151,15 +152,25 @@ export function generateWorldSettlement(
   for (let landmarkIndex = 0; landmarkIndex < settings.landmarks.length; landmarkIndex++) {
     const landmark = settings.landmarks[landmarkIndex];
     const accessSafe = (a: Point, b: Point, width: number) => terrainRoadSafe(a, b, width)
-      && landmarkBounds.every((bounds, index) => index === landmarkIndex || !segmentBox(a, b, bounds, width / 2 + 1));
+      && landmarkBounds.every((bounds, index) => index === landmarkIndex
+        ? !segmentBuildingFootprint(a, b, landmark, width / 2)
+        : !segmentBox(a, b, bounds, width / 2 + 1));
     const entry = landmarkEntry(landmark, settings.roadWidth);
     const direction: Point = [Math.sin(landmark.rotation ?? 0), Math.cos(landmark.rotation ?? 0)];
     const outside = add(entry, scale(direction, Math.max(12, settings.blockSize / 3)));
     const tailSafe = (a: Point, b: Point, width: number) => terrainRoadSafe(a, b, width)
-      && landmarkBounds.every(bounds => !segmentBox(a, b, bounds, width / 2 + 1));
-    const tail = routeToNetwork(outside, roadNodes(streets), tailSafe, settings.roadWidth);
-    const route = tail && accessSafe(entry, outside, settings.roadWidth) ? [entry, ...tail] : undefined;
-    if (!route) throw new Error(`world_settlement_landmark_unreachable:${landmark.id}`);
+      && landmarkBounds.every((bounds, index) => index === landmarkIndex
+        ? !segmentBuildingFootprint(a, b, landmark, width / 2)
+        : !segmentBox(a, b, bounds, width / 2 + 1));
+    const roadside = insertRoadNodeAt(streets, outside);
+    const tail = roadside ? [roadside] : routeToNetwork(outside, roadNodes(streets), tailSafe, settings.roadWidth);
+    const route = tail && accessSafe(entry, tail[0], settings.roadWidth) ? [entry, ...tail] : undefined;
+    if (!route) {
+      const reason = !tail ? 'network'
+        : !terrainRoadSafe(entry, tail[0], settings.roadWidth) ? 'terrain'
+          : 'footprint';
+      throw new Error(`world_settlement_landmark_unreachable:${landmark.id}:${reason}`);
+    }
     if (route.length > 1) streets.push(guide(`${town.id}-landmark-${landmark.id}`, route, settings.roadWidth,
       ['settlement', settings.kind, 'street', 'landmark-access']));
   }
@@ -199,13 +210,14 @@ export function createWorldSettlementLandmarkLayout(
   let patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks});
   for(const requirement of requirements) {
     let next:TownPatch|undefined,resolved:TownBuilding|undefined;
-    for(const candidate of frontageLandmarkSites(requirement,patch.streets,town,options.kind)) {
+    const failures=new Set<string>();
+    for(const candidate of boundedLandmarkSites(frontageLandmarkSites(requirement,patch.streets,town,options.kind))) {
       try {
         next=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[...landmarks,candidate]});
         resolved=candidate;break;
-      } catch {}
+      } catch(error) {failures.add(error instanceof Error?error.message:String(error));}
     }
-    if(!resolved||!next) throw new Error('world_settlement_no_landmark_site:'+requirement.id);
+    if(!resolved||!next) throw new Error(`world_settlement_no_landmark_site:${requirement.id}:${[...failures].join('|')}`);
     landmarks.push(resolved);patch=next;
   }
   return {landmarks,patch};
@@ -220,11 +232,9 @@ function frontageLandmarkSites(requirement:WorldLandmarkRequirement,streets:MapG
     const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]],steps=Math.max(1,Math.ceil(length/8));
     for(let index=0;index<=steps;index++) for(const side of [-1,1]) {
       const roadPoint=mix(a,b,index/steps),direction=scale(normal,-side),rotation=normalizeAngle(Math.atan2(direction[0],direction[1]));
-      const probe:TownBuilding={...requirement,x:0,z:0,rotation},bounds=townBuildingBounds(probe);
-      const tx=Math.abs(direction[0])<EPS?Infinity:bounds.width/2/Math.abs(direction[0]);
-      const tz=Math.abs(direction[1])<EPS?Infinity:bounds.depth/2/Math.abs(direction[1]);
-      const setback=Math.min(tx,tz)+roadWidth/2+1.01+Math.max(12,blockSize/3);
-      points.push({...probe,x:roundPoint(roadPoint[0]-direction[0]*setback),z:roundPoint(roadPoint[1]-direction[1]*setback)});
+      const setback=requirement.depth/2+roadWidth/2+Math.max(12,blockSize/3);
+      points.push({...requirement,x:roundPoint(roadPoint[0]-direction[0]*setback),
+        z:roundPoint(roadPoint[1]-direction[1]*setback),rotation});
     }
   }
   const unique=new Map(points.map(item=>[`${item.x.toFixed(6)},${item.z.toFixed(6)},${(item.rotation??0).toFixed(6)}`,item]));
@@ -245,7 +255,7 @@ export function resolveWorldSettlementLandmarks(
   let patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
   for(const authored of options.landmarks) {
     const preferred:[number,number]=[authored.x,authored.z];
-    const sites=[preferred,...nearbyLandmarkSites(preferred,authored,town.radius,patch.streets,options.kind)];
+    const sites=boundedLandmarkSites([preferred,...nearbyLandmarkSites(preferred,authored,town.radius,patch.streets,options.kind)]);
     const unique=new Map(sites.map(point=>[pointKey(point),point]));
     let resolved:TownBuilding|undefined,next:TownPatch|undefined,reason='world_settlement_invalid_landmark:'+authored.id;
     const failures=new Set<string>();
@@ -265,11 +275,9 @@ export function resolveWorldSettlementLandmarks(
 
 function nearbyLandmarkSites(preferred:Point,landmark:TownBuilding,townRadius:number,streets:MapGuide[],kind:WorldSettlementKind):Point[] {
   const limit=townRadius*.25,step=Math.max(4,Math.min(landmark.width,landmark.depth)*.3),points:Point[]=[];
-  const direction:Point=[Math.sin(landmark.rotation??0),Math.cos(landmark.rotation??0)],bounds=townBuildingBounds(landmark);
-  const tx=Math.abs(direction[0])<EPS?Infinity:bounds.width/2/Math.abs(direction[0]);
-  const tz=Math.abs(direction[1])<EPS?Infinity:bounds.depth/2/Math.abs(direction[1]);
+  const direction:Point=[Math.sin(landmark.rotation??0),Math.cos(landmark.rotation??0)];
   const roadWidth=kind==='city'?4.2:3,blockSize=Math.max(kind==='city'?34:52,Math.min(kind==='city'?76:110,townRadius*(kind==='city'?.22:.32)));
-  const setback=Math.min(tx,tz)+roadWidth/2+1.01+Math.max(12,blockSize/3);
+  const setback=landmark.depth/2+roadWidth/2+Math.max(12,blockSize/3);
   for(const street of streets) for(let segment=1;segment<street.points.length;segment++) {
     const a=street.points[segment-1],b=street.points[segment],length=distance(a,b),steps=Math.max(1,Math.ceil(length/8));
     for(let index=0;index<=steps;index++) {
@@ -282,6 +290,16 @@ function nearbyLandmarkSites(preferred:Point,landmark:TownBuilding,townRadius:nu
   }
   const unique=new Map(points.map(point=>[pointKey(point),point]));
   return [...unique.values()].sort((a,b)=>distance(a,preferred)-distance(b,preferred)||a[0]-b[0]||a[1]-b[1]);
+}
+
+function boundedLandmarkSites<T>(sites: readonly T[]): T[] {
+  if (sites.length <= LANDMARK_SITE_ATTEMPT_LIMIT) return [...sites];
+  const nearby = Math.min(12, LANDMARK_SITE_ATTEMPT_LIMIT), result = sites.slice(0, nearby);
+  const spread = LANDMARK_SITE_ATTEMPT_LIMIT - nearby, remaining = sites.length - nearby;
+  for (let index = 0; index < spread; index++) {
+    result.push(sites[nearby + Math.floor(index * remaining / spread)]);
+  }
+  return result;
 }
 
 /** Recomputes review metrics from delivered geometry; diagnostics are deliberately not persisted in TownPatch. */
@@ -579,7 +597,10 @@ function placeBuildings(
       || !buildingEarthworkSafe(sample, town, landmark)
       || probes.some(point => !dryPoint(sample, town, point, settings.waterSetback)
         || sampleSlope(sample, town, point) > settings.maxSiteSlope + EPS)
-      || localRoads.some(road => segmentBox(road.a, road.b, bounds, road.width / 2))) {
+      || localRoads.some(road => road.road.id === `${town.id}-landmark-${landmark.id}`
+        && road.road.tags.includes('landmark-access')
+        ? segmentBuildingFootprint(road.a, road.b, landmark, road.width / 2)
+        : segmentBox(road.a, road.b, bounds, road.width / 2))) {
       throw new Error(`world_settlement_invalid_landmark:${landmark.id}`);
     }
     const worldBounds = { ...bounds, x: bounds.x + town.center[0], z: bounds.z + town.center[1] };
@@ -674,6 +695,20 @@ function roadNodes(roads: MapGuide[]): Point[] {
   return [...result.values()];
 }
 
+function insertRoadNodeAt(streets: MapGuide[], point: Point): Point | undefined {
+  for (const street of streets) for (let index = 1; index < street.points.length; index++) {
+    const a = street.points[index - 1], b = street.points[index], delta = sub(b, a), length2 = delta[0] ** 2 + delta[1] ** 2;
+    const t = length2 ? Math.max(0, Math.min(1, ((point[0] - a[0]) * delta[0] + (point[1] - a[1]) * delta[1]) / length2)) : 0;
+    const projected: Point = [roundPoint(a[0] + delta[0] * t), roundPoint(a[1] + delta[1] * t)];
+    if (distance(projected, point) > 0.0001) continue;
+    if (same(projected, a)) return a;
+    if (same(projected, b)) return b;
+    street.points.splice(index, 0, projected);
+    return projected;
+  }
+  return undefined;
+}
+
 function segmentSafe(
   sample: WorldSettlementSampler,
   town: TownIntent,
@@ -742,10 +777,7 @@ function boxesOverlap(a: Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'>, b: P
 function landmarkEntry(building: TownBuilding, roadWidth: number): Point {
   const rotation = building.rotation ?? 0;
   const direction: Point = [Math.sin(rotation), Math.cos(rotation)];
-  const bounds = townBuildingBounds(building);
-  const tx = Math.abs(direction[0]) < EPS ? Infinity : bounds.width / 2 / Math.abs(direction[0]);
-  const tz = Math.abs(direction[1]) < EPS ? Infinity : bounds.depth / 2 / Math.abs(direction[1]);
-  return add([building.x, building.z], scale(direction, Math.min(tx, tz) + roadWidth / 2 + 1.01));
+  return add([building.x, building.z], scale(direction, building.depth / 2 + roadWidth / 2));
 }
 
 function splitRoadIntersections(streets: MapGuide[]): void {
