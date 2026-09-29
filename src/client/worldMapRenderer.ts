@@ -268,7 +268,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       builtContent.forEach(disposeContentEntry);
     };
     const contentBatchSize = limits ? 3 : 1;
-    const terrainBatchSize = limits ? 4 : 1;
+    // sampleWorldTile is synchronous until buildTerrainEntry reaches its first
+    // await. Starting four entries together therefore samples four complete
+    // tiles in one frame; keep terrain work to one tile per paint interval.
+    const terrainBatchSize = 1;
     for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
       const batch = missingContent.slice(index, index + contentBatchSize);
       const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [key, await buildContentEntry(chunk)] as const));
@@ -1335,7 +1338,7 @@ function reconcileRequestKey(request: ReconcileRequest): string {
 
 function yieldWorldBuild(): Promise<void> {
   return new Promise(resolve => {
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(resolve, 0));
     else setTimeout(resolve, 0);
   });
 }
