@@ -127,6 +127,8 @@ const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
 const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
 const ASSET_CATALOG_SNAPSHOT_CONTEXT_MAX_CHARS = 12_000;
 const GENERATED_ASSET_CONTEXT_MAX_CHARS = 12_000;
+const DEFAULT_USER_PROMPT_MAX_CHARS = 1_200;
+const USER_PROMPT_HARD_MAX_CHARS = 8_000;
 const MINIMAL_MAP_CODE_API_KEYS = [
   'terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
@@ -205,6 +207,8 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   validateCode?: (code: string) => unknown;
   /** Optional user-authored preference for focal assets; the model still owns the composition. */
   focusPrompt?: string;
+  /** Internal bounded override for trusted composed prompts; ordinary editor requests keep the 1,200-character default. */
+  userPromptMaxChars?: number;
   promptMode?: MapCodePromptMode;
   revisionMode?: MapCodeRevisionMode;
   spatialPolicy?: MapCodeSpatialPolicy;
@@ -727,8 +731,13 @@ export async function generateMapCodeSuggestion(
     options.promptMode
   );
   const focalPreference = options.focusPrompt?.trim().slice(0, 300);
+  const userPromptMaxChars = clampInteger(
+    options.userPromptMaxChars ?? DEFAULT_USER_PROMPT_MAX_CHARS,
+    1,
+    USER_PROMPT_HARD_MAX_CHARS
+  );
   const userPrompt = [
-    prompt.trim().slice(0, 1_200),
+    prompt.trim().slice(0, userPromptMaxChars),
     scopePrompt,
     options.selectedObjectIds?.length
       ? `Currently selected map object IDs: ${options.selectedObjectIds.slice(0, 64).join(', ')}. Treat these as the default targets when the request says selected objects/buildings/foundations.`
@@ -4098,6 +4107,7 @@ Declare terrain and water before sampling candidate sites. Use api.environmentSa
 ## Architectural composition
 Ordinary repeated homes, apartment blocks and small shops should be complete reusable building assets, including their fixed doors, windows, balconies and roofs. Signs and other exterior attachments may be placed separately.
 For large focal architecture with repeated bays, stories, wings, arcades, buttresses or seating, decide the footprint -> depth layers -> massing tiers/stories -> boundary runs -> ordinary/corner/entrance modules before requesting assets. The scene program owns their connections, floor heights, silhouette and deliberate voids such as courtyards, arenas and entrance passages; reusable assets own the detail of each part. A unique tightly coupled roof, sculpture or simple complete building may remain one asset. Choose decomposition for structural benefit, not a minimum part count.
+Users/activities→public/service→entry/void/roof; no lists/extras.
 Use shared dimensions and local frames so related placements follow footprint changes. Distinguish entrance/corner/transition bays; preserve asymmetry and depth. Transform points with JavaScript and Math.
 For connected modules, describe canonical dimensions, span axis, joining faces, open passages and front direction in the asset prompt. Use spanAxis:'x' for side-by-side bays and spanAxis:'z' for longitudinal parts. Fit individual bays with placeBetween; do not stretch one detailed module across an entire building. Sample a closed outline into short segments near the canonical module span before applying this transferable tier rule:
 function placeTier(points, elevation, spec) {

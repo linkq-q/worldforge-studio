@@ -224,6 +224,8 @@ describe('map code planner', () => {
     expect(main).toContain('Ordinary repeated homes, apartment blocks and small shops should be complete reusable building assets');
     expect(main).toContain('Signs and other exterior attachments may be placed separately');
     expect(main).toContain('For large focal architecture with repeated bays');
+    expect(main).toContain('Users/activities→public/service→entry/void/roof');
+    expect(main).toContain('no lists/extras');
     expect(main).toContain('Let contours, shoreline and access shape connected neighborhoods');
     expect(main).toContain('Sample terrain and water before choosing district sites');
     expect(main).toContain('sample safe ground and provide plausible crossings');
@@ -1083,6 +1085,30 @@ describe('map code planner', () => {
 
     const body = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)) as { messages: Array<{ role: string; content: string }> };
     expect(body.messages.find((message) => message.role === 'user')?.content).toContain('图书馆主楼');
+  });
+
+  it('keeps the ordinary prompt bound while allowing a bounded internal assembly prompt', async () => {
+    const sentinel = 'WORLD-ASSEMBLY-PROGRAM-TAIL';
+    const prompt = `Program:${'x'.repeat(1_600)}${sentinel}`;
+    const code = "function plan(api) { api.place({name:'marker',position:[0,0],role:'structure'}); }";
+    const request = async (userPromptMaxChars?: number) => {
+      const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      }));
+      await generateMapCodeSuggestion(prompt, createEmptyMap(), [], {
+        apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+        promptMode: 'main', scope: 'scene', minNewAssets: 0, maxNewAssets: 0,
+        revisionMode: 'first-pass',
+        ...(userPromptMaxChars === undefined ? {} : { userPromptMaxChars })
+      });
+      const body = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      return body.messages.find((message) => message.role === 'user')?.content ?? '';
+    };
+
+    expect(await request()).not.toContain(sentinel);
+    expect(await request(2_000)).toContain(sentinel);
   });
 
   it('does not inject an Atlantis-specific city recipe', () => {
