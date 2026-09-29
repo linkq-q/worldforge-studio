@@ -404,6 +404,42 @@ describe('composable world terrain operations', () => {
     expect(mean(ridgeShares)).toBeGreaterThan(0.28);
   });
 
+  it('feathers compact coastal earthworks instead of forming one continuous slope wall', () => {
+    for (const seed of [1, 42, 2309, 6103301, 99173]) {
+      const sample = createWorldSampler({
+        version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.1,
+        constraints: [
+          { region: 'center', biome: 'grassland' }, { region: 'east', biome: 'grassland' },
+          { region: 'north', biome: 'forest' }, { region: 'west', biome: 'ocean' }
+        ],
+        landforms: [
+          { center: [20, -185], radius: [175, 58], height: 11 },
+          { center: [175, -130], radius: [60, 65], height: 5 }
+        ],
+        terrainBrushes: [{
+          id: 'curving-western-bay', mode: 'lower', amount: 16, feather: 12,
+          region: { kind: 'path', points: [
+            [-165, -235], [-190, -135], [-155, -35], [-185, 65], [-150, 155], [-175, 235]
+          ], width: 72 }
+        }]
+      });
+      const shoreline: number[] = [];
+      for (const z of [-220, -160, -100, -40, 20, 80, 140, 200]) {
+        let previous = sample(-250, z).height, shoreX: number | undefined, maxSlope = 0;
+        for (let x = -248; x <= 40; x += 2) {
+          const point = sample(x, z);
+          maxSlope = Math.max(maxSlope, sampleWorldSlope(sample, x, z));
+          if (previous <= 0 && point.height > 0) shoreX = x;
+          previous = point.height;
+        }
+        expect(shoreX).toBeDefined();
+        expect(maxSlope).toBeLessThan(0.9);
+        shoreline.push(shoreX!);
+      }
+      expect(Math.max(...shoreline) - Math.min(...shoreline)).toBeGreaterThan(40);
+    }
+  });
+
   it('keeps missing and explicit legacy relief profiles sample-identical', () => {
     const recipe: WorldRecipe = { version: 1, seed: 147, size: 500, constraints: [
       { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' }

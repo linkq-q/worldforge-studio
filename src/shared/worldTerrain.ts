@@ -476,7 +476,10 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     const reliefDetail = compactRelief
       ? fbm(wx / (310 * terrainScale), wz / (310 * terrainScale), seed + 1451, 2) * 0.32 - erosionChannels * 0.48
       : 0;
-    const base = continentalness < 0 ? continentalness * 1050 : Math.pow(continentalness, 1.4) * 400;
+    const oceanDepthScale = compactRelief ? 0.4 + terrainScale * 0.6 : 1;
+    const base = continentalness < 0
+      ? continentalness * 1050 * oceanDepthScale
+      : Math.pow(continentalness, 1.4) * 400;
     const macroHeight = base + land * (mountain * ridge * 3100 * terrainScale
       + rolling * (1 - climateDry * 0.8));
     let height = macroHeight * (recipe.heightScale ?? 1) + land * climateDry * dunes;
@@ -500,7 +503,11 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude);
     }
     for (const brush of recipe.terrainBrushes ?? []) {
-      const area = regionSample(brush.region, x, z), feather = brush.feather ?? 0;
+      const authoredFeather = brush.feather ?? 0;
+      const feather = compactRelief && (brush.mode === 'raise' || brush.mode === 'lower')
+        ? Math.max(authoredFeather, brush.amount * 3.75)
+        : authoredFeather;
+      const area = regionSample(brush.region, x, z);
       const influence = area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
       if (influence <= 0) continue;
       if (brush.mode === 'raise' || brush.mode === 'lower') {
