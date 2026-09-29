@@ -7341,7 +7341,15 @@ class MapEditor {
   private frameWorldTown(map: EditableMap, townId?: string): void {
     const towns = map.world?.bundle.plan.towns;
     const town = towns?.find(item => item.id === townId) ?? towns?.reduce((largest, item) => item.radius > largest.radius ? item : largest, towns[0]);
-    if (!town || !this.camera || !this.orbit) return;
+    this.worldPlaySpawn = null;
+    if (!this.camera || !this.orbit) return;
+    if (!town) {
+      if (!map.world) return;
+      const size = map.world.bundle.plan.recipe.size;
+      this.frameBox(new THREE.Box3(new THREE.Vector3(-size / 2, -16, -size / 2), new THREE.Vector3(size / 2, size * 0.15, size / 2)));
+      this.setViewName('世界全景');
+      return;
+    }
     const y = sampleTerrainHeight(map, ...town.center);
     this.orbit.target.set(town.center[0], y, town.center[1]);
     this.camera.position.set(town.center[0] + town.radius * 1.25, y + town.radius * 1.5, town.center[1] + town.radius * 1.6);
@@ -7416,6 +7424,8 @@ class MapEditor {
     if (viewDirection.lengthSq() < 0.0001) viewDirection.set(1, 0.72, 1);
     viewDirection.normalize();
     const distance = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov * 0.5)) * 1.15;
+    this.camera.far = Math.max(1500, distance + radius * 2);
+    this.camera.updateProjectionMatrix();
     this.camera.up.set(0, Math.abs(viewDirection.y) > 0.999 ? 0 : 1, Math.abs(viewDirection.y) > 0.999 ? -1 : 0);
     this.camera.position.copy(center).addScaledVector(viewDirection, distance);
     this.orbit.target.copy(center);
