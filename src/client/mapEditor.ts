@@ -360,6 +360,7 @@ class MapEditor {
   private worldWidth = 1600;
   private worldGenerateAssets = true;
   private worldPlaySpawn: [number, number, number] | null = null;
+  private worldPlaySpawnYaw = 0;
   private hdriFiles: string[] = [];
   private hdriTextures: HdriTexture[] = [];
   private orbit: OrbitControls | null = null;
@@ -534,14 +535,19 @@ class MapEditor {
     this.renderShell();
     this.setupViewport();
     this.setupAssetPreview();
-    await this.reloadLists();
-    const requestedMap = new URLSearchParams(location.search).get('map');
-    if (requestedMap && this.state.maps.some(map => map.id === requestedMap)) {
-      this.mapFolder = this.mapCatalog.membership[requestedMap] ?? 'unfiled';
-      await this.loadMap(requestedMap);
+    this.animate();
+    this.setBusy(true, '正在载入地图与附近分块…');
+    try {
+      await this.reloadLists();
+      const requestedMap = new URLSearchParams(location.search).get('map');
+      if (requestedMap && this.state.maps.some(map => map.id === requestedMap)) {
+        this.mapFolder = this.mapCatalog.membership[requestedMap] ?? 'unfiled';
+      }
+      this.setBusy(false, '已载入');
+    } catch (error) {
+      this.setBusy(false, `载入失败：${error instanceof Error ? error.message : String(error)}`);
     }
     this.renderPanels();
-    this.animate();
     const workspace = new URLSearchParams(location.search).get('workspace');
     if (workspace) await this.openWorkspace(workspace === 'experiments' ? 'experiments' : 'maps');
   }
@@ -1142,6 +1148,7 @@ class MapEditor {
     this.app.querySelectorAll<HTMLButtonElement>('[data-panel-target]').forEach((button) => {
       button.classList.toggle('active', button.dataset.panelTarget === panel);
     });
+    this.resize();
   }
 
   private setupViewport(): void {
@@ -1175,7 +1182,8 @@ class MapEditor {
       getMap: () => {
         if (!this.state.map) return null;
         const map = this.mapWithEditorAssets(this.state.map);
-        return map.world && this.worldPlaySpawn ? {...map, spawnPoints: [this.worldPlaySpawn]} : map;
+        return map.world && this.worldPlaySpawn
+          ? {...map, spawnPoints: [this.worldPlaySpawn], spawnYaw: this.worldPlaySpawnYaw} : map;
       },
       onActiveChange: (active) => this.setPlayModeActive(active),
       getCollisionWorld: () => this.renderedMap?.getCollisionWorld?.() ?? null,
@@ -1250,6 +1258,7 @@ class MapEditor {
     window.addEventListener('blur', this.clearCameraKeys);
     window.addEventListener('beforeunload', this.handleBeforeUnload);
     window.addEventListener('resize', () => this.resize());
+    new ResizeObserver(() => this.resize()).observe(host);
     this.resize();
   }
 
@@ -1301,7 +1310,9 @@ class MapEditor {
     if (!this.state.libraryAssets.some((asset) => asset.id === this.selectedLibraryAssetId)) {
       this.selectedLibraryAssetId = this.state.libraryAssets[0]?.id ?? '';
     }
-    const initialMap = this.state.maps.find(map => this.mapFolder === 'all' || (this.mapCatalog.membership[map.id] ?? 'unfiled') === this.mapFolder);
+    const requestedMapId = new URLSearchParams(location.search).get('map');
+    const initialMap = this.state.maps.find(map => map.id === requestedMapId)
+      ?? this.state.maps.find(map => this.mapFolder === 'all' || (this.mapCatalog.membership[map.id] ?? 'unfiled') === this.mapFolder);
     if (!this.state.map && !initialMap && this.state.maps.length) {
       this.mapFolder = this.mapCatalog.membership[this.state.maps[0].id] ?? 'unfiled';
     }
@@ -1368,9 +1379,9 @@ class MapEditor {
       this.mapAiComparisonMap = savedMap;
       this.mapAiPreviewVisible = true;
     }
+    if (!draftRecovery && savedMap.world) this.frameWorldTown(savedMap, new URLSearchParams(location.search).get('town') ?? undefined);
     await this.refreshScene();
     if (!draftRecovery) {
-      if (savedMap.world) this.frameWorldTown(savedMap, new URLSearchParams(location.search).get('town') ?? undefined);
       try {
         const plan = await loadBrowserMapPlan(savedMap.id);
         if (plan && isBrowserMapPlanCurrent(savedMap, plan)) {
@@ -6376,7 +6387,11 @@ class MapEditor {
     const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
       editorHelpers: true,
       scene: this.scene,
-      renderer: this.renderer ?? undefined
+      renderer: this.renderer ?? undefined,
+      ...(this.state.map.world && this.orbit && this.camera ? {
+        worldInitialView: { x: this.orbit.target.x, z: this.orbit.target.z,
+          distance: Math.abs(this.camera.position.y - this.orbit.target.y) }
+      } : {})
     });
     const rebuildMs = performance.now() - rebuildStartedAt;
     if (rebuildMs > 100) {
@@ -6928,7 +6943,6 @@ class MapEditor {
     const frameMs = Math.max(0, now - this.lastFrameAt);
     const dt = Math.min(0.05, frameMs / 1000);
     this.lastFrameAt = now;
-    this.resize();
     this.playMode?.update(dt);
     if (!this.playMode?.isActive) {
       this.updateKeyboardCamera(dt);
@@ -6944,9 +6958,12 @@ class MapEditor {
     }
     this.renderScene?.renderFrame(dt, now / 1000);
     this.renderStats?.endFrame(frameMs, now);
-    this.previewOrbit?.update();
-    this.resizePreview();
-    if (this.previewRenderer && this.previewScene && this.previewCamera) this.previewRenderer.render(this.previewScene, this.previewCamera);
+    if (this.previewRenderer?.domElement.isConnected && this.previewRenderer.domElement.checkVisibility()
+      && this.previewScene && this.previewCamera) {
+      this.previewOrbit?.update();
+      this.resizePreview();
+      this.previewRenderer.render(this.previewScene, this.previewCamera);
+    }
   }
 
   private resize(): void {
@@ -7332,6 +7349,7 @@ class MapEditor {
     const port = town.ports[0]?.position ?? [0, 0];
     const x = town.center[0] + port[0], z = town.center[1] + port[1];
     this.worldPlaySpawn = [x, sampleTerrainHeight(map, x, z), z];
+    this.worldPlaySpawnYaw = Math.atan2(port[0], port[1]);
     this.setViewName(town.name);
   }
 
@@ -7606,6 +7624,7 @@ class MapEditor {
 
   private setPlayModeActive(active: boolean): void {
     this.app.dataset.playMode = String(active);
+    this.resize();
     if (this.orbit) this.orbit.enabled = !active;
     const hud = this.app.querySelector<HTMLElement>('.play-mode-hud');
     if (hud) hud.hidden = !active;

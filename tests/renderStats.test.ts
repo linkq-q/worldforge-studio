@@ -7,6 +7,24 @@ import {
 } from '../src/client/renderStats';
 
 describe('render stats', () => {
+  it('keeps a captured report readable even while clipboard permission is pending', () => {
+    const element = {
+      hidden: false, innerHTML: '', classList: { add: vi.fn() },
+      addEventListener: vi.fn(), querySelector: () => null, querySelectorAll: () => []
+    } as unknown as HTMLElement;
+    const info = { autoReset: true, reset: vi.fn(), render: { calls: 120, triangles: 30_000 } };
+    const copyText = vi.fn(() => new Promise<void>(() => {}));
+    const stats = new RenderStats(info, element, 0, {
+      details: vi.fn(), copyText, captureDurationMs: 10
+    });
+    stats.beginCapture(0);
+    stats.endFrame(16, 12);
+    expect(copyText).toHaveBeenCalledOnce();
+    expect(element.innerHTML).toContain('aria-label="性能报告"');
+    expect(element.innerHTML).toContain('frames: 1');
+    expect(element.innerHTML).toContain('已生成性能报告');
+  });
+
   it('owns renderer info resets and reports compact developer metrics', () => {
     const reset = vi.fn();
     const info: RendererInfoSource = {

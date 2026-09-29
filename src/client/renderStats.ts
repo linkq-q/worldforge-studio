@@ -92,6 +92,7 @@ export class RenderStats {
   private expanded = false;
   private captureStartedAt: number | null = null;
   private captureSamples: FramePerformanceSample[] = [];
+  private captureReport = '';
   private status = '';
   private interacting = false;
 
@@ -146,6 +147,7 @@ export class RenderStats {
   beginCapture(now = performance.now()): void {
     this.captureStartedAt = now;
     this.captureSamples = [];
+    this.captureReport = '';
     this.status = '正在记录 10 秒…';
     this.renderPanel();
   }
@@ -194,7 +196,8 @@ export class RenderStats {
         ${passRows ? `<div class="perf-pass-list"><strong>Pass Timing</strong>${passRows}</div>` : ''}
         ${passToggles ? `<div class="perf-pass-toggles"><strong>临时 Pass 开关</strong>${passToggles}</div>` : ''}
         <button type="button" class="perf-capture">记录并复制 10 秒报告</button>
-        <small>${escapeHtml(this.status || 'CPU 帧时；Pass 开关不会修改方案存档')}</small>
+        <small>${escapeHtml(this.status || '帧间隔；Pass 开关不会修改方案存档')}</small>
+        ${this.captureReport ? `<details><summary>查看本次报告</summary><textarea aria-label="性能报告" rows="12" readonly>${escapeHtml(this.captureReport)}</textarea></details>` : ''}
       </div>`;
     this.bindPanel();
   }
@@ -219,6 +222,9 @@ export class RenderStats {
   private async finishCapture(): Promise<void> {
     this.captureStartedAt = null;
     const report = buildPerformanceReport(this.captureSamples, this.options?.details() ?? EMPTY_DETAILS);
+    this.captureReport = report;
+    this.status = `已生成性能报告（${this.captureSamples.length} 帧）`;
+    this.renderPanel();
     try {
       await (this.options?.copyText?.(report) ?? navigator.clipboard?.writeText(report));
       this.status = `已复制性能报告（${this.captureSamples.length} 帧）`;

@@ -11,6 +11,7 @@ describe('world architecture prompt', () => {
     const result = buildWorldArchitecturePrompt(prompt, [24, 12, 18]);
 
     expect(result).toContain('Build ONLY the 24m by 18m footprint architecture, height 12m');
+    expect(result).toContain('Every stair must end on a real platform connected to an upper walkable route');
     expect(result).toContain('public arrival and service or logistics flows');
     expect(result).toContain('not a checklist of rooms');
     expect(result).toContain(sentinel);
