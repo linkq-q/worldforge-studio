@@ -139,6 +139,9 @@ export interface WorldContentChunk { x: number; z: number }
 export interface WorldBuildingCollider {
   id: string; x: number; z: number; width: number; depth: number; rotation: number;
 }
+export interface WorldHarborQuayExtension {
+  from: [number, number]; to: [number, number]; width: number; height: number;
+}
 
 const contentKey = (chunk: WorldContentChunk) => chunk.x + ':' + chunk.z;
 
@@ -180,15 +183,54 @@ function clipSegment(
   return [[a[0] + dx * low, a[1] + dz * low], [a[0] + dx * high, a[1] + dz * high]];
 }
 
-function buildRoadChunk(
+/** Extends an authored dry harbor landing far enough over sampled water to read and function as a pier. */
+export function worldHarborQuayExtension(
+  road: MapGuide, sample: (x: number, z: number) => WorldSample, worldSize: number
+): WorldHarborQuayExtension | undefined {
+  if (road.closed || !road.tags.includes('harbor-quay') || road.points.length < 2) return undefined;
+  const from=road.points.at(-1)!,previous=road.points.at(-2)!,dx=from[0]-previous[0],dz=from[1]-previous[1];
+  const length=Math.hypot(dx,dz);if(length<1e-6)return undefined;
+  const direction:[number,number]=[dx/length,dz/length],half=worldSize/2,step=2;
+  const overWater=Math.max(8,road.width*1.5),maxReach=32+overWater;
+  let firstWater:number|undefined,lastWater:[number,number]|undefined,waterLevel:number|undefined;
+  for(let distance=step;distance<=maxReach;distance+=step) {
+    const point:[number,number]=[from[0]+direction[0]*distance,from[1]+direction[1]*distance];
+    if(Math.abs(point[0])>half||Math.abs(point[1])>half)break;
+    const value=sample(...point);
+    if(value.waterLevel===null) {if(firstWater!==undefined)break;continue;}
+    firstWater??=distance;lastWater=point;waterLevel=value.waterLevel;
+    if(distance-firstWater>=overWater)break;
+  }
+  if(firstWater===undefined||!lastWater||waterLevel===undefined||Math.hypot(lastWater[0]-from[0],lastWater[1]-from[1])-firstWater<overWater-1e-6)return undefined;
+  const shore=sample(...from),lift=worldSize<2000?.12:1.2;
+  return {from:[...from],to:lastWater,width:road.width,height:Math.max(shore.height+lift,waterLevel+.55)};
+}
+
+function pointSegmentDistance(x:number,z:number,a:[number,number],b:[number,number]):number {
+  const dx=b[0]-a[0],dz=b[1]-a[1],length2=dx*dx+dz*dz;
+  const t=length2?Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length2)):0;
+  return Math.hypot(x-(a[0]+dx*t),z-(a[1]+dz*t));
+}
+
+/** Uses the same deck surface for walking that the content renderer draws over the water. */
+export function sampleWorldQuaySurface(
+  base:(x:number,z:number)=>WorldSample,extensions:readonly WorldHarborQuayExtension[],x:number,z:number
+):WorldSample {
+  const value=base(x,z),deck=extensions.find(item=>pointSegmentDistance(x,z,item.from,item.to)<=item.width/2);
+  return deck&&deck.height>value.height?{...value,height:deck.height}:value;
+}
+
+export function buildWorldRoadChunk(
   roads: MapGuide[], chunk: WorldContentChunk, sample: (x: number, z: number) => WorldSample, worldSize: number
 ): { mesh?: THREE.Mesh; triangles: number } {
-  const positions: number[] = [], indices: number[] = [];
+  const positions: number[] = [], colors:number[]=[],indices: number[] = [];
   const minX = chunk.x * WORLD_CONTENT_CHUNK_SIZE, minZ = chunk.z * WORLD_CONTENT_CHUNK_SIZE;
   const maxX = minX + WORLD_CONTENT_CHUNK_SIZE, maxZ = minZ + WORLD_CONTENT_CHUNK_SIZE;
   const spacing = worldRoadSampleSpacing(worldSize), lift = worldSize < 2000 ? .12 : 1.2;
+  const ordinary=new THREE.Color('#a78d67'),quay=new THREE.Color('#6b5038');
   for (const road of roads) {
-    const points = road.closed ? [...road.points, road.points[0]] : road.points;
+    const extension=worldHarborQuayExtension(road,sample,worldSize);
+    const points = road.closed ? [...road.points, road.points[0]] : extension?[...road.points,extension.to]:road.points;
     for (let i = 1; i < points.length; i++) {
       const pad = road.width / 2;
       const clipped = clipSegment(points[i - 1], points[i], minX - pad, minZ - pad, maxX + pad, maxZ + pad);
@@ -197,11 +239,12 @@ function buildRoadChunk(
       if (length < 1e-6) continue;
       const steps = Math.max(1, Math.ceil(length / spacing)), offsetX = (bz - az) / length * pad, offsetZ = (ax - bx) / length * pad;
       const start = positions.length / 3;
+      const deck=extension&&i===road.points.length?extension:undefined,color=extension?quay:ordinary;
       for (let step = 0; step <= steps; step++) {
         const x = ax + (bx - ax) * step / steps, z = az + (bz - az) * step / steps;
         for (const sign of [-1, 1]) {
           const px = x + offsetX * sign, pz = z + offsetZ * sign;
-          positions.push(px, sample(px, pz).height + lift, pz);
+          positions.push(px,deck?.height??sample(px,pz).height+lift,pz);colors.push(color.r,color.g,color.b);
         }
         if (step) { const next = start + step * 2; indices.push(next - 2, next - 1, next, next, next - 1, next + 1); }
       }
@@ -209,9 +252,10 @@ function buildRoadChunk(
   }
   if (!indices.length) return { triangles: 0 };
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(indices);
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);
   geometry.computeVertexNormals(); geometry.computeBoundingSphere();
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: '#a78d67', roughness: 1, side: THREE.DoubleSide }));
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: '#ffffff',vertexColors:true,roughness: 1, side: THREE.DoubleSide }));
   mesh.receiveShadow = true; return { mesh, triangles: indices.length / 3 };
 }
 
@@ -243,13 +287,19 @@ export class WorldContentView {
   private readonly active = new Map<string, ActiveContentChunk>();
   private placements: WorldBuildingPlacement[] = [];
   private roads: MapGuide[] = [];
+  private quayExtensions:WorldHarborQuayExtension[]=[];
   private desired: WorldContentChunk[] = [];
   private meshCollision = new MeshCollisionWorld();
 
   reset(bundle: WorldBundle, sample: (x: number, z: number) => WorldSample, assets?: WorldAssetLibrary): void {
     this.clear(); this.bundle = bundle; this.sample = sample; this.assets = assets;
     this.placements = worldBuildingPlacements(bundle); this.roads = worldRoads(bundle);
+    this.quayExtensions=this.roads.flatMap(road=>{
+      const extension=worldHarborQuayExtension(road,sample,bundle.plan.recipe.size);return extension?[extension]:[];
+    });
   }
+
+  sampleSurface=(x:number,z:number):WorldSample=>sampleWorldQuaySurface(this.sample!,this.quayExtensions,x,z);
 
   update(focus: THREE.Vector3, camera: THREE.Vector3): void {
     if (!this.bundle || !this.sample) return;
@@ -291,7 +341,7 @@ export class WorldContentView {
     if (this.assets) root.add(buildWorldAssetBuildingPlacements(placements, this.sample!, this.assets));
     const fallback = this.assets ? placements.filter(building => !pickWorldAsset(this.assets!, building)) : placements;
     root.add(buildFallbackBuildings(fallback, this.sample!));
-    const road = buildRoadChunk(this.roads, chunk, this.sample!, this.bundle!.plan.recipe.size);
+    const road = buildWorldRoadChunk(this.roads, chunk, this.sample!, this.bundle!.plan.recipe.size);
     if (road.mesh) root.add(road.mesh);
     return { root, placements, buildingCount: placements.length, roadTriangles: road.triangles };
   }
@@ -311,7 +361,7 @@ export class WorldContentView {
   private clear(): void {
     this.meshCollision.dispose(); this.meshCollision = new MeshCollisionWorld();
     for (const chunk of this.active.values()) disposeWorldStructures(chunk.root);
-    this.active.clear(); this.root.clear(); this.desired = []; this.placements = []; this.roads = [];
+    this.active.clear(); this.root.clear(); this.desired = []; this.placements = []; this.roads = [];this.quayExtensions=[];
   }
 }
 

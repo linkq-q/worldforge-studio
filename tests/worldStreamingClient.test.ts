@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { WorldContentView, selectWorldContentChunks } from '../src/client/worldContent';
+import { buildWorldRoadChunk, sampleWorldQuaySurface, WorldContentView, worldHarborQuayExtension,
+  selectWorldContentChunks } from '../src/client/worldContent';
 import { stepWorldWalk, type WorldWalkState } from '../src/client/worldWalkController';
 import { buildWorldAssetLibrary, disposeWorldAssetLibrary, type WorldAssetSource } from '../src/client/worldAssets';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import type { WorldSample } from '../src/shared/worldTerrain';
+import type { MapGuide } from '../src/shared/mapGuide';
 
 const bundle = validateWorldBundle(JSON.parse(readFileSync(new URL('../scripts/fixtures/hierarchical-world.json', import.meta.url), 'utf8').replace(/^\uFEFF/, '')));
 const flatSample = (height = 0, waterLevel: number | null = null): WorldSample => ({
@@ -61,5 +63,34 @@ describe('continuous-world streaming client', () => {
     expect(cliff.x).toBe(.45);
     const wet = stepWorldWalk({ ...initial, x: 0 }, right, .05, { size: 2, sample: () => flatSample(0, 1), colliders: [] });
     expect(wet.x).toBeLessThanOrEqual(.6); expect(wet.wading).toBe(true);
+  });
+
+  it('extends a tagged dry landing into a visible walkable pier over sampled water', () => {
+    const coast=(x:number):WorldSample=>flatSample(x<12?2:-2,x<12?null:0);
+    const quay:MapGuide={id:'harbor-quay',name:'harbor quay',points:[[0,0],[8,0]],curve:'polyline',closed:false,
+      width:6.4,tags:['settlement','sea-landing','harbor-quay']};
+    const street:MapGuide={...quay,id:'street',name:'street',points:[[0,10],[8,10]],tags:['settlement','street']};
+    const extension=worldHarborQuayExtension(quay,(x)=>coast(x),500)!;
+    expect(extension.from).toEqual([8,0]);
+    expect(extension.to[0]).toBeGreaterThanOrEqual(22);
+    expect(coast(extension.to[0]).waterLevel).toBe(0);
+    expect(worldHarborQuayExtension(street,(x)=>coast(x),500)).toBeUndefined();
+    expect(worldHarborQuayExtension(quay,()=>flatSample(2),500)).toBeUndefined();
+
+    const built=buildWorldRoadChunk([quay,street],{x:0,z:0},(x)=>coast(x),500),positions=built.mesh!.geometry.getAttribute('position');
+    const colors=built.mesh!.geometry.getAttribute('color');
+    const tip=Array.from({length:positions.count},(_,index)=>index).sort((a,b)=>positions.getX(b)-positions.getX(a))[0];
+    expect(positions.getX(tip)).toBeGreaterThanOrEqual(extension.to[0]);
+    expect(positions.getY(tip)).toBeCloseTo(extension.height);
+    expect(new Set(Array.from({length:colors.count},(_,index)=>colors.getX(index).toFixed(3))).size).toBe(2);
+
+    const deckSample=(x:number,z:number)=>sampleWorldQuaySurface((worldX)=>coast(worldX),[extension],x,z);
+    const walked=stepWorldWalk({x:18,y:extension.height,z:0,yaw:0,pitch:0,wading:false},
+      {forward:false,backward:false,left:false,right:true,sprint:false},.05,{size:500,sample:deckSample,colliders:[]});
+    expect(walked.x).toBeGreaterThan(18);
+    expect(walked.y).toBeCloseTo(extension.height);
+    expect(walked.wading).toBe(false);
+    built.mesh!.geometry.dispose();
+    (built.mesh!.material as THREE.Material).dispose();
   });
 });
