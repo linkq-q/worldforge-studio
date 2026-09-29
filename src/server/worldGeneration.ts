@@ -691,9 +691,10 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
   for(let attempt=0;attempt<=(request.repairAttempts??0);attempt++) {
     const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.intent-repair':'world.intent',signal});
     let draft:unknown;
+    let proposed:WorldIntentDraft|undefined;
     try {
       draft=parseJson(content);
-      const proposed=parseWorldIntentDraft(draft,request);
+      proposed=parseWorldIntentDraft(draft,request);
       const sites=createWorldSitingEvidence(proposed);
       intent=proposed;
       evidence=sites;
@@ -702,8 +703,11 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     catch(error) {
       recordGenerationTrace('world.rejected',{attempt,draft,error:error instanceof Error?error.message:String(error)});
       if(attempt===(request.repairAttempts??0)) throw error;
+      const siteHints=proposed?.plan.towns.map(town=>({townId:town.id,region:town.region,radius:town.radius,
+        candidateCenters:findWorldSiteCandidates(proposed!.plan.recipe,town,4).map(site=>site.center.map(value=>Math.round(value)))}));
       messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
-        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: preserve a broad, gently sloped dry landmass for the stated population and road network, with a reachable coast for a port. For an island surrounded by ocean constraints, use a broad low central landform before adding narrow mountain ridges or coastal cuts. Do not solve a crowded town by shrinking away its population, housing districts or public functions. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
+        ...(siteHints?{siteHints}:{}),
+        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. Site hints show sampled buildable centers, not authorized town coordinates. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them and a reachable coast for a port. For an island surrounded by ocean constraints, use a broad low central landform before adding narrow mountain ridges or coastal cuts. Preserve the stated population, housing districts and public functions; do not solve a crowded town by shrinking it away. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
     }
   }
   if(intent&&evidence) {

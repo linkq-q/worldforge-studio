@@ -235,7 +235,8 @@ describe('world generation compiler', () => {
     const repairMessages=mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>;
     expect(JSON.parse(repairMessages.at(-1)!.content)).toMatchObject({
       error:expect.stringContaining('world_no_site_candidates'),
-      instruction:expect.stringContaining('preserve a broad, gently sloped dry landmass')
+      instruction:expect.stringContaining('create separated dry centers'),
+      siteHints:expect.arrayContaining([expect.objectContaining({townId:'market-town',candidateCenters:expect.any(Array)})])
     });
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
   });
