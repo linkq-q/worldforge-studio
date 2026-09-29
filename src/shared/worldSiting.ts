@@ -60,14 +60,15 @@ function inspectSite(recipe: WorldRecipe, sample: WorldSampler, intent: WorldSit
   const values = [];
   let dry = 0, maxSlope = 0;
   for (let iz = -2; iz <= 2; iz++) for (let ix = -2; ix <= 2; ix++) {
+    if (ix * ix + iz * iz > 4) continue;
     const x = center[0] + ix * intent.radius / 2, z = center[1] + iz * intent.radius / 2;
     const value = sample(x, z), slope = sampleWorldSlope(sample, x, z);
     values.push(value.height); maxSlope = Math.max(maxSlope, slope);
     if (value.waterLevel === null && value.height > 2) dry++;
   }
   const middle = sample(center[0], center[1]);
-  if (middle.waterLevel !== null || middle.height <= 2 || dry < 13) return null;
-  const dryRatio = dry / 25;
+  if (middle.waterLevel !== null || middle.height <= 2 || dry < Math.ceil(values.length * 0.52)) return null;
+  const dryRatio = dry / values.length;
   const water = nearestWater(recipe, sample, center, Math.max(intent.radius * 2, 160), intent.targetWaterBodyId);
   const target = intent.targetWaterBodyId;
   if (target && (!water || (target === 'sea' ? water.type !== 'sea' : water.id !== target))) return null;

@@ -424,16 +424,18 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
 export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainContext {
   const recipe = validateWorldRecipe(input);
   const { seed, size, constraints } = recipe;
+  // Keep compact worlds from sampling one nearly constant slice of kilometre-scale fields.
+  const terrainScale = clamp(size / 6400, 0.125, 1);
   const waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed);
   const sample = (x: number, z: number): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
-    const warpX = fbm(x / 13000 + 17, z / 13000, seed + 41, 2);
-    const warpZ = fbm(x / 13000, z / 13000 - 23, seed + 73, 2);
+    const warpX = fbm(x / (13000 * terrainScale) + 17, z / (13000 * terrainScale), seed + 41, 2);
+    const warpZ = fbm(x / (13000 * terrainScale), z / (13000 * terrainScale) - 23, seed + 73, 2);
     const ux = nx + warpX * 0.12, uz = nz + warpZ * 0.12;
-    const broad = fbm(x / 8500, z / 8500, seed + 103);
+    const broad = fbm(x / (8500 * terrainScale), z / (8500 * terrainScale), seed + 103);
     let continentalness = (0.5 + broad * 0.5) * 0.12;
     let temperature = (0.62 - nz * 0.12) * 0.12;
-    let moisture = (0.52 + fbm(x / 10000, z / 10000, seed + 701, 2) * 0.28) * 0.12;
+    let moisture = (0.52 + fbm(x / (10000 * terrainScale), z / (10000 * terrainScale), seed + 701, 2) * 0.28) * 0.12;
     let uplift = (0.15 + smooth(-0.15, 0.65, broad) * 0.7) * 0.12;
     let total = 0.12;
     for (const constraint of constraints) {
@@ -448,20 +450,22 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       total += w;
     }
     continentalness = continentalness / total + broad * 0.14;
-    moisture = clamp(moisture / total + fbm(x / 4500 + 13, z / 4500, seed + 809, 2) * 0.08);
+    moisture = clamp(moisture / total
+      + fbm(x / (4500 * terrainScale) + 13, z / (4500 * terrainScale), seed + 809, 2) * 0.08);
     temperature = clamp(temperature / total);
     uplift = uplift / total;
     const land = smooth(-0.03, 0.22, continentalness);
-    const wx = x + warpX * 1500, wz = z + warpZ * 1500;
-    const ridgeNoise = fbm(wx / 2600, wz / 2600, seed + 211, 3);
+    const wx = x + warpX * 1500 * terrainScale, wz = z + warpZ * 1500 * terrainScale;
+    const ridgeNoise = fbm(wx / (2600 * terrainScale), wz / (2600 * terrainScale), seed + 211, 3);
     const ridge = Math.cos(ridgeNoise * Math.PI / 2) ** 4;
-    const mass = smooth(-0.45, 0.5, fbm(wx / 6200, wz / 6200, seed + 919, 3));
+    const mass = smooth(-0.45, 0.5, fbm(wx / (6200 * terrainScale), wz / (6200 * terrainScale), seed + 919, 3));
     const mountain = uplift * (0.16 + mass * 0.84);
     const climateDry = smooth(0.53, 0.82, temperature) * (1 - smooth(0.14, 0.44, moisture));
-    const rolling = fbm(wx / 1200, wz / 1200, seed + 311, 4) * 115;
+    const rolling = fbm(wx / (1200 * terrainScale), wz / (1200 * terrainScale), seed + 311, 4) * 115;
     const dunes = (0.5 + 0.5 * Math.sin(wx / 85 + wz / 160 + noise(wx / 1100, wz / 1100, seed + 505) * 4)) ** 1.5 * 28;
     const base = continentalness < 0 ? continentalness * 1050 : Math.pow(continentalness, 1.4) * 400;
-    const macroHeight = base + land * (mountain * ridge * 3100 + rolling * (1 - climateDry * 0.8));
+    const macroHeight = base + land * (mountain * ridge * 3100 * terrainScale
+      + rolling * (1 - climateDry * 0.8));
     let height = macroHeight * (recipe.heightScale ?? 1) + land * climateDry * dunes;
     for (const form of recipe.landforms ?? []) {
       const d2 = ((x - form.center[0]) / form.radius[0]) ** 2 + ((z - form.center[1]) / form.radius[1]) ** 2;
@@ -480,6 +484,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       height = mix(height, target, influence * (brush.strength ?? 1));
     }
     let waterLevel: number | null = null, waterBodyId: string | null = null, freshWaterDistance = Infinity;
+    let finiteWaterWeight = 0;
     for (const prepared of waterBodies) {
       const water = prepared.mapWater;
       const river = water.type === 'river' ? sampleRiverProfile(x, z, prepared.riverSamples) : null;
@@ -493,6 +498,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       const inside = waterBoundaryContainsPoint(prepared.boundary, x, z);
       const boundaryDistance = waterBoundaryDistance(prepared.boundary, x, z);
       freshWaterDistance = Math.min(freshWaterDistance, inside ? 0 : boundaryDistance);
+      const materialBankWidth = Math.min(24, Math.max(8, outerBankWidth));
+      finiteWaterWeight = Math.max(finiteWaterWeight,
+        inside ? 1 : 1 - smooth(0, materialBankWidth, boundaryDistance));
       if (!inside) {
         // Reuse the editor's outer bank profile. Carving only the inside of a
         // water polygon creates a vertical wall exactly at its boundary.
@@ -537,6 +545,11 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       if (influence <= 0) continue;
       for (const biome of WORLD_BIOMES) weights[biome] *= 1 - influence;
       weights[patch.biome] += influence;
+    }
+    if (finiteWaterWeight > weights.ocean) {
+      const scale = (1 - finiteWaterWeight) / Math.max(0.000001, 1 - weights.ocean);
+      for (const biome of WORLD_BIOMES) if (biome !== 'ocean') weights[biome] *= scale;
+      weights.ocean = finiteWaterWeight;
     }
     return {
       height, continentalness, temperature: localTemp, moisture,

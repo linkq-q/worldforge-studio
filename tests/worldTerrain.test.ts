@@ -231,6 +231,17 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('blends finite water material through the carved lake bank', () => {
+    const base = createWorldSampler(original), level = base(0, 0).height + 2;
+    const sample = createWorldSampler({ ...original, waterBodies: [{
+      id: 'lake-bank', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },
+      levels: [level], depth: 6, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    expect(sample(0, 0).weights.ocean).toBe(1);
+    expect(sample(41, 0).weights.ocean).toBeGreaterThan(sample(55, 0).weights.ocean);
+    expect(sample(55, 0).weights.ocean).toBeGreaterThan(sample(70, 0).weights.ocean);
+  });
+
   it('rejects malformed or colliding operation identities', () => {
     expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
       { id: 'same', mode: 'raise', region: { kind: 'circle', center: [0, 0], radius: 10 }, amount: 2 }
@@ -296,6 +307,28 @@ describe('composable world terrain operations', () => {
     let maxSlope = 0;
     for (let x = -700; x <= 300; x += 4) maxSlope = Math.max(maxSlope, sampleWorldSlope(sample, x, 0));
     expect(maxSlope).toBeLessThan(0.5);
+  });
+
+  it('keeps compact worlds rolling without cliff tails across seeds and climate plans', () => {
+    const scenarios: WorldRecipe['constraints'][] = [
+      [
+        { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'forest' },
+        { region: 'south', biome: 'desert' }
+      ],
+      [
+        { region: 'west', biome: 'ocean' }, { region: 'center', biome: 'grassland' },
+        { region: 'east', biome: 'desert' }, { region: 'north', biome: 'mountains' }
+      ]
+    ];
+    for (const constraints of scenarios) for (const seed of [1, 42, 2309, 99173]) {
+      const sample = createWorldSampler({ version: 1, seed, size: 500, heightScale: 0.035, constraints });
+      const slopes: number[] = [];
+      for (let z = -240; z <= 240; z += 8) for (let x = -240; x <= 240; x += 8) {
+        slopes.push(sampleWorldSlope(sample, x, z));
+      }
+      expect(slopes.filter(slope => slope < 0.02).length / slopes.length).toBeLessThan(0.35);
+      expect(slopes.filter(slope => slope > 0.75).length / slopes.length).toBeLessThan(0.01);
+    }
   });
 });
 
