@@ -199,6 +199,48 @@ describe('world generation compiler', () => {
     expect(() => compileWorldDraft(draft, request)).toThrow('invalid_world_asset_request');
   });
 
+  it('requires complete ordinary-building and ecology bindings only when generating assets', () => {
+    const draft = validDraft() as any;
+    draft.plan.ecology = [{id:'harbor-forest',kind:'broadleaf',biome:'forest',density:.7,spacing:18,maxSlope:25,scale:[.8,1.2]}];
+    const generatedRequest={...request,generateAssets:true};
+    expect(() => compileWorldDraft(draft, generatedRequest)).toThrow(/^world_missing_asset_roles:.*house/);
+    draft.assets.push(
+      {key:'house',name:'House',role:'house',prompt:'A compact local house'},
+      {key:'shop',name:'Shop',role:'shop',prompt:'A compact local shop'},
+      {key:'workshop',name:'Workshop',role:'workshop',prompt:'A compact local workshop'}
+    );
+    expect(() => compileWorldDraft(draft, generatedRequest)).toThrow('world_missing_ecology_assets:harbor-forest');
+    draft.assets.push({key:'oak',name:'Harbor oak',role:'tree',prompt:'A broadleaf harbor oak',
+      ecologyKind:'broadleaf',ecologyRuleId:'harbor-forest'});
+    expect(() => compileWorldDraft(draft, generatedRequest)).not.toThrow();
+    expect(() => compileWorldDraft({...draft,assets:[]}, {...generatedRequest,generateAssets:false})).not.toThrow();
+  });
+
+  it('repairs only missing asset coverage while preserving the first layout trace and spatial choices', async () => {
+    const input={...request,generateAssets:true,reusableAssetIds:['asset-existing']};
+    const intent=parseWorldIntentDraft(rawSoloIntent(input),input),evidence=createWorldSitingEvidence(intent);
+    const layout={towns:[{townId:'market-town',candidateId:evidence.towns[0].candidates[0].id}],
+      settlements:[{townId:'market-town',options:{kind:'city',pattern:'organic',density:.8}}],assets:[]};
+    const repaired={...layout,assets:[
+      {key:'house',name:'House',role:'house',prompt:'A compact local house',existingAssetId:'asset-existing'},
+      {key:'shop',name:'Shop',role:'shop',prompt:'A compact local shop',existingAssetId:'asset-existing'},
+      {key:'workshop',name:'Workshop',role:'workshop',prompt:'A compact local workshop',existingAssetId:'asset-existing'}
+    ]};
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent(input)))
+      .mockResolvedValueOnce(JSON.stringify(layout)).mockResolvedValueOnce(JSON.stringify(repaired));
+    const store={loadAsset:vi.fn().mockResolvedValue(reusableAsset())} as unknown as MapStore;
+    const result=await generateWorld(input,store);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
+    expect(result.draft.assets.map(asset=>asset.role)).toEqual(['house','shop','workshop']);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.raw',{layout});
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({
+      stage:'layout',error:expect.stringMatching(/^world_missing_asset_roles:/)
+    }));
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.repair.raw',{layout:repaired});
+    const repairPrompt=JSON.parse((mocks.llmChat.mock.calls[2][0] as Array<{role:string;content:string}>).at(-1)!.content);
+    expect(repairPrompt.instruction).toContain('Copy towns and settlements exactly');
+  });
+
   it('repairs an invalid GPT intent once and returns geometry audits', async () => {
     const {intent,layout}=soloLayout();
     mocks.llmChat

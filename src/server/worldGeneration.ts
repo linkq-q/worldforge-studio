@@ -101,7 +101,7 @@ const WORLD_LAYOUT_PROMPT = `Choose only from supplied sampled site candidates. 
 {towns:[{townId,candidateId,landmarkLayoutId?}],settlements:[{townId,options}],assets:[]}.
 Choose exactly one candidate per town and only the available:true road pairs, which form one jointly validated candidate graph. A town with publicBuildings must choose a supplied landmarkLayoutId for that candidate and matching pattern. Never return recipe, terrain heights, centers, ports, world-road points, landmark coordinates or rotations. The server materializes those from actual samples.
 options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?}. kind, pattern and density must exactly preserve intent. Invalid or unreachable public footprints are omitted from candidates, never faked.
-Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?,ecologyKind?,ecologyRuleId?}], at most 12. If enterable:true, use strategy:'assembly' or omit strategy so the server routes to assembly; strategy:'single' is invalid for every enterable asset, including reused ones. For each public building, match its assetKey and authored [width,height,depth] exactly in the landmark asset request. Every role:'tree' asset must name exactly one intent.plan.ecology rule through ecologyRuleId and copy that rule's kind into ecologyKind; this keeps palms, broadleaf trees, pines, shrubs and rocks attached to their authored habitat. Non-tree assets omit both fields. existingAssetId may reference only an id in reusableAssets, whose visualSize is its authoritative measured [width,height,depth]. Omit existingAssetId when requesting a new asset; not every asset must be reused.
+Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?,ecologyKind?,ecologyRuleId?}], at most 12. If assets will be generated, include at least one asset family for every ordinary-building role used by the generated settlement: house, shop and/or workshop. Do not substitute a landmark family for ordinary buildings. If enterable:true, use strategy:'assembly' or omit strategy so the server routes to assembly; strategy:'single' is invalid for every enterable asset, including reused ones. For each public building, match its assetKey and authored [width,height,depth] exactly in the landmark asset request. Include one role:'tree' asset binding for every intent.plan.ecology rule, including shrub and rock rules. Every role:'tree' asset must name exactly one intent.plan.ecology rule through ecologyRuleId and copy that rule's kind into ecologyKind; this keeps palms, broadleaf trees, pines, shrubs and rocks attached to their authored habitat. Non-tree assets omit both fields. existingAssetId may reference only an id in reusableAssets, whose visualSize is its authoritative measured [width,height,depth]. Omit existingAssetId when requesting a new asset; not every asset must be reused.
 For a requested harbor, the waterfront landmark program and matching asset prompt must show a boat-facing mooring/unloading edge connected to the dry working street; market stalls alone do not constitute a port. Keep the quay structure within its authored footprint and describe how people and cargo reach it. Do not invent a water crossing or place ordinary buildings in water.`;
 
 export const WORLD_GENERATION_PROMPT = `You design a playable continuous world in metres. Return JSON only: {plan,settlements,assets}. GPT owns spatial intent and unique architecture; deterministic tools grow ordinary streets/buildings and stream vegetation. Never enumerate trees or ordinary houses. No final rendering style in the world data.
@@ -586,6 +586,19 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
     if (b.assetKey && !keys.has(b.assetKey)) throw new Error('unknown_world_building_asset:'+b.assetKey);
     if (b.enterable && !assets.find(a=>a.key===b.assetKey)?.enterable) throw new Error('world_enterable_asset_required');
   }
+  if (request.generateAssets !== false) {
+    const roles=new Set(assets.map(asset=>asset.role));
+    const missingRoles=new Set<string>();
+    for (const building of patches.flatMap(patch=>patch.buildings).filter(building=>!building.assetKey)) {
+      const role=/工|仓|农具|workshop|factory/i.test(building.use)?'workshop'
+        :/商|店|客|shop|market|inn/i.test(building.use)?'shop':'house';
+      if(!roles.has(role)) missingRoles.add(role);
+    }
+    if(missingRoles.size) throw new Error('world_missing_asset_roles:'+[...missingRoles].join(','));
+    const ecologyRuleIds=new Set(assets.filter(asset=>asset.role==='tree').map(asset=>asset.ecologyRuleId));
+    const missingEcology=plan.ecology.filter(rule=>!ecologyRuleIds.has(rule.id)).map(rule=>rule.id);
+    if(missingEcology.length) throw new Error('world_missing_ecology_assets:'+missingEcology.join(','));
+  }
   return {draft:{plan,settlements,assets},bundle:validateWorldBundle({plan,patches})};
 }
 
@@ -748,8 +761,26 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     let layout:unknown;
     try {layout=parseJson(content);recordGenerationTrace('world.layout.raw',{layout});compiled=materializeWorldIntent(intent,evidence,layout,request);}
     catch(error) {
-      recordGenerationTrace('world.rejected',{stage:'layout',layout,error:error instanceof Error?error.message:String(error)});
-      throw error;
+      const reason=error instanceof Error?error.message:String(error);
+      recordGenerationTrace('world.rejected',{stage:'layout',layout,error:reason});
+      if(request.generateAssets===false||!/^world_missing_(?:asset_roles|ecology_assets):/.test(reason)||!layout) throw error;
+      const first=record(layout,'invalid_world_layout');
+      layoutMessages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:reason,
+        instruction:'Repair only the assets array. Copy towns and settlements exactly from the previous response. Add the missing ordinary-building role family or ecology-rule binding requested by the error while keeping all existing valid landmark assets. Return one complete JSON object with only towns, settlements and assets. Do not change site choices, settlement options, intent, terrain, roads or geography.'})});
+      const repairedContent=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,traceStage:'world.layout-repair',signal});
+      let repaired:unknown;
+      try {
+        repaired=parseJson(repairedContent);recordGenerationTrace('world.layout.repair.raw',{layout:repaired});
+        const next=record(repaired,'invalid_world_layout');
+        if(JSON.stringify(next.towns)!==JSON.stringify(first.towns)||JSON.stringify(next.settlements)!==JSON.stringify(first.settlements)) {
+          throw new Error('world_layout_repair_changed_spatial_choice');
+        }
+        compiled=materializeWorldIntent(intent,evidence,repaired,request);
+      } catch(repairError) {
+        recordGenerationTrace('world.rejected',{stage:'layout-repair',layout:repaired,
+          error:repairError instanceof Error?repairError.message:String(repairError)});
+        throw repairError;
+      }
     }
   }
   if(!compiled) throw new Error('world_generation_failed');
