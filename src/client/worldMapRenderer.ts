@@ -217,7 +217,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     options.worldInitialView?.z ?? map.spawnPoints[0]?.[2] ?? 0,
     options.worldInitialView?.distance ?? 50
   );
-  await reconcile(initialRequest.x, initialRequest.z, initialRequest.distance, requestRevision, { terrain: 16, content: 9 });
+  await reconcile(initialRequest.x, initialRequest.z, initialRequest.distance, requestRevision, { terrain: 16, content: 1 });
   completionTimer = setTimeout(() => {
     completionTimer = null;
     if (!desiredRequest) requestReconcile(initialRequest.x, initialRequest.z, initialRequest.distance);
@@ -245,12 +245,14 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       return [logicalKey, { tile, signature, ocean: oceanOwner === tile, skirtSides }] as const;
     }));
     const desiredContent = new Map(contentChunks.map(chunk => [ecologyKey(chunk), chunk] as const));
+    const focusContentKey = pointEcologyKey(focusX, focusZ);
     const allMissingTerrain = [...desiredTerrain.entries()]
       .filter(([key, value]) => entries.get(key)?.signature !== value.signature)
       .sort(([, left], [, right]) => tileDistanceSquared(left.tile, focusX, focusZ) - tileDistanceSquared(right.tile, focusX, focusZ));
     const allMissingContent = [...desiredContent.entries()]
       .filter(([key]) => !contentEntries.has(key))
-      .sort(([, left], [, right]) => chunkDistanceSquared(left, focusX, focusZ) - chunkDistanceSquared(right, focusX, focusZ));
+      .sort(([leftKey, left], [rightKey, right]) => Number(rightKey === focusContentKey) - Number(leftKey === focusContentKey)
+        || chunkDistanceSquared(left, focusX, focusZ) - chunkDistanceSquared(right, focusX, focusZ));
     const missingTerrain = limits ? allMissingTerrain.slice(0, limits.terrain) : allMissingTerrain;
     const missingContent = limits ? allMissingContent.slice(0, limits.content) : allMissingContent;
     pendingTiles = allMissingTerrain.length + allMissingContent.length;

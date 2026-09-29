@@ -92,7 +92,7 @@ describe('main editor streamed world renderer', () => {
       const stats = rendered.getDebugStats().streaming!;
       expect(stats.terrainTiles).toBeGreaterThan(1);
       expect(stats.terrainTiles).toBeLessThanOrEqual(128);
-      expect(stats.contentChunks).toBeLessThanOrEqual(25);
+      expect(stats.contentChunks).toBe(1);
       expect(stats.buildings).toBeGreaterThan(0);
       expect(stats.texturePixels).toBeLessThanOrEqual(128 * 128 * 128 * 4 + 25 * 32 * 32 * 4);
       expect(stats.collisionMeshes).toBeGreaterThan(0);
@@ -103,7 +103,12 @@ describe('main editor streamed world renderer', () => {
       const position = rendered.objectGroups.get('manual-root')!.getWorldPosition(new THREE.Vector3());
       expect(position.x).toBeCloseTo(town.center[0] + 4);
       expect(position.z).toBeCloseTo(town.center[1]);
-      await waitFor(() => rendered.getDebugStats().streaming?.pendingTiles === 0);
+      await waitFor(() => {
+        const settled = rendered.getDebugStats().streaming;
+        return Boolean(settled && settled.pendingTiles === 0 && settled.contentChunks > 1);
+      });
+      expect(rendered.getDebugStats().streaming?.contentChunks).toBeGreaterThan(1);
+      expect(rendered.objectGroups.get('manual-root')!.getWorldPosition(new THREE.Vector3())).toEqual(position);
       const collision = rendered.getCollisionWorld?.();
       const manualGroup = rendered.objectGroups.get('manual-root');
       const manualCollision = collision?.instances.find(instance => instance.id.includes('manual-root'));
