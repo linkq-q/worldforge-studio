@@ -132,7 +132,7 @@ export function generateWorldSettlement(
         if(town.targetWaterBodyId==='sea') {
           const landing=shoreLanding(shorePoints,town,sample,settings,roadSafe);
           if(landing) streets.push(guide(`${town.id}-sea-landing`,landing,workingWidth,
-            ['settlement',settings.kind,'street','waterfront','sea-landing']));
+            ['settlement',settings.kind,'street','waterfront','sea-landing','harbor-quay']));
         }
       }
     }
@@ -402,7 +402,7 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     roadWidth: city ? 4.2 : 3,
     arterialWidth: city ? 6.4 : 4.6,
     blockSize: city?Math.max(34,Math.min(76,town.radius*.22)):Math.max(38,Math.min(80,town.radius*.38)),
-    parcelWidth: city ? 5.8 : town.radius>=90?7.2:9,
+    parcelWidth: city?5.8:town.radius>=90?(town.targetWaterBodyId==='sea'?5:7.2):9,
     parcelDepth: city ? 8.5 : town.radius>=90?9:10,
     buildingGap: city ? 1.2 : 7,
     roadBudget: city ? Math.round(26+density*10+Math.max(0,town.radius-100)/20)
@@ -716,7 +716,9 @@ function placeBuildings(
   candidates.sort((a, b) => score(a) - score(b) || a.blockId.localeCompare(b.blockId)
     || a.roadId.localeCompare(b.roadId) || a.id.localeCompare(b.id));
   const villageFloor=Math.round(8+Math.max(0,town.radius-60)*settings.density*.42);
-  const ordinaryTarget = Math.max(city ? 24 : villageFloor, Math.round(candidates.length * settings.density));
+  const occupancy=!city&&town.targetWaterBodyId==='sea'
+    ? Math.min(1,settings.density+settings.waterfrontBias*.4):settings.density;
+  const ordinaryTarget = Math.max(city ? 24 : villageFloor, Math.round(candidates.length * occupancy));
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);

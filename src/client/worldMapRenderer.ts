@@ -49,6 +49,11 @@ const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   roleCounts: {}
 };
 
+export function worldRoadSurfaceMaterial(road: Pick<MapGuide,'id'|'tags'>): 'brick-paver'|'cobblestone'|'compacted-earth' {
+  if(road.tags.includes('harbor-quay')) return 'cobblestone';
+  return road.id.startsWith('town:')||road.tags.some(tag=>/street|settlement|town/i.test(tag))?'brick-paver':'compacted-earth';
+}
+
 interface GlobalBuilding extends TownBuilding { x: number; z: number; townId: string }
 interface ManualObjectTree { rootId: string; x: number; z: number; objects: MapObject[] }
 interface ReconcileRequest { x: number; z: number; distance: number }
@@ -621,14 +626,13 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         const minX = Math.min(...local.map(point => point[0])), maxX = Math.max(...local.map(point => point[0]));
         const minZ = Math.min(...local.map(point => point[1])), maxZ = Math.max(...local.map(point => point[1]));
         const zoneX = (minX + maxX) / 2, zoneZ = (minZ + maxZ) / 2;
-        const settlement = road.id.startsWith('town:') || road.tags.some(tag => /street|settlement|town/i.test(tag));
         result.push({
           id: `world-road:${road.id}:${index}:${tileKey(tile)}`,
           tags: ['paving', 'settlement'],
           center: [zoneX, zoneZ],
           radius: Math.max(...local.map(point => Math.hypot(point[0] - zoneX, point[1] - zoneZ))) + road.width,
           intensity: 1,
-          material: settlement ? 'brick-paver' : 'compacted-earth',
+          material: worldRoadSurfaceMaterial(road),
           region: { kind: 'path', points: local, width: road.width },
           roadDistanceOffset: fragment.distanceOffset,
           roadContinuesBefore: fragment.continuesBefore,
