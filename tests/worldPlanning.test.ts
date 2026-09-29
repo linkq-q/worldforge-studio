@@ -337,16 +337,35 @@ describe('organic settlement integration',()=>{
     ]};
     const sample=createPlannedWorldSampler(plan,[local]),a=spur.points[0],b=spur.points[1];
     const length=Math.hypot(b[0]-a[0],b[1]-a[1]),steps=Math.ceil(length),nx=-(b[1]-a[1])/length,nz=(b[0]-a[0])/length;
-    let previous:number|undefined,maxLongitudinal=0,maxCross=0;
+    let previous:number|undefined,maxLongitudinal=0,maxCross=0,maxEarthwork=0;
     for(let i=0;i<=steps;i++){
       const t=i/steps,x=center[0]+a[0]+(b[0]-a[0])*t,z=center[1]+a[1]+(b[1]-a[1])*t;
       const heights=[-spur.width/2,0,spur.width/2].map(offset=>sample(x+nx*offset,z+nz*offset).height);
+      const raw=[-spur.width/2,0,spur.width/2].map(offset=>base(x+nx*offset,z+nz*offset).height);
+      maxEarthwork=Math.max(maxEarthwork,...heights.map((height,index)=>Math.abs(height-raw[index])));
       maxCross=Math.max(maxCross,(Math.max(...heights)-Math.min(...heights))/spur.width);
       if(previous!==undefined)maxLongitudinal=Math.max(maxLongitudinal,Math.abs(heights[1]-previous)/(length/steps));
       previous=heights[1];
     }
     expect(maxLongitudinal).toBeLessThanOrEqual(.5);
     expect(maxCross).toBeLessThanOrEqual(.5);
+    expect(maxEarthwork).toBeLessThanOrEqual(1.5);
+  });
+  it('bounds the combined cut and fill where conform streets overlap',()=>{
+    const recipe:WorldRecipe={version:1,seed:2309,size:1600,heightScale:.5,constraints:[{region:'center',biome:'desert'}]};
+    const base=createWorldSampler(recipe),center:[number,number]=[0,0];
+    const plan:WorldPlan={version:1,id:'cross-grade',revision:1,prompt:'Crossing streets',recipe,ecology:[],roads:[],towns:[{
+      id:'town',name:'Town',prompt:'Town',center,radius:120,blend:64,foundation:base(0,0).height,ports:[],terrainMode:'conform'
+    }]};
+    const local:TownPatch={townId:'town',worldKey:worldPlanKey(plan),summary:'Crossing streets',buildings:[],streets:[
+      road('east-west',[[-80,0],[0,0],[80,0]],12),road('north-south',[[0,-80],[0,0],[0,80]],12)
+    ]};
+    const sample=createPlannedWorldSampler(plan,[local]);
+    let maxEarthwork=0;
+    for(let z=-10;z<=10;z++) for(let x=-10;x<=10;x++) {
+      maxEarthwork=Math.max(maxEarthwork,Math.abs(sample(x,z).height-base(x,z).height));
+    }
+    expect(maxEarthwork).toBeLessThanOrEqual(1.5);
   });
   it('preserves building orientation and checks its rotated footprint',()=>{
     const plan=fixture(), rotated=patch(plan,0);

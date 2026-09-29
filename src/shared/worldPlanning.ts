@@ -450,7 +450,11 @@ function conformSampler(base: WorldSampler, plan: WorldPlan, patches: TownPatch[
       roadTargetWeight += targetWeight;
       roadTarget += point.height * targetWeight;
     }
-    if (roadTargetWeight > 0) height += (roadTarget / roadTargetWeight - height) * roadInfluence;
+    if (roadTargetWeight > 0) {
+      height += (roadTarget / roadTargetWeight - height) * roadInfluence;
+      height = sample.height + Math.max(-MAX_BUILDING_CUT_FILL + TOLERANCE,
+        Math.min(MAX_BUILDING_CUT_FILL - TOLERANCE, height - sample.height));
+    }
     let padWeight = 0, padTarget = height;
     for (const index of padIndex.get(conformCellKey(x, z)) ?? []) {
       const pad = pads[index];
@@ -463,6 +467,8 @@ function conformSampler(base: WorldSampler, plan: WorldPlan, patches: TownPatch[
       if (weight > padWeight) { padWeight = weight; padTarget = pad.target; }
     }
     height += (padTarget - height) * padWeight;
+    if (padWeight > 0) height = sample.height + Math.max(-MAX_BUILDING_CUT_FILL + TOLERANCE,
+      Math.min(MAX_BUILDING_CUT_FILL - TOLERANCE, height - sample.height));
     return height === sample.height ? sample : { ...sample, height };
   };
 }
