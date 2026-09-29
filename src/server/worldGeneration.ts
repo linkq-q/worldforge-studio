@@ -91,7 +91,7 @@ interface WorldLayoutChoice {
 
 const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. Return complete JSON only, with exactly this nesting: {"plan":{"version":1,"id":"world-id","revision":1,"prompt":"exact request.prompt","recipe":{},"ecology":[],"towns":[],"roads":[]}}. The root has only plan; recipe, ecology, towns and roads are children of plan. Request fields such as size, seed, generateAssets and repairAttempts are not fields of plan (seed and size belong inside plan.recipe). Do not pretty-print or repeat descriptions across fields. Copy request.prompt byte-for-byte into plan.prompt; elaborate only in each town.prompt.
 This is terrain intent, not final geometry. World coordinates are centered on (0,0), north is negative Z (for example a northern mountain is near [0,-150]) and west is negative X: every authored landform center, path point, water region and biome patch must lie inside [-size/2,+size/2] on both X and Z (for size 500: -250..250), never 0..size. Keep each feature radius and feather inside that same world extent. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
-recipe={version:1,seed,size,reliefProfile:'compact',heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Regions: west/east/north/south/northwest/northeast/southwest/southeast/center. Biomes: ocean/grassland/forest/desert/mountains/snow. Constraints blend continuously and express broad intent. For an inhabited island, include ocean constraints at its outer sides AND leave a broad connected dry interior for its stated population, streets and routes: give the main landmass one low, wide landform before sculpting mountain ridges, inlets and beaches. A landform alone does not make a sea; a harbor without sampled below-zero sea is invalid. Place steep ridges away from the needed buildable coastal terrace; keep cuts local instead of making a continuous cliff beside the town. For playable 500..2000m worlds, prefer heightScale around 0.08..0.15; raise exceptional volcanoes and other local relief with landforms=[{center:[x,z],radius:[rx,rz],height}] instead of globally exaggerating terrain. Landform center and radius are numeric two-element arrays, never strings; height is a metre value (for example 35 for a substantial hill, 1 for a low mound).
+recipe={version:1,seed,size,reliefProfile:'compact',heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Regions: west/east/north/south/northwest/northeast/southwest/southeast/center. Biomes: ocean/grassland/forest/desert/mountains/snow. Constraints blend continuously and express broad intent. For an inhabited island, every map edge must sample as ocean: use ocean constraints for north, south, east, west and the four corners, then keep mountains and forests inside the coast with bounded landforms or biome patches. Leave a broad connected dry interior for its stated population, streets and routes: give the main landmass one low, wide landform before sculpting mountain ridges, inlets and beaches. A landform alone does not make a sea; a harbor without sampled below-zero sea is invalid. Place steep ridges away from the needed buildable coastal terrace; keep cuts local instead of making a continuous cliff beside the town. For playable 500..2000m worlds, prefer heightScale around 0.08..0.15; raise exceptional volcanoes and other local relief with landforms=[{center:[x,z],radius:[rx,rz],height}] instead of globally exaggerating terrain. Landform center and radius are numeric two-element arrays, never strings; height is a metre value (for example 35 for a substantial hill, 1 for a low mound).
 Brush region is {kind:'circle',center:[x,z],radius} or {kind:'path',points:[[x,z],...],width}. terrainBrushes are {id,mode:'raise'|'lower',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:PATH,heights:[one per path point],strength?,feather?}. Use bounded local refinement only. For a harbor, preserve a naturally sloped dry terrace reaching the sea; do not carve a whole bay with one circular lower brush or a long straight trench, which creates a cliff and can disconnect the working street. Do not guess road or settlement grade heights: the server samples and grades their access after choosing sites. waterBodies=[{id,type:'lake'|'river',region,levels:[one for circle or one per path point],depth,shorelineSmoothness?:0..1,shorelineIrregularity?:0..0.4,shorelineProfile?:'steep'|'gentle',seed?:uint32}]. Lakes require circle regions and usually use smoothness 0.7..0.95 and irregularity 0.08..0.28; rivers require path regions, smoothness 0.65..0.9 and irregularity 0. shorelineProfile controls bank width and slope. Sea is terrain below zero. biomePatches=[{id,region,biome,feather?}] use only a valid biome from the list above. Omit biomePatches for broad north/south/east/west forest, mountain or coast areas; constraints already express those. A local patch and its feather must remain entirely inside the world bounds. Rocky terrain uses mountains, not a 'rock' biome.
 towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?,siting?:'central'|'waterfront'|'gateway'|'high-ground'}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. radius must be >=min(100,size/10), blend >=min(100,size/25); for size 500 these minima are 50m and 20m. Choose pattern from the requested culture and terrain before siting; the server validates that exact pattern. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. Size and distribute inhabited districts against the usable land and expected population: a major island town needs a shore-working district, civic core, housing and reachable hinterland rather than one tiny isolated knot; smaller villages can remain compact. Estimate one ordinary dwelling per four to six residents and reserve enough dry street frontage for that population; a service-bearing port town with hundreds of residents should not be labeled or sized as a tiny village. If dry coastal land is constrained, connect smaller inhabited districts along passable shore and inland routes. If the settlement depends on sea trade or fishing, target the sea and provide a shore-access purpose for its waterfront public building. For each named place, consider who uses it, how they reach it, what they exchange there, and which terrain feature shapes its entrance and public space. Choose distinct civic functions appropriate to that life rather than repeating a checklist; for a substantial town, plan roughly one useful public or landmark building per 10..20 ordinary buildings. Use siting only for a real spatial reason: central gathering, waterfront work, gateway trade, or high-ground lookout. Public buildings declare program, footprint and siting intent only. Match public-building count and footprint to the town radius and usable dry shore: reserve only one or two waterfront work buildings, place schools and services inland, and express promenades/plazas as street or open-space intent in town.prompt rather than as building footprints. A substantial town with four civic buildings normally needs a larger core than a tiny village. No center, foundation, ports, rotation or landmark coordinates.
 Town region is the search area for a dry center, not the location of the water. A harbor targeting the sea may need region:'center' when outer west/east/south regions are ocean; targetWaterBodyId:'sea' still requires reachable sampled shore. On a multi-town island, leave separated dry terraces at least the sum of the town radii apart with a walkable land corridor; a small flatten brush cannot create city-scale dry land.
@@ -295,6 +295,27 @@ function validateSettlementExperience(town:WorldIntentTown,patch:ReturnType<type
   }
   const publicIds=new Set(town.publicBuildings.map(building=>building.id));
   if(!patch.buildings.some(building=>!publicIds.has(building.id))) throw new Error('world_settlement_no_housing:'+town.id);
+  const quality=auditWorldSettlementAcceptance(town,patch,{
+    kind:town.kind,density:town.density,waterfrontBias:town.waterfrontBias
+  });
+  if(quality.planningIssues.length) {
+    throw new Error('world_settlement_quality_rejected:'+town.id+':'+quality.planningIssues.join(','));
+  }
+}
+
+export function auditWorldSettlementAcceptance(town: Pick<WorldIntentTown,'id'|'radius'|'targetWaterBodyId'|'publicBuildings'>,
+  patch: Pick<TownPatch,'buildings'|'streets'>,
+  settings: Pick<WorldSettlementOptions,'kind'|'density'|'waterfrontBias'>): {
+    publicBuildings:number;ordinaryBuildings:number;builtExtent:number;planningIssues:string[]
+  } {
+  const publicIds=new Set(town.publicBuildings.map(building=>building.id));
+  const publicBuildings=patch.buildings.filter(building=>publicIds.has(building.id)).length;
+  const ordinary=patch.buildings.filter(building=>!publicIds.has(building.id));
+  const ordinaryBuildings=ordinary.length;
+  const coverage=auditWorldSettlementCoverage(town,{buildings:ordinary,streets:patch.streets},settings,ordinaryBuildings);
+  const planningIssues=[...coverage.planningIssues];
+  if(publicBuildings>Math.max(1,Math.ceil(ordinaryBuildings/10))) planningIssues.push('public_program_overconcentrated');
+  return {publicBuildings,ordinaryBuildings,builtExtent:coverage.builtExtent,planningIssues};
 }
 
 export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'targetWaterBodyId'>,
@@ -303,11 +324,12 @@ export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'tar
   ordinaryBuildings: number): {builtExtent: number; planningIssues: string[]} {
   const x=patch.buildings.map(building=>building.x),z=patch.buildings.map(building=>building.z);
   const builtExtent=x.length?Math.max(Math.max(...x)-Math.min(...x),Math.max(...z)-Math.min(...z))/(2*town.radius):0;
-  const ordinaryFloor=settings.kind==='city'?Math.max(20,Math.ceil(town.radius*(settings.density??.82)*.24))
-    :Math.max(10,Math.ceil(town.radius*(settings.density??.38)*.12));
+  const ordinaryFloor=settings.kind==='city'?Math.max(24,Math.ceil(town.radius*(settings.density??.82)*.52))
+    :Math.max(8,Math.ceil(town.radius*(settings.density??.38)*.5));
+  const extentFloor=settings.kind==='city'?.5:.4;
   const planningIssues:string[]=[];
-  if(town.radius>=90&&ordinaryBuildings<ordinaryFloor) planningIssues.push('underbuilt_settlement');
-  if(town.radius>=90&&builtExtent<.4) planningIssues.push('clustered_settlement');
+  if(town.radius>=50&&ordinaryBuildings<ordinaryFloor) planningIssues.push('underbuilt_settlement');
+  if(town.radius>=50&&builtExtent<extentFloor) planningIssues.push('clustered_settlement');
   if(town.targetWaterBodyId==='sea'&&(settings.waterfrontBias??0)>=.5
     &&!patch.streets.some(street=>street.tags.includes('sea-landing'))) planningIssues.push('missing_sea_landing');
   return {builtExtent,planningIssues};
@@ -315,6 +337,8 @@ export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'tar
 
 export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
   const sample=cachedWorldSampler(createWorldSampler(intent.plan.recipe));
+  const boundary=auditWorldIslandBoundary(intent.plan.prompt,intent.plan.recipe,sample);
+  if(boundary&&boundary.dryRatio>.2) throw new Error('world_island_boundary_open:'+boundary.drySamples+'/'+boundary.samples);
   const towns=intent.plan.towns.map(town=>({id:town.id,candidates:findWorldSiteCandidates(intent.plan.recipe,town)}));
   for(const town of towns) if(!town.candidates.length) throw new Error('world_no_site_candidates:'+town.id);
   const connections:WorldSitingEvidence['connections']=[],landmarkLayouts:WorldSitingEvidence['landmarkLayouts']=[];
@@ -451,6 +475,20 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     }
   }
   return {towns,connections,landmarkLayouts};
+}
+
+export function auditWorldIslandBoundary(prompt:string,recipe:WorldRecipe,
+  sample:ReturnType<typeof createWorldSampler> = createWorldSampler(recipe)):
+  {samples:number;drySamples:number;dryRatio:number;maxHeight:number}|null {
+  if(!/\bisland\b|海岛|岛屿/i.test(prompt)) return null;
+  const half=recipe.size/2,points:Array<[number,number]>=[],steps=20;
+  for(let index=0;index<=steps;index++) {
+    const value=-half+recipe.size*index/steps;
+    points.push([-half,value],[half,value],[value,-half],[value,half]);
+  }
+  const heights=points.map(([x,z])=>sample(x,z).height);
+  const drySamples=heights.filter(height=>height>2).length;
+  return {samples:heights.length,drySamples,dryRatio:drySamples/heights.length,maxHeight:Math.max(...heights)};
 }
 
 export function materializeWorldIntent(intent: WorldIntentDraft, evidence: WorldSitingEvidence, input: unknown,
@@ -732,10 +770,17 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
               blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[],
               ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})}]};
           try {
-            const patch=generateWorldSettlement(previewPlan,town.id,sample,{kind:town.kind,pattern:town.pattern,
+            let patch=generateWorldSettlement(previewPlan,town.id,sample,{kind:town.kind,pattern:town.pattern,
               density:town.density,waterfrontBias:town.waterfrontBias??0});
+            if(town.publicBuildings.length) patch=createWorldSettlementLandmarkLayout(previewPlan,town.id,sample,
+              {kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0},
+              town.publicBuildings).patch;
+            const quality=auditWorldSettlementAcceptance(town,patch,{
+              kind:town.kind,density:town.density,waterfrontBias:town.waterfrontBias
+            });
             return {center:site.center.map(value=>Math.round(value)),dryRatio:site.dryRatio,
-              estimatedBuildings:patch.buildings.length,
+              estimatedBuildings:patch.buildings.length,ordinaryBuildings:quality.ordinaryBuildings,
+              publicBuildings:quality.publicBuildings,builtExtent:quality.builtExtent,planningIssues:quality.planningIssues,
               waterfrontConnected:patch.streets.some(street=>street.tags.includes('waterfront'))};
           } catch(error) {
             return {center:site.center.map(value=>Math.round(value)),dryRatio:site.dryRatio,
@@ -752,11 +797,12 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
           if(height<=0) sea++;
           if(height>2) dry++;
         }
-        return {seaCells:sea,dryCells:dry,sampledCells:81};
+        return {seaCells:sea,dryCells:dry,sampledCells:81,
+          islandBoundary:auditWorldIslandBoundary(proposed!.plan.prompt,proposed!.plan.recipe,sampler)};
       })():undefined;
       messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
         ...(siteHints?{siteHints}:{}),...(terrainHint?{terrainHint}:{}),
-        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. Site hints report sampled centers, ordinary-building capacity before public buildings, and whether a safe waterfront street actually reaches the shore; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. Do not carve an abrupt circular harbor basin or a continuous coastal trench with a lower brush; let the ocean constraint form a broad shore and use gentle local cuts only. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. For an island, keep ocean constraints at the outer sides AND a broad low central landform; do not remove the sea to make building room. Preserve the stated population, housing districts and public functions; do not solve a crowded town by shrinking it away. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
+        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. Site hints report sampled centers, ordinary-building capacity before public buildings, and whether a safe waterfront street actually reaches the shore; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres; islandBoundary reports sampled world-edge heights for an explicit island request. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. Do not carve an abrupt circular harbor basin or a continuous coastal trench with a lower brush; let the ocean constraint form a broad shore and use gentle local cuts only. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. For an island, keep ocean constraints at every world edge AND a broad low central landform; do not remove the sea to make building room. Preserve the stated population, housing districts and public functions; do not solve a crowded town by shrinking it away. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
     }
   }
   if(intent&&evidence) {
@@ -820,6 +866,13 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
       recommendedPublicBuildings,connectedPorts,portCount:town.ports.length,builtExtent:coverage.builtExtent,planningIssues};
   });
   recordGenerationTrace('world.geometry.preview',{draft:compiled.draft,diagnostics});
+  const rejected=diagnostics.filter(item=>item.planningIssues.some(issue=>
+    ['underbuilt_settlement','clustered_settlement','missing_sea_landing','public_program_overconcentrated'].includes(issue)));
+  if(rejected.length) {
+    const error='world_geometry_quality_rejected:'+rejected.map(item=>item.townId+':'+item.planningIssues.join(',')).join(';');
+    recordGenerationTrace('world.rejected',{stage:'geometry',error,diagnostics});
+    throw new Error(error);
+  }
   const assetSources=request.generateAssets?await generateWorldAssets(compiled.draft.assets,store,signal):undefined;
   recordGenerationTrace('world.preview',{draft:compiled.draft,diagnostics,assets:assetSources?.map(a=>({id:a.id,assetId:a.assetId,provider:a.provider,strategy:a.strategy}))});
   return {bundle:compiled.bundle,draft:compiled.draft,diagnostics,assetSources,planningProvider:'gpt',assetProvider:'deepseek',preview:true};

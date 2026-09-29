@@ -3,16 +3,17 @@ import { Euler, Quaternion } from 'three';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import {
-  assembleWorldModel, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
+  assembleWorldModel, auditWorldIslandBoundary, auditWorldSettlementAcceptance, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
   materializeWorldIntent, parseWorldIntentDraft, validateWorldGenerationRequest, worldAssetStrategy,
   WORLD_GENERATION_PROMPT, type WorldAssetRequest, type WorldGenerationRequest
 } from '../src/server/worldGeneration';
 import type { MapStore } from '../src/server/mapStore';
 
-const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), recordGenerationTrace: vi.fn() }));
+const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
   ...await importOriginal<typeof import('../src/server/modelApi')>(),
-  llmChat: mocks.llmChat
+  llmChat: mocks.llmChat,
+  generateModel: mocks.generateModel
 }));
 vi.mock('../src/server/generationTrace', () => ({ recordGenerationTrace: mocks.recordGenerationTrace }));
 
@@ -96,6 +97,7 @@ function reusableAsset(id = 'asset-existing'): MapAsset {
 describe('world generation compiler', () => {
   beforeEach(() => {
     mocks.llmChat.mockReset();
+    mocks.generateModel.mockReset();
     mocks.recordGenerationTrace.mockReset();
   });
 
@@ -344,6 +346,57 @@ describe('world generation compiler', () => {
       builtExtent:expect.any(Number),planningIssues:[]});
   });
 
+  it('rejects the traced underbuilt settlement proportions before asset generation', () => {
+    const building=(id:string,x:number,z:number)=>({id,x,z,width:8,depth:8,height:6,use:'home'});
+    const patch={
+      buildings:[
+        ...Array.from({length:18},(_,index)=>building('home-'+index,(index%6)*15.5,Math.floor(index/6)*7)),
+        ...Array.from({length:4},(_,index)=>building('public-'+index,150+index*5,5))
+      ],
+      streets:[{id:'quay',name:'quay',points:[[0,0],[40,0]] as [number,number][],curve:'polyline' as const,
+        closed:false,width:5,tags:['waterfront','sea-landing']}]
+    };
+    const town={id:'harbor-town',radius:105,targetWaterBodyId:'sea',publicBuildings:Array.from({length:4},(_,index)=>({
+      id:'public-'+index,use:'public service',width:8,depth:8,height:6,assetKey:'public-'+index
+    }))};
+    const harbor=auditWorldSettlementAcceptance(town,patch,{kind:'city',density:.8,waterfrontBias:.85});
+    expect(harbor).toMatchObject({
+      publicBuildings:4,
+      ordinaryBuildings:18,
+      planningIssues:['underbuilt_settlement','clustered_settlement','public_program_overconcentrated']
+    });
+    expect(harbor.builtExtent).toBeCloseTo(.37,2);
+    const farmPatch={...patch,buildings:[building('home-a',0,0),building('home-b',31.9,0),
+      building('public-a',10,0),building('public-b',20,0)]};
+    expect(auditWorldSettlementAcceptance({
+      id:'farmstead',radius:55,publicBuildings:[
+        {id:'public-a',use:'mill',width:8,depth:8,height:6,assetKey:'mill'},
+        {id:'public-b',use:'granary',width:8,depth:8,height:6,assetKey:'granary'}
+      ]
+    },farmPatch,{kind:'village',density:.3,waterfrontBias:0})).toMatchObject({
+      publicBuildings:2,ordinaryBuildings:2,builtExtent:.29,
+      planningIssues:['underbuilt_settlement','clustered_settlement','public_program_overconcentrated']
+    });
+  });
+
+  it('stops rejected world geometry before any paid asset call', async () => {
+    const input={...request,prompt:'A complete island town',generateAssets:true,repairAttempts:0 as const};
+    const intent=rawSoloIntent(input);
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(intent));
+    await expect(generateWorld(input,{} as MapStore)).rejects.toThrow('world_island_boundary_open');
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({
+      attempt:0,error:expect.stringContaining('world_island_boundary_open')
+    }));
+  });
+
+  it('rejects a named island whose dry terrain is clipped by the world boundary', () => {
+    const recipe={version:1 as const,seed:7,size:500,heightScale:.1,
+      constraints:[{region:'center' as const,biome:'grassland' as const}]};
+    expect(auditWorldIslandBoundary('A complete island town',recipe)).toMatchObject({dryRatio:1});
+    expect(auditWorldIslandBoundary('A coastal town',recipe)).toBeNull();
+  });
+
   it('prompts for a settlement-specific economy and civic program before street layout', () => {
     expect(WORLD_GENERATION_PROMPT).toContain('livelihood, population scale, external logistics, public services');
     expect(WORLD_GENERATION_PROMPT).toContain('one public or landmark building per 10..20 ordinary buildings');
@@ -360,6 +413,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('Copy request.prompt byte-for-byte into plan.prompt');
     expect(messages[0].content).toContain('The root has only plan; recipe, ecology, towns and roads are children of plan');
     expect(messages[0].content).toContain('for size 500: -250..250');
+    expect(messages[0].content).toContain('every map edge must sample as ocean');
     expect(messages[0].content).toContain('Ecology region is a circle/path object');
     expect(messages[0].content).toContain('exactly four ascending metre values');
     expect(messages[0].content).toContain("reliefProfile:'compact'");
