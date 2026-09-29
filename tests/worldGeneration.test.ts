@@ -325,6 +325,31 @@ describe('world generation compiler', () => {
     }));
   });
 
+  it('tells an intent repair exactly which path region is missing width', async () => {
+    const invalid=rawSoloIntent() as any;
+    invalid.plan.recipe.terrainBrushes=[{id:'shore-working-grade',mode:'grade',
+      region:{kind:'path',points:[[-60,0],[60,0]]},heights:[3,3]}];
+    invalid.plan.recipe.waterBodies=[{id:'trade-river',type:'river',
+      region:{kind:'path',points:[[-80,-80],[80,80]]},levels:[0,0],depth:3}];
+    const repaired=structuredClone(invalid);
+    repaired.plan.recipe.terrainBrushes[0].region.width=12;
+    repaired.plan.recipe.waterBodies[0].region.width=18;
+    const parsed=parseWorldIntentDraft(repaired,request),evidence=createWorldSitingEvidence(parsed);
+    const layout={towns:[{townId:'market-town',candidateId:evidence.towns[0].candidates[0].id}],
+      settlements:[{townId:'market-town',options:{kind:'city',pattern:'organic',density:.8}}],assets:[]};
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(invalid)).mockResolvedValueOnce(JSON.stringify(repaired))
+      .mockResolvedValueOnce(JSON.stringify(layout));
+
+    await generateWorld({...request,repairAttempts:1},{} as MapStore);
+
+    const initialPrompt=(mocks.llmChat.mock.calls[0][0] as Array<{role:string;content:string}>)[0].content;
+    const repairPrompt=JSON.parse((mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>).at(-1)!.content);
+    expect(initialPrompt).toContain('Every path region requires numeric width 1..1000, including grade brushes, rivers');
+    expect(repairPrompt.error).toBe('invalid_world_terrain_region:plan.recipe.terrainBrushes[0].region.width:required_numeric_width_1_to_1000');
+    expect(parseWorldIntentDraft(repaired,request).plan.recipe.waterBodies?.[0].region).toEqual(
+      expect.objectContaining({kind:'path',width:18}));
+  },10_000);
+
   it('uses its one allowed intent repair when sampled siting cannot support the proposed town', async () => {
     const {layout}=soloLayout();
     const impossible=rawSoloIntent() as any;
