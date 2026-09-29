@@ -218,6 +218,8 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('Copy request.prompt byte-for-byte into plan.prompt');
     expect(messages[0].content).toContain('under 5000 characters');
     expect(messages[0].content).toContain('for size 500: -250..250');
+    expect(messages[0].content).toContain('Ecology region is a circle/path object');
+    expect(messages[0].content).toContain('exactly four ascending metre values');
     expect(messages[0].content).toContain("reliefProfile:'compact'");
     expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
