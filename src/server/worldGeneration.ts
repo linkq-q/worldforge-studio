@@ -17,6 +17,7 @@ export interface WorldGenerationRequest {
   size: number;
   generateAssets?: boolean;
   reusableAssetIds?: string[];
+  repairAttempts?: 0 | 1;
 }
 export interface WorldAssetRequest {
   key: string;
@@ -51,10 +52,10 @@ Brush region: {kind:'circle',center:[x,z],radius} or {kind:'path',points:[[x,z],
 towns=[{id,name,prompt,center:[x,z],radius,blend,foundation,terrainMode:'conform',ports:[{id,guideId,position:[localX,localZ],width}]}]. A town core spans +/-radius in local coords. Its ports are exactly on its square boundary, meet world roads at the same world coordinates, and share width. Foundations may be omitted; the compiler samples them. Do not place every settlement on identical pads. Keep towns near enough for interesting traversal, with sparse hinterland and dense streets. Settlement radius normally 50..220 m. Keep core areas non-overlapping. Coast, river, slopes and practical access determine settlement shape. No town on open water.
 Before choosing roads and buildings, silently plan each settlement in this order: livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, then traffic and housing. Record the specific economy, era and civic program in town.prompt and express only its few authored public buildings through landmarks and matching assets. As a heuristic, consider about one public or landmark building per 10..20 ordinary buildings, adjusted for settlement purpose and size. Libraries, schools, bathhouses, markets, wells, council halls and comparable services belong only where the town's culture, era and population support them; public buildings need not be large. Do not copy one civic checklist into every settlement. Missing services or external connections are reported as preview diagnostics rather than silently filled with generic landmarks.
 roads use MapGuide: {id,name,points:[[worldX,worldZ],...],curve:'polyline',closed:false,width,tags:[]}. Secondary lanes 2..3.5m, main streets 4..6m, footpaths >=2m; avoid highway proportions in small settlements. Provide connected overland access between named destinations. Explicitly share coordinates at junctions. No road across deep water or cliffs; route around or author a real crossing. Paths with sharp reversals are invalid.
-ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?}]. These seeded rules run per fixed chunk; use a region for oasis groves or local woodland. Don't place trees one-by-one.
+ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?:[outerMin,preferredMin,preferredMax,outerMax]}]. These seeded rules run per fixed chunk; use a region for oasis groves or local woodland. Don't place trees one-by-one. Derive vegetation density from moisture, slope and human use: freshwater shores should support substantial groves where the climate permits, with a gradual transition into dry hinterland. waterDistance measures metres from explicit fresh lakes and rivers, not the sea; use it for water-dependent groves, omit it for rain-fed forests. Leave roads, entrances and occupied building footprints clear.
 settlements=[{townId,options:{kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?,landmarks?}}]. Choose a distinct planning approach appropriate to each place. The same kernel handles cities and villages. landmarks contains only authored significant buildings: {id,x,z,width,depth,height,use,rotation?,assetKey,enterable}. Reserve a sensible dry footprint and accessible entry. Use only a few landmarks; ordinary houses come from the tool.
 assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions:[width,height,depth],enterable?,strategy:'single'|'assembly',existingAssetId?}], at most 12 reusable families. When the request includes reusableAssets, reuse a suitable listed id through existingAssetId instead of requesting a duplicate; never invent or search for an unlisted id. Asset prompts describe silhouette, dimensions, local +Z entrance, +Y up, openings, joining faces and material identities. Give common houses genuinely distinct silhouettes. Vegetation is clustered by rules. Small ordinary buildings can be single models. Large castles, cathedrals, caravanserais and enterable public buildings use assembly, routed to the existing WorldForge main Scene Code architecture prompt: footprint -> depth -> tiers -> bays, reusable ordinary/corner/entrance modules, preserved passages and courtyard voids. Asset key must match landmark.assetKey. Never generate a large landmark as a solid fake facade when it is meant to be entered.
-Limits: <=12 towns, <=8 ecology rules, <=32 world roads, <=16 landforms. Return a new preview, never assume visual acceptance. The compiler reports actual sampled heights/water and validation errors for one repair; use that evidence rather than inventing sampled values.`;
+Limits: <=12 towns, <=8 ecology rules, <=32 world roads, <=16 landforms. Return a new preview, never assume visual acceptance. A failed first output is preserved without retry by default. Only an explicitly enabled repair can provide sampled terrain evidence for one correction; never invent sampled values.`;
 
 function parseJson(text: string): unknown {
   return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
@@ -79,12 +80,13 @@ export function validateWorldGenerationRequest(input: unknown): WorldGenerationR
     || !Number.isInteger(r.seed) || r.seed < 0 || r.seed > 0xffffffff
     || !Number.isFinite(r.size) || r.size < 500 || r.size > 256000
     || (r.generateAssets !== undefined && typeof r.generateAssets !== 'boolean')
+    || (r.repairAttempts !== undefined && r.repairAttempts !== 0 && r.repairAttempts !== 1)
     || (reusableAssetIds !== undefined && (!Array.isArray(reusableAssetIds) || reusableAssetIds.length > 64
       || new Set(reusableAssetIds).size !== reusableAssetIds.length
       || reusableAssetIds.some(id => typeof id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(id))))) {
     throw new Error('invalid_world_generation_request');
   }
-  return {prompt:r.prompt.trim(),seed:r.seed,size:r.size,generateAssets:r.generateAssets !== false,
+  return {prompt:r.prompt.trim(),seed:r.seed,size:r.size,generateAssets:r.generateAssets !== false,repairAttempts:r.repairAttempts??0,
     ...(reusableAssetIds?.length ? {reusableAssetIds:[...reusableAssetIds]} : {})};
 }
 
@@ -231,21 +233,23 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
   const messages:ChatMessage[]=[{role:'system',content:WORLD_GENERATION_PROMPT},
     {role:'user',content:JSON.stringify({...request,...(reusableAssets.length?{reusableAssets}:{})})}];
   let compiled:ReturnType<typeof compileWorldDraft>|undefined;
-  for(let attempt=0;attempt<2;attempt++) {
+  for(let attempt=0;attempt<=(request.repairAttempts??0);attempt++) {
     const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.repair':'world.plan',signal});
     let draft:unknown;
     try {draft=parseJson(content);compiled=compileWorldDraft(draft,request);break;}
     catch(error) {
-      if(attempt) throw error;
+      recordGenerationTrace('world.rejected',{attempt,draft,error:error instanceof Error?error.message:String(error)});
+      if(attempt===(request.repairAttempts??0)) throw error;
       messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),terrain:terrainEvidence(draft),instruction:'Repair the JSON using actual terrain evidence. Preserve the requested destinations and topology. Return the complete corrected JSON.'})});
     }
   }
   if(!compiled) throw new Error('world_generation_failed');
   const assetSources=request.generateAssets?await generateWorldAssets(compiled.draft.assets,store,signal):undefined;
   const sample=createWorldSampler(compiled.bundle.plan.recipe);
+  const landmarkKeys=new Set(compiled.draft.assets.filter(asset=>asset.role==='landmark').map(asset=>asset.key));
   const diagnostics=compiled.bundle.patches.map(p=>{
     const town=compiled.bundle.plan.towns.find(t=>t.id===p.townId)!;
-    const publicBuildings=p.buildings.filter(building=>/civic|market|well|school|library|bath|council|temple|cathedral|clinic|hospital|inn|caravanserai|harbou?r|port|monument/i.test(building.use)).length;
+    const publicBuildings=p.buildings.filter(building=>landmarkKeys.has(building.assetKey??'') || /civic|market|well|school|library|bath|council|temple|cathedral|clinic|hospital|inn|caravanserai|harbou?r|port|monument|市场|集市|水井|学校|图书馆|浴场|议事|神庙|教堂|诊所|医院|驿馆|港口|纪念/i.test(building.use)).length;
     const ordinaryBuildings=p.buildings.length-publicBuildings;
     const recommendedPublicBuildings:[number,number]=[
       ordinaryBuildings>=10?Math.max(1,Math.floor(ordinaryBuildings/20)):0,

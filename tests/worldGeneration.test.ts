@@ -107,7 +107,7 @@ describe('world generation compiler', () => {
       .mockResolvedValueOnce(JSON.stringify({ ...draft, accidentalTopology: true }))
       .mockResolvedValueOnce(JSON.stringify(draft));
 
-    const result = await generateWorld(request, {} as MapStore);
+    const result = await generateWorld({...request,repairAttempts:1}, {} as MapStore);
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
     const repairMessages = mocks.llmChat.mock.calls[1][0] as Array<{ role: string; content: string }>;
     expect(JSON.parse(repairMessages.at(-1)!.content).error).toBe('world_unknown_draft_field:accidentalTopology');
@@ -141,8 +141,15 @@ describe('world generation compiler', () => {
     const draft = validDraft();
     draft.plan.prompt = 'Silently changed destination';
     mocks.llmChat.mockResolvedValue(JSON.stringify(draft));
-    await expect(generateWorld(request, {} as MapStore)).rejects.toThrow('world_prompt_request_mismatch');
+    await expect(generateWorld({...request,repairAttempts:1}, {} as MapStore)).rejects.toThrow('world_prompt_request_mismatch');
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the first rejected output without a hidden retry by default', async () => {
+    mocks.llmChat.mockResolvedValue(JSON.stringify({...validDraft(), unexpected: true}));
+    await expect(generateWorld(request, {} as MapStore)).rejects.toThrow('world_unknown_draft_field:unexpected');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
   });
 });
 
