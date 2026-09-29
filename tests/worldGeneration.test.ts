@@ -135,6 +135,14 @@ describe('world generation compiler', () => {
     expect(result.bundle.plan.towns).toHaveLength(1);
   });
 
+  it('accepts one missing final brace only when the remaining JSON is complete', async () => {
+    const { layout } = soloLayout();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent()).slice(0, -1))
+      .mockResolvedValueOnce(JSON.stringify(layout));
+    const result = await generateWorld(request, {} as MapStore);
+    expect(result.bundle.plan.towns).toHaveLength(1);
+  });
+
   it('rejects semantic fields that would otherwise be silently overwritten or ignored', () => {
     const extra = { ...validDraft(), topology: 'keep me' };
     expect(() => compileWorldDraft(extra, request)).toThrow('world_unknown_draft_field:topology');
