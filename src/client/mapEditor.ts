@@ -357,7 +357,7 @@ class MapEditor {
   private readonly adaptiveQuality = new AdaptiveRenderQuality();
   private renderQualityMode: RenderQualityMode = 'auto';
   private playMode: PlayModeController | null = null;
-  private worldWidth = 1600;
+  private worldWidth = 500;
   private worldGenerateAssets = true;
   private worldPlaySpawn: [number, number, number] | null = null;
   private worldPlaySpawnYaw = 0;

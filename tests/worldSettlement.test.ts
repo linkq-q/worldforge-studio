@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MapGuide } from '../src/shared/mapGuide';
 import {
-  auditWorldSettlement, generateWorldSettlement, type WorldSettlementSampler
+  auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, type WorldSettlementSampler
 } from '../src/shared/worldSettlement';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
 import { segmentBox, townBuildingBounds, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
@@ -179,6 +179,23 @@ describe('world settlement growth', () => {
     for (const edge of segments(patch)) expect(segmentBox(edge.a, edge.b, landmarkBounds, edge.width / 2)).toBe(false);
     const access = patch.streets.find(street => street.tags.includes('landmark-access'))!;
     expect(Math.min(...access.points.map(point => pointDistance(point, [landmark.x, landmark.z], [landmark.x, landmark.z])))).toBeLessThan(50);
+  });
+
+  it('places a required public footprint on reachable sampled street frontage', () => {
+    const plan = fixture(), sample = sampler(plan);
+    const result = createWorldSettlementLandmarkLayout(plan, 'town', sample, {
+      kind: 'city', pattern: 'organic', seed: 71, density: 0.78
+    }, [{
+      id: 'market', use: 'covered public market', width: 12, depth: 10, height: 6,
+      assetKey: 'market', enterable: true
+    }]);
+    expect(result.landmarks).toEqual([expect.objectContaining({
+      id: 'market', use: 'covered public market', width: 12, depth: 10, height: 6,
+      assetKey: 'market', enterable: true, x: expect.any(Number), z: expect.any(Number), rotation: expect.any(Number)
+    })]);
+    expect(result.patch.buildings.find(building => building.id === 'market')).toEqual(result.landmarks[0]);
+    expect(result.patch.streets.some(street => street.tags.includes('landmark-access'))).toBe(true);
+    expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
   });
 
   it('fails explicitly when no settlement can be built', () => {

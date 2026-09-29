@@ -51,8 +51,9 @@ function rawSeedIntent() {
     },
     ecology: [],
     towns: [
-      {id:'spring-town',name:'Spring Town',prompt:'A compact caravan town beside the spring',radius:130,blend:80,terrainMode:'conform',region:'center',waterfrontBias:.7,targetWaterBodyId:'fresh-spring'},
-      {id:'fishing-village',name:'Fishing Village',prompt:'A small fishing village on the landward side of the coast',radius:100,blend:80,terrainMode:'conform',region:'west',waterfrontBias:.85,targetWaterBodyId:'sea'}
+      {id:'spring-town',name:'Spring Town',prompt:'A compact caravan town beside the spring',radius:130,blend:80,terrainMode:'conform',region:'center',kind:'city',density:.45,waterfrontBias:.7,targetWaterBodyId:'fresh-spring',
+        publicBuildings:[{id:'market',use:'public market',width:12,depth:10,height:6,assetKey:'market',enterable:true}]},
+      {id:'fishing-village',name:'Fishing Village',prompt:'A small fishing village on the landward side of the coast',radius:100,blend:80,terrainMode:'conform',region:'west',kind:'village',density:.4,waterfrontBias:.85,targetWaterBodyId:'sea',publicBuildings:[]}
     ],
     roads: [{id:'trade-road',name:'Fish and caravan road',fromTownId:'fishing-village',toTownId:'spring-town',width:4,tags:['trade-route']}]
   }};
@@ -156,8 +157,66 @@ describe('world generation compiler', () => {
     const messages = mocks.llmChat.mock.calls[0][0] as Array<{ role: string; content: string }>;
     const planningInput = JSON.parse(messages[1].content);
     expect(planningInput.reusableAssets).toEqual([expect.objectContaining({ id: asset.id, name: asset.name })]);
+    expect(planningInput.reusableAssets[0].visualSize).toEqual([8,7,9]);
     expect(planningInput.reusableAssets[0]).not.toHaveProperty('modelJson');
   });
+
+  it('allows a terrain-only intent without inventing a town', () => {
+    const input:WorldGenerationRequest={prompt:'A remote volcanic snowfield',seed:17,size:1400,generateAssets:false};
+    const intent={plan:{version:1,id:'terrain-only',revision:1,prompt:input.prompt,
+      recipe:{version:1,seed:17,size:1400,constraints:[{region:'center',biome:'mountains'}]},
+      ecology:[],towns:[],roads:[]}};
+    const parsed=parseWorldIntentDraft(intent,input),evidence=createWorldSitingEvidence(parsed);
+    expect(evidence).toEqual({towns:[],connections:[],landmarkLayouts:[]});
+    const result=materializeWorldIntent(parsed,evidence,{towns:[],settlements:[],assets:[]},input);
+    expect(result.bundle.plan.towns).toEqual([]);
+    expect(result.bundle.patches).toEqual([]);
+  });
+
+  it('offers sampled public-building layouts for a town without external roads', () => {
+    const input:WorldGenerationRequest={prompt:'A self-contained hill market',seed:2309,size:1600,generateAssets:false};
+    const raw={plan:{version:1,id:'solo-market',revision:1,prompt:input.prompt,
+      recipe:{version:1,seed:input.seed,size:input.size,heightScale:.1,constraints:[{region:'center',biome:'grassland'}]},
+      ecology:[],roads:[],towns:[{id:'market-town',name:'Market Town',prompt:'A compact inland market town',
+        radius:100,blend:64,terrainMode:'conform',region:'center',kind:'city',density:.65,publicBuildings:[
+          {id:'market',use:'covered public market',width:12,depth:10,height:6,assetKey:'market',enterable:true}
+        ]}]}};
+    const intent=parseWorldIntentDraft(raw,input),evidence=createWorldSitingEvidence(intent);
+    expect(evidence.connections).toEqual([]);
+    expect(evidence.towns[0].candidates.length).toBeGreaterThan(0);
+    const layout=evidence.landmarkLayouts.find(item=>item.townId==='market-town'&&item.pattern==='organic');
+    expect(layout).toBeDefined();
+    const chosen=evidence.towns[0].candidates.find(candidate=>candidate.id===layout!.candidateId)!;
+    expect(()=>materializeWorldIntent(intent,evidence,{towns:[{townId:'market-town',candidateId:chosen.id,
+      landmarkLayoutId:layout!.id}],settlements:[{townId:'market-town',options:{kind:'city',pattern:'organic',density:.65}}],
+      assets:[{key:'market',name:'Market',role:'landmark',prompt:'A covered public market',dimensions:[12,6,10],enterable:true,strategy:'assembly'}]},input)).not.toThrow();
+  },15_000);
+
+  it('keeps one shared candidate graph for a three-town chain at 500 metres', () => {
+    const input:WorldGenerationRequest={prompt:'Three close grassland settlements linked in a chain',seed:91,size:500,generateAssets:false};
+    const makeTown=(id:string,region:'west'|'center'|'east',publicBuildings:unknown[]=[])=>({id,name:id,prompt:id,
+      radius:50,blend:50,terrainMode:'conform',region,kind:'village',density:.3,publicBuildings});
+    const raw={plan:{version:1,id:'three-town-chain',revision:1,prompt:input.prompt,
+      recipe:{version:1,seed:input.seed,size:input.size,heightScale:.02,constraints:[
+        {region:'west',biome:'grassland'},{region:'center',biome:'grassland'},{region:'east',biome:'grassland'}]},
+      ecology:[],towns:[makeTown('a','west'),makeTown('b','center',[{id:'well',use:'public well',width:6,depth:6,height:4,assetKey:'well'}]),
+        makeTown('c','east')],roads:[
+        {id:'ab',name:'A to B',fromTownId:'a',toTownId:'b',width:3,tags:['path']},
+        {id:'bc',name:'B to C',fromTownId:'b',toTownId:'c',width:3,tags:['path']}
+      ]}};
+    const intent=parseWorldIntentDraft(raw,input),evidence=createWorldSitingEvidence(intent);
+    expect(evidence.connections).toHaveLength(2);
+    expect(evidence.connections.every(connection=>connection.available)).toBe(true);
+    expect(evidence.connections.find(connection=>connection.roadId==='ab')!.toCandidateId)
+      .toBe(evidence.connections.find(connection=>connection.roadId==='bc')!.fromCandidateId);
+    expect(evidence.towns.every(town=>town.candidates.length===1)).toBe(true);
+    const landmarkLayout=evidence.landmarkLayouts.find(item=>item.townId==='b'&&item.pattern==='organic')!;
+    const choices=evidence.towns.map(town=>({townId:town.id,candidateId:town.candidates[0].id,
+      ...(town.id==='b'?{landmarkLayoutId:landmarkLayout.id}:{})}));
+    expect(()=>materializeWorldIntent(intent,evidence,{towns:choices,settlements:intent.plan.towns.map(town=>({townId:town.id,
+      options:{kind:'village',pattern:'organic',density:.3}})),assets:[{key:'well',name:'Well',role:'landmark',
+      prompt:'A small public well',dimensions:[6,4,6],strategy:'single'}]},input)).not.toThrow();
+  },15_000);
 
   it('fails after the single repair instead of accepting changed request semantics', async () => {
     const draft = validDraft();
@@ -187,16 +246,28 @@ describe('world generation compiler', () => {
       {townId:'fishing-village',options:{kind:'village' as const,pattern:'organic' as const,density:.4,waterfrontBias:.85}}
     ];
     const connection=connections[0];
+    const landmarkLayout=evidence.landmarkLayouts.find(item=>item.townId==='spring-town'&&item.candidateId===connection.toCandidateId&&item.pattern==='organic')!;
+    expect(landmarkLayout.landmarks[0]).toEqual(expect.objectContaining({id:'market',assetKey:'market'}));
     const layout={towns:[{townId:'fishing-village',candidateId:connection.fromCandidateId},
-      {townId:'spring-town',candidateId:connection.toCandidateId}],settlements,assets:[]};
+      {townId:'spring-town',candidateId:connection.toCandidateId,landmarkLayoutId:landmarkLayout.id}],settlements,
+      assets:[{key:'market',name:'Market',role:'landmark',prompt:'A small open public market',dimensions:[12,6,10],enterable:true,strategy:'assembly'}]};
     expect(()=>materializeWorldIntent(parsed,evidence,layout,input)).not.toThrow();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(intent)).mockResolvedValueOnce(JSON.stringify(layout));
     const result=await generateWorld(input,{} as MapStore);
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    const intentPrompt=(mocks.llmChat.mock.calls[0][0] as Array<{role:string;content:string}>)[0].content;
+    const layoutPrompt=(mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>)[0].content;
+    expect(intentPrompt).toContain('Biomes: ocean/grassland/forest/desert/mountains/snow');
+    expect(intentPrompt).toContain("mode:'raise'|'lower'");
+    expect(intentPrompt).toContain("mode:'grade'");
+    expect(intentPrompt).toContain('prefer heightScale around 0.08..0.15');
+    expect(intentPrompt).toContain("shorelineProfile?:'steep'|'gentle'");
+    expect(layoutPrompt).toContain('Omit existingAssetId when requesting a new asset');
+    expect(layoutPrompt).toContain('visualSize is its authoritative measured');
     expect(result.bundle.plan.towns.find(town=>town.id==='fishing-village')!.center).not.toEqual([-450,250]);
     expect(result.bundle.plan.roads[0].points.length).toBeGreaterThanOrEqual(2);
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.siting',expect.objectContaining({evidence:expect.any(Object)}));
-  });
+  },15_000);
 });
 
 describe('world asset assembly', () => {
