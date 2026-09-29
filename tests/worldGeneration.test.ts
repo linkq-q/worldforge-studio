@@ -3,7 +3,7 @@ import { Euler, Quaternion } from 'three';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import {
-  assembleWorldModel, auditWorldIslandBoundary, auditWorldSettlementAcceptance, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
+  assembleWorldModel, auditWorldIslandBoundary, auditWorldIslandLandmass, auditWorldSettlementAcceptance, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
   materializeWorldIntent, parseWorldIntentDraft, validateWorldGenerationRequest, worldAssetStrategy,
   WORLD_GENERATION_PROMPT, type WorldAssetRequest, type WorldGenerationRequest
 } from '../src/server/worldGeneration';
@@ -397,6 +397,40 @@ describe('world generation compiler', () => {
     expect(auditWorldIslandBoundary('A coastal town',recipe)).toBeNull();
   });
 
+  it('rejects an inhabited island whose connected dry interior cannot hold its town cores', async () => {
+    const recipe={version:1 as const,seed:17,size:500,heightScale:.1,
+      constraints:[
+        {region:'north' as const,biome:'ocean' as const},{region:'south' as const,biome:'ocean' as const},
+        {region:'east' as const,biome:'ocean' as const},{region:'west' as const,biome:'ocean' as const},
+        {region:'northeast' as const,biome:'ocean' as const},{region:'northwest' as const,biome:'ocean' as const},
+        {region:'southeast' as const,biome:'ocean' as const},{region:'southwest' as const,biome:'ocean' as const},
+        {region:'center' as const,biome:'grassland' as const}
+      ],landforms:[{center:[0,0] as [number,number],radius:[70,60] as [number,number],height:7}]};
+    const audit=auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:78}]);
+    expect(audit).toMatchObject({adequate:false,requiredSpan:156});
+    expect(audit!.largestDryComponentSamples).toBeLessThan(audit!.requiredDrySamples);
+    const broadDryCore=((x:number,z:number)=>({height:Math.abs(x)<=160&&Math.abs(z)<=160?8:-4,
+      waterLevel:Math.abs(x)<=160&&Math.abs(z)<=160?null:0,waterBodyId:null})) as ReturnType<typeof createWorldSampler>;
+    expect(auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:78}],broadDryCore))
+      .toMatchObject({adequate:true,requiredSpan:156});
+    const raw={plan:{version:1,id:'small-island',revision:1,
+      prompt:'An inhabited island port',recipe,ecology:[],roads:[],towns:[{id:'port',name:'Port',prompt:'Port town',
+        radius:78,blend:40,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.72,
+        publicBuildings:[]}] }};
+    const input={prompt:'An inhabited island port',seed:17,size:500,generateAssets:true,repairAttempts:1 as const};
+    expect(()=>createWorldSitingEvidence(parseWorldIntentDraft(raw,input)))
+      .toThrow('world_island_landmass_insufficient');
+    mocks.llmChat.mockResolvedValue(JSON.stringify(raw));
+    await expect(generateWorld(input,{} as MapStore)).rejects.toThrow('world_island_landmass_insufficient');
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+    const repairMessages=mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>;
+    expect(JSON.parse(repairMessages.at(-1)!.content)).toMatchObject({
+      error:expect.stringContaining('world_island_landmass_insufficient'),
+      terrainHint:{islandLandmass:expect.objectContaining({adequate:false,requiredSpan:156})},
+      instruction:expect.stringContaining('passable route between them')
+    });
+  });
+
   it('prompts for a settlement-specific economy and civic program before street layout', () => {
     expect(WORLD_GENERATION_PROMPT).toContain('livelihood, population scale, external logistics, public services');
     expect(WORLD_GENERATION_PROMPT).toContain('one public or landmark building per 10..20 ordinary buildings');
@@ -414,6 +448,9 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('The root has only plan; recipe, ecology, towns and roads are children of plan');
     expect(messages[0].content).toContain('for size 500: -250..250');
     expect(messages[0].content).toContain('every map edge must sample as ocean');
+    expect(messages[0].content).toContain('combined 2*radius by 2*radius cores');
+    expect(messages[0].content).toContain('Assign at most one biome constraint to each broad region');
+    expect(messages[0].content).toContain('heightScale around 0.02..0.04');
     expect(messages[0].content).toContain('Ecology region is a circle/path object');
     expect(messages[0].content).toContain('exactly four ascending metre values');
     expect(messages[0].content).toContain("reliefProfile:'compact'");
