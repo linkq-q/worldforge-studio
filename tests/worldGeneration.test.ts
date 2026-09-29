@@ -392,6 +392,31 @@ describe('world generation compiler', () => {
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
   });
 
+  it('tells GPT when every sampled town candidate lacks a buildable network', async () => {
+    const input={...request,seed:19};
+    const mountain=rawSoloIntent(input) as any;
+    mountain.plan.recipe.heightScale=.4;
+    mountain.plan.recipe.constraints=[{region:'center',biome:'mountains'}];
+    const {layout}=soloLayout(input);
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(mountain))
+      .mockResolvedValueOnce(JSON.stringify(rawSoloIntent(input)))
+      .mockResolvedValueOnce(JSON.stringify(layout));
+
+    await generateWorld({...input,repairAttempts:1},{} as MapStore);
+
+    const repairPrompt=JSON.parse((mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>).at(-1)!.content);
+    expect(repairPrompt.siteHints).toEqual([expect.objectContaining({
+      townId:'market-town',candidateUsability:expect.objectContaining({
+        total:3,usable:0,rejected:3,
+        issueCounts:{world_settlement_no_buildable_network:3},
+        allCandidatesLackBuildableNetwork:true
+      })
+    })]);
+    expect(repairPrompt.instruction).toContain('move that town region away from steep mountain terrain');
+    expect(repairPrompt.instruction).toContain('shape a broad, low, gently sloped buildable terrace');
+    expect(repairPrompt.instruction).toContain('do not relax settlement or route quality');
+  },20_000);
+
   it('reports a tiny inland knot and missing sea landing in a large harbor town', () => {
     const building=(id:string,x:number,z:number)=>({id,x,z,width:8,depth:8,height:6,use:'home'});
     const small={buildings:Array.from({length:11},(_,index)=>building('b'+index,(index%4)*4,Math.floor(index/4)*4)),
