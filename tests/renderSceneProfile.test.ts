@@ -5,6 +5,20 @@ import { normalizeMapDesignSemantics } from '../src/shared/mapDesign';
 import { createRenderSceneProfile, normalizeRenderSceneProfile } from '../src/shared/renderSceneProfile';
 
 describe('render scene profile', () => {
+  it('lets the render planner distinguish paving recipes without embedding finish colors in map data', () => {
+    const map = createEmptyMap();
+    map.visualSemantics.zones = [
+      { id:'historic-street', tags:['paving'], center:[0,0], radius:20, intensity:1, material:'cobblestone' },
+      { id:'new-road', tags:['paving'], center:[20,0], radius:15, intensity:1, material:'asphalt' }
+    ];
+    const profile = normalizeRenderSceneProfile(createRenderSceneProfile(map))!;
+    expect(profile.targets?.zones.map(zone => zone.material)).toEqual(['cobblestone','asphalt']);
+    const invalid = structuredClone(profile);
+    Object.assign(invalid.targets!.zones[0], {material:'invented-road',color:'#ff0000'});
+    expect(normalizeRenderSceneProfile(invalid)?.targets?.zones[0]).toEqual({
+      id:'historic-street',tags:['paving'],center:[0,0],radius:20
+    });
+  });
   it('retains later focal buildings, lights and walk-up props when scenery exhausts the context budget', () => {
     const map = createEmptyMap();
     map.objects = Array.from({ length: 140 }, (_, index) => {

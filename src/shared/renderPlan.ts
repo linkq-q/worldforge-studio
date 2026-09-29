@@ -282,12 +282,44 @@ export interface RuntimeTerrainMaterialStyle {
   detailStrength: number;
   soilRecipe: 'dry' | 'moist';
   sandRecipe: 'dune' | 'beach';
+  compactedEarthColor?: string;
+  gardenStoneColor?: string;
+  asphaltColor?: string;
+  concreteColor?: string;
+  brickPaverColor?: string;
+  cobblestoneColor?: string;
+  gravelColor?: string;
+  mudColor?: string;
+  roadDetailStrength?: number;
+  /** Multiplier of the road texture's world-space dimensions. */
+  roadTextureScale?: number;
 }
+
+export const DEFAULT_RUNTIME_ROAD_COLORS = {
+  'compacted-earth': '#967c60',
+  'garden-stone': '#a49c8a',
+  asphalt: '#697176',
+  concrete: '#ada99d',
+  'brick-paver': '#9b7d68',
+  cobblestone: '#948c7e',
+  gravel: '#928675',
+  mud: '#725b43'
+} as const;
 
 export const DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE: RuntimeTerrainMaterialStyle = {
   detailStrength: 0.55,
   soilRecipe: 'dry',
-  sandRecipe: 'dune'
+  sandRecipe: 'dune',
+  compactedEarthColor: DEFAULT_RUNTIME_ROAD_COLORS['compacted-earth'],
+  gardenStoneColor: DEFAULT_RUNTIME_ROAD_COLORS['garden-stone'],
+  asphaltColor: DEFAULT_RUNTIME_ROAD_COLORS.asphalt,
+  concreteColor: DEFAULT_RUNTIME_ROAD_COLORS.concrete,
+  brickPaverColor: DEFAULT_RUNTIME_ROAD_COLORS['brick-paver'],
+  cobblestoneColor: DEFAULT_RUNTIME_ROAD_COLORS.cobblestone,
+  gravelColor: DEFAULT_RUNTIME_ROAD_COLORS.gravel,
+  mudColor: DEFAULT_RUNTIME_ROAD_COLORS.mud,
+  roadDetailStrength: 0.45,
+  roadTextureScale: 1
 };
 
 export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
@@ -545,11 +577,21 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     label: '地表材质细节',
     priority: 'P1',
     availability: 'ready',
-    availabilityNote: '地图保存草地、土壤、沙地、岩石和铺装语义；渲染方案控制程序细节配方。',
+    availabilityNote: '地图保存地表和道路材料语义；渲染方案控制配色、程序细节和路面纹理尺寸。',
     params: {
       detailStrength: { type: 'number', min: 0, max: 1, default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.detailStrength },
       soilRecipe: { type: 'enum', values: ['dry', 'moist'], default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.soilRecipe },
-      sandRecipe: { type: 'enum', values: ['dune', 'beach'], default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.sandRecipe }
+      sandRecipe: { type: 'enum', values: ['dune', 'beach'], default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.sandRecipe },
+      compactedEarthColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS['compacted-earth'] },
+      gardenStoneColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS['garden-stone'] },
+      asphaltColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS.asphalt },
+      concreteColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS.concrete },
+      brickPaverColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS['brick-paver'] },
+      cobblestoneColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS.cobblestone },
+      gravelColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS.gravel },
+      mudColor: { type: 'color', default: DEFAULT_RUNTIME_ROAD_COLORS.mud },
+      roadDetailStrength: { type: 'number', min: 0, max: 1, default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.roadDetailStrength },
+      roadTextureScale: { type: 'number', min: 0.5, max: 2, default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.roadTextureScale }
     }
   },
   {
@@ -929,7 +971,17 @@ export function compileRuntimeTerrainMaterialStyle(plan: RenderPlan): RuntimeTer
   return {
     detailStrength: numericValue(params.detailStrength) ?? DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.detailStrength,
     soilRecipe: params.soilRecipe === 'moist' ? 'moist' : 'dry',
-    sandRecipe: params.sandRecipe === 'beach' ? 'beach' : 'dune'
+    sandRecipe: params.sandRecipe === 'beach' ? 'beach' : 'dune',
+    compactedEarthColor: stringValue(params.compactedEarthColor) ?? DEFAULT_RUNTIME_ROAD_COLORS['compacted-earth'],
+    gardenStoneColor: stringValue(params.gardenStoneColor) ?? DEFAULT_RUNTIME_ROAD_COLORS['garden-stone'],
+    asphaltColor: stringValue(params.asphaltColor) ?? DEFAULT_RUNTIME_ROAD_COLORS.asphalt,
+    concreteColor: stringValue(params.concreteColor) ?? DEFAULT_RUNTIME_ROAD_COLORS.concrete,
+    brickPaverColor: stringValue(params.brickPaverColor) ?? DEFAULT_RUNTIME_ROAD_COLORS['brick-paver'],
+    cobblestoneColor: stringValue(params.cobblestoneColor) ?? DEFAULT_RUNTIME_ROAD_COLORS.cobblestone,
+    gravelColor: stringValue(params.gravelColor) ?? DEFAULT_RUNTIME_ROAD_COLORS.gravel,
+    mudColor: stringValue(params.mudColor) ?? DEFAULT_RUNTIME_ROAD_COLORS.mud,
+    roadDetailStrength: numericValue(params.roadDetailStrength) ?? DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.roadDetailStrength,
+    roadTextureScale: numericValue(params.roadTextureScale) ?? DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.roadTextureScale
   };
 }
 

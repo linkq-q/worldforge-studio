@@ -8,6 +8,7 @@ import {
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
   compileRuntimePostQuality,
+  compileRuntimeTerrainMaterialStyle,
   compileRuntimeVolumetricLight,
   compileRuntimeWaterStyles,
   compileRenderPlan,
@@ -18,6 +19,70 @@ import {
 } from '../src/shared/renderPlan';
 
 describe('RenderPlan V2 capabilities', () => {
+  it('allows road styling after loading an older access policy and clamps its texture controls', () => {
+    const policy = normalizeRenderAccessPolicy({
+      version: 1,
+      parameters: [{
+        moduleId: 'runtime.terrain-materials', parameter: 'detailStrength', control: 'range',
+        ai: { enabled: true, min: 0, max: 0.6 }, developer: { enabled: true, min: 0, max: 1 }
+      }]
+    });
+    const colors = {
+      asphaltColor: '#677b80', brickPaverColor: '#ad9977', cobblestoneColor: '#959487',
+      concreteColor: '#c3bcab', gardenStoneColor: '#acaa98', compactedEarthColor: '#967c60',
+      gravelColor: '#928675', mudColor: '#725b43'
+    };
+    for (const actor of ['ai', 'developer'] as const) {
+      const plan = normalizeRenderPlan({
+        version: 2, baseSchemeId: 'render-natural-day', modules: [{
+          id: 'runtime.terrain-materials',
+          params: { ...colors, detailStrength: 0.9, roadDetailStrength: -1, roadTextureScale: 8 }
+        }]
+      }, ['render-natural-day'], policy, actor);
+      expect(compileRuntimeTerrainMaterialStyle(plan)).toMatchObject({
+        ...colors, detailStrength: actor === 'ai' ? 0.6 : 0.9, roadDetailStrength: 0, roadTextureScale: 2
+      });
+    }
+    for (const parameter of [...Object.keys(colors), 'roadDetailStrength', 'roadTextureScale']) {
+      expect(policy.parameters.find((entry) => (
+        entry.moduleId === 'runtime.terrain-materials' && entry.parameter === parameter
+      ))).toMatchObject({ ai: { enabled: true }, developer: { enabled: true } });
+    }
+  });
+
+  it('validates road colors and respects explicitly restricted road controls', () => {
+    const input = (params: Record<string, string | number>) => ({
+      version: 2, baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'runtime.terrain-materials', params }]
+    });
+    expect(() => normalizeRenderPlan(input({ asphaltColor: 'gray' })))
+      .toThrow('invalid_render_color:runtime.terrain-materials.asphaltColor');
+    const policy = normalizeRenderAccessPolicy({
+      version: 1, parameters: [{
+        moduleId: 'runtime.terrain-materials', parameter: 'asphaltColor', control: 'color',
+        ai: { enabled: false }, developer: { enabled: true }
+      }, {
+        moduleId: 'runtime.terrain-materials', parameter: 'roadTextureScale', control: 'range',
+        ai: { enabled: true, min: 0.75, max: 1.2 }, developer: { enabled: true, min: 0.5, max: 2 }
+      }]
+    });
+    const plan = normalizeRenderPlan(input({ asphaltColor: '#112233', roadTextureScale: 0.1 }),
+      ['render-natural-day'], policy, 'ai');
+    expect(plan.modules[0]?.params).toEqual({ roadTextureScale: 0.75 });
+  });
+
+  it('gives old terrain plans complete road defaults without adding stored overrides', () => {
+    const plan = normalizeRenderPlan({
+      version: 2, baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'runtime.terrain-materials', params: { soilRecipe: 'moist' } }]
+    });
+    expect(compileRuntimeTerrainMaterialStyle(plan)).toMatchObject({
+      soilRecipe: 'moist', asphaltColor: '#697176', brickPaverColor: '#9b7d68',
+      roadDetailStrength: 0.45, roadTextureScale: 1
+    });
+    expect(plan.modules[0]?.params).toEqual({ soilRecipe: 'moist' });
+  });
+
   it('supports repeatable scoped material and effect recipes', () => {
     const plan = normalizeRenderPlan({
       version: 2,

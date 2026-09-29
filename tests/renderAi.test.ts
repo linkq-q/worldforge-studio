@@ -4,6 +4,7 @@ import {
   compileRuntimeOutline,
   compileRuntimePresentation,
   compileRuntimeStyle,
+  compileRuntimeTerrainMaterialStyle,
   RENDER_CAPABILITIES,
   type RenderPlan
 } from '../src/shared/renderPlan';
@@ -27,6 +28,26 @@ const BUILTIN_RENDER_SCHEMES = [
 ];
 
 describe('render AI adapter', () => {
+  it('keeps scene-directed road colors from AI responses in the render plan', async () => {
+    const params = { asphaltColor: '#6a7d85', brickPaverColor: '#b8a58a', roadDetailStrength: 0.3, roadTextureScale: 0.75 };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        plan: { version: 2, baseSchemeId: 'render-natural-day', modules: [{ id: 'runtime.terrain-materials', params }] },
+        explanation: '道路采用与建筑协调的灰蓝沥青和米色铺装。'
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    const suggestion = await generateRenderSuggestion('灰蓝色城市道路与米色石材广场', BUILTIN_RENDER_SCHEMES, {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(suggestion.plan.modules).toContainEqual({ id: 'runtime.terrain-materials', params });
+    expect(compileRuntimeTerrainMaterialStyle(suggestion.plan)).toMatchObject(params);
+    const requestBody = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)) as { messages: Array<{ content: string }> };
+    expect(requestBody.messages[0]?.content).toContain('道路与铺装配色使用 runtime.terrain-materials');
+    expect(requestBody.messages[0]?.content).toContain('值越大砖石纹理越大');
+  });
+
   it('extracts JSON and clamps the render whitelist', () => {
     const suggestion = normalizeRenderSuggestion([
       '```json',

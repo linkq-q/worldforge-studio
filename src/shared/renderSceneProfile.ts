@@ -2,6 +2,7 @@ import { evaluateIndoorLightCoverage } from './indoorLighting';
 import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapSceneMode } from './map';
 import { normalizeMapDesignSemantics, type MapDesignGroup, type MapExperienceMode, type MapFocusKind, type MapRevealMode, type MapRelationKind } from './mapDesign';
 import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from './mapAssetMetadata';
+import { TERRAIN_SURFACE_RECIPES, type TerrainSurfaceRecipe } from './visualDirection';
 
 /** Map-authored composition cues, not a RenderPlan or a second styling authority. */
 export interface SceneArtBrief {
@@ -18,7 +19,7 @@ export interface RenderSceneProfile {
   sceneArtBrief?: SceneArtBrief;
   targets?: {
     objects: Array<{ id: string; name: string; position: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number]; parentId?: string; groupId?: string; tags?: string[]; light?: MapAssetLight; parts: Array<{ id: string; tags: string[] }> }>;
-    zones: Array<{ id: string; tags: string[]; center: [number, number]; radius: number }>;
+    zones: Array<{ id: string; tags: string[]; center: [number, number]; radius: number; material?: TerrainSurfaceRecipe }>;
     grassLayers: Array<{ id: string; preset: string }>;
   };
   sceneMode: MapSceneMode;
@@ -99,7 +100,7 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
         const nodes = (asset?.modelJson as { nodes?: Array<{ id?: string; tags?: Array<{ tag?: string; value?: unknown }> }> })?.nodes;
         return { id: object.id, name: object.name, position: [...world.position], rotation: [...world.rotation], scale: [...world.scale], ...(object.parentId ? { parentId: object.parentId } : {}), ...(object.designGroupId ? { groupId: object.designGroupId } : {}), tags: asset?.tags?.slice(0, 16) ?? [], ...(light ? { light } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 32).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
       }),
-      zones: map.visualSemantics.zones.slice(0, 64).map(zone => ({ id: zone.id, tags: [...zone.tags], center: [...zone.center], radius: zone.radius })),
+      zones: map.visualSemantics.zones.slice(0, 64).map(zone => ({ id: zone.id, tags: [...zone.tags], center: [...zone.center], radius: zone.radius, ...(zone.material ? { material: zone.material } : {}) })),
       grassLayers: map.grassLayers.slice(0, 8).map(layer => ({ id: layer.id, preset: layer.preset }))
     },
     size: [...(room?.size ?? map.box.size)],
@@ -212,7 +213,7 @@ function normalizeRenderTargets(input: NonNullable<RenderSceneProfile['targets']
   const coordinate = (value: unknown, axis: number) => number(Array.isArray(value) ? value[axis] : 0, -10000, 10000);
   return {
     objects: list(input.objects, 128).map(object => ({ id: text(object.id, 120), name: text(object.name, 80), position: [coordinate(object.position, 0), coordinate(object.position, 1), coordinate(object.position, 2)], ...(Array.isArray(object.rotation) ? { rotation: [coordinate(object.rotation, 0), coordinate(object.rotation, 1), coordinate(object.rotation, 2)] as [number, number, number] } : {}), ...(Array.isArray(object.scale) ? { scale: [coordinate(object.scale, 0), coordinate(object.scale, 1), coordinate(object.scale, 2)] as [number, number, number] } : {}), ...(object.parentId ? { parentId: text(object.parentId, 120) } : {}), ...(object.groupId ? { groupId: text(object.groupId, 80) } : {}), tags: normalizeAssetTags(object.tags) ?? [], ...(normalizeMapAssetLight(object.light) ? { light: normalizeMapAssetLight(object.light) } : {}), parts: list(object.parts, 32).map(part => ({ id: text(part.id, 120), tags: texts(part.tags, 8, 80) })) })),
-    zones: list(input.zones, 64).map(zone => ({ id: text(zone.id, 120), tags: texts(zone.tags, 8, 40), center: [coordinate(zone.center, 0), coordinate(zone.center, 1)], radius: number(zone.radius, 0, 10000) })),
+    zones: list(input.zones, 64).map(zone => ({ id: text(zone.id, 120), tags: texts(zone.tags, 8, 40), center: [coordinate(zone.center, 0), coordinate(zone.center, 1)], radius: number(zone.radius, 0, 10000), ...(TERRAIN_SURFACE_RECIPES.includes(zone.material as TerrainSurfaceRecipe) ? { material: zone.material as TerrainSurfaceRecipe } : {}) })),
     grassLayers: list(input.grassLayers, 8).map(layer => ({ id: text(layer.id, 120), preset: text(layer.preset, 40) }))
   };
 }

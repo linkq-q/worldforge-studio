@@ -33,6 +33,7 @@ import { combinedGrassDensity } from '../shared/mapGrass';
 import { foundationBoundary, foundationStepRange, foundationTopHeight, type MapFoundation } from '../shared/mapFoundation';
 import {
   DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
+  DEFAULT_RUNTIME_ROAD_COLORS,
   DEFAULT_RUNTIME_GRASS_STYLE,
   type RuntimeTerrainMaterialStyle,
   type RuntimeGrassStyle,
@@ -201,6 +202,16 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
   let terrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE;
+  const rebuildRoadMaterials = (next: EditableMap): void => {
+    roadBodies.removeFromParent();
+    disposeObject(roadBodies);
+    roadBodies = buildRoadMaterialBodies(next, terrainMaterialStyle);
+    modelsRoot.add(roadBodies);
+    roadSurfaceOverlays.removeFromParent();
+    disposeObject(roadSurfaceOverlays);
+    roadSurfaceOverlays = buildRoadSurfaceOverlays(next, terrainMaterialStyle);
+    modelsRoot.add(roadSurfaceOverlays);
+  };
   let colorPalette: ColorPalette | null = null;
   let terrainPalette: TerrainPaletteColors | undefined;
   const modelSnowUniforms = new Set<{ value: number }>();
@@ -374,6 +385,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined);
+      rebuildRoadMaterials(currentMap);
       snowLayer?.material.copy(material);
       terrain.userData.terrainMaterialStyle = { ...style };
       syncTerrainSandShader(sandFlow);
@@ -439,14 +451,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       disposeSnowLayer();
       snowLayer = buildTerrainSnowLayer(next, sandFlow.snowSurface, material);
       if (snowLayer) root.add(snowLayer);
-      roadBodies.removeFromParent();
-      disposeObject(roadBodies);
-      roadBodies = buildRoadMaterialBodies(next);
-      modelsRoot.add(roadBodies);
-      roadSurfaceOverlays.removeFromParent();
-      disposeObject(roadSurfaceOverlays);
-      roadSurfaceOverlays = buildRoadSurfaceOverlays(next);
-      modelsRoot.add(roadSurfaceOverlays);
+      rebuildRoadMaterials(next);
       // Blades sample terrain height, so they have to follow the new surface.
       rebuildGrass(next);
     },
@@ -599,14 +604,23 @@ function applyTerrainGrassTint(
   colors.needsUpdate = true;
 }
 
-function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
+function roadRecipeColor(recipe: Exclude<TerrainSurfaceRecipe, 'default'>, style: RuntimeTerrainMaterialStyle): string {
+  const keys = {
+    'compacted-earth': 'compactedEarthColor', 'garden-stone': 'gardenStoneColor', asphalt: 'asphaltColor',
+    concrete: 'concreteColor', 'brick-paver': 'brickPaverColor', cobblestone: 'cobblestoneColor',
+    gravel: 'gravelColor', mud: 'mudColor'
+  } as const;
+  return style[keys[recipe]] ?? DEFAULT_RUNTIME_ROAD_COLORS[recipe];
+}
+
+function roadDetailStrength(style: RuntimeTerrainMaterialStyle): number {
+  return style.roadDetailStrength ?? 0.45;
+}
+
+function buildRoadMaterialBodies(map: EditableMap, style = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE): THREE.Group {
   const group = new THREE.Group();
   group.name = 'road-material-bodies';
-  const palette: Record<string, number> = {
-    default: 0xb8b2a6, 'compacted-earth': 0x8f6949, 'garden-stone': 0xaaa69a,
-    asphalt: 0x555b5e, concrete: 0x9d9a91, 'brick-paver': 0xb45738,
-    cobblestone: 0x85847f, gravel: 0x847867, mud: 0x654832
-  };
+  if (roadDetailStrength(style) <= 0) return group;
   const detail: Record<string, { spacing: number; width: number; height: number; kind: string }> = {
     'garden-stone': { spacing: 1.0, width: 0.82, height: 0.12, kind: 'slab' },
     cobblestone: { spacing: 0.52, width: 0.34, height: 0.12, kind: 'cobble' },
@@ -635,6 +649,9 @@ function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
         transform.rotation.set(recipe.kind === 'slab' ? -Math.PI / 2 : 0, tangent + (random() - 0.5) * (recipe.kind === 'brick' ? 0.12 : 0.45), 0);
         if (recipe.kind === 'cobble' || recipe.kind === 'gravel') { transform.rotation.x = random() * 0.45; transform.rotation.z = random() * 0.45; }
         transform.scale.setScalar(scale);
+        // Relief belongs to the finish; retain the footprint and flatten raised stones.
+        if (recipe.kind === 'slab') transform.scale.z *= roadDetailStrength(style);
+        else transform.scale.y *= roadDetailStrength(style);
         transform.updateMatrix();
         matrices.push(transform.matrix.clone());
         placed += 1;
@@ -644,11 +661,13 @@ function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
   for (const [materialId, matrices] of instances) {
     if (matrices.length === 0) continue;
     const recipe = detail[materialId];
-    const geometry = recipe.kind === 'cobble' || recipe.kind === 'gravel'
-      ? new THREE.DodecahedronGeometry(recipe.width, 0)
-      : roadSlabGeometry(recipe);
+    const geometry = recipe.kind === 'cobble'
+      ? new THREE.DodecahedronGeometry(recipe.width / 2, 0).scale(1, recipe.height / recipe.width, 1)
+      : recipe.kind === 'gravel'
+        ? new THREE.DodecahedronGeometry(recipe.width, 0)
+        : roadSlabGeometry(recipe);
     const material = new THREE.MeshStandardMaterial({
-      color: palette[materialId] ?? palette.default,
+      color: roadRecipeColor(materialId as Exclude<TerrainSurfaceRecipe, 'default'>, style),
       roughness: materialId === 'asphalt' ? 0.9 : 0.82,
       flatShading: materialId === 'cobblestone'
     });
@@ -685,13 +704,13 @@ function roadSlabGeometry(recipe: { spacing: number; width: number; height: numb
   });
 }
 
-function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
+function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE): THREE.Group {
   const group = new THREE.Group();
   group.name = 'road-surface-overlays';
   let textures: ReturnType<typeof createBrickRoadOverlayTextures> | undefined;
   for (const zone of map.visualSemantics.zones) {
     if (zone.material !== 'brick-paver' || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
-    textures ??= createBrickRoadOverlayTextures();
+    textures ??= createBrickRoadOverlayTextures(style);
     const points = zone.region.points;
     const samples = pathSamplesWithDistance(points, Math.max(0.85, zone.region.width * 0.24));
     if (samples.length < 2) continue;
@@ -740,9 +759,9 @@ function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
         // Sample every cross-section vertex so the overlay follows sloped terrain
         // instead of floating from a single center-line height.
         vertices.push(x, sampleTerrainHeight(map, x, z) + 0.025, z);
-        // One texture repeat spans several metres so each paver reads as a
-        // deliberate block rather than dense insect-like noise.
-        uvs.push(sample.distance / 5.0, acrossRatio * 1.6);
+        // World-space repeats keep pavers at 60 x 35 cm regardless of road width.
+        const textureScale = style.roadTextureScale ?? 1;
+        uvs.push(sample.distance / (2.4 * textureScale), across / (1.05 * textureScale));
       }
       if (index > 0) {
         const previousRow = (index - 1) * (crossSegments + 1);
@@ -764,11 +783,11 @@ function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
     const material = new THREE.MeshStandardMaterial({
       map: textures.map,
       bumpMap: textures.bumpMap,
-      bumpScale: 0.045,
+      bumpScale: 0.035 * roadDetailStrength(style),
       normalMap: textures.normalMap,
       normalMapType: THREE.TangentSpaceNormalMap,
-      normalScale: new THREE.Vector2(0.75, 0.75),
-      color: 0xffffff,
+      normalScale: new THREE.Vector2(0.5, 0.5).multiplyScalar(roadDetailStrength(style)),
+      color: roadRecipeColor('brick-paver', style),
       roughness: 0.9,
       metalness: 0,
       side: THREE.DoubleSide,
@@ -784,14 +803,18 @@ function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
   return group;
 }
 
-function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
+function createBrickRoadOverlayTextures(style: RuntimeTerrainMaterialStyle): { map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
   const createCanvas = (bump: boolean): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
     if (!ctx) return canvas;
-    ctx.fillStyle = bump ? '#565656' : '#6d382c';
+    const shade = (value: number) => {
+      const channel = Math.round(255 - (255 - value) * roadDetailStrength(style));
+      return `rgb(${channel}, ${channel}, ${channel})`;
+    };
+    ctx.fillStyle = bump ? '#787878' : shade(165);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const rows = 3;
     const rowHeight = canvas.height / rows;
@@ -799,12 +822,12 @@ function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: 
     for (let row = 0; row < rows; row += 1) {
       const offset = row % 2 === 0 ? 0 : brickWidth * 0.5;
       for (let x = -brickWidth; x < canvas.width + brickWidth; x += brickWidth) {
-        const left = x + offset + 5;
-        const top = row * rowHeight + 5;
-        ctx.fillStyle = bump ? '#a8a8a8' : row % 3 === 0 ? '#bd5d40' : row % 3 === 1 ? '#d1704e' : '#b34d38';
-        ctx.fillRect(left, top, brickWidth - 10, rowHeight - 10);
-        ctx.fillStyle = bump ? '#b8b8b8' : 'rgba(232, 133, 90, 0.2)';
-        ctx.fillRect(left + 5, top + 4, brickWidth - 20, 3);
+        const left = x + offset + 2;
+        const top = row * rowHeight + 2;
+        ctx.fillStyle = bump ? '#989898' : shade([237, 229, 245][row % 3]);
+        ctx.fillRect(left, top, brickWidth - 4, rowHeight - 4);
+        ctx.fillStyle = bump ? '#9e9e9e' : `rgba(255, 255, 255, ${0.08 * roadDetailStrength(style)})`;
+        ctx.fillRect(left + 3, top + 3, brickWidth - 10, 2);
       }
     }
     return canvas;
@@ -2534,7 +2557,7 @@ function createTerrainPropertyTexture(
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawTerrainMaterialZones(ctx, map, style, channel, canvas.width, canvas.height);
     drawProceduralTerrainPropertyDetail(ctx, map, style, channel, canvas.width, canvas.height);
-    drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, channel);
+    drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, channel, style);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.NoColorSpace;
@@ -2563,9 +2586,9 @@ function createSurfaceTexture(
     ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (surface === 'terrain') {
-      drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
+      drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height, terrainStyle);
       drawProceduralTerrainDetail(ctx, map, terrainStyle, canvas.width, canvas.height);
-      drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, 'color');
+      drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, 'color', terrainStyle);
     }
     const finish = surface !== 'terrain'
       ? activeInteriorSurfaceFinish(map.interiorArtDirection, surface as RoomSurface)
@@ -2864,17 +2887,6 @@ const SEMANTIC_SURFACE_COLORS = {
   snow: '#edf3f7'
 } as const;
 
-const TERRAIN_RECIPE_COLORS = {
-  'compacted-earth': '#916a43',
-  'garden-stone': '#aaa69a',
-  asphalt: '#555b5e',
-  concrete: '#9d9a91',
-  'brick-paver': '#b45738',
-  cobblestone: '#85847f',
-  gravel: '#847867',
-  mud: '#654832'
-} as const satisfies Record<Exclude<TerrainSurfaceRecipe, 'default'>, string>;
-
 const TERRAIN_RECIPE_CHANNEL_COLORS = {
   'compacted-earth': { roughness: '#d8d8d8', bump: '#858585' },
   'garden-stone': { roughness: '#d2d2d2', bump: '#888888' },
@@ -2908,7 +2920,8 @@ function drawSemanticTerrainSurface(
   ctx: CanvasRenderingContext2D,
   map: EditableMap,
   width: number,
-  height: number
+  height: number,
+  style: RuntimeTerrainMaterialStyle
 ): void {
   for (const zone of map.visualSemantics.zones) {
     const tag = [...zone.tags].reverse().find((item): item is keyof typeof SEMANTIC_SURFACE_COLORS => (
@@ -2916,7 +2929,7 @@ function drawSemanticTerrainSurface(
     ));
     if (!tag || tag === 'snow') continue;
     const recipeColor = zone.material && zone.material !== 'default'
-      ? TERRAIN_RECIPE_COLORS[zone.material]
+      ? roadRecipeColor(zone.material, style)
       : undefined;
     const opacity = recipeColor
       ? Math.min(0.88, 0.62 + zone.intensity * 0.22)
@@ -2964,8 +2977,12 @@ function drawTerrainRecipeDetails(
   map: EditableMap,
   width: number,
   height: number,
-  channel: TerrainRecipeDetailChannel
+  channel: TerrainRecipeDetailChannel,
+  style: RuntimeTerrainMaterialStyle
 ): void {
+  const detailScale = style.roadTextureScale ?? 1;
+  ctx.save();
+  ctx.globalAlpha *= roadDetailStrength(style);
   for (const zone of map.visualSemantics.zones) {
     if (!zone.material || zone.material === 'default' || zone.region?.kind !== 'path') continue;
     const region = zone.region;
@@ -2990,10 +3007,10 @@ function drawTerrainRecipeDetails(
       continue;
     }
     if (zone.material === 'garden-stone') {
-      forEachPathSample(region.points, Math.max(0.75, region.width * 0.62), (sample) => {
+      forEachPathSample(region.points, Math.max(0.75, region.width * 0.62) * detailScale, (sample) => {
         const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
         const halfWidth = region.width * pixelsPerMetre * (0.32 + random() * 0.08);
-        const halfLength = Math.max(3, region.width * pixelsPerMetre * (0.2 + random() * 0.08));
+        const halfLength = Math.max(3, region.width * pixelsPerMetre * (0.2 + random() * 0.08)) * detailScale;
         const tangent = [sample.tangentX, -sample.tangentZ] as const;
         const normal = [-tangent[1], tangent[0]] as const;
         const corners = [
@@ -3017,28 +3034,28 @@ function drawTerrainRecipeDetails(
       continue;
     }
     if (zone.material === 'concrete') {
-      drawCutStoneSidewalkDetails(ctx, map, region, width, height, channel, random);
+      drawCutStoneSidewalkDetails(ctx, map, region, width, height, channel, random, detailScale);
       continue;
     }
     if (zone.material === 'brick-paver') {
       // Brick color is supplied by the larger terrain-conforming overlay. Keep
       // the legacy pass transparent in the color channel so its roughness and
       // bump channels remain available without reintroducing tiny color bricks.
-      drawBrickPaverDetails(ctx, map, region, width, height, channel, random, channel === 'color' ? 0 : 1);
+      drawBrickPaverDetails(ctx, map, region, width, height, channel, random, channel === 'color' ? 0 : 1, detailScale);
       continue;
     }
     if (zone.material === 'cobblestone' || zone.material === 'gravel') {
       const cobbled = zone.material === 'cobblestone';
-      const spacing = cobbled ? Math.max(0.32, region.width * 0.14) : Math.max(0.2, region.width * 0.09);
+      const spacing = (cobbled ? Math.max(0.32, region.width * 0.14) : Math.max(0.2, region.width * 0.09)) * detailScale;
       forEachPathSample(region.points, spacing, (sample) => {
-        const lanes = Math.max(2, Math.floor(region.width / (cobbled ? 0.42 : 0.28)));
+        const lanes = Math.max(2, Math.floor(region.width / ((cobbled ? 0.42 : 0.28) * detailScale)));
         for (let lane = 0; lane < lanes; lane += 1) {
           const across = ((lane + random()) / lanes - 0.5) * region.width * 0.88;
           const point = surfaceCanvasPoint(map, [
             sample.x - sample.tangentZ * across,
             sample.z + sample.tangentX * across
           ], width, height);
-          const radius = pixelsPerMetre * (cobbled ? 0.14 + random() * 0.07 : 0.035 + random() * 0.06);
+          const radius = pixelsPerMetre * (cobbled ? 0.14 + random() * 0.07 : 0.035 + random() * 0.06) * detailScale;
           ctx.beginPath();
           ctx.ellipse(point[0], point[1], radius * 1.2, radius, random() * Math.PI, 0, Math.PI * 2);
           ctx.fillStyle = cobbled
@@ -3084,10 +3101,10 @@ function drawTerrainRecipeDetails(
       ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.82);
       ctx.stroke();
       drawCanvasPath(ctx, map, region.points, width, height);
-      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(31, 34, 35, 0.34)', '#919191', '#737373');
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(31, 34, 35, 0.12)', '#919191', '#737373');
       ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.72);
       ctx.stroke();
-      drawAsphaltRoadDetails(ctx, map, region, width, height, channel, random);
+      drawAsphaltRoadDetails(ctx, map, region, width, height, channel, random, detailScale);
     } else {
       ctx.setLineDash([Math.max(2, pixelsPerMetre * 0.35), Math.max(3, pixelsPerMetre * 0.7)]);
       ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(71, 46, 27, 0.36)', '#b0b0b0', '#656565');
@@ -3096,6 +3113,7 @@ function drawTerrainRecipeDetails(
     }
     ctx.restore();
   }
+  ctx.restore();
 }
 
 type RoadPathSample = {
@@ -3125,6 +3143,7 @@ function drawMudDetailStrip(
 ): void {
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
   const fadeLength = Math.max(0.85, roadWidth * 1.2);
+  const opacity = ctx.globalAlpha;
   ctx.lineCap = 'butt';
   for (let index = 1; index < samples.length; index += 1) {
     if (broken && random() < 0.08) continue;
@@ -3150,7 +3169,7 @@ function drawMudDetailStrip(
     ctx.beginPath();
     ctx.moveTo(start[0], start[1]);
     ctx.lineTo(end[0], end[1]);
-    ctx.globalAlpha = visibility * (broken ? 0.82 : 0.58);
+    ctx.globalAlpha = opacity * visibility * (broken ? 0.82 : 0.58);
     ctx.strokeStyle = recipe === 'compacted-earth'
       ? terrainRecipeDetailInk(channel, 'rgba(107, 75, 47, 0.2)', '#a9a9a9', '#777777')
       : broken
@@ -3159,7 +3178,7 @@ function drawMudDetailStrip(
     ctx.lineWidth = Math.max(1, roadWidth * pixelsPerMetre * widthRatio);
     ctx.stroke();
   }
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = opacity;
 }
 
 function mudRoadJunctionDistances(
@@ -3243,11 +3262,12 @@ function drawBrickPaverDetails(
   height: number,
   channel: TerrainRecipeDetailChannel,
   random: () => number,
-  opacityScale = 1
+  opacityScale = 1,
+  detailScale = 1
 ): void {
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
-  const brickLength = 0.9;
-  const lanes = Math.max(2, Math.round(region.width / 0.42));
+  const brickLength = 0.9 * detailScale;
+  const lanes = Math.max(2, Math.round(region.width / (0.42 * detailScale)));
   const rowWidth = region.width / lanes;
 
   forEachPathSample(region.points, brickLength, (sample) => {
@@ -3259,7 +3279,7 @@ function drawBrickPaverDetails(
       const brickWidth = brickLength * pixelsPerMetre * (0.82 + random() * 0.05);
       const brickHeight = Math.min(rowWidth * 0.7, brickLength * 0.4) * pixelsPerMetre;
       ctx.save();
-      ctx.globalAlpha = (channel === 'color' ? 0.94 : 0.9) * opacityScale;
+      ctx.globalAlpha *= (channel === 'color' ? 0.94 : 0.9) * opacityScale;
       ctx.translate(
         center[0] + sample.tangentX * stagger * pixelsPerMetre
           - sample.tangentZ * across * region.width * pixelsPerMetre,
@@ -3286,13 +3306,14 @@ function drawCutStoneSidewalkDetails(
   width: number,
   height: number,
   channel: TerrainRecipeDetailChannel,
-  random: () => number
+  random: () => number,
+  detailScale = 1
 ): void {
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
-  const lanes = Math.max(2, Math.round(region.width / 0.65));
-  const slabLength = pixelsPerMetre * 0.9;
+  const lanes = Math.max(2, Math.round(region.width / (0.65 * detailScale)));
+  const slabLength = pixelsPerMetre * 0.9 * detailScale;
   const slabWidth = region.width * pixelsPerMetre / lanes;
-  forEachPathSample(region.points, 0.9, (sample) => {
+  forEachPathSample(region.points, 0.9 * detailScale, (sample) => {
     const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
     const angle = Math.atan2(-sample.tangentZ, sample.tangentX);
     for (let lane = 0; lane < lanes; lane += 1) {
@@ -3330,18 +3351,19 @@ function drawAsphaltRoadDetails(
   width: number,
   height: number,
   channel: TerrainRecipeDetailChannel,
-  random: () => number
+  random: () => number,
+  detailScale = 1
 ): void {
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
-  const lanes = Math.max(4, Math.floor(region.width / 0.55));
-  forEachPathSample(region.points, 0.38, (sample) => {
+  const lanes = Math.max(4, Math.floor(region.width / (0.55 * detailScale)));
+  forEachPathSample(region.points, 0.38 * detailScale, (sample) => {
     for (let lane = 0; lane < lanes; lane += 1) {
       const across = ((lane + random()) / lanes - 0.5) * region.width * 0.82;
       const point = surfaceCanvasPoint(map, [
         sample.x - sample.tangentZ * across,
         sample.z + sample.tangentX * across
       ], width, height);
-      const grain = Math.max(0.45, pixelsPerMetre * (0.018 + random() * 0.035));
+      const grain = Math.max(0.45, pixelsPerMetre * (0.018 + random() * 0.035) * detailScale);
       ctx.fillStyle = random() > 0.48
         ? terrainRecipeDetailInk(channel, 'rgba(205, 208, 206, 0.1)', '#b3b3b3', '#999999')
         : terrainRecipeDetailInk(channel, 'rgba(20, 22, 23, 0.12)', '#858585', '#696969');

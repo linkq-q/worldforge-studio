@@ -266,6 +266,7 @@ function buildSystemPrompt(
     '模块可以只覆盖需要改变的参数；其余参数继承基础方案。颜色必须是 #RRGGBB。',
     '输出 RenderPlan V2。runtime.material-theme、runtime.water-style、runtime.effect-recipe 可以重复；每项必须提供唯一 key 和 scope。scope.target 只能是 water、material-tag 或 asset-tag，标签使用 foliage、bark、wood、stone、metal、water、emissive、fire、tree、rock、building 等已存在语义。',
     '色彩语义使用 runtime.color-grade；水体语义使用 runtime.water-style；草叶颜色、胖瘦、高度、风和地表染色使用 runtime.grass-style；树叶/树皮/石头/金属批量改材质使用 runtime.material-theme；柔光/硬光/逆光/阴天/黄昏使用 runtime.light-rig；Bloom/SSAO 使用 runtime.post-quality；发光/Fresnel/火焰/魔法光环/植被摇摆使用 runtime.effect-recipe。',
+    '道路与铺装配色使用 runtime.terrain-materials：compactedEarthColor、gardenStoneColor、asphaltColor、concreteColor、brickPaverColor、cobblestoneColor、gravelColor、mudColor 分别调整对应材料的受光前基色。新方案按场景与建筑协调路面色相明度，不要求砖必为红色或沥青接近黑色；只覆盖需要的材料。roadDetailStrength 为0到1的路面细节强度，roadTextureScale 为0.5到2的实际纹理尺寸倍率，值越大砖石纹理越大；精细铺装可取0.5到1，避免粗大砖缝抢过建筑。Refine 只改用户要求涉及的颜色和细节；道路宽度、布局和材料种类属于地图阶段，不写进渲染方案。',
     '局部美术能力是可重复模块，每个提供唯一 key，省略 scope，params.config 是下述 JSON 对象序列化后的字符串。只使用当前场景 targets 中的真实 objectId、partId、zoneId；只改用户要求的对象和区域，不为填满预算而添加模块。',
     'runtime.color-field 最多4条：{zoneId?:区域ID,target:"ground-and-grass"|"terrain"|"grass",axis:"x"|"z"|"radial",center:[x,z],start:起点,end:终点,feather:边缘过渡米数,strength:0到1,stops:[[0,"#RRGGBB"],[0.4,"#RRGGBB"],[1,"#RRGGBB"]]}。2–4个递增色标，首尾0和1；end必须大于start。草与地面默认共享区域配色，避免无意义彩虹。颜色是受光前基色，不代替照明。',
     'runtime.grass-style 的 rootColor/tipColor 为显式颜色，覆盖预设。colorStops 是2–4个草叶高度色标数组的JSON字符串，首尾0和1；gradientBias和rootDarken可调。启用用户色卡时在该色卡允许的颜色内选色。',

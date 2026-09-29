@@ -4,12 +4,38 @@ import {
   renderDeveloperWorkspace
 } from '../src/client/developerRenderControls';
 import type { RenderScheme } from '../src/shared/renderScheme';
+import { BUILTIN_RENDER_SCHEMES } from '../src/shared/renderScheme';
 import {
   createDefaultRenderAccessPolicy,
   RENDER_CAPABILITIES
 } from '../src/shared/renderPlan';
 
 describe('developer render controls', () => {
+  it('offers localized road colors and bounded texture controls in existing terrain settings', () => {
+    const capability = RENDER_CAPABILITIES.find((entry) => entry.id === 'runtime.terrain-materials');
+    if (!capability) throw new Error('missing terrain capability');
+    const scheme: RenderScheme = {
+      ...BUILTIN_RENDER_SCHEMES[0]!,
+      renderPlan: {
+        version: 2, baseSchemeId: BUILTIN_RENDER_SCHEMES[0]!.id,
+        modules: [{ id: 'runtime.terrain-materials', params: { brickPaverColor: '#a2b3c4', roadTextureScale: 0.75 } }]
+      }
+    };
+    const html = renderDeveloperCapability(capability, scheme, []);
+    const colorInput = html.match(/<input[^>]+data-dev-param="brickPaverColor"[^>]+>/)?.[0];
+    const scaleInput = html.match(/<input class="developer-value-range"[^>]+data-dev-param="roadTextureScale"[^>]+>/)?.[0];
+    const detailInput = html.match(/<input class="developer-value-range"[^>]+data-dev-param="roadDetailStrength"[^>]+>/)?.[0];
+    expect(colorInput).toContain('type="color"');
+    expect(colorInput).toContain('value="#a2b3c4"');
+    expect(scaleInput).toContain('min="0.5"');
+    expect(scaleInput).toContain('max="2"');
+    expect(scaleInput).toContain('value="0.75"');
+    expect(detailInput).toContain('value="0.45"');
+    for (const label of ['铺路砖颜色', '沥青路面颜色', '路面纹理尺寸', '路面细节强度']) {
+      expect(html).toContain(label);
+    }
+  });
+
   it('previews the current water value across the hard range before access policy limits', () => {
     const accessPolicy = createDefaultRenderAccessPolicy();
     const reflectionAccess = accessPolicy.parameters.find((entry) => (
