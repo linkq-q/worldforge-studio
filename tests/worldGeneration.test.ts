@@ -110,6 +110,13 @@ describe('world generation compiler', () => {
       .toThrow('invalid_world_public_building_siting');
   });
 
+  it('uses compact relief for new GPT worlds without changing older stored recipes', () => {
+    const intent = rawSeedIntent();
+    const parsed = parseWorldIntentDraft(intent, { prompt: intent.plan.prompt, seed: 9012901, size: 2000 });
+    expect(parsed.plan.recipe.reliefProfile).toBe('compact');
+    expect(intent.plan.recipe).not.toHaveProperty('reliefProfile');
+  });
+
   it('rejects semantic fields that would otherwise be silently overwritten or ignored', () => {
     const extra = { ...validDraft(), topology: 'keep me' };
     expect(() => compileWorldDraft(extra, request)).toThrow('world_unknown_draft_field:topology');
@@ -208,6 +215,12 @@ describe('world generation compiler', () => {
     const store = { loadAsset: vi.fn().mockResolvedValue(asset) } as unknown as MapStore;
     await generateWorld({ ...request, reusableAssetIds: [asset.id] }, store);
     const messages = mocks.llmChat.mock.calls[0][0] as Array<{ role: string; content: string }>;
+    expect(messages[0].content).toContain('Copy request.prompt byte-for-byte into plan.prompt');
+    expect(messages[0].content).toContain("reliefProfile:'compact'");
+    expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
+    expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
+    expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
+    expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
     expect(planningInput.reusableAssets).toEqual([expect.objectContaining({ id: asset.id, name: asset.name })]);
     expect(planningInput.reusableAssets[0].visualSize).toEqual([8,7,9]);
