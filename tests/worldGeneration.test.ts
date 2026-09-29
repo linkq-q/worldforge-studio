@@ -3,7 +3,7 @@ import { Euler, Quaternion } from 'three';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import {
-  assembleWorldModel, compileWorldDraft, generateWorld, worldAssetStrategy,
+  assembleWorldModel, compileWorldDraft, generateWorld, generateWorldAssets, validateWorldGenerationRequest, worldAssetStrategy,
   WORLD_GENERATION_PROMPT, type WorldAssetRequest, type WorldGenerationRequest
 } from '../src/server/worldGeneration';
 import type { MapStore } from '../src/server/mapStore';
@@ -33,6 +33,15 @@ function validDraft() {
     },
     settlements: [{ townId: 'market-town', options: { kind: 'city' as const, pattern: 'organic' as const, seed: 9, density: 0.8 } }],
     assets: []
+  };
+}
+
+function reusableAsset(id = 'asset-existing'): MapAsset {
+  return {
+    id, name: 'Existing house', prompt: 'A reusable stone house', tags: ['house'],
+    modelJson: { format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: { width: 8, height: 7, depth: 9 } } }] },
+    mode: 'voxel-pro', createdAt: 1, updatedAt: 1,
+    colliderPlan: { version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: false }
   };
 }
 
@@ -79,6 +88,19 @@ describe('world generation compiler', () => {
     expect(() => compileWorldDraft(cathedral, request)).toThrow('world_asset_strategy_conflict:cathedral');
   });
 
+  it('allows only explicitly offered reusable asset ids', () => {
+    const draft = validDraft() as any;
+    draft.assets.push({
+      key: 'stone-house', name: 'Stone house', role: 'house', prompt: 'Reuse the existing stone house',
+      dimensions: [8, 7, 9], strategy: 'single', existingAssetId: 'asset-existing'
+    });
+    expect(() => compileWorldDraft(draft, request)).toThrow('invalid_world_asset_request');
+    expect(compileWorldDraft(draft, { ...request, reusableAssetIds: ['asset-existing'] }).draft.assets[0].existingAssetId)
+      .toBe('asset-existing');
+    expect(() => validateWorldGenerationRequest({ ...request, reusableAssetIds: Array.from({length:65},(_,i)=>'asset-'+i) }))
+      .toThrow('invalid_world_generation_request');
+  });
+
   it('repairs an invalid GPT draft once and returns geometry audits', async () => {
     const draft = validDraft();
     mocks.llmChat
@@ -102,6 +124,17 @@ describe('world generation compiler', () => {
     expect(WORLD_GENERATION_PROMPT).toContain('livelihood, population scale, external logistics, public services');
     expect(WORLD_GENERATION_PROMPT).toContain('one public or landmark building per 10..20 ordinary buildings');
     expect(WORLD_GENERATION_PROMPT).toContain('Do not copy one civic checklist into every settlement');
+  });
+
+  it('shows GPT only the requested reusable catalog without model payloads', async () => {
+    mocks.llmChat.mockResolvedValue(JSON.stringify(validDraft()));
+    const asset = reusableAsset();
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset) } as unknown as MapStore;
+    await generateWorld({ ...request, reusableAssetIds: [asset.id] }, store);
+    const messages = mocks.llmChat.mock.calls[0][0] as Array<{ role: string; content: string }>;
+    const planningInput = JSON.parse(messages[1].content);
+    expect(planningInput.reusableAssets).toEqual([expect.objectContaining({ id: asset.id, name: asset.name })]);
+    expect(planningInput.reusableAssets[0]).not.toHaveProperty('modelJson');
   });
 
   it('fails after the single repair instead of accepting changed request semantics', async () => {
@@ -162,5 +195,20 @@ describe('world asset assembly', () => {
     expect(body.transform.pos).toEqual([2, 1, 0]);
     expect(body.parent).toBe(frame.id);
     expect(detail.parent).toBe(body.id);
+  });
+
+  it('loads an explicitly reused asset without generating or saving a duplicate', async () => {
+    const asset = reusableAsset();
+    const store = {
+      loadAsset: vi.fn().mockResolvedValue(asset),
+      saveAsset: vi.fn()
+    } as unknown as MapStore;
+    const [result] = await generateWorldAssets([{
+      key: 'stone-house', name: 'Stone house', role: 'house', prompt: 'Reuse it',
+      strategy: 'single', existingAssetId: asset.id
+    }], store);
+    expect(result).toMatchObject({ id: 'stone-house', assetId: asset.id, modelJson: asset.modelJson, provider: 'existing' });
+    expect(store.loadAsset).toHaveBeenCalledWith(asset.id);
+    expect(store.saveAsset).not.toHaveBeenCalled();
   });
 });

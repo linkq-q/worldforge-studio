@@ -16,6 +16,7 @@ export interface WorldGenerationRequest {
   seed: number;
   size: number;
   generateAssets?: boolean;
+  reusableAssetIds?: string[];
 }
 export interface WorldAssetRequest {
   key: string;
@@ -25,6 +26,7 @@ export interface WorldAssetRequest {
   dimensions?: [number, number, number];
   enterable?: boolean;
   strategy?: 'single' | 'assembly';
+  existingAssetId?: string;
 }
 export interface WorldAssetResult {
   id: string;
@@ -32,7 +34,7 @@ export interface WorldAssetResult {
   role: WorldAssetRequest['role'];
   modelJson: unknown;
   assetId: string;
-  provider: 'deepseek';
+  provider: 'deepseek' | 'existing';
   strategy: 'single' | 'assembly';
 }
 export interface WorldDraft {
@@ -51,7 +53,7 @@ Before choosing roads and buildings, silently plan each settlement in this order
 roads use MapGuide: {id,name,points:[[worldX,worldZ],...],curve:'polyline',closed:false,width,tags:[]}. Secondary lanes 2..3.5m, main streets 4..6m, footpaths >=2m; avoid highway proportions in small settlements. Provide connected overland access between named destinations. Explicitly share coordinates at junctions. No road across deep water or cliffs; route around or author a real crossing. Paths with sharp reversals are invalid.
 ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?}]. These seeded rules run per fixed chunk; use a region for oasis groves or local woodland. Don't place trees one-by-one.
 settlements=[{townId,options:{kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?,landmarks?}}]. Choose a distinct planning approach appropriate to each place. The same kernel handles cities and villages. landmarks contains only authored significant buildings: {id,x,z,width,depth,height,use,rotation?,assetKey,enterable}. Reserve a sensible dry footprint and accessible entry. Use only a few landmarks; ordinary houses come from the tool.
-assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions:[width,height,depth],enterable?,strategy:'single'|'assembly'}], at most 12 reusable families. Asset prompts describe silhouette, dimensions, local +Z entrance, +Y up, openings, joining faces and material identities. Give common houses genuinely distinct silhouettes. Vegetation is clustered by rules. Small ordinary buildings can be single models. Large castles, cathedrals, caravanserais and enterable public buildings use assembly, routed to the existing WorldForge main Scene Code architecture prompt: footprint -> depth -> tiers -> bays, reusable ordinary/corner/entrance modules, preserved passages and courtyard voids. Asset key must match landmark.assetKey. Never generate a large landmark as a solid fake facade when it is meant to be entered.
+assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions:[width,height,depth],enterable?,strategy:'single'|'assembly',existingAssetId?}], at most 12 reusable families. When the request includes reusableAssets, reuse a suitable listed id through existingAssetId instead of requesting a duplicate; never invent or search for an unlisted id. Asset prompts describe silhouette, dimensions, local +Z entrance, +Y up, openings, joining faces and material identities. Give common houses genuinely distinct silhouettes. Vegetation is clustered by rules. Small ordinary buildings can be single models. Large castles, cathedrals, caravanserais and enterable public buildings use assembly, routed to the existing WorldForge main Scene Code architecture prompt: footprint -> depth -> tiers -> bays, reusable ordinary/corner/entrance modules, preserved passages and courtyard voids. Asset key must match landmark.assetKey. Never generate a large landmark as a solid fake facade when it is meant to be entered.
 Limits: <=12 towns, <=8 ecology rules, <=32 world roads, <=16 landforms. Return a new preview, never assume visual acceptance. The compiler reports actual sampled heights/water and validation errors for one repair; use that evidence rather than inventing sampled values.`;
 
 function parseJson(text: string): unknown {
@@ -72,11 +74,18 @@ function largeLandmark(asset: WorldAssetRequest): boolean {
 }
 export function validateWorldGenerationRequest(input: unknown): WorldGenerationRequest {
   const r = input as WorldGenerationRequest;
+  const reusableAssetIds = r?.reusableAssetIds;
   if (!r || typeof r.prompt !== 'string' || !r.prompt.trim() || r.prompt.length > 8000
     || !Number.isInteger(r.seed) || r.seed < 0 || r.seed > 0xffffffff
     || !Number.isFinite(r.size) || r.size < 500 || r.size > 256000
-    || (r.generateAssets !== undefined && typeof r.generateAssets !== 'boolean')) throw new Error('invalid_world_generation_request');
-  return {prompt:r.prompt.trim(),seed:r.seed,size:r.size,generateAssets:r.generateAssets !== false};
+    || (r.generateAssets !== undefined && typeof r.generateAssets !== 'boolean')
+    || (reusableAssetIds !== undefined && (!Array.isArray(reusableAssetIds) || reusableAssetIds.length > 64
+      || new Set(reusableAssetIds).size !== reusableAssetIds.length
+      || reusableAssetIds.some(id => typeof id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(id))))) {
+    throw new Error('invalid_world_generation_request');
+  }
+  return {prompt:r.prompt.trim(),seed:r.seed,size:r.size,generateAssets:r.generateAssets !== false,
+    ...(reusableAssetIds?.length ? {reusableAssetIds:[...reusableAssetIds]} : {})};
 }
 
 export function compileWorldDraft(input: unknown, request: WorldGenerationRequest): {draft:WorldDraft;bundle:WorldBundle} {
@@ -111,7 +120,7 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
   const patches = settlements.map(s=>generateWorldSettlement(plan,s.townId,sample,s.options));
   const keys = new Set<string>();
   const assets = root.assets.map(assetInput => exactRecord(assetInput,
-    ['key','name','role','prompt','dimensions','enterable','strategy'], 'invalid_world_asset_request','world_unknown_asset_field')) as unknown as WorldAssetRequest[];
+    ['key','name','role','prompt','dimensions','enterable','strategy','existingAssetId'], 'invalid_world_asset_request','world_unknown_asset_field')) as unknown as WorldAssetRequest[];
   for (const asset of assets) {
     if (!asset || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(asset.key) || keys.has(asset.key)
       || !['house','shop','workshop','tree','landmark'].includes(asset.role)
@@ -119,6 +128,8 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
       || typeof asset.prompt !== 'string' || !asset.prompt.trim() || asset.prompt.length>6000
       || (asset.strategy!==undefined && !['single','assembly'].includes(asset.strategy))
       || (asset.enterable!==undefined && typeof asset.enterable!=='boolean')
+      || (asset.existingAssetId!==undefined && (typeof asset.existingAssetId!=='string'
+        || !request.reusableAssetIds?.includes(asset.existingAssetId)))
       || (asset.dimensions!==undefined && (!Array.isArray(asset.dimensions)||asset.dimensions.length!==3
         ||asset.dimensions.some(n=>!Number.isFinite(n)||n<=0||n>300)))) throw new Error('invalid_world_asset_request');
     worldAssetStrategy(asset);
@@ -180,6 +191,11 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
   for(let i=0;i<requests.length;i+=2) {
     const batch=await Promise.all(requests.slice(i,i+2).map(async request=>{
       const strategy=worldAssetStrategy(request);
+      if(request.existingAssetId) {
+        const asset=await store.loadAsset(request.existingAssetId);
+        return {id:request.key,name:request.name,role:request.role,modelJson:asset.modelJson,
+          assetId:asset.id,provider:'existing' as const,strategy};
+      }
       let modelJson:unknown;
       if(strategy==='assembly') {
         const [w,h,d]=request.dimensions??[32,16,32];
@@ -206,8 +222,14 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
 
 export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSignal) {
   const request=validateWorldGenerationRequest(input);
+  const reusableAssets=await Promise.all((request.reusableAssetIds??[]).map(async id=>{
+    const asset=await store.loadAsset(id).catch(()=>null);
+    if(!asset) throw new Error('unknown_reusable_world_asset:'+id);
+    return {id:asset.id,name:asset.name,prompt:asset.prompt,tags:asset.tags??[],mode:asset.mode,
+      ...(asset.libraryMetadata?{libraryMetadata:asset.libraryMetadata}:{})};
+  }));
   const messages:ChatMessage[]=[{role:'system',content:WORLD_GENERATION_PROMPT},
-    {role:'user',content:JSON.stringify(request)}];
+    {role:'user',content:JSON.stringify({...request,...(reusableAssets.length?{reusableAssets}:{})})}];
   let compiled:ReturnType<typeof compileWorldDraft>|undefined;
   for(let attempt=0;attempt<2;attempt++) {
     const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.repair':'world.plan',signal});
