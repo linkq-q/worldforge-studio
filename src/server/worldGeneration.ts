@@ -49,6 +49,12 @@ export interface WorldAssetResult {
   ecologyKind?: EcologyKind;
   ecologyRuleId?: string;
 }
+interface ReusableWorldAsset {
+  id: string;
+  visualSize: [number, number, number];
+  tags: string[];
+  libraryMetadata?: MapAsset['libraryMetadata'];
+}
 export interface WorldDraft {
   plan: WorldPlan;
   settlements: Array<{ townId: string; options: WorldSettlementOptions }>;
@@ -779,6 +785,26 @@ export function worldAssetStrategy(asset: WorldAssetRequest): 'single'|'assembly
   return asset.enterable || largeLandmark(asset) ? 'assembly' : 'single';
 }
 
+function bindExactReusableAssetKeys(assets: WorldAssetRequest[], reusableAssets: ReusableWorldAsset[]): WorldAssetRequest[] {
+  const offered=new Map(reusableAssets.map(asset=>[asset.id,asset]));
+  return assets.map(asset=>{
+    if(asset.existingAssetId || !offered.has(asset.key)) return asset;
+    const reusable=offered.get(asset.key)!,tags=new Set([...(reusable.tags??[]),...(reusable.libraryMetadata?.tags??[])]
+      .map(tag=>tag.toLowerCase()));
+    if(asset.dimensions?.some((value,index)=>Math.abs(value-reusable.visualSize[index])>0.01)) {
+      throw new Error(`world_reusable_asset_conflict:${asset.key}:dimensions:requested=${asset.dimensions.join('x')}:available=${reusable.visualSize.join('x')}`);
+    }
+    const taggedRole=(['house','shop','workshop','tree','landmark'] as const).find(role=>tags.has(role));
+    if(taggedRole&&taggedRole!==asset.role) {
+      throw new Error(`world_reusable_asset_conflict:${asset.key}:role:requested=${asset.role}:available=${taggedRole}`);
+    }
+    if(asset.enterable===true&&tags.has('non-enterable')) {
+      throw new Error(`world_reusable_asset_conflict:${asset.key}:enterability:requested=enterable:available=non-enterable`);
+    }
+    return {...asset,existingAssetId:asset.key};
+  });
+}
+
 /** Preserve the renderer's per-module local frame when exporting a connected building. */
 export function assembleWorldModel(map: EditableMap, assets: readonly MapAsset[]): unknown {
   const transforms=getObjectWorldTransforms(map), nodes:unknown[]=[];
@@ -852,7 +878,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     if(!asset) throw new Error('unknown_reusable_world_asset:'+id);
     const bounds=calculateModelVisualFrame(asset.modelJson).bounds;
     return {id:asset.id,name:asset.name,prompt:asset.prompt,tags:asset.tags??[],mode:asset.mode,
-      visualSize:[bounds.max[0]-bounds.min[0],bounds.max[1]-bounds.min[1],bounds.max[2]-bounds.min[2]],
+      visualSize:[bounds.max[0]-bounds.min[0],bounds.max[1]-bounds.min[1],bounds.max[2]-bounds.min[2]] as [number,number,number],
       ...(asset.libraryMetadata?{libraryMetadata:asset.libraryMetadata}:{})};
   }));
   const messages:ChatMessage[]=[{role:'system',content:WORLD_INTENT_PROMPT},
@@ -964,6 +990,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     }
   }
   if(!compiled) throw new Error('world_generation_failed');
+  compiled.draft.assets=bindExactReusableAssetKeys(compiled.draft.assets,reusableAssets);
   const sample=createWorldSampler(compiled.bundle.plan.recipe);
   const landmarkKeys=new Set(compiled.draft.assets.filter(asset=>asset.role==='landmark').map(asset=>asset.key));
   const diagnostics=compiled.bundle.patches.map(p=>{
