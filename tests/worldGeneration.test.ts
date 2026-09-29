@@ -19,9 +19,9 @@ vi.mock('../src/server/generationTrace', () => ({ recordGenerationTrace: mocks.r
 
 const request: WorldGenerationRequest = { prompt: 'A compact grassland town', seed: 2309, size: 1600, generateAssets: false };
 
-it('accepts two bounded intent repairs but rejects larger retry counts',()=>{
-  expect(validateWorldGenerationRequest({...request,repairAttempts:2}).repairAttempts).toBe(2);
-  expect(()=>validateWorldGenerationRequest({...request,repairAttempts:3})).toThrow('invalid_world_generation_request');
+it('accepts three bounded intent repairs but rejects larger retry counts',()=>{
+  expect(validateWorldGenerationRequest({...request,repairAttempts:3}).repairAttempts).toBe(3);
+  expect(()=>validateWorldGenerationRequest({...request,repairAttempts:4})).toThrow('invalid_world_generation_request');
 });
 
 it('reports when every candidate pair overlaps connected town cores',()=>{

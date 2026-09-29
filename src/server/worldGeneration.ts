@@ -23,7 +23,7 @@ export interface WorldGenerationRequest {
   size: number;
   generateAssets?: boolean;
   reusableAssetIds?: string[];
-  repairAttempts?: 0 | 1 | 2;
+  repairAttempts?: 0 | 1 | 2 | 3;
 }
 export interface WorldAssetRequest {
   key: string;
@@ -158,7 +158,7 @@ export function validateWorldGenerationRequest(input: unknown): WorldGenerationR
     || !Number.isInteger(r.seed) || r.seed < 0 || r.seed > 0xffffffff
     || !Number.isFinite(r.size) || r.size < 500 || r.size > 256000
     || (r.generateAssets !== undefined && typeof r.generateAssets !== 'boolean')
-    || (r.repairAttempts !== undefined && r.repairAttempts !== 0 && r.repairAttempts !== 1 && r.repairAttempts !== 2)
+    || (r.repairAttempts !== undefined && r.repairAttempts !== 0 && r.repairAttempts !== 1 && r.repairAttempts !== 2 && r.repairAttempts !== 3)
     || (reusableAssetIds !== undefined && (!Array.isArray(reusableAssetIds) || reusableAssetIds.length > 64
       || new Set(reusableAssetIds).size !== reusableAssetIds.length
       || reusableAssetIds.some(id => typeof id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(id))))) {
