@@ -7,7 +7,7 @@ import { WORLD_REGIONS, type WorldRecipe, type WorldRegion, type WorldTerrainBru
 import { validateEcologyRules, type EcologyKind, type EcologyRule } from '../shared/worldEcology';
 import { findWorldRoute, findWorldSiteCandidates,
   type WorldSiteCandidate, type WorldSiteIntent } from '../shared/worldSiting';
-import { validateWorldPlan, validateWorldBundle, type TownBuilding, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
+import { validateWorldPlan, validateWorldBundle, type TownBuilding, type TownIntent, type TownPatch, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
 import { auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, resolveWorldSettlementLandmarks,
   type WorldLandmarkRequirement, type WorldSettlementKind, type WorldSettlementOptions } from '../shared/worldSettlement';
 import { generateModel, llmChat, type ChatMessage } from './modelApi';
@@ -93,7 +93,7 @@ const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. R
 This is terrain intent, not final geometry. World coordinates are centered on (0,0), north is negative Z and west is negative X: every authored landform center, path point, water region and biome patch must lie inside [-size/2,+size/2] on both X and Z (for size 500: -250..250), never 0..size. Keep each feature radius and feather inside that same world extent. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
 recipe={version:1,seed,size,reliefProfile:'compact',heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Regions: west/east/north/south/northwest/northeast/southwest/southeast/center. Biomes: ocean/grassland/forest/desert/mountains/snow. Constraints blend continuously and express broad intent. For playable 500..2000m worlds, prefer heightScale around 0.08..0.15; raise exceptional volcanoes and other local relief with landforms=[{center:[x,z],radius:[rx,rz],height}] instead of globally exaggerating terrain.
 Brush region is {kind:'circle',center:[x,z],radius} or {kind:'path',points:[[x,z],...],width}. terrainBrushes are {id,mode:'raise'|'lower',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:PATH,heights:[one per path point],strength?,feather?}. Use bounded local refinement only. Do not guess road or settlement grade heights: the server samples and grades their access after choosing sites. waterBodies=[{id,type:'lake'|'river',region,levels:[one for circle or one per path point],depth,shorelineSmoothness?:0..1,shorelineIrregularity?:0..0.4,shorelineProfile?:'steep'|'gentle',seed?:uint32}]. Lakes require circle regions and usually use smoothness 0.7..0.95 and irregularity 0.08..0.28; rivers require path regions, smoothness 0.65..0.9 and irregularity 0. shorelineProfile controls bank width and slope. Sea is terrain below zero. biomePatches=[{id,region,biome,feather?}].
-towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?,siting?:'central'|'waterfront'|'gateway'|'high-ground'}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. radius must be >=min(100,size/10), blend >=min(100,size/25); for size 500 these minima are 50m and 20m. Choose pattern from the requested culture and terrain before siting; the server validates that exact pattern. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. Size and distribute inhabited districts against the usable land and expected population: a major island town needs a shore-working district, civic core, housing and reachable hinterland rather than one tiny isolated knot; smaller villages can remain compact. If the settlement depends on sea trade or fishing, target the sea and provide a shore-access purpose for its waterfront public building. For each named place, consider who uses it, how they reach it, what they exchange there, and which terrain feature shapes its entrance and public space. Choose distinct civic functions appropriate to that life rather than repeating a checklist; for a substantial town, plan roughly one useful public or landmark building per 10..20 ordinary buildings. Use siting only for a real spatial reason: central gathering, waterfront work, gateway trade, or high-ground lookout. Public buildings declare program, footprint and siting intent only. Match public-building count and footprint to the town radius and usable dry shore: reserve only one or two waterfront work buildings, place schools and services inland, and express promenades/plazas as street or open-space intent in town.prompt rather than as building footprints. A substantial town with four civic buildings normally needs a larger core than a tiny village. No center, foundation, ports, rotation or landmark coordinates.
+towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?,targetWaterBodyId?,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?,siting?:'central'|'waterfront'|'gateway'|'high-ground'}]}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. radius must be >=min(100,size/10), blend >=min(100,size/25); for size 500 these minima are 50m and 20m. Choose pattern from the requested culture and terrain before siting; the server validates that exact pattern. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. Size and distribute inhabited districts against the usable land and expected population: a major island town needs a shore-working district, civic core, housing and reachable hinterland rather than one tiny isolated knot; smaller villages can remain compact. Estimate one ordinary dwelling per four to six residents and reserve enough dry street frontage for that population; a service-bearing port town with hundreds of residents should not be labeled or sized as a tiny village. If dry coastal land is constrained, connect smaller inhabited districts along passable shore and inland routes. If the settlement depends on sea trade or fishing, target the sea and provide a shore-access purpose for its waterfront public building. For each named place, consider who uses it, how they reach it, what they exchange there, and which terrain feature shapes its entrance and public space. Choose distinct civic functions appropriate to that life rather than repeating a checklist; for a substantial town, plan roughly one useful public or landmark building per 10..20 ordinary buildings. Use siting only for a real spatial reason: central gathering, waterfront work, gateway trade, or high-ground lookout. Public buildings declare program, footprint and siting intent only. Match public-building count and footprint to the town radius and usable dry shore: reserve only one or two waterfront work buildings, place schools and services inland, and express promenades/plazas as street or open-space intent in town.prompt rather than as building footprints. A substantial town with four civic buildings normally needs a larger core than a tiny village. No center, foundation, ports, rotation or landmark coordinates.
 roads=[{id,name,fromTownId,toTownId,width,tags}]. They express topology and purpose only; the server routes them over sampled terrain. No points or invented elevations.
 ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?}]. Ecology region is a circle/path object using the brush region schema, never a compass string; omit it for broad biome coverage. waterDistance is exactly four ascending metre values [outerMin,preferredMin,preferredMax,outerMax] for explicit fresh lakes/rivers only; omit it near the sea or when no fresh water exists.  Never enumerate ordinary buildings or vegetation. Preserve the user's named destinations and relations. Limits: <=12 towns, <=32 roads, <=8 ecology rules, <=16 landforms.`;
 
@@ -290,6 +290,22 @@ function validateSettlementExperience(town:WorldIntentTown,patch:ReturnType<type
   }
   const publicIds=new Set(town.publicBuildings.map(building=>building.id));
   if(!patch.buildings.some(building=>!publicIds.has(building.id))) throw new Error('world_settlement_no_housing:'+town.id);
+}
+
+export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'targetWaterBodyId'>,
+  patch: Pick<TownPatch,'buildings'|'streets'>,
+  settings: Pick<WorldSettlementOptions,'kind'|'density'|'waterfrontBias'>,
+  ordinaryBuildings: number): {builtExtent: number; planningIssues: string[]} {
+  const x=patch.buildings.map(building=>building.x),z=patch.buildings.map(building=>building.z);
+  const builtExtent=x.length?Math.max(Math.max(...x)-Math.min(...x),Math.max(...z)-Math.min(...z))/(2*town.radius):0;
+  const ordinaryFloor=settings.kind==='city'?Math.max(20,Math.ceil(town.radius*(settings.density??.82)*.24))
+    :Math.max(10,Math.ceil(town.radius*(settings.density??.38)*.12));
+  const planningIssues:string[]=[];
+  if(town.radius>=90&&ordinaryBuildings<ordinaryFloor) planningIssues.push('underbuilt_settlement');
+  if(town.radius>=90&&builtExtent<.4) planningIssues.push('clustered_settlement');
+  if(town.targetWaterBodyId==='sea'&&(settings.waterfrontBias??0)>=.5
+    &&!patch.streets.some(street=>street.tags.includes('sea-landing'))) planningIssues.push('missing_sea_landing');
+  return {builtExtent,planningIssues};
 }
 
 export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
@@ -700,11 +716,11 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     }
   }
   if(!compiled) throw new Error('world_generation_failed');
-  const assetSources=request.generateAssets?await generateWorldAssets(compiled.draft.assets,store,signal):undefined;
   const sample=createWorldSampler(compiled.bundle.plan.recipe);
   const landmarkKeys=new Set(compiled.draft.assets.filter(asset=>asset.role==='landmark').map(asset=>asset.key));
   const diagnostics=compiled.bundle.patches.map(p=>{
     const town=compiled.bundle.plan.towns.find(t=>t.id===p.townId)!;
+    const settings=compiled.draft.settlements.find(item=>item.townId===p.townId)!.options;
     const publicBuildings=p.buildings.filter(building=>landmarkKeys.has(building.assetKey??'') || /civic|market|well|school|library|bath|council|temple|cathedral|clinic|hospital|inn|caravanserai|harbou?r|port|monument|市场|集市|水井|学校|图书馆|浴场|议事|神庙|教堂|诊所|医院|驿馆|港口|纪念/i.test(building.use)).length;
     const ordinaryBuildings=p.buildings.length-publicBuildings;
     const recommendedPublicBuildings:[number,number]=[
@@ -718,9 +734,13 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     if(publicBuildings>recommendedPublicBuildings[1]&&recommendedPublicBuildings[1]>0) planningIssues.push('public_program_overconcentrated');
     if(!town.ports.length) planningIssues.push('missing_external_connection');
     else if(connectedPorts<town.ports.length) planningIssues.push('missing_port_connection');
+    const coverage=auditWorldSettlementCoverage(town,p,settings,ordinaryBuildings);
+    planningIssues.push(...coverage.planningIssues);
     return {townId:p.townId,...auditWorldSettlement(p,town,sample),publicBuildings,ordinaryBuildings,
-      recommendedPublicBuildings,connectedPorts,portCount:town.ports.length,planningIssues};
+      recommendedPublicBuildings,connectedPorts,portCount:town.ports.length,builtExtent:coverage.builtExtent,planningIssues};
   });
+  recordGenerationTrace('world.geometry.preview',{draft:compiled.draft,diagnostics});
+  const assetSources=request.generateAssets?await generateWorldAssets(compiled.draft.assets,store,signal):undefined;
   recordGenerationTrace('world.preview',{draft:compiled.draft,diagnostics,assets:assetSources?.map(a=>({id:a.id,assetId:a.assetId,provider:a.provider,strategy:a.strategy}))});
   return {bundle:compiled.bundle,draft:compiled.draft,diagnostics,assetSources,planningProvider:'gpt',assetProvider:'deepseek',preview:true};
 }

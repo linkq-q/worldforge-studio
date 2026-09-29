@@ -3,7 +3,7 @@ import { Euler, Quaternion } from 'three';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import {
-  assembleWorldModel, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
+  assembleWorldModel, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
   materializeWorldIntent, parseWorldIntentDraft, validateWorldGenerationRequest, worldAssetStrategy,
   WORLD_GENERATION_PROMPT, type WorldAssetRequest, type WorldGenerationRequest
 } from '../src/server/worldGeneration';
@@ -220,6 +220,21 @@ describe('world generation compiler', () => {
     }));
   });
 
+  it('reports a tiny inland knot and missing sea landing in a large harbor town', () => {
+    const building=(id:string,x:number,z:number)=>({id,x,z,width:8,depth:8,height:6,use:'home'});
+    const small={buildings:Array.from({length:11},(_,index)=>building('b'+index,(index%4)*4,Math.floor(index/4)*4)),
+      streets:[{id:'shore',name:'shore',points:[[0,0],[20,0]] as [number,number][],curve:'polyline' as const,
+        closed:false,width:4,tags:['waterfront']}]} ;
+    const town={radius:105,targetWaterBodyId:'sea'};
+    const settings={kind:'village' as const,density:.48,waterfrontBias:.85};
+    expect(auditWorldSettlementCoverage(town,small,settings,8).planningIssues).toEqual([
+      'underbuilt_settlement','clustered_settlement','missing_sea_landing']);
+    const grown={buildings:[building('west',-75,-40),building('east',75,40)],
+      streets:[{...small.streets[0],tags:['waterfront','sea-landing']}]};
+    expect(auditWorldSettlementCoverage(town,grown,settings,32)).toMatchObject({
+      builtExtent:expect.any(Number),planningIssues:[]});
+  });
+
   it('prompts for a settlement-specific economy and civic program before street layout', () => {
     expect(WORLD_GENERATION_PROMPT).toContain('livelihood, population scale, external logistics, public services');
     expect(WORLD_GENERATION_PROMPT).toContain('one public or landmark building per 10..20 ordinary buildings');
@@ -242,6 +257,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
     expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
+    expect(messages[0].content).toContain('one ordinary dwelling per four to six residents');
     expect(messages[0].content).toContain('reserve only one or two waterfront work buildings');
     expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
