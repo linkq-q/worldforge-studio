@@ -353,7 +353,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       terrainBorderDepth: 4,
       oceanCoast: false,
       terrainOnly: true,
-      terrainSurfaceWeight: (x, z, tags) => tileBiomeSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
+      terrainSurfaceWeight: (x, z, tags) => worldTileSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
     });
     applyWorldTerrainEdgeNormals(rendered.group, tile, centerX, centerZ);
     const renderedAt = performance.now();
@@ -1074,7 +1074,7 @@ function chunkDistanceSquared(chunk: EcologyChunk, x: number, z: number): number
   return tileDistanceSquared(tile, x, z);
 }
 
-function tileBiomeSurfaceWeight(
+export function worldTileSurfaceWeight(
   data: WorldTileData,
   tile: WorldTile,
   worldX: number,
@@ -1086,10 +1086,20 @@ function tileBiomeSurfaceWeight(
   const x0 = Math.floor(gridX), z0 = Math.floor(gridZ);
   const x1 = Math.min(data.resolution - 1, x0 + 1), z1 = Math.min(data.resolution - 1, z0 + 1);
   const tx = gridX - x0, tz = gridZ - z0;
+  const ocean = interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean);
+  const height = interpolateTileScalar(data.heights, data.resolution, x0, z0, x1, z1, tx, tz);
+  const beach = THREE.MathUtils.clamp(1 - Math.abs(height - 4) / 22, 0, 1)
+    * THREE.MathUtils.clamp(ocean * 2.5, 0, 1);
   let weight = 0;
   for (const tag of tags) {
-    if (tag === 'dry' || tag === 'sand') {
+    if (tag === 'dry') {
       weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert));
+    } else if (tag === 'sand') {
+      weight = Math.max(
+        weight,
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert),
+        beach
+      );
     } else if (tag === 'rocky') {
       weight = Math.max(
         weight,
@@ -1107,16 +1117,33 @@ function tileBiomeSurfaceWeight(
     } else if (tag === 'forest') {
       weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest));
     } else if (tag === 'water') {
-      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean));
+      weight = Math.max(weight, ocean);
     } else if (tag === 'lowland') {
       weight = Math.max(
         weight,
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean),
+        ocean,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland)
       );
     }
   }
   return THREE.MathUtils.clamp(weight, 0, 1);
+}
+
+function interpolateTileScalar(
+  values: Float32Array,
+  resolution: number,
+  x0: number,
+  z0: number,
+  x1: number,
+  z1: number,
+  tx: number,
+  tz: number
+): number {
+  return THREE.MathUtils.lerp(
+    THREE.MathUtils.lerp(values[z0 * resolution + x0], values[z0 * resolution + x1], tx),
+    THREE.MathUtils.lerp(values[z1 * resolution + x0], values[z1 * resolution + x1], tx),
+    tz
+  );
 }
 
 function interpolateTileBiome(
