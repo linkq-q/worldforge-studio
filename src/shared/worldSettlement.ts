@@ -107,7 +107,7 @@ export function generateWorldSettlement(
 
   const candidates = safeUrbanEdges(layout.roads, roadSafe);
   const reserved = town.ports.length + settings.landmarks.length + (shore ? 2 : 0);
-  const selected = connectedEdges(candidates, shore?.point ?? site, Math.max(1, settings.roadBudget - reserved), random);
+  const selected = connectedEdges(candidates, shore?.point ?? site, Math.max(1, settings.roadBudget - reserved), random, layout);
   if (!selected.length) throw new Error('world_settlement_no_buildable_network');
 
   const streets: MapGuide[] = selected.map((edge, index) => guide(
@@ -486,7 +486,7 @@ function safeUrbanEdges(
   return result;
 }
 
-function connectedEdges(edges: Edge[], anchor: Point, budget: number, random: () => number): Edge[] {
+function connectedEdges(edges: Edge[], anchor: Point, budget: number, random: () => number, layout: UrbanLayout): Edge[] {
   if (!edges.length || budget <= 0) return [];
   const byNode = new Map<string, number[]>();
   edges.forEach((edge, index) => {
@@ -523,21 +523,65 @@ function connectedEdges(edges: Edge[], anchor: Point, budget: number, random: ()
   const startNode = nodes.reduce((best, key) => distance(parsePoint(key), anchor) < distance(parsePoint(best), anchor) ? key : best);
   const reached = new Set([startNode]);
   const selected: number[] = [];
+  const selectedSet = new Set<number>();
   const noise = new Map(component.map(index => [index, random() * 8]));
+  const blockEdges = urbanBlockEdgeGroups(layout, edges, allowed);
+  const blocksByEdge = new Map<number,number[][]>();
+  for(const group of blockEdges) for(const index of group) blocksByEdge.set(index,[...(blocksByEdge.get(index)??[]),group]);
+  const targetCycles=Math.max(2,Math.min(6,Math.round(budget/6)));
+  const targetExtent=Math.max(...component.flatMap(index=>[distance(edges[index].a,anchor),distance(edges[index].b,anchor)]))*.92;
+  let cycles=0,reachedExtent=distance(parsePoint(startNode),anchor);
   const frontier = [...(byNode.get(startNode) ?? [])].filter(index => allowed.has(index));
   while (frontier.length && selected.length < budget) {
-    frontier.sort((a, b) => edgePriority(edges[a], anchor, noise.get(a)!) - edgePriority(edges[b], anchor, noise.get(b)!));
+    const priority=(index:number) => {
+      const edge=edges[index],ka=pointKey(edge.a),kb=pointKey(edge.b),closing=reached.has(ka)&&reached.has(kb);
+      const groups=blocksByEdge.get(index)??[];
+      const progress=Math.max(0,...groups.map(group=>group.filter(candidate=>selectedSet.has(candidate)).length/group.length));
+      const completes=groups.some(group=>group.every(candidate=>candidate===index||selectedSet.has(candidate)));
+      const outward=Math.max(distance(edge.a,anchor),distance(edge.b,anchor));
+      return edgePriority(edge,anchor,noise.get(index)!)-(completes?180:progress*28)
+        -(closing&&cycles<targetCycles?120:0)-Math.max(0,outward-reachedExtent)*(reachedExtent<targetExtent?4:.3);
+    };
+    frontier.sort((a, b) => priority(a)-priority(b));
     const edgeIndex = frontier.shift()!;
-    if (selected.includes(edgeIndex)) continue;
+    if (selectedSet.has(edgeIndex)) continue;
     const edge = edges[edgeIndex], ka = pointKey(edge.a), kb = pointKey(edge.b);
     if (!reached.has(ka) && !reached.has(kb)) continue;
+    const closing=reached.has(ka)&&reached.has(kb);
     selected.push(edgeIndex);
+    selectedSet.add(edgeIndex);
+    if(closing) cycles++;
+    reachedExtent=Math.max(reachedExtent,distance(edge.a,anchor),distance(edge.b,anchor));
     for (const key of [ka, kb]) if (!reached.has(key)) {
       reached.add(key);
       frontier.push(...(byNode.get(key) ?? []).filter(index => allowed.has(index)));
     }
   }
   return selected.map(index => edges[index]);
+}
+
+function urbanBlockEdgeGroups(layout:UrbanLayout,edges:Edge[],allowed:Set<number>):number[][] {
+  // The block polygon is inset from its roads, so recover each safe source edge by parallel proximity.
+  const maxOffset=Math.max(...layout.roads.map(road=>road.width),0)/2+2.5;
+  const groups:number[][]=[];
+  for(const block of layout.blocks) {
+    const group:number[]=[];
+    for(let side=0;side<block.points.length;side++) {
+      const a=block.points[side],b=block.points[(side+1)%block.points.length],middle=mix(a,b,.5),delta=normalize(sub(b,a));
+      let best:{index:number;distance:number;score:number}|undefined;
+      for(const index of allowed) {
+        const edge=edges[index],edgeDelta=normalize(sub(edge.b,edge.a));
+        const alignment=Math.abs(delta[0]*edgeDelta[0]+delta[1]*edgeDelta[1]);
+        if(alignment<.8) continue;
+        const separation=pointSegmentDistance(middle,edge.a,edge.b),score=separation+(1-alignment)*20;
+        if(!best||score<best.score) best={index,distance:separation,score};
+      }
+      if(best&&best.distance<=maxOffset) group.push(best.index);
+    }
+    const unique=[...new Set(group)];
+    if(unique.length>=3) groups.push(unique);
+  }
+  return groups;
 }
 
 function edgePriority(edge: Edge, anchor: Point, noise: number): number {
@@ -625,7 +669,7 @@ function placeBuildings(
   const candidates = layout.parcels.filter(parcel => selectedByRoad.get(parcel.roadId)?.some(edge =>
     pointSegmentDistance(parcel.front, edge.a, edge.b) < 1e-4));
   const blockCenters = new Map(layout.blocks.map(block => [block.id, block.center]));
-  const civicAnchors: Point[] = result.length ? result.map(building => [building.x, building.z]) : [[0, 0]];
+  const civicAnchors: Point[] = [[0,0],...town.ports.map(port=>port.position),...result.map(building=>[building.x,building.z] as Point)];
   const waterfront = localRoads.filter(segment => segment.road.tags.includes('waterfront'));
   const nearest = (point: Point, anchors: Point[]) => Math.min(...anchors.map(anchor => distance(point, anchor)));
   const waterfrontDistance = (point: Point) => waterfront.length

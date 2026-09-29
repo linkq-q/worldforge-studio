@@ -48,6 +48,36 @@ function segments(patch: ReturnType<typeof generateWorldSettlement>) {
   return patch.streets.flatMap(street => street.points.slice(1).map((b, index) => ({ a: street.points[index], b, width: street.width })));
 }
 
+function settlementShape(patch: ReturnType<typeof generateWorldSettlement>, radius: number) {
+  const streets = patch.streets.filter(street => !street.tags.some(tag => ['port', 'waterfront', 'landmark-access'].includes(tag)));
+  const edges = streets.flatMap(street => street.points.slice(1).map((b, index) => [street.points[index], b] as const));
+  const key = (point: Point) => `${point[0].toFixed(5)},${point[1].toFixed(5)}`;
+  const graph = new Map<string, Set<string>>();
+  for (const [a, b] of edges) {
+    const ka = key(a), kb = key(b);
+    if (!graph.has(ka)) graph.set(ka, new Set());
+    if (!graph.has(kb)) graph.set(kb, new Set());
+    graph.get(ka)!.add(kb); graph.get(kb)!.add(ka);
+  }
+  let components = 0;
+  const remaining = new Set(graph.keys());
+  while (remaining.size) {
+    components++;
+    const queue = [remaining.values().next().value!];
+    remaining.delete(queue[0]);
+    for (let index = 0; index < queue.length; index++) for (const next of graph.get(queue[index]) ?? []) {
+      if (remaining.delete(next)) queue.push(next);
+    }
+  }
+  const roadExtent = Math.max(...edges.flatMap(edge => edge.map(point => Math.hypot(...point)))) / radius;
+  const buildingExtent = Math.max(...patch.buildings.map(building => Math.hypot(building.x, building.z))) / radius;
+  return {
+    cycles: edges.length - graph.size + components,
+    deadEnds: [...graph.values()].filter(neighbors => neighbors.size === 1).length,
+    roadExtent, buildingExtent
+  };
+}
+
 function pointDistance(point: Point, a: Point, b: Point): number {
   const dx = b[0] - a[0], dz = b[1] - a[1];
   const t = Math.max(0, Math.min(1, ((point[0] - a[0]) * dx + (point[1] - a[1]) * dz) / (dx * dx + dz * dz || 1)));
@@ -165,6 +195,33 @@ describe('world settlement growth', () => {
     expect(patch.buildings.length).toBeGreaterThanOrEqual(minimumBuildings);
     expect(audit.builtFootprintArea).toBeGreaterThan(audit.roadSurfaceArea * 0.45);
     expectStreetFacingBuildings(patch);
+  });
+
+  it('uses its road budget for outward, block-forming fabric across seeds and a sloped shore', () => {
+    for (const [seed, shore] of [[7, false], [19, false], [31, true]] as const) {
+      const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+      town.radius = 180;
+      town.ports[0].position = [town.radius, 0];
+      plan.roads[0].points = [[town.center[0] + town.radius, 0], [1800, 0]];
+      const sample: WorldSettlementSampler = (x, z) => {
+        const original = base(x, z), lx = x - town.center[0];
+        const water = shore && lx < -125;
+        return { ...original, height: water ? -3 : 12 + (shore ? z * 0.02 : 0),
+          waterLevel: water ? 0 : null, waterBodyId: water ? 'shore' : null };
+      };
+      const patch = generateWorldSettlement(plan, town.id, sample, {
+        kind: 'city', pattern: 'organic', seed, density: 0.82, waterfrontBias: shore ? 1 : 0, waterSetback: 6
+      });
+      const shape = settlementShape(patch, town.radius);
+      expect(shape.cycles, `seed ${seed}`).toBeGreaterThanOrEqual(shore ? 4 : 5);
+      expect(shape.deadEnds, `seed ${seed}`).toBeLessThanOrEqual(8);
+      expect(shape.roadExtent, `seed ${seed}`).toBeGreaterThanOrEqual(0.78);
+      expect(shape.buildingExtent, `seed ${seed}`).toBeGreaterThanOrEqual(0.65);
+      const port = patch.streets.find(street => street.tags.includes('port'))!;
+      expect(port.points[0], `seed ${seed}`).toEqual(town.ports[0].position);
+      expect(patch.streets.some(street => street !== port && street.points.some(point =>
+        Math.hypot(point[0] - port.points.at(-1)![0], point[1] - port.points.at(-1)![1]) < 1e-6)), `seed ${seed}`).toBe(true);
+    }
   });
 
   it('builds coherent street walls from dry urban parcels and leaves block interiors open', () => {
