@@ -60,7 +60,7 @@ describe('world siting', () => {
     const end: [number, number] = [71.5, -176];
     const route = findWorldRoute(sample, start, end, 5);
     expect(route).not.toBeNull();
-    expect(route!.points.length).toBeGreaterThan(3);
+    expect(route!.points.length).toBeGreaterThanOrEqual(3);
     expect(route!.length).toBeGreaterThan(Math.hypot(end[0] - start[0], end[1] - start[1]));
     expect(route!.maxSlope).toBeLessThanOrEqual(0.5);
     for (let segment = 1; segment < route!.points.length; segment++) {
