@@ -392,6 +392,10 @@ describe('world generation compiler', () => {
       publicBuildings:2,ordinaryBuildings:2,builtExtent:.29,
       planningIssues:['underbuilt_settlement','clustered_settlement','public_program_overconcentrated']
     });
+    const spreadHamlet={buildings:Array.from({length:8},(_,index)=>building('farm-home-'+index,
+      (index%4)*18-27,Math.floor(index/4)*25-12.5)),streets:[]};
+    expect(auditWorldSettlementCoverage({radius:50},spreadHamlet,
+      {kind:'village',density:.48,waterfrontBias:0},8)).toMatchObject({planningIssues:[]});
   });
 
   it('stops rejected world geometry before any paid asset call', async () => {

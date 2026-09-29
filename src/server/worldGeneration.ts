@@ -325,7 +325,7 @@ export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'tar
   const x=patch.buildings.map(building=>building.x),z=patch.buildings.map(building=>building.z);
   const builtExtent=x.length?Math.max(Math.max(...x)-Math.min(...x),Math.max(...z)-Math.min(...z))/(2*town.radius):0;
   const ordinaryFloor=settings.kind==='city'?Math.max(24,Math.ceil(town.radius*(settings.density??.82)*.52))
-    :Math.max(8,Math.ceil(town.radius*(settings.density??.38)*.5));
+    :Math.max(8,Math.ceil(town.radius*(settings.density??.38)*.32));
   const extentFloor=settings.kind==='city'?.5:.4;
   const planningIssues:string[]=[];
   if(town.radius>=50&&ordinaryBuildings<ordinaryFloor) planningIssues.push('underbuilt_settlement');
