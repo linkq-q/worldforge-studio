@@ -456,6 +456,21 @@ describe('world settlement growth', () => {
     }, requirements)).toThrow('world_settlement_no_waterfront_site:dry-quay');
   });
 
+  it('finds real waterfront frontage across the full core of a compact sea town', () => {
+    const plan=fixture(),town=plan.towns[0],base=sampler(plan);
+    town.radius=100;town.ports[0].position=[100,0];town.targetWaterBodyId='sea';
+    plan.roads[0].points=[[town.center[0]+100,0],[1800,0]];
+    const sample:WorldSettlementSampler=(x,z) => {
+      const original=base(x,z),water=x-town.center[0] < -92;
+      return {...original,height:water?-3:12,waterLevel:water?0:null,waterBodyId:null};
+    };
+    const result=createWorldSettlementLandmarkLayout(plan,town.id,sample,{
+      kind:'city',pattern:'organic',seed:47,density:.78,waterfrontBias:.95,waterSetback:6
+    },[{id:'fish-market',use:'fish market',width:16,depth:12,height:5,assetKey:'market',siting:'waterfront'}]);
+    expect(result.landmarks[0].id).toBe('fish-market');
+    expect(result.patch.streets.some(street=>street.tags.includes('waterfront'))).toBe(true);
+  });
+
   it('bounds public-footprint retries and still fails explicitly when no site can fit', () => {
     const plan = fixture(), sample = sampler(plan);
     expect(() => createWorldSettlementLandmarkLayout(plan, 'town', sample, {

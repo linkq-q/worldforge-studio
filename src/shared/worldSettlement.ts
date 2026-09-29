@@ -264,7 +264,7 @@ function frontageLandmarkSites(
   const unique=new Map(points.map(item=>[`${item.x.toFixed(6)},${item.z.toFixed(6)},${(item.rotation??0).toFixed(6)}`,item]));
   const candidates=[...unique.values()],tie=(a:TownBuilding,b:TownBuilding)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z)||a.x-b.x||a.z-b.z;
   if(siting==='waterfront') {
-    const reach=Math.min(180,town.radius*.58);
+    const reach=Math.min(180,town.radius);
     return candidates.map(candidate=>({candidate,water:nearestWater(sample,town,[candidate.x,candidate.z],reach)}))
       .filter((item):item is {candidate:TownBuilding;water:{direction:Point;distance:number}}=>Boolean(item.water))
       .sort((a,b)=>a.water.distance-b.water.distance||tie(a.candidate,b.candidate)).map(item=>item.candidate);
