@@ -553,6 +553,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain("reliefProfile:'compact'");
     expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
+    expect(messages[0].content).toContain('about eight ordinary houses gets at most one public landmark');
     expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
     expect(messages[0].content).toContain('one ordinary dwelling per four to six residents');
     expect(messages[0].content).toContain('Roads connect two different town IDs only');
