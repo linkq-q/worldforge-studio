@@ -508,10 +508,77 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('carves coherent downslope drainage into large compact island mountains across seeds', () => {
+    const recipe: WorldRecipe = {
+      version: 1, seed: 6103402, size: 500, reliefProfile: 'compact', heightScale: 0.12,
+      constraints: [
+        { region: 'center', biome: 'grassland' }, { region: 'east', biome: 'ocean' },
+        { region: 'north', biome: 'mountains' }, { region: 'northeast', biome: 'forest' },
+        { region: 'northwest', biome: 'forest' }, { region: 'south', biome: 'ocean' },
+        { region: 'southeast', biome: 'grassland' }, { region: 'southwest', biome: 'grassland' },
+        { region: 'west', biome: 'ocean' }
+      ],
+      landforms: [
+        { center: [0, 30], radius: [220, 185], height: 5 },
+        { center: [-35, -145], radius: [105, 75], height: 42 },
+        { center: [35, -125], radius: [85, 65], height: 28 },
+        { center: [-5, -115], radius: [150, 24], height: 18 },
+        { center: [-75, -105], radius: [42, 95], height: 13 },
+        { center: [78, -135], radius: [38, 85], height: 10 }
+      ],
+      terrainBrushes: [
+        { id: 'north-ridge-west', mode: 'raise', amount: 10, feather: 18,
+          region: { kind: 'path', points: [[-120,-175],[-75,-145],[-25,-130],[25,-112],[75,-105],[120,-78]], width: 24 } },
+        { id: 'north-gully', mode: 'lower', amount: 8, feather: 15,
+          region: { kind: 'path', points: [[72,-205],[55,-170],[42,-135],[35,-100]], width: 13 } },
+        { id: 'harbor-terrace', mode: 'flatten', height: 3, strength: 0.35, feather: 22,
+          region: { kind: 'circle', center: [58,92], radius: 62 } },
+        { id: 'inland-farm-terrace', mode: 'flatten', height: 5, strength: 0.3, feather: 18,
+          region: { kind: 'circle', center: [-55,55], radius: 48 } }
+      ]
+    };
+    const medianAngularResiduals: number[] = [], radialCorrelations: number[] = [], ridgeShares: number[] = [];
+    const percentile = (values: number[], fraction: number) => values.sort((a, b) => a - b)
+      [Math.floor((values.length - 1) * fraction)];
+    const correlation = (a: number[], b: number[]) => {
+      const meanA = a.reduce((sum, value) => sum + value, 0) / a.length;
+      const meanB = b.reduce((sum, value) => sum + value, 0) / b.length;
+      const centeredA = a.map(value => value - meanA), centeredB = b.map(value => value - meanB);
+      return centeredA.reduce((sum, value, index) => sum + value * centeredB[index], 0)
+        / Math.sqrt(centeredA.reduce((sum, value) => sum + value * value, 0)
+          * centeredB.reduce((sum, value) => sum + value * value, 0));
+    };
+    for (const seed of [6103402, 99173]) {
+      const sample = createWorldSampler({ ...recipe, seed }), count = 144;
+      const profiles = [0.48, 0.62, 0.76].map(radius => Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2;
+        return sample(-35 + Math.cos(angle) * 105 * radius, -145 + Math.sin(angle) * 75 * radius).height;
+      }));
+      const residuals = profiles.map(profile => profile.map((height, index) => {
+        const offsets = [-5, -4, -3, 3, 4, 5];
+        return height - offsets.reduce((sum, offset) => sum + profile[(index + offset + count) % count], 0)
+          / offsets.length;
+      }));
+      medianAngularResiduals.push(percentile(residuals.flat().map(Math.abs), 0.5));
+      radialCorrelations.push(correlation(residuals[0], residuals[1]), correlation(residuals[1], residuals[2]));
+      ridgeShares.push(residuals.flat().filter(value => value > 0.25).length / residuals.flat().length);
+
+      const townSlopes: number[] = [];
+      for (let z = 10; z <= 155; z += 6) for (let x = 15; x <= 205; x += 6) {
+        if (sample(x, z).height > 0) townSlopes.push(sampleWorldSlope(sample, x, z));
+      }
+      expect(percentile(townSlopes, 0.95)).toBeLessThan(0.31);
+    }
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    expect(mean(medianAngularResiduals)).toBeGreaterThan(1.1);
+    expect(mean(radialCorrelations)).toBeGreaterThan(0.58);
+    expect(mean(ridgeShares)).toBeGreaterThan(0.3);
+  });
+
   it('keeps missing and explicit legacy relief profiles sample-identical', () => {
     const recipe: WorldRecipe = { version: 1, seed: 147, size: 500, constraints: [
       { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' }
-    ], landforms: [{ center: [-55, -235], radius: [110, 70], height: 26 }] };
+    ], landforms: [{ center: [-55, -235], radius: [110, 70], height: 42 }] };
     const implicit = createWorldSampler(recipe), explicit = createWorldSampler({ ...recipe, reliefProfile: 'legacy' });
     for (const [x, z] of [[0, 0], [-55, -235], [-120, -180], [200, 200]]) {
       expect(implicit(x, z)).toEqual(explicit(x, z));

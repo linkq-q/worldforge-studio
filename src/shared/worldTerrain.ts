@@ -489,7 +489,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     const macroHeight = base + land * (mountain * ridge * 3100 * terrainScale
       + rolling * (1 - climateDry * 0.8));
     let height = macroHeight * (recipe.heightScale ?? 1) + land * climateDry * dunes;
-    let authoredDetailAmplitude = 0;
+    let authoredDetailAmplitude = 0, authoredDrainageDetail = 0;
     for (const form of recipe.landforms ?? []) {
       const d2 = ((x - form.center[0]) / form.radius[0]) ** 2 + ((z - form.center[1]) / form.radius[1]) ** 2;
       // Compact support with zero first and second derivatives at the boundary.
@@ -501,13 +501,38 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
           const smallHillBoost = Math.sqrt(form.height) * 1.3 * (1 - smooth(20, 40, form.height));
           authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
             slopeBand * Math.min(14, form.height * 0.16 + smallHillBoost));
+          if (compactRelief && form.height >= 28 && Math.min(...form.radius) >= 45) {
+            // Large authored mountains need coherent downslope structure, not isotropic noise alone.
+            // Ellipse angle follows the local fall line; a slow phase warp bends channels without
+            // breaking them into dots, while the slope band protects both summit and foothill.
+            const radius = Math.sqrt(d2);
+            const aspect = Math.atan2((z - form.center[1]) / form.radius[1],
+              (x - form.center[0]) / form.radius[0]);
+            const channelCount = clamp(Math.round((form.radius[0] + form.radius[1]) / 34), 5, 8);
+            const formScale = Math.max(...form.radius);
+            const phase = noise(form.center[0] / formScale, form.center[1] / formScale,
+              seed + 1877) * Math.PI;
+            const twist = noise(form.center[0] / formScale + 11, form.center[1] / formScale - 7,
+              seed + 1907) * 0.9;
+            const channelWarp = fbm(x / (formScale * 1.25), z / (formScale * 1.25), seed + 1931, 2) * 1.2;
+            const branchWarp = fbm(x / (formScale * 1.6) + 13, z / (formScale * 1.6) - 9,
+              seed + 1973, 2);
+            const drainageWave = Math.cos(channelCount * aspect + phase
+              + twist * (radius - 0.55) + channelWarp) * 0.72
+              + Math.cos((channelCount + 2) * aspect - phase * 0.45
+                - twist * (radius - 0.55) * 0.7 + branchWarp) * 0.28;
+            const channel = smooth(0.25, 0.82, drainageWave);
+            const rib = smooth(0.15, 0.86, -drainageWave);
+            const drainageAmplitude = Math.min(5.5, form.height * 0.11) * smooth(28, 42, form.height);
+            authoredDrainageDetail += slopeBand * drainageAmplitude * (rib * 0.32 - channel * 0.82);
+          }
         }
       }
     }
     if (compactRelief) {
       const proceduralAmplitude = land * smooth(0.28, 0.68, uplift)
         * 360 * terrainScale * (recipe.heightScale ?? 1);
-      height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude);
+      height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude) + authoredDrainageDetail;
     }
     for (const brush of recipe.terrainBrushes ?? []) {
       const authoredFeather = brush.feather ?? 0;
