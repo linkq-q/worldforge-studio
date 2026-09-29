@@ -236,7 +236,7 @@ describe('world generation compiler', () => {
     expect(JSON.parse(repairMessages.at(-1)!.content)).toMatchObject({
       error:expect.stringContaining('world_no_site_candidates'),
       instruction:expect.stringContaining('create separated dry centers'),
-      siteHints:expect.arrayContaining([expect.objectContaining({townId:'market-town',candidateCenters:expect.any(Array)})]),
+      siteHints:expect.arrayContaining([expect.objectContaining({townId:'market-town',candidates:expect.any(Array)})]),
       terrainHint:expect.objectContaining({sampledCells:81,seaCells:expect.any(Number),dryCells:expect.any(Number)})
     });
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));

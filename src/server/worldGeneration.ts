@@ -703,8 +703,26 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     catch(error) {
       recordGenerationTrace('world.rejected',{attempt,draft,error:error instanceof Error?error.message:String(error)});
       if(attempt===(request.repairAttempts??0)) throw error;
-      const siteHints=proposed?.plan.towns.map(town=>({townId:town.id,region:town.region,radius:town.radius,
-        candidateCenters:findWorldSiteCandidates(proposed!.plan.recipe,town,4).map(site=>site.center.map(value=>Math.round(value)))}));
+      const siteHints=proposed?.plan.towns.map(town=>{
+        const sample=createWorldSampler(proposed!.plan.recipe);
+        const candidates=findWorldSiteCandidates(proposed!.plan.recipe,town,3).map(site=>{
+          const previewPlan:WorldPlan={version:1,id:proposed!.plan.id,revision:proposed!.plan.revision,
+            prompt:proposed!.plan.prompt,recipe:proposed!.plan.recipe,ecology:proposed!.plan.ecology,roads:[],
+            towns:[{id:town.id,name:town.name,prompt:town.prompt,center:site.center,radius:town.radius,
+              blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[],
+              ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})}]};
+          try {
+            const patch=generateWorldSettlement(previewPlan,town.id,sample,{kind:town.kind,pattern:town.pattern,
+              density:town.density,waterfrontBias:town.waterfrontBias??0});
+            return {center:site.center.map(value=>Math.round(value)),dryRatio:site.dryRatio,
+              estimatedBuildings:patch.buildings.length};
+          } catch(error) {
+            return {center:site.center.map(value=>Math.round(value)),dryRatio:site.dryRatio,
+              issue:error instanceof Error?error.message:String(error)};
+          }
+        });
+        return {townId:town.id,region:town.region,radius:town.radius,candidates};
+      });
       const terrainHint=proposed?(()=>{
         const sampler=createWorldSampler(proposed!.plan.recipe),half=proposed!.plan.recipe.size/2;
         let sea=0,dry=0;
@@ -717,7 +735,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
       })():undefined;
       messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
         ...(siteHints?{siteHints}:{}),...(terrainHint?{terrainHint}:{}),
-        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. Site hints show sampled buildable centers, not authorized town coordinates; terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres. For a port, the recipe must contain an actual below-zero sea and a broad, gently sloped dry shore beside it. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. For an island, keep ocean constraints at the outer sides AND a broad low central landform; do not remove the sea to make building room. Preserve the stated population, housing districts and public functions; do not solve a crowded town by shrinking it away. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
+        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. Site hints report sampled centers and how many ordinary buildings the streets can actually hold before public buildings; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. For an island, keep ocean constraints at the outer sides AND a broad low central landform; do not remove the sea to make building room. Preserve the stated population, housing districts and public functions; do not solve a crowded town by shrinking it away. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
     }
   }
   if(intent&&evidence) {
