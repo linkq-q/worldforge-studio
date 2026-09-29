@@ -331,10 +331,10 @@ describe('WorldForge material tag runtime', () => {
     const objectGroup = new THREE.Group();
     modelsRoot.add(objectGroup);
     scene.add(modelsRoot);
+    vi.useFakeTimers();
     const renderFrames: FrameRequestCallback[] = [];
     vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
       renderFrames.push(callback);
-      queueMicrotask(() => callback(performance.now()));
       return renderFrames.length;
     }));
     const now = Date.now();
@@ -345,10 +345,23 @@ describe('WorldForge material tag runtime', () => {
       mode: 'voxel', createdAt: now, updatedAt: now
     };
 
-    const result = await buildMapPrimitiveBatches(
+    let completed = false;
+    const building = buildMapPrimitiveBatches(
       [{ objectId: 'frame-sliced-object', objectGroup, asset, assetTags: [] }],
       { scene, modelsRoot, materialTagPolicy: { disabled: [] }, workSliceMs: 0 }
-    );
+    ).then((result) => { completed = true; return result; });
+
+    while (!renderFrames.length) await Promise.resolve();
+    renderFrames.shift()!(performance.now());
+    await Promise.resolve();
+    expect(completed).toBe(false);
+    await vi.runAllTimersAsync();
+    while (!completed) {
+      while (!renderFrames.length) await Promise.resolve();
+      renderFrames.shift()!(performance.now());
+      await vi.runAllTimersAsync();
+    }
+    const result = await building;
 
     expect(requestAnimationFrame).toHaveBeenCalled();
     expect(result.getStats().buildYieldCount).toBeGreaterThan(0);

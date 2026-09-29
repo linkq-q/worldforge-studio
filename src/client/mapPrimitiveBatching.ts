@@ -296,7 +296,9 @@ export async function buildMapPrimitiveBatches(
 
 function yieldMainThread(): Promise<void> {
   if (typeof requestAnimationFrame === 'function') {
-    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    // Promise continuations run in the microtask checkpoint before paint when
+    // resolved directly inside rAF. Resume in the following task instead.
+    return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
   }
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
