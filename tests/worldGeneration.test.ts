@@ -210,6 +210,7 @@ describe('world generation compiler', () => {
     expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     const repairMessages = mocks.llmChat.mock.calls[1][0] as Array<{ role: string; content: string }>;
     expect(JSON.parse(repairMessages.at(-1)!.content).error).toBe('world_unknown_intent_field:accidentalTopology');
+    expect(JSON.parse(repairMessages.at(-1)!.content).instruction).toContain('only a plan key');
     expect(result.bundle.plan.id).toBe(intent.plan.id);
     expect(result.bundle.plan.recipe.heightScale).toBe(0.1);
     expect(result.diagnostics[0]).toEqual(expect.objectContaining({
@@ -249,7 +250,7 @@ describe('world generation compiler', () => {
     await generateWorld({ ...request, reusableAssetIds: [asset.id] }, store);
     const messages = mocks.llmChat.mock.calls[0][0] as Array<{ role: string; content: string }>;
     expect(messages[0].content).toContain('Copy request.prompt byte-for-byte into plan.prompt');
-    expect(messages[0].content).toContain('under 5000 characters');
+    expect(messages[0].content).toContain('The root has only plan; recipe, ecology, towns and roads are children of plan');
     expect(messages[0].content).toContain('for size 500: -250..250');
     expect(messages[0].content).toContain('Ecology region is a circle/path object');
     expect(messages[0].content).toContain('exactly four ascending metre values');
@@ -258,6 +259,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
     expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
     expect(messages[0].content).toContain('one ordinary dwelling per four to six residents');
+    expect(messages[0].content).toContain('Roads connect two different town IDs only');
     expect(messages[0].content).toContain('reserve only one or two waterfront work buildings');
     expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
