@@ -421,6 +421,7 @@ describe('world generation compiler', () => {
     })]);
     expect(repairPrompt.instruction).toContain('move that town region away from steep mountain terrain');
     expect(repairPrompt.instruction).toContain('shape a broad, low, gently sloped buildable terrace');
+    expect(repairPrompt.instruction).toContain('world_settlement_no_landmark_site');
     expect(repairPrompt.instruction).toContain('do not relax settlement or route quality');
   },20_000);
 
