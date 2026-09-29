@@ -134,6 +134,12 @@ describe('world generation compiler', () => {
     expect(intent.plan.recipe).not.toHaveProperty('reliefProfile');
   });
 
+  it('accepts an omitted model prompt and preserves the server-owned request prompt', () => {
+    const intent=rawSoloIntent() as any;
+    delete intent.plan.prompt;
+    expect(parseWorldIntentDraft(intent,request).plan.prompt).toBe(request.prompt);
+  });
+
   it('keeps all intent fields when GPT places towns and roads beside plan', () => {
     const source = rawSoloIntent();
     const { towns, roads, ...plan } = source.plan;
@@ -170,7 +176,10 @@ describe('world generation compiler', () => {
 
     const wrongPrompt = validDraft();
     wrongPrompt.plan.prompt = 'A different world';
-    expect(() => compileWorldDraft(wrongPrompt, request)).toThrow('world_prompt_request_mismatch');
+    expect(compileWorldDraft(wrongPrompt, request).bundle.plan.prompt).toBe(request.prompt);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.request-echo-mismatch', {
+      stage: 'draft', field: 'prompt', expected: request.prompt, received: 'A different world'
+    });
 
     const unknownOption = validDraft() as any;
     unknownOption.settlements = [{ townId: 'market-town', options: { kind: 'city', boulevardCount: 12 } }];
@@ -307,7 +316,12 @@ describe('world generation compiler', () => {
     const {intent,layout}=soloLayout();
     mocks.llmChat
       .mockResolvedValueOnce(JSON.stringify({ ...rawSoloIntent(), accidentalTopology: true }))
-      .mockResolvedValueOnce(JSON.stringify(rawSoloIntent()))
+      .mockImplementationOnce(async (messages:Array<{role:string;content:string}>) => {
+        const repair=JSON.parse(messages.at(-1)!.content);
+        const repaired=rawSoloIntent();
+        repaired.plan.prompt=repair.instruction;
+        return JSON.stringify(repaired);
+      })
       .mockResolvedValueOnce(JSON.stringify(layout));
 
     const result = await generateWorld({...request,repairAttempts:1}, {} as MapStore);
@@ -315,6 +329,13 @@ describe('world generation compiler', () => {
     const repairMessages = mocks.llmChat.mock.calls[1][0] as Array<{ role: string; content: string }>;
     expect(JSON.parse(repairMessages.at(-1)!.content).error).toBe('world_unknown_intent_field:accidentalTopology');
     expect(JSON.parse(repairMessages.at(-1)!.content).instruction).toContain('only a plan key');
+    expect(JSON.parse(repairMessages.at(-1)!.content).request).toEqual({
+      prompt:request.prompt,seed:request.seed,size:request.size
+    });
+    expect(result.bundle.plan.prompt).toBe(request.prompt);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.request-echo-mismatch', expect.objectContaining({
+      stage:'intent',field:'prompt',expected:request.prompt,received:expect.stringContaining('only a plan key')
+    }));
     expect(result.bundle.plan.id).toBe(intent.plan.id);
     expect(result.bundle.plan.recipe.heightScale).toBe(0.1);
     expect(result.diagnostics[0]).toEqual(expect.objectContaining({
@@ -613,11 +634,13 @@ describe('world generation compiler', () => {
       .toThrow('world_settlement_waterfront_unreachable:bay-town');
   },15_000);
 
-  it('fails after the single repair instead of accepting changed request semantics', async () => {
+  it('keeps the server-owned prompt when every model response changes its echo', async () => {
     const intent = rawSoloIntent();
     intent.plan.prompt = 'Silently changed destination';
-    mocks.llmChat.mockResolvedValue(JSON.stringify(intent));
-    await expect(generateWorld({...request,repairAttempts:1}, {} as MapStore)).rejects.toThrow('world_prompt_request_mismatch');
+    const {layout}=soloLayout();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(intent)).mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld({...request,repairAttempts:1}, {} as MapStore);
+    expect(result.bundle.plan.prompt).toBe(request.prompt);
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
   });
 

@@ -141,6 +141,12 @@ function exactRecord(input: unknown, allowed: readonly string[], invalid: string
   if (extra) throw new Error(`${unknown}:${extra}`);
   return result;
 }
+function requestOwnedPrompt(raw:Record<string,unknown>,request:WorldGenerationRequest,stage:'intent'|'draft'):string {
+  if(raw.prompt!==undefined&&raw.prompt!==request.prompt) recordGenerationTrace('world.request-echo-mismatch',{
+    stage,field:'prompt',expected:request.prompt,received:raw.prompt
+  });
+  return request.prompt;
+}
 function largeLandmark(asset: WorldAssetRequest): boolean {
   return asset.role === 'landmark' && !!asset.dimensions && Math.max(asset.dimensions[0], asset.dimensions[2]) >= 18
     && /castle|cathedral|caravanserai|城堡|教堂|驿馆|宫殿|柱廊/i.test(asset.prompt + ' ' + asset.name);
@@ -205,7 +211,7 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
   const root = exactRecord(wrapper, ['plan'], 'invalid_world_intent', 'world_unknown_intent_field');
   const raw = exactRecord(root.plan, ['version','id','revision','prompt','recipe','ecology','towns','roads'],
     'invalid_world_intent','world_unknown_intent_plan_field');
-  if (raw.version !== 1 || raw.prompt !== request.prompt) throw new Error('world_prompt_request_mismatch');
+  if (raw.version !== 1) throw new Error('invalid_world_intent');
   let recipe: WorldRecipe;
   try { recipe = validateWorldRecipe({ ...(raw.recipe as WorldRecipe), reliefProfile: 'compact' }); }
   catch (error) { throw worldIntentError(error, root); }
@@ -272,7 +278,7 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
     return {id,name:item.name,fromTownId:item.fromTownId,toTownId:item.toTownId,width:finite(item.width,2,64,'invalid_world_intent_road'),tags:[...item.tags] as string[]};
   });
   return {plan:{version:1,id:generationId(raw.id,'invalid_world_intent'),revision:finite(raw.revision,1,Number.MAX_SAFE_INTEGER,'invalid_world_intent'),
-    prompt:request.prompt,recipe,ecology:validateEcologyRules(raw.ecology),towns,roads}};
+    prompt:requestOwnedPrompt(raw,request,'intent'),recipe,ecology:validateEcologyRules(raw.ecology),towns,roads}};
 }
 
 export interface WorldSitingEvidence {
@@ -665,7 +671,6 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
 export function compileWorldDraft(input: unknown, request: WorldGenerationRequest): {draft:WorldDraft;bundle:WorldBundle} {
   const root = exactRecord(structuredClone(input), ['plan','settlements','assets'], 'invalid_world_draft', 'world_unknown_draft_field');
   const rawPlan = record(root.plan, 'invalid_world_draft'), rawRecipe = record(rawPlan.recipe, 'invalid_world_draft');
-  if (rawPlan.prompt !== request.prompt) throw new Error('world_prompt_request_mismatch');
   if (rawRecipe.seed !== request.seed || rawRecipe.size !== request.size) throw new Error('world_recipe_request_mismatch');
   const recipe = validateWorldRecipe(rawRecipe as unknown as WorldPlan['recipe']);
   const sample = cachedWorldSampler(createWorldSampler(recipe));
@@ -679,7 +684,7 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
     }
     return {...town,foundation:sample(town.center[0] as number,town.center[1] as number).height};
   });
-  const plan = validateWorldPlan({...rawPlan,recipe,towns});
+  const plan = validateWorldPlan({...rawPlan,prompt:requestOwnedPrompt(rawPlan,request,'draft'),recipe,towns});
   if (!Array.isArray(root.settlements) || !Array.isArray(root.assets) || root.assets.length > WORLD_ASSET_FAMILY_LIMIT) throw new Error('invalid_world_draft');
   const settlements = root.settlements.map(item => {
     const command = exactRecord(item, ['townId','options'], 'invalid_world_settlement_command', 'world_unknown_settlement_field');
@@ -887,7 +892,8 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
           islandBoundary:auditWorldIslandBoundary(proposed!.plan.prompt,proposed!.plan.recipe,sampler),
           islandLandmass:auditWorldIslandLandmass(proposed!.plan.prompt,proposed!.plan.recipe,proposed!.plan.towns,sampler)};
       })():undefined;
-      messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
+      messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({request:{prompt:request.prompt,seed:request.seed,size:request.size},
+        error:error instanceof Error?error.message:String(error),
         ...(siteHints?{siteHints}:{}),...(terrainHint?{terrainHint}:{}),
         instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays and assign at most one biome constraint to each broad region; use bounded biome patches and landforms for interior forest and mountains. Site hints report sampled centers, ordinary-building capacity before public buildings, and whether a safe waterfront street actually reaches the shore; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres; islandBoundary reports sampled world-edge heights, while islandLandmass reports the largest connected dry component against the combined town-core area and largest town diameter. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. Do not carve an abrupt circular harbor basin or a continuous coastal trench with a lower brush; let the ocean constraint form a broad shore and use gentle local cuts only. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. world_candidate_terraces_overlap means every sampled pair for that road overlaps the square town cores; the error reports best axis separation / required sum of radii. Move or widen connected buildable terraces until at least one candidate pair meets that separation. For an island, keep the sampled world edge wet without blanket ocean constraints drowning the interior; enlarge a broad low central landform with overlapping low interior landforms until the connected dry interior exceeds the combined 2*radius by 2*radius town cores and the largest town diameter. A compact strongly ocean-constrained island may lower global heightScale to about 0.02..0.04 and author mountain relief locally. Do not remove the sea or shrink the named towns to make room. Preserve the stated population, housing districts and public functions. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
     }
