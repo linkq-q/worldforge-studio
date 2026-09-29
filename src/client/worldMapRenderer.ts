@@ -1092,6 +1092,17 @@ export function worldTileSurfaceWeight(
   const tx = gridX - x0, tz = gridZ - z0;
   const ocean = interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean);
   const height = interpolateTileScalar(data.heights, data.resolution, x0, z0, x1, z1, tx, tz);
+  const metresPerCell = tile.size / Math.max(1, data.resolution - 1);
+  const slopeX0 = Math.min(x0, data.resolution - 2), slopeX1 = slopeX0 + 1;
+  const slopeZ0 = Math.min(z0, data.resolution - 2), slopeZ1 = slopeZ0 + 1;
+  const slopeTx = gridX - slopeX0, slopeTz = gridZ - slopeZ0;
+  const height00 = data.heights[slopeZ0 * data.resolution + slopeX0];
+  const height10 = data.heights[slopeZ0 * data.resolution + slopeX1];
+  const height01 = data.heights[slopeZ1 * data.resolution + slopeX0];
+  const height11 = data.heights[slopeZ1 * data.resolution + slopeX1];
+  const slopeX = THREE.MathUtils.lerp(height10 - height00, height11 - height01, slopeTz) / metresPerCell;
+  const slopeZ = THREE.MathUtils.lerp(height01 - height00, height11 - height10, slopeTx) / metresPerCell;
+  const steepRock = THREE.MathUtils.smoothstep(Math.hypot(slopeX, slopeZ), 0.28, 0.72) * (1 - ocean);
   const beach = THREE.MathUtils.clamp(1 - Math.abs(height - 4) / 22, 0, 1)
     * THREE.MathUtils.clamp(ocean * 2.5, 0, 1);
   let weight = 0;
@@ -1108,18 +1119,22 @@ export function worldTileSurfaceWeight(
       weight = Math.max(
         weight,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.mountains),
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow) * 0.35
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow) * 0.35,
+        steepRock
       );
     } else if (tag === 'snow') {
       weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow));
     } else if (tag === 'grass') {
       weight = Math.max(
         weight,
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland),
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest)
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland) * (1 - steepRock * 0.72),
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest) * (1 - steepRock * 0.72)
       );
     } else if (tag === 'forest') {
-      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest));
+      weight = Math.max(
+        weight,
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest) * (1 - steepRock * 0.72)
+      );
     } else if (tag === 'water') {
       weight = Math.max(weight, ocean);
     } else if (tag === 'lowland') {

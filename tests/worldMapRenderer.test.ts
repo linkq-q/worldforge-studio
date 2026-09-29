@@ -61,6 +61,23 @@ describe('main editor streamed world renderer', () => {
     expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['grass'])).toBe(1);
   });
 
+  it('exposes steep inland terrain as rock without changing flat biome weights', () => {
+    const tile = { x: 0, z: 0, size: 20 };
+    const weights = new Float32Array(9 * WORLD_BIOMES.length);
+    for (let index = 0; index < 9; index += 1) {
+      weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('grassland')] = 1;
+    }
+    const data = (heights: number[]): WorldTileData => ({
+      heights: new Float32Array(heights), normals: new Float32Array(), weights,
+      waterLevels: new Float32Array(9), resolution: 3
+    });
+
+    expect(worldTileSurfaceWeight(data([0, 0, 0, 0, 0, 0, 0, 0, 0]), tile, 10, 10, ['rocky'])).toBe(0);
+    const steep = data([0, 10, 20, 0, 10, 20, 0, 10, 20]);
+    expect(worldTileSurfaceWeight(steep, tile, 10, 10, ['rocky'])).toBe(1);
+    expect(worldTileSurfaceWeight(steep, tile, 10, 10, ['grass'])).toBeCloseTo(0.28);
+  });
+
   it('does not add terrain skirts between equal-LOD tiles', async () => {
     const map = createEmptyMap();
     map.world = { bundle: smallBundle, assets: [] };
