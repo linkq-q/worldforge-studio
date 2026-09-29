@@ -560,6 +560,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('Roads connect two different town IDs only');
     expect(messages[0].content).toContain("Rocky terrain uses mountains, not a 'rock' biome");
     expect(messages[0].content).toContain('reserve only one or two waterfront work buildings');
+    expect(messages[0].content).toContain('Use 3..5m for rural walking/cart roads');
     expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
     expect(planningInput.reusableAssets).toEqual([expect.objectContaining({ id: asset.id, name: asset.name })]);

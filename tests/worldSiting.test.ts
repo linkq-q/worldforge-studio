@@ -31,6 +31,14 @@ describe('world siting', () => {
     expect(findWorldRoute(createWorldSampler(recipe),[0,0],[0,100],4)?.points).toEqual([[0,0],[0,100]]);
   });
 
+  it('does not accept a narrow road grade that the 500 metre world validator samples', () => {
+    const sample = (x:number) => ({
+      height: Math.max(3, 8 - Math.abs(x - 4) * 3), moisture: .5, temperature: .5, continentalness: .5,
+      weights: {ocean:0,grassland:1,forest:0,desert:0,mountains:0,snow:0}, waterLevel: null, waterBodyId: null
+    });
+    expect(findWorldRoute(sample, [0, 0], [16, 0], 4, 2)).toBeNull();
+  });
+
   it('routes around the traced island ridge only when the terminal earthwork stays within budget', () => {
     const recipe: WorldRecipe = {
       version: 1, seed: 6103402, size: 500, reliefProfile: 'compact', heightScale: 0.09,
