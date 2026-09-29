@@ -23,7 +23,7 @@ export interface WorldGenerationRequest {
   size: number;
   generateAssets?: boolean;
   reusableAssetIds?: string[];
-  repairAttempts?: 0 | 1;
+  repairAttempts?: 0 | 1 | 2;
 }
 export interface WorldAssetRequest {
   key: string;
@@ -152,7 +152,7 @@ export function validateWorldGenerationRequest(input: unknown): WorldGenerationR
     || !Number.isInteger(r.seed) || r.seed < 0 || r.seed > 0xffffffff
     || !Number.isFinite(r.size) || r.size < 500 || r.size > 256000
     || (r.generateAssets !== undefined && typeof r.generateAssets !== 'boolean')
-    || (r.repairAttempts !== undefined && r.repairAttempts !== 0 && r.repairAttempts !== 1)
+    || (r.repairAttempts !== undefined && r.repairAttempts !== 0 && r.repairAttempts !== 1 && r.repairAttempts !== 2)
     || (reusableAssetIds !== undefined && (!Array.isArray(reusableAssetIds) || reusableAssetIds.length > 64
       || new Set(reusableAssetIds).size !== reusableAssetIds.length
       || reusableAssetIds.some(id => typeof id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(id))))) {
@@ -335,6 +335,29 @@ export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'tar
   return {builtExtent,planningIssues};
 }
 
+export function auditWorldCandidatePacking(
+  towns: Array<Pick<TownIntent,'id'|'radius'>>,
+  roads: Array<Pick<WorldIntentRoad,'id'|'fromTownId'|'toTownId'>>,
+  candidates: Array<{id:string;candidates:Array<Pick<WorldSiteCandidate,'center'>>}>
+): {roadId:string;fromTownId:string;toTownId:string;requiredSeparation:number;bestAxisSeparation:number}|null {
+  for(const road of roads) {
+    const fromTown=towns.find(town=>town.id===road.fromTownId),toTown=towns.find(town=>town.id===road.toTownId);
+    const from=candidates.find(item=>item.id===road.fromTownId)?.candidates??[];
+    const to=candidates.find(item=>item.id===road.toTownId)?.candidates??[];
+    if(!fromTown||!toTown||!from.length||!to.length) continue;
+    const requiredSeparation=fromTown.radius+toTown.radius;
+    let bestAxisSeparation=0,hasSeparatedPair=false;
+    for(const a of from) for(const b of to) {
+      const separation=Math.max(Math.abs(a.center[0]-b.center[0]),Math.abs(a.center[1]-b.center[1]));
+      bestAxisSeparation=Math.max(bestAxisSeparation,separation);
+      if(separation>=requiredSeparation) hasSeparatedPair=true;
+    }
+    if(!hasSeparatedPair) return {roadId:road.id,fromTownId:road.fromTownId,toTownId:road.toTownId,
+      requiredSeparation,bestAxisSeparation:Math.round(bestAxisSeparation*100)/100};
+  }
+  return null;
+}
+
 export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
   const sample=cachedWorldSampler(createWorldSampler(intent.plan.recipe));
   const boundary=auditWorldIslandBoundary(intent.plan.prompt,intent.plan.recipe,sample);
@@ -344,6 +367,8 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
     +landmass.largestDryComponentSamples+'/'+landmass.requiredDrySamples+':'+landmass.minSpan+'/'+landmass.requiredSpan);
   const towns=intent.plan.towns.map(town=>({id:town.id,candidates:findWorldSiteCandidates(intent.plan.recipe,town)}));
   for(const town of towns) if(!town.candidates.length) throw new Error('world_no_site_candidates:'+town.id);
+  const packing=auditWorldCandidatePacking(intent.plan.towns,intent.plan.roads,towns);
+  if(packing) throw new Error(`world_candidate_terraces_overlap:${packing.roadId}:${packing.bestAxisSeparation}/${packing.requiredSeparation}`);
   const connections:WorldSitingEvidence['connections']=[],landmarkLayouts:WorldSitingEvidence['landmarkLayouts']=[];
   const connectedTownIds=new Set(intent.plan.roads.flatMap(road=>[road.fromTownId,road.toTownId]));
   for(const town of intent.plan.towns) if(!connectedTownIds.has(town.id)) {
@@ -845,7 +870,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
       })():undefined;
       messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
         ...(siteHints?{siteHints}:{}),...(terrainHint?{terrainHint}:{}),
-        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays and assign at most one biome constraint to each broad region; use bounded biome patches and landforms for interior forest and mountains. Site hints report sampled centers, ordinary-building capacity before public buildings, and whether a safe waterfront street actually reaches the shore; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres; islandBoundary reports sampled world-edge heights, while islandLandmass reports the largest connected dry component against the combined town-core area and largest town diameter. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. Do not carve an abrupt circular harbor basin or a continuous coastal trench with a lower brush; let the ocean constraint form a broad shore and use gentle local cuts only. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. For an island, keep the sampled world edge wet without blanket ocean constraints drowning the interior; enlarge a broad low central landform with overlapping low interior landforms until the connected dry interior exceeds the combined 2*radius by 2*radius town cores and the largest town diameter. A compact strongly ocean-constrained island may lower global heightScale to about 0.02..0.04 and author mountain relief locally. Do not remove the sea or shrink the named towns to make room. Preserve the stated population, housing districts and public functions. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
+        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays and assign at most one biome constraint to each broad region; use bounded biome patches and landforms for interior forest and mountains. Site hints report sampled centers, ordinary-building capacity before public buildings, and whether a safe waterfront street actually reaches the shore; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres; islandBoundary reports sampled world-edge heights, while islandLandmass reports the largest connected dry component against the combined town-core area and largest town diameter. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. Do not carve an abrupt circular harbor basin or a continuous coastal trench with a lower brush; let the ocean constraint form a broad shore and use gentle local cuts only. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. world_candidate_terraces_overlap means every sampled pair for that road overlaps the square town cores; the error reports best axis separation / required sum of radii. Move or widen connected buildable terraces until at least one candidate pair meets that separation. For an island, keep the sampled world edge wet without blanket ocean constraints drowning the interior; enlarge a broad low central landform with overlapping low interior landforms until the connected dry interior exceeds the combined 2*radius by 2*radius town cores and the largest town diameter. A compact strongly ocean-constrained island may lower global heightScale to about 0.02..0.04 and author mountain relief locally. Do not remove the sea or shrink the named towns to make room. Preserve the stated population, housing districts and public functions. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
     }
   }
   if(intent&&evidence) {

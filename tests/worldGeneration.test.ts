@@ -3,7 +3,7 @@ import { Euler, Quaternion } from 'three';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import {
-  assembleWorldModel, auditWorldIslandBoundary, auditWorldIslandLandmass, auditWorldSettlementAcceptance, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
+  assembleWorldModel, auditWorldCandidatePacking, auditWorldIslandBoundary, auditWorldIslandLandmass, auditWorldSettlementAcceptance, auditWorldSettlementCoverage, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
   materializeWorldIntent, parseWorldIntentDraft, validateWorldGenerationRequest, worldAssetStrategy,
   WORLD_GENERATION_PROMPT, type WorldAssetRequest, type WorldGenerationRequest
 } from '../src/server/worldGeneration';
@@ -18,6 +18,21 @@ vi.mock('../src/server/modelApi', async importOriginal => ({
 vi.mock('../src/server/generationTrace', () => ({ recordGenerationTrace: mocks.recordGenerationTrace }));
 
 const request: WorldGenerationRequest = { prompt: 'A compact grassland town', seed: 2309, size: 1600, generateAssets: false };
+
+it('accepts two bounded intent repairs but rejects larger retry counts',()=>{
+  expect(validateWorldGenerationRequest({...request,repairAttempts:2}).repairAttempts).toBe(2);
+  expect(()=>validateWorldGenerationRequest({...request,repairAttempts:3})).toThrow('invalid_world_generation_request');
+});
+
+it('reports when every candidate pair overlaps connected town cores',()=>{
+  const towns=[{id:'bay',radius:110},{id:'farm',radius:58}],roads=[{id:'farm-road',fromTownId:'bay',toTownId:'farm'}];
+  const candidates=[{id:'bay',candidates:[{center:[2.5,48.7] as [number,number]}]},
+    {id:'farm',candidates:[{center:[-98.5,-2.5] as [number,number]},{center:[-66.5,-98.5] as [number,number]}]}];
+  expect(auditWorldCandidatePacking(towns,roads,candidates)).toEqual({roadId:'farm-road',fromTownId:'bay',toTownId:'farm',
+    requiredSeparation:168,bestAxisSeparation:147.2});
+  candidates[1].candidates.push({center:[-170,48.7]});
+  expect(auditWorldCandidatePacking(towns,roads,candidates)).toBeNull();
+});
 
 function validDraft() {
   const recipe = {
