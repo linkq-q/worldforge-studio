@@ -209,7 +209,7 @@ describe('map code planner', () => {
     expect(main).toContain('Use api.sampleProbabilityField for vegetation');
     expect(main).toContain('api.foundation');
     expect(main).toContain('api.bridge');
-    expect(main).toContain('exactly these 19 keys');
+    expect(main).toContain('exactly these 20 keys');
     expect(main).toContain('Declare 2..5 useful asset families');
     expect(main).toContain('## Architectural composition');
     expect(main).toContain('## Settlement formation');
@@ -224,9 +224,9 @@ describe('map code planner', () => {
     expect(main).toContain('Ordinary repeated homes, apartment blocks and small shops should be complete reusable building assets');
     expect(main).toContain('Signs and other exterior attachments may be placed separately');
     expect(main).toContain('For large focal architecture with repeated bays');
-    expect(main).toContain('contours, shoreline, access paths and neighboring buildings');
-    expect(main).toContain('rivers, lakes, mountains, valleys, cliffs and other terrain or water features');
-    expect(main).toContain('Compare buildable ground, access and connections around or across these features');
+    expect(main).toContain('Let contours, shoreline and access shape connected neighborhoods');
+    expect(main).toContain('Sample terrain and water before choosing district sites');
+    expect(main).toContain('sample safe ground and provide plausible crossings');
     expect(main).not.toContain('Do not split routine settlement buildings');
     expect(main).not.toContain('Air conditioners, signs');
     expect(main).toContain('Changing a grid position by a small random offset');
