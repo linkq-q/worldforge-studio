@@ -151,10 +151,17 @@ describe('world generation compiler', () => {
       .toThrow('world_unknown_intent_field:extra');
   });
 
-  it('rejects duplicate intent fields inside and beside plan', () => {
+  it('ignores redundant sibling intent fields but rejects conflicting duplicates', () => {
     const source = rawSoloIntent();
-    expect(() => parseWorldIntentDraft({ ...source, ecology: source.plan.ecology }, request))
+    for (const field of ['ecology', 'towns', 'roads'] as const) {
+      expect(parseWorldIntentDraft({ ...source, [field]: structuredClone(source.plan[field]) }, request).plan[field])
+        .toEqual(source.plan[field]);
+    }
+    expect(parseWorldIntentDraft({ ...source, ecology: [] }, request).plan.ecology).toEqual(source.plan.ecology);
+    expect(() => parseWorldIntentDraft({ ...source, ecology: [{ id: 'different-ecology' }] }, request))
       .toThrow('world_unknown_intent_field:ecology');
+    expect(() => parseWorldIntentDraft({ ...source, towns: [{ ...source.plan.towns[0], id: 'different-town' }] }, request))
+      .toThrow('world_unknown_intent_field:towns');
   });
 
   it('accepts one surplus closing brace only when the remaining JSON is complete', async () => {
