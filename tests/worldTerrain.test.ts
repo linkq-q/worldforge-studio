@@ -73,6 +73,21 @@ describe('continuous biome world experiment', () => {
     }
   });
 
+  it('skips unused normal sampling for render-only tiles', () => {
+    const recipe = parseWorldPrompt('中央是草原', 17, 500);
+    const base = createWorldSampler(recipe);
+    let samples = 0;
+    const tile = sampleWorldTile(recipe, { x: -50, z: -50, size: 100 }, 11, (x, z) => {
+      samples += 1;
+      return base(x, z);
+    }, false);
+
+    expect(samples).toBe(11 * 11);
+    expect(tile.normals).toHaveLength(0);
+    expect(tile.heights).toHaveLength(11 * 11);
+    expect(tile.weights).toHaveLength(11 * 11 * WORLD_BIOMES.length);
+  });
+
   it('spends a tight LOD budget near the requested viewpoint rather than traversal order', () => {
     for (const [x, z] of [[23500,23500], [-23500,23500], [23500,-23500], [-23500,-23500]]) {
       const tiles = selectWorldTiles(64000, x, z, 600, 70);

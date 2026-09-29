@@ -92,6 +92,11 @@ export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
     pendingTiles: number;
     unloadedTiles: number;
     finestTerrainSpacing: number;
+    lastTerrainBuildMs: number;
+    maxTerrainBuildMs: number;
+    lastTerrainSampleMs: number;
+    lastTerrainRenderMs: number;
+    lastTerrainCollisionMs: number;
   };
 }
 
@@ -656,7 +661,9 @@ function applyTerrainGrassTint(
     const x = positions.getX(index);
     const y = positions.getY(index);
     const z = positions.getZ(index);
-    const base = terrainVertexColor(map, x, y, z, palette, geometry.userData.oceanCoast ? y : undefined, false, surfaceWeight);
+    const base = terrainVertexColor(
+      map, x, y, z, palette, geometry.userData.oceanCoast ? y : undefined, Boolean(surfaceWeight), surfaceWeight
+    );
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
@@ -1731,7 +1738,7 @@ function buildTerrainGeometry(
       vertices[index + 2],
       undefined,
       coast ? vertices[index + 1] : undefined,
-      false,
+      Boolean(surfaceWeight),
       surfaceWeight
     ));
   }
@@ -2771,7 +2778,7 @@ function createSurfaceTexture(
       ? activeInteriorSurfaceFinish(map.interiorArtDirection, surface as RoomSurface)
       : undefined;
     if (finish) drawSurfaceFinish(ctx, finish, surfaceDimensions(map, surface as RoomSurface), canvas.width, canvas.height);
-    drawSubtleGrid(ctx, canvas.width, canvas.height);
+    if (surface !== 'terrain' || !surfaceWeight) drawSubtleGrid(ctx, canvas.width, canvas.height);
     for (const stroke of map.paintStrokes) {
       if (stroke.surface !== surface && !(surface === 'terrain' && stroke.surface === 'floor')) continue;
       drawStroke(ctx, stroke, canvas.width, canvas.height);

@@ -48,7 +48,7 @@ describe('main editor streamed world renderer', () => {
       expect(stats.terrainTiles).toBeLessThanOrEqual(128);
       expect(stats.contentChunks).toBeLessThanOrEqual(25);
       expect(stats.buildings).toBeGreaterThan(0);
-      expect(stats.texturePixels).toBeLessThanOrEqual(128 * 256 * 256 * 4);
+      expect(stats.texturePixels).toBeLessThanOrEqual(128 * 128 * 128 * 4 + 25 * 32 * 32 * 4);
       expect(stats.collisionMeshes).toBeGreaterThan(0);
       expect(stats.finestTerrainSpacing).toBeGreaterThan(0);
       expect(rendered.objectGroups.has('manual-root')).toBe(true);

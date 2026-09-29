@@ -33,7 +33,10 @@ import {
   type CollisionMeshKind
 } from './mapMeshCollision';
 
-const TERRAIN_TILE_BUDGET = 128;
+const MAX_TERRAIN_TILE_BUDGET = 128;
+const UNIFORM_TERRAIN_TILE_BUDGET = 64;
+const FINE_TERRAIN_RESOLUTION = 65;
+const TARGET_FINE_TERRAIN_SPACING = 1.5;
 const CONTENT_DISTANCE_LIMIT = 3_000;
 const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
@@ -147,6 +150,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   if (!map.world) throw new Error('world_renderer_requires_world');
   const world = map.world;
   const bundle = world.bundle;
+  const terrainTileBudget = bundle.plan.recipe.size / 8 / (FINE_TERRAIN_RESOLUTION - 1) <= TARGET_FINE_TERRAIN_SPACING
+    ? UNIFORM_TERRAIN_TILE_BUDGET
+    : MAX_TERRAIN_TILE_BUDGET;
   const terrainContext = worldMapTerrainContext(world);
   const sample = terrainContext.sample;
   const root = new THREE.Group();
@@ -176,6 +182,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   let disposed = false;
   let pendingTiles = 0;
   let unloadedTiles = 0;
+  let lastTerrainBuildMs = 0;
+  let maxTerrainBuildMs = 0;
+  let lastTerrainSampleMs = 0;
+  let lastTerrainRenderMs = 0;
+  let lastTerrainCollisionMs = 0;
   let desiredRequest: ReconcileRequest | null = null;
   let appliedRequest: ReconcileRequest | null = null;
   let failedRequest: { key: string; at: number } | null = null;
@@ -218,7 +229,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     revision: number,
     limits?: { terrain: number; content: number }
   ): Promise<boolean> {
-    const tiles = selectWorldTiles(bundle.plan.recipe.size, focusX, focusZ, distance, TERRAIN_TILE_BUDGET);
+    const tiles = selectWorldTiles(bundle.plan.recipe.size, focusX, focusZ, distance, terrainTileBudget);
     const contentChunks = selectEcologyChunks(
       bundle.plan.recipe.size,
       focusX,
@@ -319,12 +330,14 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     signature: string,
     includeOcean: boolean
   ): Promise<TileEntry> {
+    const buildStartedAt = performance.now();
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
-    const resolution = tile.size <= 256 ? 65 : tile.size <= 2_048 ? 33 : 17;
-    const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample);
+    const resolution = tile.size <= 256 ? FINE_TERRAIN_RESOLUTION : tile.size <= 2_048 ? 33 : 17;
+    const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample, false);
+    const sampledAt = performance.now();
     const tileMap = makeTerrainTileMap(tile, sampled.heights, includeOcean);
-    const textureSize = tile.size <= 256 ? 256 : tile.size <= 2_048 ? 128 : 64;
+    const textureSize = tile.size <= 256 ? 128 : tile.size <= 2_048 ? 64 : 32;
     const rendered = await buildNormalizedEditableMapGroupCore(tileMap, {
       ...options,
       editorHelpers: false,
@@ -335,11 +348,18 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       terrainOnly: true,
       terrainSurfaceWeight: (x, z, tags) => tileBiomeSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
     });
+    const renderedAt = performance.now();
     applyStyle(rendered, tileMap, tile);
     const terrainMount = new THREE.Group();
     terrainMount.name = `world-tile:${tileKey(tile)}`;
     terrainMount.position.set(centerX, 0, centerZ);
     const collision = tile.size <= 256 ? buildGlobalCollision(tileMap, centerX, centerZ, new Set(['terrain'])) : null;
+    const collisionAt = performance.now();
+    lastTerrainSampleMs = sampledAt - buildStartedAt;
+    lastTerrainRenderMs = renderedAt - sampledAt;
+    lastTerrainCollisionMs = collisionAt - renderedAt;
+    lastTerrainBuildMs = collisionAt - buildStartedAt;
+    maxTerrainBuildMs = Math.max(maxTerrainBuildMs, lastTerrainBuildMs);
     return {
       tile,
       signature,
@@ -357,7 +377,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const tile: WorldTile = { x: chunk.x * ECOLOGY_CHUNK_SIZE, z: chunk.z * ECOLOGY_CHUNK_SIZE, size: ECOLOGY_CHUNK_SIZE };
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
-    const sampled = sampleWorldTile(bundle.plan.recipe, tile, 65, sample);
+    const sampled = sampleWorldTile(bundle.plan.recipe, tile, 65, sample, false);
     const contentMap = makeContentMap(tile, sampled.heights, chunk);
     const rendered = await buildNormalizedEditableMapGroupCore(contentMap, {
       ...options,
@@ -792,7 +812,12 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       unloadedTiles,
       finestTerrainSpacing: entries.size
         ? Math.min(...[...entries.values()].map(entry => entry.tile.size / Math.max(1, entry.map.terrain.resolutionX - 1)))
-        : 0
+        : 0,
+      lastTerrainBuildMs,
+      maxTerrainBuildMs,
+      lastTerrainSampleMs,
+      lastTerrainRenderMs,
+      lastTerrainCollisionMs
     };
     return base;
   };

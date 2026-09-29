@@ -562,13 +562,19 @@ export function dominantBiome(sample: WorldSample): WorldBiome {
   return WORLD_BIOMES.reduce((a, b) => sample.weights[a] >= sample.weights[b] ? a : b);
 }
 
-export function sampleWorldTile(recipe: WorldRecipe, tile: WorldTile, resolution = 33, sample = createWorldSampler(recipe)): WorldTileData {
+export function sampleWorldTile(
+  recipe: WorldRecipe,
+  tile: WorldTile,
+  resolution = 33,
+  sample = createWorldSampler(recipe),
+  includeNormals = true
+): WorldTileData {
   if (!Number.isInteger(resolution) || resolution < 3 || resolution > 129 || !Number.isFinite(tile.x)
     || !Number.isFinite(tile.z) || !Number.isFinite(tile.size) || tile.size <= 0 || tile.size > recipe.size) {
     throw new Error('invalid_world_tile');
   }
   const heights = new Float32Array(resolution * resolution);
-  const normals = new Float32Array(resolution * resolution * 3);
+  const normals = new Float32Array(includeNormals ? resolution * resolution * 3 : 0);
   const weights = new Float32Array(resolution * resolution * WORLD_BIOMES.length);
   const waterLevels = new Float32Array(resolution * resolution).fill(NaN);
   // A fixed world-space stencil gives identical normals at every LOD's shared vertices.
@@ -580,10 +586,12 @@ export function sampleWorldTile(recipe: WorldRecipe, tile: WorldTile, resolution
     const point = sample(x, z);
     heights[i] = point.height;
     if (point.waterLevel !== null) waterLevels[i] = point.waterLevel;
-    const dx = sample(x + epsilon, z).height - sample(x - epsilon, z).height;
-    const dz = sample(x, z + epsilon).height - sample(x, z - epsilon).height;
-    const length = Math.hypot(dx, epsilon * 2, dz);
-    normals.set([-dx / length, epsilon * 2 / length, -dz / length], i * 3);
+    if (includeNormals) {
+      const dx = sample(x + epsilon, z).height - sample(x - epsilon, z).height;
+      const dz = sample(x, z + epsilon).height - sample(x, z - epsilon).height;
+      const length = Math.hypot(dx, epsilon * 2, dz);
+      normals.set([-dx / length, epsilon * 2 / length, -dz / length], i * 3);
+    }
     for (let j = 0; j < WORLD_BIOMES.length; j++) weights[i * WORLD_BIOMES.length + j] = point.weights[WORLD_BIOMES[j]];
   }
   return { heights, normals, weights, waterLevels, resolution };

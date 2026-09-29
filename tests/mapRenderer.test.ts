@@ -1087,6 +1087,20 @@ describe('structured map water rendering', () => {
 });
 
 describe('terrain-only refresh', () => {
+  it('uses streamed biome weights for snow in terrain vertex colors', async () => {
+    const map = createEmptyMap('streamed snow', 'map-streamed-snow');
+    const rendered = await buildEditableMapGroup(map, {
+      terrainSurfaceWeight: (_x, _z, tags) => tags.includes('snow') ? 1 : 0
+    });
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const colors = terrain.geometry.getAttribute('color');
+
+    expect(colors.getX(0)).toBeGreaterThan(0.8);
+    expect(colors.getY(0)).toBeGreaterThan(0.8);
+    expect(colors.getZ(0)).toBeGreaterThan(0.8);
+    rendered.dispose();
+  });
+
   it('updates water column depth in place after brushing and releases its texture on dispose', async () => {
     const map = createEmptyMap();
     map.waterBodies = [{id:'lake',name:'lake',type:'lake',points:[[-8,-8],[8,-8],[8,8],[-8,8]],level:2,width:1,depth:2,shorelineSmoothness:0}];
