@@ -142,10 +142,11 @@ export function findWorldSiteCandidates(recipe: WorldRecipe, intent: WorldSiteIn
   return spaced.map((candidate, index) => ({ ...candidate, id: `${intent.id}-site-${index + 1}` }));
 }
 
-function routeSafe(sample: WorldSampler, points: Point[], width: number): { maxSlope: number } | null {
+function routeSafe(sample: WorldSampler, points: Point[], width: number, sampleSpacing: number): { maxSlope: number } | null {
   let maxSlope = 0;
   for (let segment = 1; segment < points.length; segment++) {
-    const a = points[segment - 1], b = points[segment], length = distance(a, b), steps = Math.max(1, Math.ceil(length / 8));
+    const a = points[segment - 1], b = points[segment], length = distance(a, b);
+    const steps = Math.max(1, Math.ceil(length / sampleSpacing));
     const nx = -(b[1] - a[1]) / length, nz = (b[0] - a[0]) / length;
     let previous: number | undefined;
     for (let i = 0; i <= steps; i++) {
@@ -161,8 +162,8 @@ function routeSafe(sample: WorldSampler, points: Point[], width: number): { maxS
   return { maxSlope };
 }
 
-function routeGradeable(sample: WorldSampler, a: Point, b: Point, width: number): { maxSlope: number } | null {
-  const length = distance(a, b), steps = Math.max(1, Math.ceil(length / 8));
+function routeGradeable(sample: WorldSampler, a: Point, b: Point, width: number, sampleSpacing: number): { maxSlope: number } | null {
+  const length = distance(a, b), steps = Math.max(1, Math.ceil(length / sampleSpacing));
   if (!length) return null;
   const nx = -(b[1] - a[1]) / length, nz = (b[0] - a[0]) / length;
   let previous: number | undefined, maxSlope = 0;
@@ -179,7 +180,7 @@ function routeGradeable(sample: WorldSampler, a: Point, b: Point, width: number)
   return { maxSlope };
 }
 
-function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, width: number): WorldRouteResult | null {
+function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, width: number, sampleSpacing: number): WorldRouteResult | null {
   const directLength = distance(start, end);
   if (directLength > 4096) return null;
   const alongSteps = Math.max(6, Math.min(28, Math.ceil(directLength / Math.max(12, width * 2.4))));
@@ -200,7 +201,7 @@ function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, w
   const endProbes = Array.from({ length: 32 }, (_, index): Point => {
     const angle = index * Math.PI / 16;
     return [end[0] + Math.cos(angle) * step * 3, end[1] + Math.sin(angle) * step * 3];
-  }).map(point => ({ point, safe: routeGradeable(sample, end, point, width) }))
+  }).map(point => ({ point, safe: routeGradeable(sample, end, point, width, sampleSpacing) }))
     .filter((item): item is { point: Point; safe: { maxSlope: number } } => !!item.safe);
   const cost = nodes.map(() => Number.POSITIVE_INFINITY), previous = nodes.map(() => -1);
   const open = new Set([startIndex]), edgeCache = new Map<string, { maxSlope: number } | null>();
@@ -222,8 +223,8 @@ function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, w
       const cache = gradeable ? terminalEdgeCache : edgeCache;
       let safe = cache.get(key);
       if (safe === undefined) {
-        safe = gradeable ? routeGradeable(sample, nodes[current], nodes[next], width)
-          : routeSafe(sample, [nodes[current], nodes[next]], width);
+        safe = gradeable ? routeGradeable(sample, nodes[current], nodes[next], width, sampleSpacing)
+          : routeSafe(sample, [nodes[current], nodes[next]], width, sampleSpacing);
         cache.set(key, safe);
       }
       if (!safe) return;
@@ -239,7 +240,7 @@ function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, w
     }
     if (distance(nodes[current], end) <= step * 3) visit(endIndex, true);
     if (distance(nodes[current], end) <= step * 6) for (const probe of endProbes) {
-      const approach = routeSafe(sample, [nodes[current], probe.point], width);
+      const approach = routeSafe(sample, [nodes[current], probe.point], width, sampleSpacing);
       if (!approach) continue;
       const nextCost = cost[current] + distance(nodes[current], probe.point) * (1 + approach.maxSlope)
         + distance(probe.point, end) * (1 + probe.safe.maxSlope);
@@ -260,8 +261,8 @@ function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, w
     let next = from + 1;
     for (let candidate = path.length - 1; candidate > from + 1; candidate--) {
       const terminal = (from === 0 || candidate === path.length - 1) && distance(path[from], path[candidate]) <= step * 3;
-      if ((terminal ? routeGradeable(sample, path[from], path[candidate], width)
-        : routeSafe(sample, [path[from], path[candidate]], width))) { next = candidate; break; }
+      if ((terminal ? routeGradeable(sample, path[from], path[candidate], width, sampleSpacing)
+        : routeSafe(sample, [path[from], path[candidate]], width, sampleSpacing))) { next = candidate; break; }
     }
     simplified.push(path[next]); from = next;
   }
@@ -269,8 +270,8 @@ function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, w
   for (let index = 1; index < simplified.length; index++) {
     const terminal = (index === 1 || index === simplified.length - 1)
       && distance(simplified[index - 1], simplified[index]) <= step * 3;
-    const safe = terminal ? routeGradeable(sample, simplified[index - 1], simplified[index], width)
-      : routeSafe(sample, [simplified[index - 1], simplified[index]], width);
+    const safe = terminal ? routeGradeable(sample, simplified[index - 1], simplified[index], width, sampleSpacing)
+      : routeSafe(sample, [simplified[index - 1], simplified[index]], width, sampleSpacing);
     if (!safe) return null;
     maxSlope = Math.max(maxSlope, safe.maxSlope);
   }
@@ -278,7 +279,7 @@ function findTerrainAwareRoute(sample: WorldSampler, start: Point, end: Point, w
 }
 
 /** Small candidate set matching the settlement kernel's existing direct/elbow/offset routing strategy. */
-export function findWorldRoute(sample: WorldSampler, start: Point, end: Point, width: number): WorldRouteResult | null {
+export function findWorldRoute(sample: WorldSampler, start: Point, end: Point, width: number, sampleSpacing = 8): WorldRouteResult | null {
   const middle = mix(start, end, 0.5), dx = end[0] - start[0], dz = end[1] - start[1], length = Math.hypot(dx, dz);
   if (!length) return null;
   const normal: Point = [-dz / length, dx / length], offsets = [0, 0.12, -0.12, 0.24, -0.24];
@@ -286,10 +287,10 @@ export function findWorldRoute(sample: WorldSampler, start: Point, end: Point, w
     ...offsets.map(offset => [start, [middle[0] + normal[0] * length * offset, middle[1] + normal[1] * length * offset] as Point, end])];
   const shortcut = routes.map(points => {
     const clean=points.filter((p, i) => !i || distance(p, points[i - 1]) > 1e-6);
-    return {points:clean,safe:routeSafe(sample,clean,width)};
+    return {points:clean,safe:routeSafe(sample,clean,width,sampleSpacing)};
   })
     .filter((item): item is { points: Point[]; safe: { maxSlope: number } } => !!item.safe)
     .map(item => ({ points: item.points, length: pathLength(item.points), maxSlope: item.safe.maxSlope }))
     .sort((a, b) => a.length - b.length)[0] ?? null;
-  return shortcut ?? findTerrainAwareRoute(sample, start, end, width);
+  return shortcut ?? findTerrainAwareRoute(sample, start, end, width, sampleSpacing);
 }
