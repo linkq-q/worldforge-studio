@@ -36,7 +36,10 @@ export interface WorldSettlementAudit {
   maxRoadSlope: number;
   maxBuildingSlope: number;
 }
-export type WorldLandmarkRequirement = Omit<TownBuilding, 'x' | 'z' | 'rotation'>;
+export type WorldLandmarkSiting = 'central' | 'waterfront' | 'gateway' | 'high-ground';
+export type WorldLandmarkRequirement = Omit<TownBuilding, 'x' | 'z' | 'rotation'> & {
+  siting?: WorldLandmarkSiting;
+};
 
 type Point = [number, number];
 type Edge = { a: Point; b: Point; kind: UrbanRoad['kind']; source: string };
@@ -219,9 +222,12 @@ export function createWorldSettlementLandmarkLayout(
   const landmarks:TownBuilding[]=[];
   let patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks});
   for(const requirement of requirements) {
+    const {siting,...building}=requirement;
     let next:TownPatch|undefined,resolved:TownBuilding|undefined;
     const failures=new Set<string>();
-    for(const candidate of boundedLandmarkSites(frontageLandmarkSites(requirement,patch.streets,town,options.kind))) {
+    const sites=frontageLandmarkSites(building,patch.streets,town,options.kind,sample,siting);
+    if(!sites.length&&siting==='waterfront') throw new Error(`world_settlement_no_waterfront_site:${requirement.id}`);
+    for(const candidate of boundedLandmarkSites(sites)) {
       try {
         next=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[...landmarks,candidate]});
         resolved=candidate;break;
@@ -233,7 +239,10 @@ export function createWorldSettlementLandmarkLayout(
   return {landmarks,patch};
 }
 
-function frontageLandmarkSites(requirement:WorldLandmarkRequirement,streets:MapGuide[],town:TownIntent,kind:WorldSettlementKind):TownBuilding[] {
+function frontageLandmarkSites(
+  requirement:Omit<WorldLandmarkRequirement,'siting'>,streets:MapGuide[],town:TownIntent,kind:WorldSettlementKind,
+  sample:WorldSettlementSampler,siting?:WorldLandmarkSiting
+):TownBuilding[] {
   const points:TownBuilding[]=[],roadWidth=kind==='city'?4.2:3;
   const blockSize=Math.max(kind==='city'?34:52,Math.min(kind==='city'?76:110,town.radius*(kind==='city'?.22:.32)));
   for(const street of streets) for(let segment=1;segment<street.points.length;segment++) {
@@ -248,7 +257,21 @@ function frontageLandmarkSites(requirement:WorldLandmarkRequirement,streets:MapG
     }
   }
   const unique=new Map(points.map(item=>[`${item.x.toFixed(6)},${item.z.toFixed(6)},${(item.rotation??0).toFixed(6)}`,item]));
-  return [...unique.values()].sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z)||a.x-b.x||a.z-b.z);
+  const candidates=[...unique.values()],tie=(a:TownBuilding,b:TownBuilding)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z)||a.x-b.x||a.z-b.z;
+  if(siting==='waterfront') {
+    const reach=Math.min(180,town.radius*.58);
+    return candidates.map(candidate=>({candidate,water:nearestWater(sample,town,[candidate.x,candidate.z],reach)}))
+      .filter((item):item is {candidate:TownBuilding;water:{direction:Point;distance:number}}=>Boolean(item.water))
+      .sort((a,b)=>a.water.distance-b.water.distance||tie(a.candidate,b.candidate)).map(item=>item.candidate);
+  }
+  if(siting==='gateway') {
+    if(!town.ports.length) return [];
+    const gatewayDistance=(candidate:TownBuilding)=>Math.min(...town.ports.map(port=>distance([candidate.x,candidate.z],port.position)));
+    return candidates.sort((a,b)=>gatewayDistance(a)-gatewayDistance(b)||tie(a,b));
+  }
+  if(siting==='high-ground') return candidates.sort((a,b)=>
+    sampleAt(sample,town,[b.x,b.z]).height-sampleAt(sample,town,[a.x,a.z]).height||tie(a,b));
+  return candidates.sort(tie);
 }
 
 /** Keeps authored landmark program/rotation while resolving an unreachable preferred position nearby. */

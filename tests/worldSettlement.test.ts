@@ -319,6 +319,55 @@ describe('world settlement growth', () => {
     expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
   });
 
+  it('distributes public functions between the center, waterfront, gateway and high ground', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.radius = 140;
+    town.ports[0].position = [town.radius, 0];
+    plan.roads[0].points = [[town.center[0] + town.radius, 0], [1800, 0]];
+    const sample: WorldSettlementSampler = (x, z) => {
+      const original = base(x, z), lx = x - town.center[0], lz = z - town.center[1];
+      const water = lx < -100;
+      return {
+        ...original,
+        height: water ? -3 : 12 + lz * 0.025,
+        waterLevel: water ? 0 : null,
+        waterBodyId: water ? 'western-bay' : null
+      };
+    };
+    const requirements = [
+      { id: 'town-hall', use: 'town hall', width: 10, depth: 9, height: 10, assetKey: 'hall', siting: 'central' },
+      { id: 'fish-market', use: 'fish market', width: 10, depth: 9, height: 7, assetKey: 'market', siting: 'waterfront' },
+      { id: 'gate-inn', use: 'gate inn', width: 10, depth: 9, height: 8, assetKey: 'inn', siting: 'gateway' },
+      { id: 'watchtower', use: 'watchtower', width: 9, depth: 9, height: 16, assetKey: 'tower', siting: 'high-ground' }
+    ] as const;
+    const result = createWorldSettlementLandmarkLayout(plan, town.id, sample, {
+      kind: 'city', pattern: 'organic', seed: 71, density: 0.78, waterfrontBias: 1, waterSetback: 6
+    }, requirements);
+    const byId = new Map(result.landmarks.map(landmark => [landmark.id, landmark]));
+    const central = byId.get('town-hall')!, waterfront = byId.get('fish-market')!;
+    const gateway = byId.get('gate-inn')!, highGround = byId.get('watchtower')!;
+    expect(Math.hypot(central.x, central.z)).toBeLessThan(Math.hypot(gateway.x, gateway.z));
+    expect(waterfront.x + 100).toBeLessThan(central.x + 100);
+    expect(Math.hypot(gateway.x - town.ports[0].position[0], gateway.z - town.ports[0].position[1]))
+      .toBeLessThan(Math.hypot(central.x - town.ports[0].position[0], central.z - town.ports[0].position[1]));
+    expect(sample(town.center[0] + highGround.x, town.center[1] + highGround.z).height)
+      .toBeGreaterThan(sample(town.center[0] + central.x, town.center[1] + central.z).height);
+    expect(new Set(result.landmarks.map(landmark => `${landmark.x},${landmark.z}`)).size).toBe(4);
+    expect(result.landmarks.every(landmark => !('siting' in landmark))).toBe(true);
+    expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
+  }, 10_000);
+
+  it('does not invent a waterfront site when the sampled town has no water', () => {
+    const plan = fixture();
+    const requirements = [{
+      id: 'dry-quay', use: 'quay market', width: 10, depth: 9, height: 7,
+      assetKey: 'market', siting: 'waterfront'
+    }] as const;
+    expect(() => createWorldSettlementLandmarkLayout(plan, 'town', sampler(plan), {
+      kind: 'city', pattern: 'organic', seed: 71, density: 0.78
+    }, requirements)).toThrow('world_settlement_no_waterfront_site:dry-quay');
+  });
+
   it('bounds public-footprint retries and still fails explicitly when no site can fit', () => {
     const plan = fixture(), sample = sampler(plan);
     expect(() => createWorldSettlementLandmarkLayout(plan, 'town', sample, {
