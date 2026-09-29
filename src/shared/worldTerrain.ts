@@ -247,6 +247,17 @@ export function worldRegionWeight(region: WorldTerrainRegion, x: number, z: numb
   return area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
 }
 
+/** Distance to authored fresh water. The implicit height<0 ocean is salt water and is deliberately excluded. */
+export function worldFreshWaterDistance(recipe: Pick<WorldRecipe, 'waterBodies'>, x: number, z: number): number {
+  if (![x, z].every(Number.isFinite)) throw new Error('invalid_world_water_query');
+  let distance = Infinity;
+  for (const water of recipe.waterBodies ?? []) {
+    const area = regionSample(water.region, x, z);
+    distance = Math.min(distance, Math.max(0, -area.edge));
+  }
+  return distance;
+}
+
 function interpolatePath(values: number[], t: number): number {
   if (values.length === 1) return values[0];
   const scaled = clamp(t) * (values.length - 1), index = Math.min(values.length - 2, Math.floor(scaled));
@@ -323,11 +334,12 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
     const ridge = Math.cos(ridgeNoise * Math.PI / 2) ** 4;
     const mass = smooth(-0.45, 0.5, fbm(wx / 6200, wz / 6200, seed + 919, 3));
     const mountain = uplift * (0.16 + mass * 0.84);
-    const dry = smooth(0.53, 0.82, temperature) * (1 - smooth(0.14, 0.44, moisture));
+    const climateDry = smooth(0.53, 0.82, temperature) * (1 - smooth(0.14, 0.44, moisture));
     const rolling = fbm(wx / 1200, wz / 1200, seed + 311, 4) * 115;
     const dunes = (0.5 + 0.5 * Math.sin(wx / 85 + wz / 160 + noise(wx / 1100, wz / 1100, seed + 505) * 4)) ** 1.5 * 28;
     const base = continentalness < 0 ? continentalness * 1050 : Math.pow(continentalness, 1.4) * 400;
-    let height = (base + land * (mountain * ridge * 3100 + rolling * (1 - dry * 0.8) + dry * dunes)) * (recipe.heightScale ?? 1);
+    const macroHeight = base + land * (mountain * ridge * 3100 + rolling * (1 - climateDry * 0.8));
+    let height = macroHeight * (recipe.heightScale ?? 1) + land * climateDry * dunes;
     for (const form of recipe.landforms ?? []) {
       const d2 = ((x - form.center[0]) / form.radius[0]) ** 2 + ((z - form.center[1]) / form.radius[1]) ** 2;
       // Compact support with zero first and second derivatives at the boundary.
@@ -344,9 +356,10 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
       const target = brush.mode === 'flatten' ? brush.height : interpolatePath(brush.heights, area.t);
       height = mix(height, target, influence * (brush.strength ?? 1));
     }
-    let waterLevel: number | null = null, waterBodyId: string | null = null;
+    let waterLevel: number | null = null, waterBodyId: string | null = null, freshWaterDistance = Infinity;
     for (const water of recipe.waterBodies ?? []) {
       const area = regionSample(water.region, x, z);
+      freshWaterDistance = Math.min(freshWaterDistance, Math.max(0, -area.edge));
       if (!area.inside) continue;
       const level = interpolatePath(water.levels, area.t);
       const reach = water.region.kind === 'circle' ? water.region.radius : water.region.width / 2;
@@ -361,7 +374,10 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
       waterLevel = 0;
       waterBodyId = null;
     }
+    const freshWaterInfluence = 1 - smooth(20, 160, freshWaterDistance);
+    moisture = clamp(moisture + (1 - moisture) * freshWaterInfluence * 0.75);
     const localTemp = clamp(temperature - Math.max(0, height - 300) * 0.00012);
+    const dry = smooth(0.53, 0.82, temperature) * (1 - smooth(0.14, 0.44, moisture));
     let ocean = 1 - smooth(-12, 8, height);
     let snow = smooth(0.28, 0.1, localTemp) * (1 - ocean);
     let rock = smooth(0.24, 0.65, mountain) * (1 - ocean) * (1 - snow);

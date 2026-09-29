@@ -207,4 +207,34 @@ describe('localized ecology rules', () => {
       expect(Math.hypot(point.x - 128, point.z - 128)).toBeGreaterThanOrEqual(15);
     }
   });
+
+  it('reuses habitat bands for fresh-water ecology without treating the salt ocean as fresh water', () => {
+    const freshRecipe:WorldRecipe={...recipe,size:8000,waterBodies:[{
+      id:'spring',type:'lake',region:{kind:'circle',center:[128,128],radius:24},levels:[48],depth:3
+    }]};
+    const riparian:EcologyRule={...trees[0],id:'riparian',spacing:6,waterDistance:[4,10,42,72]};
+    const fresh=generateEcologyChunk(freshRecipe,[riparian],{x:0,z:0},{sample:flat});
+    expect(fresh.instances.length).toBeGreaterThan(0);
+    for(const point of fresh.instances){
+      const distance=Math.max(0,Math.hypot(point.x-128,point.z-128)-24);
+      expect(distance).toBeGreaterThanOrEqual(4);
+      expect(distance).toBeLessThanOrEqual(72);
+    }
+    const coastRecipe:WorldRecipe={...recipe,size:8000,constraints:[{region:'west',biome:'ocean'},{region:'center',biome:'forest'}]};
+    expect(generateEcologyChunk(coastRecipe,[riparian],{x:0,z:0},{sample:flat}).instances).toHaveLength(0);
+    expect(validateEcologyRules([riparian])[0].waterDistance).toEqual([4,10,42,72]);
+    expect(()=>validateEcologyRules([{...riparian,waterDistance:[0,20,10,30]}])).toThrow('invalid_ecology_rule');
+  });
+
+  it('naturally favors fresh-water banks through shared moisture and biome weights', () => {
+    const dryRecipe:WorldRecipe={version:1,seed:2309,size:1600,heightScale:.12,constraints:[{region:'center',biome:'desert'}]};
+    const freshRecipe:WorldRecipe={...dryRecipe,waterBodies:[{
+      id:'spring',type:'lake',region:{kind:'circle',center:[128,128],radius:24},levels:[30],depth:3
+    }]};
+    const rule:EcologyRule={id:'bank-trees',kind:'broadleaf',biome:'forest',density:1,spacing:6,maxSlope:60,scale:[.8,1.2]};
+    const dry=generateEcologyChunk(dryRecipe,[rule],{x:0,z:0});
+    const fresh=generateEcologyChunk(freshRecipe,[rule],{x:0,z:0});
+    expect(fresh.instances.length).toBeGreaterThan(dry.instances.length);
+    expect(fresh.instances.some(point=>Math.hypot(point.x-128,point.z-128)<120)).toBe(true);
+  });
 });

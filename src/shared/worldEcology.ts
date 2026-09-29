@@ -1,4 +1,5 @@
-import { createWorldSampler, validateWorldRecipe, worldRegionWeight, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample, type WorldTerrainRegion } from './worldTerrain';
+import { habitatBandSuitability, normalizeHabitatBand, type HabitatBand } from './mapHabitat';
+import { createWorldSampler, validateWorldRecipe, worldFreshWaterDistance, worldRegionWeight, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample, type WorldTerrainRegion } from './worldTerrain';
 
 export type EcologyKind = 'broadleaf' | 'pine' | 'shrub' | 'rock';
 export interface EcologyRule {
@@ -11,6 +12,8 @@ export interface EcologyRule {
   scale: [number, number];
   region?: WorldTerrainRegion;
   regionFeather?: number;
+  /** Four-point fresh-water distance band: outer min, preferred min/max, outer max. */
+  waterDistance?: HabitatBand;
 }
 export interface EcologyInstance {
   id: string;
@@ -50,10 +53,13 @@ export function validateEcologyRules(input: unknown): EcologyRule[] {
         region = { kind: 'path', points: rule.region.points.map(point => [point[0], point[1]]), width: rule.region.width };
       } else throw new Error('invalid_ecology_rule');
     }
+    const waterDistance = normalizeHabitatBand(rule.waterDistance);
+    if (rule.waterDistance !== undefined && !waterDistance) throw new Error('invalid_ecology_rule');
     seen.add(rule.id);
     return { id: rule.id, kind: rule.kind, biome: rule.biome, density: rule.density,
       spacing: rule.spacing, maxSlope: rule.maxSlope, scale: [rule.scale[0], rule.scale[1]],
-      ...(region ? { region } : {}), ...(rule.regionFeather === undefined ? {} : { regionFeather: rule.regionFeather }) };
+      ...(region ? { region } : {}), ...(rule.regionFeather === undefined ? {} : { regionFeather: rule.regionFeather }),
+      ...(waterDistance ? { waterDistance } : {}) };
   });
   return rules.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
@@ -161,6 +167,9 @@ export function generateEcologyChunk(
         const density = rule.density * Math.max(0, Math.min(1, localDensity));
         const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
         if (point.threshold >= density * regionDensity) continue;
+        if (rule.waterDistance && point.threshold >= density * habitatBandSuitability(
+          worldFreshWaterDistance(recipe, point.x, point.z), rule.waterDistance
+        )) continue;
         const environment = sample(point.x, point.z);
         const weight = environment.weights[rule.biome];
         if (!Number.isFinite(environment.height) || environment.height < 0 || environment.waterLevel !== null

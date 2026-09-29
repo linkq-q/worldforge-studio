@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWorldSampler, dominantBiome, parseWorldPrompt, sampleWorldSlope, sampleWorldTile, selectWorldTiles, validateWorldRecipe, WORLD_BIOMES } from '../src/shared/worldTerrain';
+import { createWorldSampler, dominantBiome, parseWorldPrompt, sampleWorldSlope, sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES, type WorldRecipe } from '../src/shared/worldTerrain';
 
 describe('continuous biome world experiment', () => {
   it('turns the requested sentence into explicit directional constraints', () => {
@@ -180,6 +180,38 @@ describe('composable world terrain operations', () => {
     const baseHeight = createWorldSampler(original)(0, 0).height;
     expect(createWorldSampler(scaled)(0, 0).height).toBeCloseTo(baseHeight * 0.1 + 20, 10);
     expect(() => validateWorldRecipe({ ...original, heightScale: 0 })).toThrow('invalid_world_height_scale');
+  });
+
+  it('keeps the existing desert dune relief when macro elevation is scaled across seeds and world sizes', () => {
+    for (const seed of [42, 2309, 99173]) for (const size of [1600, 8000, 64000]) {
+      const recipe:WorldRecipe={version:1,seed,size,constraints:[{region:'center',biome:'desert'}]};
+      const full=createWorldSampler(recipe),scaled=createWorldSampler({...recipe,heightScale:.12});
+      const residuals:number[]=[],heights:number[]=[];
+      for(let z=-400;z<=400;z+=40)for(let x=-400;x<=400;x+=40){
+        const height=scaled(x,z).height;
+        heights.push(height);
+        residuals.push(height-full(x,z).height*.12);
+        expect(height).toBe(scaled(x,z).height);
+      }
+      expect(Math.max(...residuals)-Math.min(...residuals)).toBeGreaterThan(4);
+      expect(Math.max(...heights)-Math.min(...heights)).toBeGreaterThan(5);
+    }
+  });
+
+  it('raises ecological moisture near explicit fresh water while excluding the implicit salt ocean', () => {
+    const base:WorldRecipe={version:1,seed:2309,size:1600,heightScale:.12,constraints:[
+      {region:'west',biome:'ocean'},{region:'center',biome:'desert'},{region:'east',biome:'desert'}
+    ]};
+    const lake={id:'spring',type:'lake' as const,region:{kind:'circle' as const,center:[180,0] as [number,number],radius:30},levels:[30],depth:3};
+    const recipe={...base,waterBodies:[lake]},dry=createWorldSampler(base),wet=createWorldSampler(recipe);
+    expect(worldFreshWaterDistance(recipe,220,0)).toBeCloseTo(10,10);
+    expect(worldFreshWaterDistance(recipe,180,0)).toBe(0);
+    expect(worldFreshWaterDistance(base,-450,0)).toBe(Infinity);
+    expect(wet(220,0).moisture).toBeGreaterThan(dry(220,0).moisture);
+    expect(wet(220,0).weights.desert).toBeLessThan(dry(220,0).weights.desert);
+    expect(wet(220,0).weights.grassland+wet(220,0).weights.forest)
+      .toBeGreaterThan(dry(220,0).weights.grassland+dry(220,0).weights.forest);
+    expect(wet(-450,0).moisture).toBe(dry(-450,0).moisture);
   });
 
   it('makes the reproduced kilometre coast traversable without removing its sea-to-land transition', () => {
