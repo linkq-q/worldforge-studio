@@ -13,6 +13,7 @@ import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-t
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 import { generationTraceId, recordGenerationTrace } from './generationTrace';
+import { currentCodexRun, requestCodexCompletion } from './codexBridge';
 
 const GENERATION_MATERIAL_TAG_FIELDS = [
   'mode', 'status', 'values', 'variantEnum', 'description', 'inherits', 'exclusiveRenderSlot'
@@ -152,7 +153,7 @@ export async function mountModel(primary: unknown, secondary: unknown, descripti
   options.signal?.throwIfAborted();
   const response = await (options.fetchImpl ?? fetch)(`${options.apiBase ?? MODEL_API_BASE}/api/mount`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ primary, secondary, description, provider: options.providers?.[0] ?? MODEL_PROVIDERS[0] }),
+    body: JSON.stringify({ primary, secondary, description, provider: assetProviders(options)[0] }),
     signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(300_000)]) : AbortSignal.timeout(300_000)
   });
   const data = await response.json() as { ok?: boolean; modelJson?: { nodes?: unknown[] }; error?: string };
@@ -166,7 +167,7 @@ export async function generateModel(description: string, options: ModelApiOption
   options.signal?.throwIfAborted();
   const fetcher = options.fetchImpl ?? fetch;
   const apiBase = options.apiBase ?? MODEL_API_BASE;
-  const providers = options.providers ?? MODEL_PROVIDERS;
+  const providers = assetProviders(options);
   const mode = options.mode ?? 'voxel';
   const materialTags = resolveMaterialTags(options.materialTags);
   const errors: string[] = [];
@@ -243,7 +244,7 @@ export async function refineModel(modelJson: unknown, description: string, optio
   options.signal?.throwIfAborted();
   const fetcher = options.fetchImpl ?? fetch;
   const apiBase = options.apiBase ?? MODEL_API_BASE;
-  const providers = options.providers ?? MODEL_PROVIDERS;
+  const providers = assetProviders(options);
   const materialTags = resolveMaterialTags(options.materialTags);
   const errors: string[] = [];
 
@@ -277,6 +278,13 @@ export async function refineModel(modelJson: unknown, description: string, optio
 }
 
 export async function llmChat(messages: readonly ChatMessage[], options: ChatApiOptions = {}): Promise<string> {
+  if (currentCodexRun()) {
+    const stage = options.traceStage ?? 'chat';
+    recordGenerationTrace('chat.codex.request', { stage, messages });
+    const content = await requestCodexCompletion(messages, stage, options.signal);
+    recordGenerationTrace('chat.codex.response', { stage, content });
+    return content;
+  }
   const fetcher = options.fetchImpl ?? fetch;
   const url = `${options.apiBase ?? MODEL_API_BASE}/api/chat`;
   const init: RequestInit = {
@@ -367,6 +375,13 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     await abortableDelay(/overload|rate.?limit|server busy/i.test(data.error ?? '') ? attempt * 1000 : 300, options.signal);
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError ?? 'chat_fetch_failed'));
+}
+
+function assetProviders(options: ModelApiOptions): readonly ModelProvider[] {
+  if (!currentCodexRun()) return options.providers ?? MODEL_PROVIDERS;
+  const providers = options.providers ?? ['deepseek'];
+  if (providers.includes('gpt')) throw new Error('codex_asset_gpt_provider_forbidden');
+  return providers;
 }
 
 async function readChatApiResponse(

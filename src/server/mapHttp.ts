@@ -73,6 +73,8 @@ import { applyPaletteToModelJson, type ColorPalette } from '../shared/colorPalet
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
 import { generationTraceId, recordGenerationTrace, withGenerationTrace } from './generationTrace';
+import { createCodexRun, withCodexRun, pendingCodexRequests, respondToCodexRequest, closeCodexRun } from './codexBridge';
+import { generateWorld } from './worldGeneration';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
@@ -80,6 +82,25 @@ type Res = http.ServerResponse;
 const worldAgentManagers = new WeakMap<MapStore, WorldAgentRunManager>();
 
 export async function handleMapHttp(req: Req, res: Res, store: MapStore): Promise<boolean> {
+  const runId = req.headers['x-worldforge-codex-run'];
+  if (runId) {
+    if (typeof runId !== 'string' || !isLoopbackRequest(req)
+      || !new URL(req.url ?? '/', 'http://localhost').pathname.startsWith('/api/editor/')) {
+      sendJson(res, 403, { error: 'codex_run_local_only' });
+      return true;
+    }
+    try { return await withCodexRun(runId, () => handleMapHttpInContext(req, res, store)); }
+    catch (error) {
+      if (error instanceof Error && error.message === 'unknown_codex_run') {
+        sendJson(res, 404, { error: error.message }); return true;
+      }
+      throw error;
+    }
+  }
+  return handleMapHttpInContext(req, res, store);
+}
+
+async function handleMapHttpInContext(req: Req, res: Res, store: MapStore): Promise<boolean> {
   const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
   const run = /^\/api\/editor\/maps\/([^/]+)\/(generate|refine|visual-review|code-replay|transactions)$/.exec(pathname);
   if (req.method === 'POST' && run && isLoopbackRequest(req)) {
@@ -161,6 +182,45 @@ async function handlePublicMapRoute(req: Req, res: Res, store: MapStore, parts: 
 }
 
 async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  if (parts[2] === 'worlds' && parts[3] === 'generate' && parts.length === 4 && req.method === 'POST') {
+    const body = await readJson(req);
+    const controller = new AbortController();
+    const abort = () => { if (!res.writableEnded) controller.abort(); };
+    res.on('close', abort);
+    try {
+      await withGenerationTrace(store.rootDir, {mapId:'world-preview',operation:'generate'}, async () => {
+        recordGenerationTrace('request.input',body);
+        sendJson(res,200,await generateWorld(body,store,controller.signal));
+      });
+    } catch(error) {
+      throw new HttpError(422,error instanceof Error?error.message:String(error));
+    } finally { res.off('close',abort); }
+    return;
+  }
+  if (parts[2] === 'codex-runs') {
+    if (req.method === 'POST' && parts.length === 3) {
+      sendJson(res, 201, { runId: createCodexRun() }); return;
+    }
+    try {
+      if (req.method === 'GET' && parts[4] === 'next' && parts.length === 5) {
+        sendJson(res, 200, { requests: pendingCodexRequests(parts[3]) }); return;
+      }
+      if (req.method === 'POST' && parts[4] === 'respond' && parts.length === 5) {
+        const body = await readJson<{requestId?: string; content?: string}>(req);
+        if (!body.requestId || typeof body.content !== 'string') throw new HttpError(400, 'invalid_codex_response');
+        respondToCodexRequest(parts[3], body.requestId, body.content);
+        sendJson(res, 200, { ok: true }); return;
+      }
+      if (req.method === 'DELETE' && parts.length === 4) {
+        closeCodexRun(parts[3]); sendJson(res, 200, { ok: true }); return;
+      }
+    } catch (error) {
+      if (error instanceof Error && /^(unknown_codex_run|unknown_codex_request)$/.test(error.message)) throw new HttpError(404, error.message);
+      if (error instanceof Error && error.message === 'empty_codex_response') throw new HttpError(400, error.message);
+      throw error;
+    }
+    throw new HttpError(404, 'not_found');
+  }
   if (req.method === 'GET' && parts.length === 2) {
     sendJson(res, 200, { ok: true, commands: mapEditorCliManifest() });
     return;
