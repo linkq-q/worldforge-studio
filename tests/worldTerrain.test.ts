@@ -440,6 +440,74 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('keeps a compact fishing coast curved and its northern hill folds visible across seeds', () => {
+    for (const seed of [420631, 99173]) {
+      const sample = createWorldSampler({
+        version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.1,
+        constraints: [
+          { region: 'center', biome: 'grassland' }, { region: 'east', biome: 'grassland' },
+          { region: 'north', biome: 'forest' }, { region: 'northeast', biome: 'forest' },
+          { region: 'northwest', biome: 'ocean' }, { region: 'south', biome: 'grassland' },
+          { region: 'southwest', biome: 'ocean' }, { region: 'west', biome: 'ocean' }
+        ],
+        landforms: [
+          { center: [38, 5], radius: [186, 215], height: 9 },
+          { center: [155, -151], radius: [72, 67], height: 19 },
+          { center: [73, -174], radius: [47, 48], height: 11 },
+          { center: [170, 105], radius: [61, 75], height: 5 }
+        ],
+        terrainBrushes: [
+          { id: 'curved-western-foreshore', mode: 'lower', amount: 3, feather: 16,
+            region: { kind: 'path', points: [
+              [-201, -205], [-190, -143], [-205, -80], [-183, -18], [-199, 52], [-184, 117], [-204, 202]
+            ], width: 19 } },
+          { id: 'northern-hill-gully', mode: 'lower', amount: 3, feather: 6,
+            region: { kind: 'path', points: [[133, -201], [123, -175], [105, -147], [91, -124]], width: 7 } },
+          { id: 'second-hill-gully', mode: 'lower', amount: 2, feather: 5,
+            region: { kind: 'path', points: [[190, -187], [174, -164], [161, -138], [145, -115]], width: 6 } }
+        ]
+      });
+      const shoreline: number[] = [], shoreSlopes: number[] = [];
+      for (let z = -220; z <= 220; z += 20) {
+        let previous = sample(-250, z).height, shoreX: number | undefined, shoreSlope = 0;
+        for (let x = -248; x <= 60; x += 2) {
+          const point = sample(x, z);
+          if (previous <= 0 && point.height > 0) {
+            shoreX = x;
+            shoreSlope = sampleWorldSlope(sample, x, z);
+          }
+          previous = point.height;
+        }
+        expect(shoreX).toBeDefined();
+        shoreline.push(shoreX!);
+        shoreSlopes.push(shoreSlope);
+      }
+      const localTurns = shoreline.slice(1, -1)
+        .map((x, index) => Math.abs(shoreline[index] - 2 * x + shoreline[index + 2]));
+      expect(localTurns.reduce((sum, value) => sum + value, 0)).toBeGreaterThan(60);
+      shoreSlopes.sort((a, b) => a - b);
+      expect(shoreSlopes[Math.floor(shoreSlopes.length * 0.95)]).toBeLessThan(0.6);
+
+      const residuals: number[] = [], hillSlopes: number[] = [], townSlopes: number[] = [];
+      for (let z = -230; z <= -80; z += 6) for (let x = 30; x <= 230; x += 6) {
+        const height = sample(x, z).height;
+        hillSlopes.push(sampleWorldSlope(sample, x, z));
+        residuals.push(height - (sample(x + 12, z).height + sample(x - 12, z).height
+          + sample(x, z + 12).height + sample(x, z - 12).height) / 4);
+      }
+      for (let z = 24; z <= 170; z += 8) for (let x = -64; x <= 88; x += 8) {
+        if (sample(x, z).height > 0) townSlopes.push(sampleWorldSlope(sample, x, z));
+      }
+      const absolute = residuals.map(Math.abs).sort((a, b) => a - b);
+      expect(absolute[Math.floor(absolute.length / 2)]).toBeGreaterThan(0.47);
+      expect(residuals.filter(value => value > 0.35).length / residuals.length).toBeGreaterThan(0.3);
+      hillSlopes.sort((a, b) => a - b);
+      townSlopes.sort((a, b) => a - b);
+      expect(hillSlopes[Math.floor(hillSlopes.length * 0.95)]).toBeLessThan(0.7);
+      expect(townSlopes[Math.floor(townSlopes.length * 0.95)]).toBeLessThan(0.4);
+    }
+  });
+
   it('keeps missing and explicit legacy relief profiles sample-identical', () => {
     const recipe: WorldRecipe = { version: 1, seed: 147, size: 500, constraints: [
       { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' }
