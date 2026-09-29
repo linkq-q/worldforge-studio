@@ -469,14 +469,35 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     const climateDry = smooth(0.53, 0.82, temperature) * (1 - smooth(0.14, 0.44, moisture));
     const rolling = fbm(wx / (1200 * terrainScale), wz / (1200 * terrainScale), seed + 311, 4) * 115;
     const dunes = (0.5 + 0.5 * Math.sin(wx / 85 + wz / 160 + noise(wx / 1100, wz / 1100, seed + 505) * 4)) ** 1.5 * 28;
+    const foldedRelief = compactRelief
+      ? fbm(wx / (520 * terrainScale), wz / (520 * terrainScale), seed + 1237, 3)
+      : 0;
+    const erosionChannels = compactRelief ? 1 - smooth(0.035, 0.32, Math.abs(foldedRelief)) : 0;
+    const reliefDetail = compactRelief
+      ? fbm(wx / (310 * terrainScale), wz / (310 * terrainScale), seed + 1451, 2) * 0.32 - erosionChannels * 0.48
+      : 0;
     const base = continentalness < 0 ? continentalness * 1050 : Math.pow(continentalness, 1.4) * 400;
     const macroHeight = base + land * (mountain * ridge * 3100 * terrainScale
       + rolling * (1 - climateDry * 0.8));
     let height = macroHeight * (recipe.heightScale ?? 1) + land * climateDry * dunes;
+    let authoredDetailAmplitude = 0;
     for (const form of recipe.landforms ?? []) {
       const d2 = ((x - form.center[0]) / form.radius[0]) ** 2 + ((z - form.center[1]) / form.radius[1]) ** 2;
       // Compact support with zero first and second derivatives at the boundary.
-      if (d2 < 1) height += form.height * (1 - d2) ** 3;
+      if (d2 < 1) {
+        const influence = (1 - d2) ** 3;
+        height += form.height * influence;
+        if (form.height > 0) {
+          const slopeBand = 16 * d2 ** 2 * (1 - d2) ** 2;
+          authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
+            slopeBand * Math.min(10, form.height * 0.06));
+        }
+      }
+    }
+    if (compactRelief) {
+      const proceduralAmplitude = land * smooth(0.28, 0.68, uplift)
+        * 260 * terrainScale * (recipe.heightScale ?? 1);
+      height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude);
     }
     for (const brush of recipe.terrainBrushes ?? []) {
       const area = regionSample(brush.region, x, z), feather = brush.feather ?? 0;

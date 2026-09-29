@@ -335,5 +335,48 @@ describe('composable world terrain operations', () => {
       expect(slopes.filter(slope => slope > 0.75).length / slopes.length).toBeLessThan(0.01);
     }
   });
+
+  it('adds broad ridges and erosion grooves to compact mountain relief without a steep slope tail', () => {
+    const medianResiduals: number[] = [], grooveShares: number[] = [], ridgeShares: number[] = [];
+    for (const seed of [1, 42, 2309, 99173]) {
+      const sample = createWorldSampler({
+        version: 1, seed, size: 2400, reliefProfile: 'compact', heightScale: 0.08,
+        constraints: [
+          { region: 'center', biome: 'mountains' }, { region: 'east', biome: 'ocean' },
+          { region: 'southwest', biome: 'forest' }
+        ],
+        landforms: [
+          { center: [-240, -180], radius: [630, 700], height: 180 },
+          { center: [-240, -180], radius: [180, 160], height: -48 }
+        ]
+      });
+      const slopes: number[] = [], residuals: number[] = [];
+      for (let z = -672; z <= 672; z += 48) for (let x = -672; x <= 672; x += 48) {
+        slopes.push(sampleWorldSlope(sample, x, z));
+        residuals.push(sample(x, z).height - (sample(x + 42, z).height + sample(x - 42, z).height
+          + sample(x, z + 42).height + sample(x, z - 42).height) / 4);
+      }
+      const absolute = residuals.map(Math.abs).sort((a, b) => a - b);
+      medianResiduals.push(absolute[Math.floor(absolute.length / 2)]);
+      grooveShares.push(residuals.filter(value => value < -0.5).length / residuals.length);
+      ridgeShares.push(residuals.filter(value => value > 0.5).length / residuals.length);
+      slopes.sort((a, b) => a - b);
+      expect(slopes[Math.floor(slopes.length * 0.95)]).toBeLessThan(0.7);
+    }
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    expect(mean(medianResiduals)).toBeGreaterThan(0.62);
+    expect(mean(grooveShares)).toBeGreaterThan(0.25);
+    expect(mean(ridgeShares)).toBeGreaterThan(0.27);
+  });
+
+  it('keeps missing and explicit legacy relief profiles sample-identical', () => {
+    const recipe: WorldRecipe = { version: 1, seed: 147, size: 500, constraints: [
+      { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' }
+    ], landforms: [{ center: [-55, -235], radius: [110, 70], height: 26 }] };
+    const implicit = createWorldSampler(recipe), explicit = createWorldSampler({ ...recipe, reliefProfile: 'legacy' });
+    for (const [x, z] of [[0, 0], [-55, -235], [-120, -180], [200, 200]]) {
+      expect(implicit(x, z)).toEqual(explicit(x, z));
+    }
+  });
 });
 
