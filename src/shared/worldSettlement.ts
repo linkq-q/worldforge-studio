@@ -133,9 +133,19 @@ export function generateWorldSettlement(
     const portSafe = (a: Point, b: Point, width: number) => {
       const length = distance(a, b);
       if (length < EPS) return false;
-      const inset = Math.min(0.45, (settings.waterSetback + width / 2 + 0.1) / length);
-      const from = same(a, port.position) ? mix(a, b, inset) : a;
-      const to = same(b, port.position) ? mix(b, a, inset) : b;
+      const clearance = settings.waterSetback + width / 2 + 0.1;
+      const inset = (endpoint: Point, other: Point): Point => {
+        let fraction = 0;
+        for (let axis = 0; axis < 2; axis++) {
+          if (Math.abs(Math.abs(endpoint[axis]) - town.radius) > EPS) continue;
+          const inward = Math.abs(other[axis] - endpoint[axis]);
+          if (inward < EPS) return endpoint;
+          fraction = Math.max(fraction, clearance / inward);
+        }
+        return fraction > 0 ? mix(endpoint, other, Math.min(0.45, fraction)) : endpoint;
+      };
+      const from = same(a, port.position) ? inset(a, b) : a;
+      const to = same(b, port.position) ? inset(b, a) : b;
       return roadSafe(from, to, width);
     };
     let route = routeToNetwork(port.position, roadNodes(streets), portSafe, port.width);
@@ -157,7 +167,7 @@ export function generateWorldSettlement(
         : !segmentBox(a, b, bounds, width / 2 + 1));
     const entry = landmarkEntry(landmark, settings.roadWidth);
     const direction: Point = [Math.sin(landmark.rotation ?? 0), Math.cos(landmark.rotation ?? 0)];
-    const outside = add(entry, scale(direction, Math.max(12, settings.blockSize / 3)));
+    const outside = add(entry, scale(direction, landmarkAccessLength(settings.blockSize)));
     const tailSafe = (a: Point, b: Point, width: number) => terrainRoadSafe(a, b, width)
       && landmarkBounds.every((bounds, index) => index === landmarkIndex
         ? !segmentBuildingFootprint(a, b, landmark, width / 2)
@@ -232,7 +242,7 @@ function frontageLandmarkSites(requirement:WorldLandmarkRequirement,streets:MapG
     const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]],steps=Math.max(1,Math.ceil(length/8));
     for(let index=0;index<=steps;index++) for(const side of [-1,1]) {
       const roadPoint=mix(a,b,index/steps),direction=scale(normal,-side),rotation=normalizeAngle(Math.atan2(direction[0],direction[1]));
-      const setback=requirement.depth/2+roadWidth/2+Math.max(12,blockSize/3);
+      const setback=requirement.depth/2+roadWidth/2+landmarkAccessLength(blockSize);
       points.push({...requirement,x:roundPoint(roadPoint[0]-direction[0]*setback),
         z:roundPoint(roadPoint[1]-direction[1]*setback),rotation});
     }
@@ -277,7 +287,7 @@ function nearbyLandmarkSites(preferred:Point,landmark:TownBuilding,townRadius:nu
   const limit=townRadius*.25,step=Math.max(4,Math.min(landmark.width,landmark.depth)*.3),points:Point[]=[];
   const direction:Point=[Math.sin(landmark.rotation??0),Math.cos(landmark.rotation??0)];
   const roadWidth=kind==='city'?4.2:3,blockSize=Math.max(kind==='city'?34:52,Math.min(kind==='city'?76:110,townRadius*(kind==='city'?.22:.32)));
-  const setback=landmark.depth/2+roadWidth/2+Math.max(12,blockSize/3);
+  const setback=landmark.depth/2+roadWidth/2+landmarkAccessLength(blockSize);
   for(const street of streets) for(let segment=1;segment<street.points.length;segment++) {
     const a=street.points[segment-1],b=street.points[segment],length=distance(a,b),steps=Math.max(1,Math.ceil(length/8));
     for(let index=0;index<=steps;index++) {
@@ -772,6 +782,10 @@ function buildingEarthworkSafe(sample: WorldSettlementSampler, town: TownIntent,
 function boxesOverlap(a: Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'>, b: Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'>): boolean {
   return Math.abs(a.x - b.x) < (a.width + b.width) / 2 + 0.5
     && Math.abs(a.z - b.z) < (a.depth + b.depth) / 2 + 0.5;
+}
+
+function landmarkAccessLength(blockSize: number): number {
+  return Math.max(8, Math.min(12, blockSize / 4));
 }
 
 function landmarkEntry(building: TownBuilding, roadWidth: number): Point {

@@ -120,6 +120,22 @@ describe('world settlement growth', () => {
     expect(patch.streets.length).toBeLessThanOrEqual(12);
   });
 
+  it('connects a corner port after clearing both town-boundary axes', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.radius = 100;
+    town.ports[0].position = [100, 100];
+    plan.roads[0].points = [[town.center[0] + 100, 100], [-1000, 100]];
+    const flat: WorldSettlementSampler = (x, z) => ({
+      ...base(x, z), height: 12, waterLevel: null, waterBodyId: null
+    });
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.45
+    });
+    expect(patch.streets.some(street => street.tags.includes('port')
+      && street.points[0][0] === 100 && street.points[0][1] === 100)).toBe(true);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
   it.each([
     [100, 7, 50], [150, 19, 100], [200, 31, 140]
   ] as const)('fills compact city blocks across radius %sm and seed %s', (radius, seed, minimumBuildings) => {
@@ -212,7 +228,10 @@ describe('world settlement growth', () => {
       assetKey: 'market', enterable: true, x: expect.any(Number), z: expect.any(Number), rotation: expect.any(Number)
     })]);
     expect(result.patch.buildings.find(building => building.id === 'market')).toEqual(result.landmarks[0]);
-    expect(result.patch.streets.some(street => street.tags.includes('landmark-access'))).toBe(true);
+    const access = result.patch.streets.find(street => street.tags.includes('landmark-access'))!;
+    expect(access).toBeDefined();
+    expect(Math.hypot(access.points[1][0] - access.points[0][0], access.points[1][1] - access.points[0][1]))
+      .toBeLessThanOrEqual(12.0001);
     expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
   });
 
