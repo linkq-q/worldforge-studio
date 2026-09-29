@@ -242,6 +242,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
     expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
+    expect(messages[0].content).toContain('reserve only one or two waterfront work buildings');
     expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
     expect(planningInput.reusableAssets).toEqual([expect.objectContaining({ id: asset.id, name: asset.name })]);
