@@ -1,0 +1,520 @@
+{
+  "townId": "forest",
+  "worldKey": "{\"ecology\":[{\"biome\":\"desert\",\"density\":0.2,\"id\":\"desert-scrub\",\"kind\":\"shrub\",\"maxSlope\":28,\"scale\":[0.5,1.2],\"spacing\":16},{\"biome\":\"forest\",\"density\":0.95,\"id\":\"forest-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":32,\"scale\":[0.8,1.6],\"spacing\":18},{\"biome\":\"forest\",\"density\":0.6,\"id\":\"forest-pine\",\"kind\":\"pine\",\"maxSlope\":38,\"scale\":[0.9,1.5],\"spacing\":22},{\"biome\":\"grassland\",\"density\":0.4,\"id\":\"meadow-shrub\",\"kind\":\"shrub\",\"maxSlope\":38,\"scale\":[0.7,1.8],\"spacing\":12},{\"biome\":\"grassland\",\"density\":0.1,\"id\":\"meadow-trees\",\"kind\":\"broadleaf\",\"maxSlope\":25,\"scale\":[0.65,1.2],\"spacing\":26},{\"biome\":\"mountains\",\"density\":0.5,\"id\":\"mountain-rock\",\"kind\":\"rock\",\"maxSlope\":55,\"scale\":[1,3],\"spacing\":25}],\"id\":\"forest-oasis-world\",\"prompt\":\"西方是海洋，东方是沙漠，北方是草原，南方是森林，中央是草原。南部林地建一个林业工坊小镇，东部沙漠建一个商队集市镇，以商路相连；森林较密，草原有稀疏树丛，沙漠仅零星灌木。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"desert\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"forest\",\"region\":\"south\"},{\"biome\":\"ocean\",\"region\":\"west\"}],\"seed\":42,\"size\":64000,\"version\":1},\"revision\":1,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"trade-route\",\"name\":\"林地—沙漠商路\",\"points\":[[-1010,13250],[-400,13250],[8500,10000],[18000,5750],[18760,5750]],\"tags\":[\"world-road\"],\"width\":14}],\"towns\":[{\"blend\":500,\"center\":[-1250,13250],\"foundation\":239.51407535801877,\"id\":\"forest\",\"name\":\"林间工坊镇\",\"ports\":[{\"guideId\":\"trade-route\",\"id\":\"forest-east\",\"position\":[240,0],\"width\":14}],\"prompt\":\"林业与木工聚落，错落的支路和共享绿地，仓场、工坊和住居分区，向东连接商路。\",\"radius\":240},{\"blend\":500,\"center\":[19000,5750],\"foundation\":360.2855668241125,\"id\":\"oasis\",\"name\":\"沙漠商队镇\",\"ports\":[{\"guideId\":\"trade-route\",\"id\":\"oasis-west\",\"position\":[-240,0],\"width\":14}],\"prompt\":\"围绕开放集市和公共井屋布局，商队院落、货仓、客舍与工坊各有位置，向西连接商路。\",\"radius\":240}],\"version\":1}",
+  "summary": "东侧商道进入林业作坊村，入口附近安排验材、仓储和锯木工坊，货运支巷向东南终止在晾材与工具库。主巷在公共绿地南侧转折，议事厅、客栈与面包房围在绿地边缘；北侧工匠巷逐渐分叉成几组独立住宅，南侧窄巷连接织匠、医馆和村民家宅。道路采用错位折线与尽端支巷，保留不规则空地，不重复绿洲镇的矩形集市环街。这里只定义建筑用途和街道，林木及其他绿化由程序规则生成。",
+  "streets": [
+    {
+      "id": "forest-entry",
+      "name": "东来木材商道",
+      "points": [
+        [
+          240,
+          0
+        ],
+        [
+          185,
+          0
+        ],
+        [
+          140,
+          15
+        ],
+        [
+          95,
+          15
+        ],
+        [
+          58,
+          38
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 14,
+      "tags": [
+        "road",
+        "trade-route",
+        "freight"
+      ]
+    },
+    {
+      "id": "forest-common-lane",
+      "name": "公共绿地南巷",
+      "points": [
+        [
+          58,
+          38
+        ],
+        [
+          5,
+          58
+        ],
+        [
+          -48,
+          42
+        ],
+        [
+          -85,
+          8
+        ],
+        [
+          -135,
+          22
+        ],
+        [
+          -185,
+          5
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 8,
+      "tags": [
+        "community",
+        "walkable"
+      ]
+    },
+    {
+      "id": "forest-craft-lane",
+      "name": "北侧工匠巷",
+      "points": [
+        [
+          95,
+          15
+        ],
+        [
+          70,
+          -28
+        ],
+        [
+          15,
+          -58
+        ],
+        [
+          -42,
+          -43
+        ],
+        [
+          -72,
+          -72
+        ],
+        [
+          -132,
+          -72
+        ],
+        [
+          -177,
+          -104
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 8,
+      "tags": [
+        "craft",
+        "walkable"
+      ]
+    },
+    {
+      "id": "forest-upper-homes",
+      "name": "北坡家宅巷",
+      "points": [
+        [
+          -42,
+          -43
+        ],
+        [
+          -34,
+          -108
+        ],
+        [
+          -66,
+          -145
+        ],
+        [
+          -131,
+          -164
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 6,
+      "tags": [
+        "residential",
+        "walkable"
+      ]
+    },
+    {
+      "id": "forest-south-homes",
+      "name": "南侧村巷",
+      "points": [
+        [
+          5,
+          58
+        ],
+        [
+          20,
+          112
+        ],
+        [
+          -24,
+          144
+        ],
+        [
+          -79,
+          137
+        ],
+        [
+          -122,
+          174
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 6,
+      "tags": [
+        "residential",
+        "walkable"
+      ]
+    },
+    {
+      "id": "forest-timber-yard",
+      "name": "木材货运支巷",
+      "points": [
+        [
+          185,
+          0
+        ],
+        [
+          176,
+          64
+        ],
+        [
+          137,
+          103
+        ],
+        [
+          116,
+          148
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 9,
+      "tags": [
+        "timber",
+        "service"
+      ]
+    },
+    {
+      "id": "forest-north-arrival",
+      "name": "北入口支巷",
+      "points": [
+        [
+          185,
+          0
+        ],
+        [
+          174,
+          -54
+        ],
+        [
+          137,
+          -85
+        ],
+        [
+          98,
+          -115
+        ]
+      ],
+      "curve": "polyline",
+      "closed": false,
+      "width": 8,
+      "tags": [
+        "warehouse",
+        "craft"
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "id": "forest-timber-inspection",
+      "x": 211,
+      "z": -25,
+      "width": 20,
+      "depth": 18,
+      "height": 8,
+      "use": "木材验收与计量所"
+    },
+    {
+      "id": "forest-transit-store",
+      "x": 209,
+      "z": 28,
+      "width": 24,
+      "depth": 22,
+      "height": 7,
+      "use": "商道转运仓"
+    },
+    {
+      "id": "forest-sawmill",
+      "x": 152,
+      "z": 48,
+      "width": 26,
+      "depth": 22,
+      "height": 8,
+      "use": "锯木工坊"
+    },
+    {
+      "id": "forest-drying-store",
+      "x": 193,
+      "z": 91,
+      "width": 30,
+      "depth": 24,
+      "height": 7,
+      "use": "板材晾干棚"
+    },
+    {
+      "id": "forest-log-store",
+      "x": 155,
+      "z": 137,
+      "width": 30,
+      "depth": 22,
+      "height": 8,
+      "use": "木料储库"
+    },
+    {
+      "id": "forest-tool-store",
+      "x": 92,
+      "z": 158,
+      "width": 26,
+      "depth": 24,
+      "height": 7,
+      "use": "林业工具库"
+    },
+    {
+      "id": "forest-freight-inn",
+      "x": 207,
+      "z": -64,
+      "width": 24,
+      "depth": 22,
+      "height": 12,
+      "use": "货商客舍"
+    },
+    {
+      "id": "forest-cartwright",
+      "x": 159,
+      "z": -105,
+      "width": 24,
+      "depth": 22,
+      "height": 8,
+      "use": "车轮与车架工坊"
+    },
+    {
+      "id": "forest-cooper",
+      "x": 119,
+      "z": -139,
+      "width": 26,
+      "depth": 24,
+      "height": 8,
+      "use": "木桶工坊"
+    },
+    {
+      "id": "forest-rope-maker",
+      "x": 66,
+      "z": -107,
+      "width": 22,
+      "depth": 18,
+      "height": 7,
+      "use": "绳具作坊"
+    },
+    {
+      "id": "forest-smith",
+      "x": 88,
+      "z": -57,
+      "width": 20,
+      "depth": 18,
+      "height": 8,
+      "use": "斧锯铁匠铺"
+    },
+    {
+      "id": "forest-joiner",
+      "x": 40,
+      "z": -81,
+      "width": 24,
+      "depth": 16,
+      "height": 8,
+      "use": "细木工铺"
+    },
+    {
+      "id": "forest-carver",
+      "x": 0,
+      "z": -86,
+      "width": 22,
+      "depth": 18,
+      "height": 7,
+      "use": "木雕工坊"
+    },
+    {
+      "id": "forest-basket-maker",
+      "x": -71,
+      "z": -34,
+      "width": 22,
+      "depth": 16,
+      "height": 6,
+      "use": "编篮作坊"
+    },
+    {
+      "id": "forest-apprentice-hall",
+      "x": -104,
+      "z": -48,
+      "width": 26,
+      "depth": 18,
+      "height": 9,
+      "use": "学徒共作屋"
+    },
+    {
+      "id": "forest-herbalist",
+      "x": -162,
+      "z": -48,
+      "width": 24,
+      "depth": 20,
+      "height": 8,
+      "use": "林药采集与处理屋"
+    },
+    {
+      "id": "forest-watch-cottage",
+      "x": -182,
+      "z": -131,
+      "width": 22,
+      "depth": 24,
+      "height": 10,
+      "use": "护林员家宅"
+    },
+    {
+      "id": "forest-upper-home-east",
+      "x": -8,
+      "z": -123,
+      "width": 20,
+      "depth": 18,
+      "height": 10,
+      "use": "木匠家宅"
+    },
+    {
+      "id": "forest-upper-home-center",
+      "x": -41,
+      "z": -164,
+      "width": 20,
+      "depth": 18,
+      "height": 9,
+      "use": "编织师家宅"
+    },
+    {
+      "id": "forest-upper-home-west",
+      "x": -93,
+      "z": -186,
+      "width": 24,
+      "depth": 22,
+      "height": 10,
+      "use": "林工家宅"
+    },
+    {
+      "id": "forest-upper-home-end",
+      "x": -145,
+      "z": -187,
+      "width": 24,
+      "depth": 20,
+      "height": 9,
+      "use": "护林家庭家宅"
+    },
+    {
+      "id": "forest-community-hall",
+      "x": -102,
+      "z": -15,
+      "width": 30,
+      "depth": 24,
+      "height": 13,
+      "use": "村民议事与节庆会堂"
+    },
+    {
+      "id": "forest-green-inn",
+      "x": 33,
+      "z": 14,
+      "width": 24,
+      "depth": 22,
+      "height": 12,
+      "use": "绿地客栈"
+    },
+    {
+      "id": "forest-bakery",
+      "x": -139,
+      "z": 46,
+      "width": 26,
+      "depth": 20,
+      "height": 8,
+      "use": "公共面包房"
+    },
+    {
+      "id": "forest-provision-store",
+      "x": -188,
+      "z": 30,
+      "width": 22,
+      "depth": 18,
+      "height": 7,
+      "use": "村民杂货铺"
+    },
+    {
+      "id": "forest-weavers",
+      "x": 49,
+      "z": 105,
+      "width": 24,
+      "depth": 22,
+      "height": 8,
+      "use": "织匠共作屋"
+    },
+    {
+      "id": "forest-healer",
+      "x": -10,
+      "z": 87,
+      "width": 22,
+      "depth": 18,
+      "height": 8,
+      "use": "村医药房"
+    },
+    {
+      "id": "forest-south-home-east",
+      "x": -39,
+      "z": 109,
+      "width": 24,
+      "depth": 20,
+      "height": 9,
+      "use": "林工家宅"
+    },
+    {
+      "id": "forest-south-home-center",
+      "x": -65,
+      "z": 163,
+      "width": 24,
+      "depth": 20,
+      "height": 10,
+      "use": "织匠家宅"
+    },
+    {
+      "id": "forest-south-home-west",
+      "x": -115,
+      "z": 140,
+      "width": 20,
+      "depth": 18,
+      "height": 9,
+      "use": "采集者家宅"
+    },
+    {
+      "id": "forest-south-home-end",
+      "x": -151,
+      "z": 187,
+      "width": 24,
+      "depth": 20,
+      "height": 10,
+      "use": "村民家宅"
+    }
+  ]
+}

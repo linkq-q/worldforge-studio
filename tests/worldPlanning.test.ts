@@ -1,0 +1,303 @@
+import { describe, expect, it } from 'vitest';
+import type { MapGuide } from '../src/shared/mapGuide';
+import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
+import {
+  createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
+  validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey,
+  type TownPatch, type WorldBundle, type WorldPlan
+} from '../src/shared/worldPlanning';
+
+function road(id: string, points: Array<[number, number]>, width = 10): MapGuide {
+  return { id, name: id, points, curve: 'polyline', closed: false, width, tags: ['settlement'] };
+}
+function fixture(): WorldPlan {
+  const recipe: WorldRecipe = { version: 1, seed: 42, size: 16000, constraints: [{ region: 'center', biome: 'grassland' }] };
+  const sample = createWorldSampler(recipe);
+  return {
+    version: 1, id: 'test-world', revision: 1, prompt: 'Two connected villages', recipe,
+    ecology: [
+      { id: 'trees', kind: 'broadleaf', biome: 'forest', density: 0.6, spacing: 12, maxSlope: 30, scale: [1, 2] },
+      { id: 'rocks', kind: 'rock', biome: 'grassland', density: 0.1, spacing: 18, maxSlope: 45, scale: [0.5, 1] }
+    ],
+    roads: [road('highway', [[-1800, 0], [1800, 0]])],
+    towns: [-2000, 2000].map((x, i) => ({
+      id: 'town-' + i, name: 'Town ' + i, prompt: 'A compact village', center: [x, 0],
+      radius: 200, blend: 600, foundation: sample(x, 0).height,
+      ports: [{ id: 'port-' + i, guideId: 'highway', position: [i === 0 ? 200 : -200, 0], width: 10 }]
+    }))
+  };
+}
+function patch(plan: WorldPlan, index: number): TownPatch {
+  const town = plan.towns[index];
+  return {
+    townId: town.id, worldKey: worldPlanKey(plan), summary: 'A connected main street with a house',
+    streets: [road(town.id + '-street', [[...town.ports[0].position], [0, 0], [0, 100]])],
+    buildings: [{ id: town.id + '-house', x: -70, z: -70, width: 40, depth: 35, height: 12, use: 'home' }]
+  };
+}
+
+describe('hierarchical world planning contracts', () => {
+  it('canonicalizes complete plans, while preserving ordered geometry and including every semantic field', () => {
+    const original = fixture(), reordered = structuredClone(original);
+    reordered.towns.reverse(); reordered.ecology.reverse();
+    expect(worldPlanKey(reordered)).toBe(worldPlanKey(original));
+    expect(validateWorldPlan(original).towns.map(town => town.id)).toEqual(['town-0', 'town-1']);
+    for (const edit of [
+      (p: WorldPlan) => { p.prompt += '!'; },
+      (p: WorldPlan) => { p.ecology[0].density += 0.1; },
+      (p: WorldPlan) => { p.towns[0].prompt += '!'; },
+      (p: WorldPlan) => { p.towns[0].foundation += 1; },
+      (p: WorldPlan) => { p.roads[0].points.reverse(); },
+      (p: WorldPlan) => { p.revision++; }
+    ]) {
+      const changed = structuredClone(original); edit(changed);
+      expect(worldPlanKey(changed)).not.toBe(worldPlanKey(original));
+    }
+  });
+
+  it('creates deterministic independent tasks and refuses patches from any prior plan content', () => {
+    const plan = fixture(), result = createTownTasks(plan);
+    expect(result).toEqual(createTownTasks(plan));
+    expect(result[0].seed).not.toBe(result[1].seed);
+    result[0].town.center[0] = 999;
+    expect(plan.towns[0].center[0]).toBe(-2000);
+    const old = patch(plan, 0);
+    plan.prompt += ' revised';
+    expect(() => validateTownPatch(plan, old)).toThrow('world_stale_patch');
+  });
+
+  it('rejects nonfinite, out-of-world, overlapping and excessive contracts', () => {
+    const invalid = (edit: (plan: WorldPlan) => void, error: string) => {
+      const plan = fixture(); edit(plan); expect(() => validateWorldPlan(plan)).toThrow(error);
+    };
+    invalid(p => { p.towns[0].center[0] = NaN; }, 'world_town_outside');
+    for (const id of ['../town', 'town/child', 'town\\child', 'town:stream', ' town', '.', 'CON', 'nul', 'Lpt1', 'COM9']) {
+      invalid(p => { p.towns[0].id = id; }, 'world_invalid_town_id');
+      invalid(p => { p.id = id; }, 'world_invalid_plan_id');
+    }
+    invalid(p => { p.towns[0].center[0] = 7900; }, 'world_town_outside');
+    invalid(p => { p.towns[0].blend = Infinity; }, 'world_invalid_town_blend');
+    invalid(p => { p.towns[0].radius = 99; }, 'world_invalid_town_radius');
+    invalid(p => { p.towns[1].center = [-1700, 0]; }, 'world_town_extents_overlap');
+    invalid(p => { p.towns = Array.from({ length: 13 }, () => p.towns[0]); }, 'world_town_quota');
+    invalid(p => { p.roads = Array.from({ length: 33 }, () => p.roads[0]); }, 'world_road_quota');
+    invalid(p => { p.roads[0].points = Array.from({ length: 66 }, (_, i) => [i, 0]); }, 'world_guide_segment_quota');
+    invalid(p => { p.towns[1].id = p.towns[0].id; }, 'world_duplicate_id');
+  });
+
+  it('rejects unsupported smoothing curves and mismatched road/port contracts', () => {
+    for (const [edit, error] of [
+      [(p: WorldPlan) => { p.towns[0].ports[0].position = [100, 0]; }, 'world_port_not_on_core_boundary'],
+      [(p: WorldPlan) => { p.roads[0].points[0][0] += 1; }, 'world_port_endpoint_mismatch'],
+      [(p: WorldPlan) => { p.towns[0].ports[0].width = 12; }, 'world_port_width_mismatch'],
+      [(p: WorldPlan) => { p.towns[0].ports[0].guideId = 'missing'; }, 'world_port_unknown_road'],
+      [(p: WorldPlan) => { p.roads[0].curve = 'catmull-rom'; }, 'world_polyline_required']
+    ] as const) {
+      const plan = fixture(); edit(plan); expect(() => validateWorldPlan(plan)).toThrow(error);
+    }
+  });
+
+  it('checks land, foundation height budgets and roads crossing sea', () => {
+    const lifted = fixture(); lifted.towns[0].foundation += 500;
+    expect(() => validateWorldPlan(lifted)).toThrow('world_foundation_height_budget');
+    const ocean: WorldPlan = {
+      ...fixture(), ecology: [], roads: [], towns: [],
+      recipe: { version: 1, seed: 42, size: 64000, constraints: [{ region: 'west', biome: 'ocean' }, { region: 'east', biome: 'desert' }] }
+    };
+    ocean.towns = [{ ...fixture().towns[0], ports: [], center: [-25000, 0] }];
+    expect(() => validateWorldPlan(ocean)).toThrow('world_town_core_not_land');
+    ocean.towns = []; ocean.roads = [road('sea-road', [[-25000, 0], [-24000, 0]])];
+    expect(() => validateWorldPlan(ocean)).toThrow('world_road_crosses_water');
+    const steep: WorldPlan = {
+      ...ocean, recipe: { version: 1, seed: 42, size: 16000, constraints: [{ region: 'center', biome: 'mountains' }] },
+      roads: [road('steep-road', [[-6000, -6000], [-5872, -6000]])]
+    };
+    expect(() => validateWorldPlan(steep)).toThrow('world_road_slope');
+  });
+
+  it('requires actual shared graph vertices and every port connected at the matching width', () => {
+    const plan = fixture();
+    const missing = patch(plan, 0); missing.streets[0].points[0] = [199, 0];
+    expect(() => validateTownPatch(plan, missing)).toThrow('world_street_port_missing');
+    const width = patch(plan, 0); width.streets[0].width = 8;
+    expect(() => validateTownPatch(plan, width)).toThrow('world_street_port_width_mismatch');
+    const disconnected = patch(plan, 0);
+    disconnected.streets.push(road('disconnected', [[-100, 40], [100, 40]]));
+    expect(() => validateTownPatch(plan, disconnected)).toThrow('world_streets_disconnected');
+    const connected = patch(plan, 0);
+    connected.streets.push(road('connected', [[-100, 100], [0, 100]]));
+    expect(validateTownPatch(plan, connected).streets).toHaveLength(2);
+  });
+
+  it('rejects buildings outside their core, overlaps and exact segment collisions without sparse sampling', () => {
+    const plan = fixture();
+    const outside = patch(plan, 0); outside.buildings[0].x = -190;
+    expect(() => validateTownPatch(plan, outside)).toThrow('world_building_outside');
+    const overlap = patch(plan, 0); overlap.buildings.push({ ...overlap.buildings[0], id: 'overlap', x: -65 });
+    expect(() => validateTownPatch(plan, overlap)).toThrow('world_buildings_overlap');
+    const crossing = patch(plan, 0);
+    crossing.streets = [road('diagonal', [[200, 0], [0, 0], [-150, 150]])];
+    crossing.buildings = [{ ...crossing.buildings[0], x: -73, z: 73, width: 2, depth: 2 }];
+    expect(() => validateTownPatch(plan, crossing)).toThrow('world_building_intersects_street');
+    const invalidHeight = patch(plan, 0); invalidHeight.buildings[0].height = Infinity;
+    expect(() => validateTownPatch(plan, invalidHeight)).toThrow('world_invalid_building_height');
+  });
+
+  it('bounds local task output and rejects IDs colliding with the world or another town', () => {
+    const plan = fixture(), initial: WorldBundle = { plan, patches: [] };
+    const streets = patch(plan, 0); streets.streets = Array.from({ length: 49 }, () => streets.streets[0]);
+    expect(() => validateTownPatch(plan, streets)).toThrow('world_street_quota');
+    const buildings = patch(plan, 0); buildings.buildings = Array.from({ length: 129 }, () => buildings.buildings[0]);
+    expect(() => validateTownPatch(plan, buildings)).toThrow('world_building_quota');
+    const worldCollision = patch(plan, 0); worldCollision.buildings[0].id = 'highway';
+    expect(() => validateTownPatch(plan, worldCollision)).toThrow('world_duplicate_id');
+    const first = patch(plan, 0), other = patch(plan, 1); other.buildings[0].id = first.buildings[0].id;
+    expect(() => mergeTownPatch(mergeTownPatch(initial, first), other)).toThrow('world_duplicate_id');
+    expect(() => validateWorldBundle({ plan, patches: [first, first] })).toThrow('world_duplicate_town_patch');
+  });
+
+  it('merges atomically, independently of completion order, and replaces only the intended town', () => {
+    const plan = fixture(), empty: WorldBundle = { plan, patches: [] };
+    const a = patch(plan, 0), b = patch(plan, 1), before = JSON.stringify({ empty, a, b });
+    const ab = mergeTownPatch(mergeTownPatch(empty, a), b), ba = mergeTownPatch(mergeTownPatch(empty, b), a);
+    expect(ab).toEqual(ba);
+    expect(JSON.stringify({ empty, a, b })).toBe(before);
+    const replacement = structuredClone(a); replacement.summary = 'A revised house'; replacement.buildings[0].height = 20;
+    const replaced = mergeTownPatch(ab, replacement);
+    expect(replaced.patches[1]).toEqual(ab.patches[1]);
+    expect(replaced.patches[0].buildings[0].height).toBe(20);
+    expect(ab.patches[0].buildings[0].height).toBe(12);
+    const bad = structuredClone(replacement); bad.worldKey = 'stale';
+    const snapshot = JSON.stringify(ab);
+    expect(() => mergeTownPatch(ab, bad)).toThrow('world_stale_patch');
+    expect(JSON.stringify(ab)).toBe(snapshot);
+  });
+
+  it('changes only completed town pads and preserves exact samples outside their finite collar', () => {
+    const plan = fixture(), base = createWorldSampler(plan.recipe);
+    const pending = createPlannedWorldSampler(plan), sampler = createPlannedWorldSampler(plan, [patch(plan, 0)]);
+    const town = plan.towns[0];
+    expect(pending(-1900, 100)).toEqual(base(-1900, 100));
+    for (const [dx, dz] of [[0, 0], [100, 100], [-200, 200]]) {
+      expect(sampler(town.center[0] + dx, dz).height).toBe(town.foundation);
+    }
+    for (const [x, z] of [[-2800, 0], [-2801, 0], [-2000, 801], [2000, 0], [0, 4000]]) {
+      expect(sampler(x, z)).toEqual(base(x, z));
+    }
+    expect(sampler(-2400, 0).height).not.toBe(base(-2400, 0).height);
+    expect(sampler(-2400, 0).weights).toEqual(base(-2400, 0).weights);
+  });
+
+  it('has continuous heights and matching endpoint slopes at both sides of its quintic collar', () => {
+    const plan = fixture(), town = plan.towns[0], sampler = createPlannedWorldSampler(plan, [patch(plan, 0)]);
+    const base = createWorldSampler(plan.recipe), epsilon = 0.05, center = town.center[0];
+    const inner = center + town.radius, outer = inner + town.blend;
+    expect(Math.abs(sampler(inner - epsilon, 0).height - sampler(inner + epsilon, 0).height)).toBeLessThan(1e-6);
+    const innerSlope = (sampler(inner + epsilon, 0).height - sampler(inner, 0).height) / epsilon;
+    expect(Math.abs(innerSlope)).toBeLessThan(1e-5);
+    const leftSlope = (sampler(outer, 0).height - sampler(outer - epsilon, 0).height) / epsilon;
+    const rightSlope = (base(outer + epsilon, 0).height - base(outer, 0).height) / epsilon;
+    expect(Math.abs(leftSlope - rightSlope)).toBeLessThan(0.002);
+    expect(sampler(outer, 0)).toEqual(base(outer, 0));
+  });
+
+  it('reserves pending cores and road corridors with footprint clearance but keeps blend land available', () => {
+    const plan = fixture(), exclude = createWorldExclusion(plan);
+    expect(exclude(-2000, 0, 0)).toBe(true);
+    expect(exclude(2000, 0, 0)).toBe(true);
+    expect(exclude(-2220, 0, 21)).toBe(true);
+    expect(exclude(-2250, 0, 10)).toBe(false);
+    expect(exclude(-2500, 0, 0)).toBe(false);
+    expect(exclude(0, 4, 0)).toBe(true);
+    expect(exclude(0, 7, 3)).toBe(true);
+    expect(exclude(0, 10, 0)).toBe(false);
+    expect(() => exclude(0, 0, -1)).toThrow('world_invalid_exclusion_query');
+  });
+});
+
+
+describe('town vegetation transitions', () => {
+  it('uses the same quintic collar for every reserved town with exact untouched density outside', () => {
+    const plan = fixture(), density = createWorldEcologyDensity(plan);
+    for (const town of plan.towns) {
+      const x = town.center[0], inner = x + town.radius, outer = inner + town.blend, epsilon = 0.05;
+      expect(density(x, 0)).toBe(0);
+      expect(density(inner, 0)).toBe(0);
+      expect(density(inner + town.blend / 2, 0)).toBe(0.5);
+      expect(density(outer, 0)).toBe(1);
+      expect(density(x, town.radius + town.blend + 1)).toBe(1);
+      expect(density(inner + epsilon, 0)).toBeLessThan(1e-8);
+      expect(1 - density(outer - epsilon, 0)).toBeLessThan(1e-8);
+    }
+    const town = plan.towns[0], x = town.center[0] - town.radius - town.blend / 2;
+    const base = createWorldSampler(plan.recipe), sampler = createPlannedWorldSampler(plan, [patch(plan, 0)]);
+    const expected = town.foundation + (base(x, 0).height - town.foundation) * density(x, 0);
+    expect(sampler(x, 0).height).toBeCloseTo(expected, 12);
+    expect(density(0, 7000)).toBe(1);
+    expect(() => density(NaN, 0)).toThrow('world_invalid_density_query');
+  });
+});
+
+
+describe('world road geometry budget', () => {
+  function densePatch(plan: WorldPlan, index: number, count: number): TownPatch {
+    const result = patch(plan, index), town = plan.towns[index];
+    result.buildings = [];
+    result.streets = Array.from({ length: count }, (_, i) => road(town.id + '-dense-' + i, [
+      [...town.ports[0].position], [0, 0],
+      ...Array.from({ length: 63 }, (_, j): [number, number] => [(j % 2 ? 1 : -1) * town.radius, 0])
+    ]));
+    return result;
+  }
+
+  it('rejects excessive global road tessellation before terrain sampling or rendering', () => {
+    const plan = fixture();
+    plan.roads.push(road('long-zigzag', Array.from({ length: 30 }, (_, i): [number, number] => [i % 2 ? 7000 : -7000, 3000])));
+    expect(() => validateWorldPlan(plan)).toThrow('world_road_geometry_quota');
+  });
+
+  it('rejects the accepted stress shape and combined town budgets without changing the existing bundle', () => {
+    const plan = fixture(), stress = densePatch(plan, 0, 48);
+    expect(() => validateTownPatch(plan, stress)).toThrow('world_road_geometry_quota');
+    const a = densePatch(plan, 0, 6), b = densePatch(plan, 1, 6);
+    expect(validateTownPatch(plan, a).streets).toHaveLength(6);
+    expect(validateTownPatch(plan, b).streets).toHaveLength(6);
+    const existing = mergeTownPatch({ plan, patches: [] }, a);
+    const before = JSON.stringify(existing);
+    expect(() => mergeTownPatch(existing, b)).toThrow('world_road_geometry_quota');
+    expect(() => validateWorldBundle({ plan, patches: [a, b] })).toThrow('world_road_geometry_quota');
+    expect(JSON.stringify(existing)).toBe(before);
+  });
+});
+
+describe('organic settlement integration',()=>{
+  it('lets finished towns keep vegetation on unoccupied land while reserving unfinished cores',()=>{
+    const plan=fixture(), done=patch(plan,0);
+    expect(createWorldExclusion(plan)(-1880,120,0)).toBe(true);
+    expect(createWorldExclusion(plan,[done])(-1880,120,0)).toBe(false);
+    expect(createWorldExclusion(plan,[done])(-2070,-70,0)).toBe(true);
+    expect(createWorldEcologyDensity(plan,[done])(-1880,120)).toBeGreaterThan(0);
+    expect(createWorldEcologyDensity(plan,[done])(2000,0)).toBe(0);
+  });
+  it('preserves building orientation and checks its rotated footprint',()=>{
+    const plan=fixture(), rotated=patch(plan,0);
+    Object.assign(rotated.buildings[0],{rotation:Math.PI/4});
+    expect(validateTownPatch(plan,rotated).buildings[0]).toMatchObject({rotation:Math.PI/4});
+    rotated.buildings[0].x=-175;
+    expect(()=>validateTownPatch(plan,rotated)).toThrow('world_building_outside');
+  });
+  it('blends overlapping collars continuously while keeping separate town cores exact',()=>{
+    const plan=fixture(),base=createWorldSampler(plan.recipe);
+    plan.towns[0].center=[-400,0];plan.towns[1].center=[400,0];
+    plan.towns[0].foundation=base(-400,0).height-10;plan.towns[1].foundation=base(400,0).height+20;
+    plan.roads[0].points=[[-200,0],[200,0]];
+    const patches=[patch(plan,0),patch(plan,1)], sample=createPlannedWorldSampler(plan,patches);
+    expect(sample(-350,0).height).toBe(plan.towns[0].foundation);
+    expect(sample(350,0).height).toBe(plan.towns[1].foundation);
+    for(const x of [-200,0,200]){
+      expect(Math.abs(sample(x-.0001,0).height-sample(x+.0001,0).height)).toBeLessThan(.001);
+      expect(sample(x,0)).toEqual(createPlannedWorldSampler(plan,[...patches].reverse())(x,0));
+    }
+  });
+});
+

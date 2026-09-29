@@ -81,11 +81,11 @@ interface ModelJson {
 
 let runtimePromise: Promise<ModelRuntime> | null = null;
 
-export async function buildModelGroup(modelJson: unknown): Promise<THREE.Group> {
-  return (await buildModelGroupWithNodes(modelJson)).group;
+export async function buildModelGroup(modelJson: unknown, runtimeOverride?: ModelRuntime): Promise<THREE.Group> {
+  return (await buildModelGroupWithNodes(modelJson, runtimeOverride)).group;
 }
 
-export async function buildModelGroupWithNodes(modelJson: unknown): Promise<BuiltModelGroup> {
+export async function buildModelGroupWithNodes(modelJson: unknown, runtimeOverride?: ModelRuntime): Promise<BuiltModelGroup> {
   const group = new THREE.Group();
   const zFighting = resolveModelZFighting(modelJson);
   const data = enforceReadableFoliageColors(zFighting.modelJson) as ModelJson;
@@ -97,7 +97,7 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
     return { group, objects: new Map(), runtime: fallbackRuntime, motionLookups: emptyMotionLookups };
   }
 
-  const runtime = await loadRuntime();
+  const runtime = runtimeOverride ?? await loadRuntime();
   const objects = new Map<string, THREE.Object3D>();
   for (const node of nodes) {
     const object = node.mesh

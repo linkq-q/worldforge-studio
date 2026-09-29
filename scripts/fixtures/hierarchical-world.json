@@ -1,0 +1,1282 @@
+{
+  "plan": {
+    "version": 1,
+    "id": "forest-oasis-world",
+    "revision": 1,
+    "prompt": "西方是海洋，东方是沙漠，北方是草原，南方是森林，中央是草原。南部林地建一个林业工坊小镇，东部沙漠建一个商队集市镇，以商路相连；森林较密，草原有稀疏树丛，沙漠仅零星灌木。",
+    "recipe": {
+      "version": 1,
+      "seed": 42,
+      "size": 64000,
+      "constraints": [
+        {
+          "region": "center",
+          "biome": "grassland"
+        },
+        {
+          "region": "east",
+          "biome": "desert"
+        },
+        {
+          "region": "north",
+          "biome": "grassland"
+        },
+        {
+          "region": "south",
+          "biome": "forest"
+        },
+        {
+          "region": "west",
+          "biome": "ocean"
+        }
+      ]
+    },
+    "ecology": [
+      {
+        "id": "desert-scrub",
+        "kind": "shrub",
+        "biome": "desert",
+        "density": 0.2,
+        "spacing": 16,
+        "maxSlope": 28,
+        "scale": [
+          0.5,
+          1.2
+        ]
+      },
+      {
+        "id": "forest-canopy",
+        "kind": "broadleaf",
+        "biome": "forest",
+        "density": 0.95,
+        "spacing": 18,
+        "maxSlope": 32,
+        "scale": [
+          0.8,
+          1.6
+        ]
+      },
+      {
+        "id": "forest-pine",
+        "kind": "pine",
+        "biome": "forest",
+        "density": 0.6,
+        "spacing": 22,
+        "maxSlope": 38,
+        "scale": [
+          0.9,
+          1.5
+        ]
+      },
+      {
+        "id": "meadow-shrub",
+        "kind": "shrub",
+        "biome": "grassland",
+        "density": 0.4,
+        "spacing": 12,
+        "maxSlope": 38,
+        "scale": [
+          0.7,
+          1.8
+        ]
+      },
+      {
+        "id": "meadow-trees",
+        "kind": "broadleaf",
+        "biome": "grassland",
+        "density": 0.1,
+        "spacing": 26,
+        "maxSlope": 25,
+        "scale": [
+          0.65,
+          1.2
+        ]
+      },
+      {
+        "id": "mountain-rock",
+        "kind": "rock",
+        "biome": "mountains",
+        "density": 0.5,
+        "spacing": 25,
+        "maxSlope": 55,
+        "scale": [
+          1,
+          3
+        ]
+      }
+    ],
+    "towns": [
+      {
+        "id": "forest",
+        "name": "林间工坊镇",
+        "prompt": "林业与木工聚落，错落的支路和共享绿地，仓场、工坊和住居分区，向东连接商路。",
+        "center": [
+          -1250,
+          13250
+        ],
+        "radius": 240,
+        "blend": 500,
+        "foundation": 239.51407535801877,
+        "ports": [
+          {
+            "id": "forest-east",
+            "guideId": "trade-route",
+            "position": [
+              240,
+              0
+            ],
+            "width": 14
+          }
+        ]
+      },
+      {
+        "id": "oasis",
+        "name": "沙漠商队镇",
+        "prompt": "围绕开放集市和公共井屋布局，商队院落、货仓、客舍与工坊各有位置，向西连接商路。",
+        "center": [
+          19000,
+          5750
+        ],
+        "radius": 240,
+        "blend": 500,
+        "foundation": 360.2855668241125,
+        "ports": [
+          {
+            "id": "oasis-west",
+            "guideId": "trade-route",
+            "position": [
+              -240,
+              0
+            ],
+            "width": 14
+          }
+        ]
+      }
+    ],
+    "roads": [
+      {
+        "id": "trade-route",
+        "name": "林地—沙漠商路",
+        "points": [
+          [
+            -1010,
+            13250
+          ],
+          [
+            -400,
+            13250
+          ],
+          [
+            8500,
+            10000
+          ],
+          [
+            18000,
+            5750
+          ],
+          [
+            18760,
+            5750
+          ]
+        ],
+        "curve": "polyline",
+        "closed": false,
+        "width": 14,
+        "tags": [
+          "world-road"
+        ]
+      }
+    ]
+  },
+  "patches": [
+    {
+      "townId": "forest",
+      "worldKey": "{\"ecology\":[{\"biome\":\"desert\",\"density\":0.2,\"id\":\"desert-scrub\",\"kind\":\"shrub\",\"maxSlope\":28,\"scale\":[0.5,1.2],\"spacing\":16},{\"biome\":\"forest\",\"density\":0.95,\"id\":\"forest-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":32,\"scale\":[0.8,1.6],\"spacing\":18},{\"biome\":\"forest\",\"density\":0.6,\"id\":\"forest-pine\",\"kind\":\"pine\",\"maxSlope\":38,\"scale\":[0.9,1.5],\"spacing\":22},{\"biome\":\"grassland\",\"density\":0.4,\"id\":\"meadow-shrub\",\"kind\":\"shrub\",\"maxSlope\":38,\"scale\":[0.7,1.8],\"spacing\":12},{\"biome\":\"grassland\",\"density\":0.1,\"id\":\"meadow-trees\",\"kind\":\"broadleaf\",\"maxSlope\":25,\"scale\":[0.65,1.2],\"spacing\":26},{\"biome\":\"mountains\",\"density\":0.5,\"id\":\"mountain-rock\",\"kind\":\"rock\",\"maxSlope\":55,\"scale\":[1,3],\"spacing\":25}],\"id\":\"forest-oasis-world\",\"prompt\":\"西方是海洋，东方是沙漠，北方是草原，南方是森林，中央是草原。南部林地建一个林业工坊小镇，东部沙漠建一个商队集市镇，以商路相连；森林较密，草原有稀疏树丛，沙漠仅零星灌木。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"desert\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"forest\",\"region\":\"south\"},{\"biome\":\"ocean\",\"region\":\"west\"}],\"seed\":42,\"size\":64000,\"version\":1},\"revision\":1,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"trade-route\",\"name\":\"林地—沙漠商路\",\"points\":[[-1010,13250],[-400,13250],[8500,10000],[18000,5750],[18760,5750]],\"tags\":[\"world-road\"],\"width\":14}],\"towns\":[{\"blend\":500,\"center\":[-1250,13250],\"foundation\":239.51407535801877,\"id\":\"forest\",\"name\":\"林间工坊镇\",\"ports\":[{\"guideId\":\"trade-route\",\"id\":\"forest-east\",\"position\":[240,0],\"width\":14}],\"prompt\":\"林业与木工聚落，错落的支路和共享绿地，仓场、工坊和住居分区，向东连接商路。\",\"radius\":240},{\"blend\":500,\"center\":[19000,5750],\"foundation\":360.2855668241125,\"id\":\"oasis\",\"name\":\"沙漠商队镇\",\"ports\":[{\"guideId\":\"trade-route\",\"id\":\"oasis-west\",\"position\":[-240,0],\"width\":14}],\"prompt\":\"围绕开放集市和公共井屋布局，商队院落、货仓、客舍与工坊各有位置，向西连接商路。\",\"radius\":240}],\"version\":1}",
+      "summary": "东侧商道进入林业作坊村，入口附近安排验材、仓储和锯木工坊，货运支巷向东南终止在晾材与工具库。主巷在公共绿地南侧转折，议事厅、客栈与面包房围在绿地边缘；北侧工匠巷逐渐分叉成几组独立住宅，南侧窄巷连接织匠、医馆和村民家宅。道路采用错位折线与尽端支巷，保留不规则空地，不重复绿洲镇的矩形集市环街。这里只定义建筑用途和街道，林木及其他绿化由程序规则生成。",
+      "streets": [
+        {
+          "id": "forest-common-lane",
+          "name": "公共绿地南巷",
+          "points": [
+            [
+              58,
+              38
+            ],
+            [
+              5,
+              58
+            ],
+            [
+              -48,
+              42
+            ],
+            [
+              -85,
+              8
+            ],
+            [
+              -135,
+              22
+            ],
+            [
+              -185,
+              5
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 8,
+          "tags": [
+            "community",
+            "walkable"
+          ]
+        },
+        {
+          "id": "forest-craft-lane",
+          "name": "北侧工匠巷",
+          "points": [
+            [
+              95,
+              15
+            ],
+            [
+              70,
+              -28
+            ],
+            [
+              15,
+              -58
+            ],
+            [
+              -42,
+              -43
+            ],
+            [
+              -72,
+              -72
+            ],
+            [
+              -132,
+              -72
+            ],
+            [
+              -177,
+              -104
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 8,
+          "tags": [
+            "craft",
+            "walkable"
+          ]
+        },
+        {
+          "id": "forest-entry",
+          "name": "东来木材商道",
+          "points": [
+            [
+              240,
+              0
+            ],
+            [
+              185,
+              0
+            ],
+            [
+              140,
+              15
+            ],
+            [
+              95,
+              15
+            ],
+            [
+              58,
+              38
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 14,
+          "tags": [
+            "freight",
+            "road",
+            "trade-route"
+          ]
+        },
+        {
+          "id": "forest-north-arrival",
+          "name": "北入口支巷",
+          "points": [
+            [
+              185,
+              0
+            ],
+            [
+              174,
+              -54
+            ],
+            [
+              137,
+              -85
+            ],
+            [
+              98,
+              -115
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 8,
+          "tags": [
+            "craft",
+            "warehouse"
+          ]
+        },
+        {
+          "id": "forest-south-homes",
+          "name": "南侧村巷",
+          "points": [
+            [
+              5,
+              58
+            ],
+            [
+              20,
+              112
+            ],
+            [
+              -24,
+              144
+            ],
+            [
+              -79,
+              137
+            ],
+            [
+              -122,
+              174
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 6,
+          "tags": [
+            "residential",
+            "walkable"
+          ]
+        },
+        {
+          "id": "forest-timber-yard",
+          "name": "木材货运支巷",
+          "points": [
+            [
+              185,
+              0
+            ],
+            [
+              176,
+              64
+            ],
+            [
+              137,
+              103
+            ],
+            [
+              116,
+              148
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 9,
+          "tags": [
+            "service",
+            "timber"
+          ]
+        },
+        {
+          "id": "forest-upper-homes",
+          "name": "北坡家宅巷",
+          "points": [
+            [
+              -42,
+              -43
+            ],
+            [
+              -34,
+              -108
+            ],
+            [
+              -66,
+              -145
+            ],
+            [
+              -131,
+              -164
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 6,
+          "tags": [
+            "residential",
+            "walkable"
+          ]
+        }
+      ],
+      "buildings": [
+        {
+          "id": "forest-apprentice-hall",
+          "x": -104,
+          "z": -48,
+          "width": 26,
+          "depth": 18,
+          "height": 9,
+          "use": "学徒共作屋"
+        },
+        {
+          "id": "forest-bakery",
+          "x": -139,
+          "z": 46,
+          "width": 26,
+          "depth": 20,
+          "height": 8,
+          "use": "公共面包房"
+        },
+        {
+          "id": "forest-basket-maker",
+          "x": -71,
+          "z": -34,
+          "width": 22,
+          "depth": 16,
+          "height": 6,
+          "use": "编篮作坊"
+        },
+        {
+          "id": "forest-cartwright",
+          "x": 159,
+          "z": -105,
+          "width": 24,
+          "depth": 22,
+          "height": 8,
+          "use": "车轮与车架工坊"
+        },
+        {
+          "id": "forest-carver",
+          "x": 0,
+          "z": -86,
+          "width": 22,
+          "depth": 18,
+          "height": 7,
+          "use": "木雕工坊"
+        },
+        {
+          "id": "forest-community-hall",
+          "x": -102,
+          "z": -15,
+          "width": 30,
+          "depth": 24,
+          "height": 13,
+          "use": "村民议事与节庆会堂"
+        },
+        {
+          "id": "forest-cooper",
+          "x": 119,
+          "z": -139,
+          "width": 26,
+          "depth": 24,
+          "height": 8,
+          "use": "木桶工坊"
+        },
+        {
+          "id": "forest-drying-store",
+          "x": 193,
+          "z": 91,
+          "width": 30,
+          "depth": 24,
+          "height": 7,
+          "use": "板材晾干棚"
+        },
+        {
+          "id": "forest-freight-inn",
+          "x": 207,
+          "z": -64,
+          "width": 24,
+          "depth": 22,
+          "height": 12,
+          "use": "货商客舍"
+        },
+        {
+          "id": "forest-green-inn",
+          "x": 33,
+          "z": 14,
+          "width": 24,
+          "depth": 22,
+          "height": 12,
+          "use": "绿地客栈"
+        },
+        {
+          "id": "forest-healer",
+          "x": -10,
+          "z": 87,
+          "width": 22,
+          "depth": 18,
+          "height": 8,
+          "use": "村医药房"
+        },
+        {
+          "id": "forest-herbalist",
+          "x": -162,
+          "z": -48,
+          "width": 24,
+          "depth": 20,
+          "height": 8,
+          "use": "林药采集与处理屋"
+        },
+        {
+          "id": "forest-joiner",
+          "x": 40,
+          "z": -81,
+          "width": 24,
+          "depth": 16,
+          "height": 8,
+          "use": "细木工铺"
+        },
+        {
+          "id": "forest-log-store",
+          "x": 155,
+          "z": 137,
+          "width": 30,
+          "depth": 22,
+          "height": 8,
+          "use": "木料储库"
+        },
+        {
+          "id": "forest-provision-store",
+          "x": -188,
+          "z": 30,
+          "width": 22,
+          "depth": 18,
+          "height": 7,
+          "use": "村民杂货铺"
+        },
+        {
+          "id": "forest-rope-maker",
+          "x": 66,
+          "z": -107,
+          "width": 22,
+          "depth": 18,
+          "height": 7,
+          "use": "绳具作坊"
+        },
+        {
+          "id": "forest-sawmill",
+          "x": 152,
+          "z": 48,
+          "width": 26,
+          "depth": 22,
+          "height": 8,
+          "use": "锯木工坊"
+        },
+        {
+          "id": "forest-smith",
+          "x": 88,
+          "z": -57,
+          "width": 20,
+          "depth": 18,
+          "height": 8,
+          "use": "斧锯铁匠铺"
+        },
+        {
+          "id": "forest-south-home-center",
+          "x": -65,
+          "z": 163,
+          "width": 24,
+          "depth": 20,
+          "height": 10,
+          "use": "织匠家宅"
+        },
+        {
+          "id": "forest-south-home-east",
+          "x": -39,
+          "z": 109,
+          "width": 24,
+          "depth": 20,
+          "height": 9,
+          "use": "林工家宅"
+        },
+        {
+          "id": "forest-south-home-end",
+          "x": -151,
+          "z": 187,
+          "width": 24,
+          "depth": 20,
+          "height": 10,
+          "use": "村民家宅"
+        },
+        {
+          "id": "forest-south-home-west",
+          "x": -115,
+          "z": 140,
+          "width": 20,
+          "depth": 18,
+          "height": 9,
+          "use": "采集者家宅"
+        },
+        {
+          "id": "forest-timber-inspection",
+          "x": 211,
+          "z": -25,
+          "width": 20,
+          "depth": 18,
+          "height": 8,
+          "use": "木材验收与计量所"
+        },
+        {
+          "id": "forest-tool-store",
+          "x": 92,
+          "z": 158,
+          "width": 26,
+          "depth": 24,
+          "height": 7,
+          "use": "林业工具库"
+        },
+        {
+          "id": "forest-transit-store",
+          "x": 209,
+          "z": 28,
+          "width": 24,
+          "depth": 22,
+          "height": 7,
+          "use": "商道转运仓"
+        },
+        {
+          "id": "forest-upper-home-center",
+          "x": -41,
+          "z": -164,
+          "width": 20,
+          "depth": 18,
+          "height": 9,
+          "use": "编织师家宅"
+        },
+        {
+          "id": "forest-upper-home-east",
+          "x": -8,
+          "z": -123,
+          "width": 20,
+          "depth": 18,
+          "height": 10,
+          "use": "木匠家宅"
+        },
+        {
+          "id": "forest-upper-home-end",
+          "x": -145,
+          "z": -187,
+          "width": 24,
+          "depth": 20,
+          "height": 9,
+          "use": "护林家庭家宅"
+        },
+        {
+          "id": "forest-upper-home-west",
+          "x": -93,
+          "z": -186,
+          "width": 24,
+          "depth": 22,
+          "height": 10,
+          "use": "林工家宅"
+        },
+        {
+          "id": "forest-watch-cottage",
+          "x": -182,
+          "z": -131,
+          "width": 22,
+          "depth": 24,
+          "height": 10,
+          "use": "护林员家宅"
+        },
+        {
+          "id": "forest-weavers",
+          "x": 49,
+          "z": 105,
+          "width": 24,
+          "depth": 22,
+          "height": 8,
+          "use": "织匠共作屋"
+        }
+      ]
+    },
+    {
+      "townId": "oasis",
+      "worldKey": "{\"ecology\":[{\"biome\":\"desert\",\"density\":0.2,\"id\":\"desert-scrub\",\"kind\":\"shrub\",\"maxSlope\":28,\"scale\":[0.5,1.2],\"spacing\":16},{\"biome\":\"forest\",\"density\":0.95,\"id\":\"forest-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":32,\"scale\":[0.8,1.6],\"spacing\":18},{\"biome\":\"forest\",\"density\":0.6,\"id\":\"forest-pine\",\"kind\":\"pine\",\"maxSlope\":38,\"scale\":[0.9,1.5],\"spacing\":22},{\"biome\":\"grassland\",\"density\":0.4,\"id\":\"meadow-shrub\",\"kind\":\"shrub\",\"maxSlope\":38,\"scale\":[0.7,1.8],\"spacing\":12},{\"biome\":\"grassland\",\"density\":0.1,\"id\":\"meadow-trees\",\"kind\":\"broadleaf\",\"maxSlope\":25,\"scale\":[0.65,1.2],\"spacing\":26},{\"biome\":\"mountains\",\"density\":0.5,\"id\":\"mountain-rock\",\"kind\":\"rock\",\"maxSlope\":55,\"scale\":[1,3],\"spacing\":25}],\"id\":\"forest-oasis-world\",\"prompt\":\"西方是海洋，东方是沙漠，北方是草原，南方是森林，中央是草原。南部林地建一个林业工坊小镇，东部沙漠建一个商队集市镇，以商路相连；森林较密，草原有稀疏树丛，沙漠仅零星灌木。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"desert\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"forest\",\"region\":\"south\"},{\"biome\":\"ocean\",\"region\":\"west\"}],\"seed\":42,\"size\":64000,\"version\":1},\"revision\":1,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"trade-route\",\"name\":\"林地—沙漠商路\",\"points\":[[-1010,13250],[-400,13250],[8500,10000],[18000,5750],[18760,5750]],\"tags\":[\"world-road\"],\"width\":14}],\"towns\":[{\"blend\":500,\"center\":[-1250,13250],\"foundation\":239.51407535801877,\"id\":\"forest\",\"name\":\"林间工坊镇\",\"ports\":[{\"guideId\":\"trade-route\",\"id\":\"forest-east\",\"position\":[240,0],\"width\":14}],\"prompt\":\"林业与木工聚落，错落的支路和共享绿地，仓场、工坊和住居分区，向东连接商路。\",\"radius\":240},{\"blend\":500,\"center\":[19000,5750],\"foundation\":360.2855668241125,\"id\":\"oasis\",\"name\":\"沙漠商队镇\",\"ports\":[{\"guideId\":\"trade-route\",\"id\":\"oasis-west\",\"position\":[-240,0],\"width\":14}],\"prompt\":\"围绕开放集市和公共井屋布局，商队院落、货仓、客舍与工坊各有位置，向西连接商路。\",\"radius\":240}],\"version\":1}",
+      "summary": "西来商道先经过仓储与验货区，再抵达开敞的环街集市。西南驿站用四座低矮建筑围合商队休整院，货车停在院内；北侧窄巷连接分散客舍，南侧安排染坊、浴室和居民屋，东侧是商人住宅。集市中保留交易与集散空地，井屋位于偏南位置。树木、灌木与细碎景物由群落规则生成，局部 AI 仅规划有用途的建筑和街道。",
+      "streets": [
+        {
+          "id": "oasis-caravan-service",
+          "name": "驿站后街",
+          "points": [
+            [
+              -170,
+              0
+            ],
+            [
+              -170,
+              115
+            ],
+            [
+              -100,
+              115
+            ],
+            [
+              0,
+              115
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 8,
+          "tags": [
+            "caravanserai",
+            "service"
+          ]
+        },
+        {
+          "id": "oasis-east-lane",
+          "name": "商人巷",
+          "points": [
+            [
+              75,
+              0
+            ],
+            [
+              140,
+              0
+            ],
+            [
+              140,
+              -110
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 7,
+          "tags": [
+            "residential",
+            "walkable"
+          ]
+        },
+        {
+          "id": "oasis-entry",
+          "name": "西来商道",
+          "points": [
+            [
+              -240,
+              0
+            ],
+            [
+              -170,
+              0
+            ],
+            [
+              -100,
+              0
+            ],
+            [
+              -60,
+              0
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 14,
+          "tags": [
+            "caravan",
+            "road",
+            "trade-route"
+          ]
+        },
+        {
+          "id": "oasis-market-east",
+          "name": "集市东街",
+          "points": [
+            [
+              75,
+              -55
+            ],
+            [
+              75,
+              0
+            ],
+            [
+              75,
+              55
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 10,
+          "tags": [
+            "market",
+            "walkable"
+          ]
+        },
+        {
+          "id": "oasis-market-north",
+          "name": "集市北街",
+          "points": [
+            [
+              -60,
+              -55
+            ],
+            [
+              0,
+              -55
+            ],
+            [
+              75,
+              -55
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 10,
+          "tags": [
+            "market",
+            "walkable"
+          ]
+        },
+        {
+          "id": "oasis-market-south",
+          "name": "集市南街",
+          "points": [
+            [
+              -60,
+              55
+            ],
+            [
+              0,
+              55
+            ],
+            [
+              75,
+              55
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 10,
+          "tags": [
+            "market",
+            "walkable"
+          ]
+        },
+        {
+          "id": "oasis-market-west",
+          "name": "集市西街",
+          "points": [
+            [
+              -60,
+              -55
+            ],
+            [
+              -60,
+              0
+            ],
+            [
+              -60,
+              55
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 10,
+          "tags": [
+            "market",
+            "walkable"
+          ]
+        },
+        {
+          "id": "oasis-north-alley",
+          "name": "客舍巷",
+          "points": [
+            [
+              0,
+              -55
+            ],
+            [
+              0,
+              -115
+            ],
+            [
+              0,
+              -180
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 7,
+          "tags": [
+            "lodging",
+            "walkable"
+          ]
+        },
+        {
+          "id": "oasis-north-service",
+          "name": "仓储后街",
+          "points": [
+            [
+              -170,
+              0
+            ],
+            [
+              -170,
+              -115
+            ],
+            [
+              -100,
+              -115
+            ],
+            [
+              0,
+              -115
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 8,
+          "tags": [
+            "service",
+            "warehouse"
+          ]
+        },
+        {
+          "id": "oasis-south-alley",
+          "name": "工坊巷",
+          "points": [
+            [
+              0,
+              55
+            ],
+            [
+              0,
+              115
+            ],
+            [
+              0,
+              180
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 7,
+          "tags": [
+            "walkable",
+            "workshop"
+          ]
+        }
+      ],
+      "buildings": [
+        {
+          "id": "oasis-bathhouse",
+          "x": 36,
+          "z": 139,
+          "width": 30,
+          "depth": 24,
+          "height": 8,
+          "use": "公共浴室"
+        },
+        {
+          "id": "oasis-caravan-east",
+          "x": -102,
+          "z": 57,
+          "width": 14,
+          "depth": 28,
+          "height": 8,
+          "use": "商队客房东翼"
+        },
+        {
+          "id": "oasis-caravan-north",
+          "x": -123,
+          "z": 24,
+          "width": 30,
+          "depth": 14,
+          "height": 9,
+          "use": "驿站接待与共食厅"
+        },
+        {
+          "id": "oasis-caravan-south",
+          "x": -123,
+          "z": 89,
+          "width": 30,
+          "depth": 14,
+          "height": 6,
+          "use": "驿站行李与鞍具库"
+        },
+        {
+          "id": "oasis-caravan-west",
+          "x": -145,
+          "z": 57,
+          "width": 14,
+          "depth": 28,
+          "height": 8,
+          "use": "商队客房西翼"
+        },
+        {
+          "id": "oasis-cargo-grain",
+          "x": -193,
+          "z": -44,
+          "width": 24,
+          "depth": 22,
+          "height": 9,
+          "use": "粮食仓库"
+        },
+        {
+          "id": "oasis-cargo-spice",
+          "x": -133,
+          "z": -88,
+          "width": 30,
+          "depth": 22,
+          "height": 8,
+          "use": "香料保税仓"
+        },
+        {
+          "id": "oasis-cargo-textile",
+          "x": -193,
+          "z": -80,
+          "width": 24,
+          "depth": 22,
+          "height": 9,
+          "use": "织物仓库"
+        },
+        {
+          "id": "oasis-customs",
+          "x": -215,
+          "z": -22,
+          "width": 14,
+          "depth": 18,
+          "height": 7,
+          "use": "商道验货所"
+        },
+        {
+          "id": "oasis-dyehouse",
+          "x": -35,
+          "z": 139,
+          "width": 28,
+          "depth": 24,
+          "height": 7,
+          "use": "染坊"
+        },
+        {
+          "id": "oasis-exchange",
+          "x": -84,
+          "z": -24,
+          "width": 22,
+          "depth": 20,
+          "height": 10,
+          "use": "货币兑换与商会账房"
+        },
+        {
+          "id": "oasis-feed",
+          "x": -193,
+          "z": 80,
+          "width": 24,
+          "depth": 22,
+          "height": 6,
+          "use": "草料与饲料库"
+        },
+        {
+          "id": "oasis-gatehouse",
+          "x": -215,
+          "z": 22,
+          "width": 14,
+          "depth": 18,
+          "height": 7,
+          "use": "商队登记与守卫室"
+        },
+        {
+          "id": "oasis-guest-east",
+          "x": 32,
+          "z": -177,
+          "width": 24,
+          "depth": 22,
+          "height": 11,
+          "use": "向导与翻译客舍"
+        },
+        {
+          "id": "oasis-guest-west",
+          "x": -34,
+          "z": -173,
+          "width": 30,
+          "depth": 20,
+          "height": 11,
+          "use": "安静客房院"
+        },
+        {
+          "id": "oasis-healer",
+          "x": 165,
+          "z": -65,
+          "width": 26,
+          "depth": 22,
+          "height": 8,
+          "use": "药草医馆"
+        },
+        {
+          "id": "oasis-home-southeast",
+          "x": 31,
+          "z": 179,
+          "width": 26,
+          "depth": 20,
+          "height": 9,
+          "use": "工匠家宅"
+        },
+        {
+          "id": "oasis-home-southwest",
+          "x": -29,
+          "z": 177,
+          "width": 22,
+          "depth": 22,
+          "height": 9,
+          "use": "工匠家宅"
+        },
+        {
+          "id": "oasis-hostel",
+          "x": -35,
+          "z": -138,
+          "width": 30,
+          "depth": 22,
+          "height": 10,
+          "use": "行脚客栈"
+        },
+        {
+          "id": "oasis-inn-east",
+          "x": 30,
+          "z": -78,
+          "width": 26,
+          "depth": 20,
+          "height": 12,
+          "use": "长住商人客舍"
+        },
+        {
+          "id": "oasis-inn-west",
+          "x": -34,
+          "z": -78,
+          "width": 24,
+          "depth": 20,
+          "height": 12,
+          "use": "旅人客舍"
+        },
+        {
+          "id": "oasis-kitchen",
+          "x": 33,
+          "z": -139,
+          "width": 26,
+          "depth": 24,
+          "height": 7,
+          "use": "客舍共用厨房"
+        },
+        {
+          "id": "oasis-market-cloth",
+          "x": 4,
+          "z": -31,
+          "width": 22,
+          "depth": 16,
+          "height": 5,
+          "use": "遮阴织物铺"
+        },
+        {
+          "id": "oasis-market-food",
+          "x": -31,
+          "z": -31,
+          "width": 24,
+          "depth": 16,
+          "height": 5,
+          "use": "遮阴食物铺"
+        },
+        {
+          "id": "oasis-market-pottery",
+          "x": 41,
+          "z": -31,
+          "width": 24,
+          "depth": 16,
+          "height": 5,
+          "use": "遮阴陶器铺"
+        },
+        {
+          "id": "oasis-merchant-east",
+          "x": 166,
+          "z": -27,
+          "width": 24,
+          "depth": 22,
+          "height": 12,
+          "use": "香料商家宅"
+        },
+        {
+          "id": "oasis-merchant-west",
+          "x": 105,
+          "z": -26,
+          "width": 24,
+          "depth": 18,
+          "height": 13,
+          "use": "商人宅院"
+        },
+        {
+          "id": "oasis-potters",
+          "x": 35,
+          "z": 78,
+          "width": 28,
+          "depth": 18,
+          "height": 7,
+          "use": "陶工铺"
+        },
+        {
+          "id": "oasis-stable",
+          "x": -193,
+          "z": 44,
+          "width": 24,
+          "depth": 22,
+          "height": 6,
+          "use": "驮兽马厩"
+        },
+        {
+          "id": "oasis-teahouse",
+          "x": -84,
+          "z": 24,
+          "width": 22,
+          "depth": 20,
+          "height": 7,
+          "use": "商道茶馆"
+        },
+        {
+          "id": "oasis-weavers",
+          "x": -35,
+          "z": 78,
+          "width": 26,
+          "depth": 18,
+          "height": 7,
+          "use": "织工铺"
+        },
+        {
+          "id": "oasis-wellhouse",
+          "x": 14,
+          "z": 24,
+          "width": 10,
+          "depth": 10,
+          "height": 6,
+          "use": "公共井屋"
+        },
+        {
+          "id": "oasis-wholesale",
+          "x": -89,
+          "z": -88,
+          "width": 26,
+          "depth": 22,
+          "height": 8,
+          "use": "批发议价行"
+        }
+      ]
+    }
+  ]
+}

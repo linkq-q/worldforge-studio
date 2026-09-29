@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WorldForge · 连续世界实验室</title>
+  <style>
+    * { box-sizing:border-box } body { margin:0; background:#0d171b; color:#e5eee9; font:14px/1.6 system-ui,sans-serif }
+    button,input,select,textarea { font:inherit } button,select,input,textarea { color:#e5eee9; background:#17292e; border:1px solid #395158; border-radius:6px; padding:8px }
+    button { cursor:pointer } button:hover { border-color:#99c9ad; background:#25433f } button:disabled { opacity:.5;cursor:wait }
+    main { display:grid; grid-template-columns:330px 1fr; height:100vh } aside { padding:24px; overflow:auto; border-right:1px solid #2c4147 }
+    .eyebrow { font-size:10px; letter-spacing:2.4px; color:#9dc7b2 } h1 { font-size:24px; margin:8px 0 3px; font-weight:600 }
+    .muted,small { color:#a5b9b7 } p { margin:8px 0 16px } label { display:block; margin:12px 0 5px; color:#bbceca; font-size:12px }
+    textarea { width:100%; resize:vertical; min-height:85px } .row { display:flex; gap:10px }.row>* { min-width:0;flex:1 }
+    input,select { width:100% } #generate { width:100%; margin-top:16px; background:#c9e7be; border:0; color:#16372b; font-weight:600 }
+    .section { border-top:1px solid #293d43; margin-top:22px; padding-top:16px } h2 { font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#aec6bd;margin:0 0 10px }
+    #plan { list-style:none; padding:0;margin:8px 0 } #plan li { display:flex; justify-content:space-between; padding:4px 0 }
+    #error { color:#ffae99; white-space:pre-wrap;margin-top:10px } #viewport { position:relative;min-width:0;overflow:hidden }
+    #world { display:block;width:100%;height:100%;outline:none } #view-label { position:absolute;left:24px;top:22px;pointer-events:none;text-shadow:0 1px 6px #000; }
+    #view-label strong { display:block;font-size:21px;font-weight:500 } #toolbar { position:absolute;right:20px;top:20px;display:flex;gap:6px }
+    #toolbar button { background:#10262bd9; font-size:12px;backdrop-filter:blur(8px) } #legend { display:flex;flex-wrap:wrap;gap:8px;font-size:11px;margin-top:8px }
+    .dot { display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px } #atlas { width:100%;height:auto;cursor:crosshair;border-radius:5px;display:block }
+    #compass { display:flex;justify-content:space-between;color:#8caeab;font-size:11px;margin-bottom:3px }
+    #status { position:absolute;left:20px;bottom:20px;max-width:calc(100% - 40px);background:#10262be8;padding:10px 14px;border:1px solid #395758; border-radius:6px;font:12px/1.7 ui-monospace,monospace;pointer-events:none;white-space:pre-line }
+    #inspection { font-size:12px;color:#bbceca;min-height:42px } #progress { color:#e4d297 } #metrics { font-size:11px;color:#a9c3bb;white-space:pre-line }
+    details { font-size:12px;color:#a5b9b7 } summary { cursor:pointer } a { color:#c9e7be }
+    @media(max-width:850px) { main { grid-template-columns:265px 1fr } aside { padding:16px } #toolbar { top:100px;left:20px;right:auto;flex-wrap:wrap } }
+  </style>
+</head>
+<body>
+<main>
+  <aside>
+    <div class="eyebrow">WORLDFORGE / WORLD PLANNING / STUDY 02</div>
+    <h1>一句话，一片大陆</h1>
+    <p class="muted" id="study-info">连续地形与聚落散布实验</p>
+    <form id="form">
+      <label for="prompt">世界布局</label>
+      <textarea id="prompt">西方是海洋，东方是沙漠，北方是雪地，南方是森林，中央是山脉</textarea>
+      <div class="row">
+        <div><label for="seed">种子</label><input id="seed" type="number" min="0" max="4294967295" value="42" required></div>
+        <div><label for="size">地图宽度</label><select id="size"><option value="500">500 米</option><option value="16000">16 km</option><option value="64000" selected>64 km</option><option value="256000">256 km</option></select></div>
+      </div>
+      <button id="generate" type="submit">生成世界</button>
+    </form>
+    <div id="error" role="alert"></div>
+    <label for="example">示例描述</label>
+    <select id="example">
+      <option value="">选择一个示例…</option>
+      <option>西方是海洋，东方是沙漠</option>
+      <option>西方是海洋，东方是沙漠，北方是雪地，南方是森林，中央是山脉</option>
+      <option>北方是海洋，南方是沙漠，西方是森林，东方是草原，中央是山脉</option>
+      <option>西北是海洋，东北是雪地，西南是森林，东南是沙漠，中央是草原</option>
+    </select>
+    <div class="section">
+      <h2>世界规划 → 城镇任务 → 程序生态</h2>
+      <button id="compact-demo" type="button" style="width:100%;background:#c9e7be;color:#16372b">500 米 · 四聚落预览</button>
+      <button id="demo" type="button" style="width:100%;margin-top:8px">加载原大地图样例</button>
+      <p id="planning-status" style="white-space:pre-line;font-size:12px"></p>
+      <div class="row"><select id="town" aria-label="选择城镇"></select><button id="visit-town" type="button">进入城镇</button></div>
+      <label id="density-label" for="density">植被密度预览 1.00×</label>
+      <input id="density" type="range" min="0" max="2" step="0.25" value="1">
+      <button id="forest" type="button" style="width:100%;margin-top:8px">进入林地 · 检查程序散布</button>
+      <details style="margin-top:14px"><summary>AI 计划导入 / 局部重做</summary>
+        <p>样例由当前 Codex 和城镇子 agent 编写。新世界由 Codex 输出结构化计划；此页面负责验证和预览。</p>
+        <div class="row"><button id="export-tasks" type="button">导出城镇任务</button><button id="export-bundle" type="button">导出完整计划</button></div>
+        <label for="plan-json">粘贴 WorldPlan / TownPatch / WorldBundle JSON</label>
+        <textarea id="plan-json" style="min-height:110px" placeholder="局部计划只替换所属城镇；旧版本或越界内容会被拒绝"></textarea>
+        <button id="import-plan" type="button">验证并导入计划</button>
+      </details>
+      <small>近景按需加载植物；远景保留群落底色。500米样例使用已有中世纪模型，灌木和远景植被仍用简模。密度滑块仅预览，导出保留 AI 规则原值。</small>
+    </div>
+    <div class="section"><h2>已解析的布局</h2><ul id="plan"></ul><small>核心区遵循约束，过渡区域由连续气候场混合。</small></div>
+    <div class="section">
+      <h2>全域群落图 · 点击进入局部</h2>
+      <div id="compass"><span>西 ←</span><span>北 ↑</span><span>→ 东</span></div>
+      <canvas id="atlas" width="320" height="320" aria-label="地图总览，点击进入选中区域"></canvas>
+      <div id="legend"></div><p id="inspection">海平面 0 m · 东方 +X · 北方 −Z</p>
+      <div id="metrics"></div>
+    </div>
+    <details class="section"><summary>当前流式加载数据</summary><pre id="stream-metrics" style="white-space:pre-wrap;font-size:11px"></pre></details><details class="section"><summary>最近镜头巡检结果</summary><pre id="survey-results" style="white-space:pre-wrap;font-size:11px"></pre></details><div class="section row"><button id="export" type="button">导出世界配方</button><button id="survey" type="button">运行镜头巡检</button></div>
+    <div class="section">
+      <details><summary>实验边界与操作</summary>
+        <p>左键旋转，右键平移，滚轮缩放。点击群落图进入局部，双击地形可继续靠近。</p>
+        <p>支持“方位＋海洋 / 森林 / 草原 / 沙漠 / 山脉 / 雪地”，支持中部和对角方位。当前是规则解析器；不支持的内容会报错。</p>
+        <p>程序化高度场、气候权重和按需分块独立运行；不写入编辑器地图。高度只有一个地表，不含洞穴、真实河网和水蚀。分块使用裙边遮缝，切换精度仍可能跳变。</p>
+      </details>
+    </div>
+  </aside>
+  <section id="viewport">
+    <canvas id="world" aria-label="三维连续地形"></canvas>
+    <div id="view-label"><span class="eyebrow">CONTINUOUS WORLD / SEEDED GENERATION</span><strong id="caption">正在生成世界…</strong><span id="progress">初始化连续地形</span></div>
+    <nav id="toolbar" aria-label="视图工具"><button id="overview">全图</button><button id="top">俯视</button><button id="wire">网格</button><button id="relief">高度 1×</button></nav>
+    <div id="status" role="status">加载中…</div>
+  </section>
+</main>
+<script type="module" src="/src/client/terrainBiomeLab.ts"></script>
+</body>
+</html>
+
+

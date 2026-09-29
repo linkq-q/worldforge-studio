@@ -1,0 +1,1772 @@
+{
+  "plan": {
+    "version": 1,
+    "id": "compact-four-towns",
+    "revision": 3,
+    "prompt": "500×500米自然生长的聚落群：老集市最密，工坊沿商路延伸，住居沿支巷聚集，林园稀疏；道路弯折、错接，树木与空院穿入聚落。",
+    "recipe": {
+      "version": 1,
+      "seed": 147,
+      "size": 500,
+      "constraints": [
+        {
+          "region": "center",
+          "biome": "grassland"
+        },
+        {
+          "region": "east",
+          "biome": "grassland"
+        },
+        {
+          "region": "north",
+          "biome": "grassland"
+        },
+        {
+          "region": "northeast",
+          "biome": "grassland"
+        },
+        {
+          "region": "northwest",
+          "biome": "grassland"
+        },
+        {
+          "region": "south",
+          "biome": "grassland"
+        },
+        {
+          "region": "southeast",
+          "biome": "grassland"
+        },
+        {
+          "region": "southwest",
+          "biome": "grassland"
+        },
+        {
+          "region": "west",
+          "biome": "grassland"
+        }
+      ],
+      "landforms": [
+        {
+          "center": [
+            -55,
+            -235
+          ],
+          "radius": [
+            110,
+            70
+          ],
+          "height": 26
+        },
+        {
+          "center": [
+            -230,
+            -60
+          ],
+          "radius": [
+            80,
+            105
+          ],
+          "height": 28
+        },
+        {
+          "center": [
+            245,
+            20
+          ],
+          "radius": [
+            80,
+            110
+          ],
+          "height": 6
+        },
+        {
+          "center": [
+            0,
+            230
+          ],
+          "radius": [
+            140,
+            65
+          ],
+          "height": 22
+        },
+        {
+          "center": [
+            0,
+            50
+          ],
+          "radius": [
+            180,
+            160
+          ],
+          "height": 6
+        }
+      ]
+    },
+    "ecology": [
+      {
+        "id": "meadow-canopy",
+        "kind": "broadleaf",
+        "biome": "grassland",
+        "density": 0.85,
+        "spacing": 11,
+        "maxSlope": 35,
+        "scale": [
+          0.55,
+          0.95
+        ]
+      },
+      {
+        "id": "meadow-pines",
+        "kind": "pine",
+        "biome": "grassland",
+        "density": 0.25,
+        "spacing": 15,
+        "maxSlope": 40,
+        "scale": [
+          0.55,
+          0.85
+        ]
+      },
+      {
+        "id": "meadow-scrub",
+        "kind": "shrub",
+        "biome": "grassland",
+        "density": 0.3,
+        "spacing": 9,
+        "maxSlope": 40,
+        "scale": [
+          0.5,
+          1
+        ]
+      }
+    ],
+    "towns": [
+      {
+        "id": "homes",
+        "name": "新街住居",
+        "prompt": "住宅从两条汇合道路向外蔓延，主路旁较密，背街与绿地相互穿插。",
+        "center": [
+          115,
+          90
+        ],
+        "radius": 65,
+        "blend": 45,
+        "foundation": 170.73196372260213,
+        "ports": [
+          {
+            "id": "homes-port-0",
+            "guideId": "market-homes",
+            "position": [
+              -65,
+              -55
+            ],
+            "width": 5
+          },
+          {
+            "id": "homes-port-1",
+            "guideId": "craft-homes",
+            "position": [
+              -5,
+              -65
+            ],
+            "width": 5.5
+          },
+          {
+            "id": "homes-port-2",
+            "guideId": "homes-orchard",
+            "position": [
+              -65,
+              45
+            ],
+            "width": 5
+          }
+        ]
+      },
+      {
+        "id": "market",
+        "name": "老集市",
+        "prompt": "老街沿商路生长，路口密集，两侧支巷错开，外围留出果树和空院。",
+        "center": [
+          -70,
+          -65
+        ],
+        "radius": 80,
+        "blend": 50,
+        "foundation": 174.51648313020422,
+        "ports": [
+          {
+            "id": "market-port-0",
+            "guideId": "market-craft",
+            "position": [
+              80,
+              -25
+            ],
+            "width": 6
+          },
+          {
+            "id": "market-port-1",
+            "guideId": "market-orchard",
+            "position": [
+              -45,
+              80
+            ],
+            "width": 5
+          },
+          {
+            "id": "market-port-2",
+            "guideId": "market-homes",
+            "position": [
+              80,
+              55
+            ],
+            "width": 5
+          }
+        ]
+      },
+      {
+        "id": "orchard",
+        "name": "林园住居",
+        "prompt": "疏落住居沿弯路和分叉小径延伸，树林穿入建筑之间，路末只有零星房屋。",
+        "center": [
+          -135,
+          120
+        ],
+        "radius": 60,
+        "blend": 40,
+        "foundation": 167.82784749148453,
+        "ports": [
+          {
+            "id": "orchard-port-0",
+            "guideId": "market-orchard",
+            "position": [
+              25,
+              -60
+            ],
+            "width": 5
+          },
+          {
+            "id": "orchard-port-1",
+            "guideId": "homes-orchard",
+            "position": [
+              60,
+              20
+            ],
+            "width": 5
+          }
+        ]
+      },
+      {
+        "id": "workshops",
+        "name": "工坊街",
+        "prompt": "沿运输路形成一条不规则工坊街，仓房和住居混合，侧面留下作业空地。",
+        "center": [
+          105,
+          -135
+        ],
+        "radius": 55,
+        "blend": 40,
+        "foundation": 173.82830460984522,
+        "ports": [
+          {
+            "id": "workshops-port-0",
+            "guideId": "market-craft",
+            "position": [
+              -55,
+              25
+            ],
+            "width": 6
+          },
+          {
+            "id": "workshops-port-1",
+            "guideId": "craft-homes",
+            "position": [
+              5,
+              55
+            ],
+            "width": 5.5
+          }
+        ]
+      }
+    ],
+    "roads": [
+      {
+        "id": "craft-homes",
+        "name": "craft-homes",
+        "points": [
+          [
+            110,
+            -80
+          ],
+          [
+            135,
+            -45
+          ],
+          [
+            100,
+            -5
+          ],
+          [
+            110,
+            25
+          ]
+        ],
+        "curve": "polyline",
+        "closed": false,
+        "width": 5.5,
+        "tags": [
+          "compact-preview"
+        ]
+      },
+      {
+        "id": "homes-orchard",
+        "name": "homes-orchard",
+        "points": [
+          [
+            50,
+            135
+          ],
+          [
+            15,
+            150
+          ],
+          [
+            -40,
+            128
+          ],
+          [
+            -75,
+            140
+          ]
+        ],
+        "curve": "polyline",
+        "closed": false,
+        "width": 5,
+        "tags": [
+          "compact-preview"
+        ]
+      },
+      {
+        "id": "market-craft",
+        "name": "market-craft",
+        "points": [
+          [
+            10,
+            -90
+          ],
+          [
+            29,
+            -97
+          ],
+          [
+            50,
+            -110
+          ]
+        ],
+        "curve": "polyline",
+        "closed": false,
+        "width": 6,
+        "tags": [
+          "compact-preview"
+        ]
+      },
+      {
+        "id": "market-homes",
+        "name": "market-homes",
+        "points": [
+          [
+            10,
+            -10
+          ],
+          [
+            29,
+            9
+          ],
+          [
+            50,
+            35
+          ]
+        ],
+        "curve": "polyline",
+        "closed": false,
+        "width": 5,
+        "tags": [
+          "compact-preview"
+        ]
+      },
+      {
+        "id": "market-orchard",
+        "name": "market-orchard",
+        "points": [
+          [
+            -115,
+            15
+          ],
+          [
+            -122,
+            37
+          ],
+          [
+            -110,
+            60
+          ]
+        ],
+        "curve": "polyline",
+        "closed": false,
+        "width": 5,
+        "tags": [
+          "compact-preview"
+        ]
+      }
+    ]
+  },
+  "patches": [
+    {
+      "townId": "homes",
+      "worldKey": "{\"ecology\":[{\"biome\":\"grassland\",\"density\":0.85,\"id\":\"meadow-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":35,\"scale\":[0.55,0.95],\"spacing\":11},{\"biome\":\"grassland\",\"density\":0.25,\"id\":\"meadow-pines\",\"kind\":\"pine\",\"maxSlope\":40,\"scale\":[0.55,0.85],\"spacing\":15},{\"biome\":\"grassland\",\"density\":0.3,\"id\":\"meadow-scrub\",\"kind\":\"shrub\",\"maxSlope\":40,\"scale\":[0.5,1],\"spacing\":9}],\"id\":\"compact-four-towns\",\"prompt\":\"500×500米自然生长的聚落群：老集市最密，工坊沿商路延伸，住居沿支巷聚集，林园稀疏；道路弯折、错接，树木与空院穿入聚落。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"grassland\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"grassland\",\"region\":\"northeast\"},{\"biome\":\"grassland\",\"region\":\"northwest\"},{\"biome\":\"grassland\",\"region\":\"south\"},{\"biome\":\"grassland\",\"region\":\"southeast\"},{\"biome\":\"grassland\",\"region\":\"southwest\"},{\"biome\":\"grassland\",\"region\":\"west\"}],\"landforms\":[{\"center\":[-55,-235],\"height\":26,\"radius\":[110,70]},{\"center\":[-230,-60],\"height\":28,\"radius\":[80,105]},{\"center\":[245,20],\"height\":6,\"radius\":[80,110]},{\"center\":[0,230],\"height\":22,\"radius\":[140,65]},{\"center\":[0,50],\"height\":6,\"radius\":[180,160]}],\"seed\":147,\"size\":500,\"version\":1},\"revision\":3,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"craft-homes\",\"name\":\"craft-homes\",\"points\":[[110,-80],[135,-45],[100,-5],[110,25]],\"tags\":[\"compact-preview\"],\"width\":5.5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"homes-orchard\",\"name\":\"homes-orchard\",\"points\":[[50,135],[15,150],[-40,128],[-75,140]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-craft\",\"name\":\"market-craft\",\"points\":[[10,-90],[29,-97],[50,-110]],\"tags\":[\"compact-preview\"],\"width\":6},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-homes\",\"name\":\"market-homes\",\"points\":[[10,-10],[29,9],[50,35]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-orchard\",\"name\":\"market-orchard\",\"points\":[[-115,15],[-122,37],[-110,60]],\"tags\":[\"compact-preview\"],\"width\":5}],\"towns\":[{\"blend\":45,\"center\":[115,90],\"foundation\":170.73196372260213,\"id\":\"homes\",\"name\":\"新街住居\",\"ports\":[{\"guideId\":\"market-homes\",\"id\":\"homes-port-0\",\"position\":[-65,-55],\"width\":5},{\"guideId\":\"craft-homes\",\"id\":\"homes-port-1\",\"position\":[-5,-65],\"width\":5.5},{\"guideId\":\"homes-orchard\",\"id\":\"homes-port-2\",\"position\":[-65,45],\"width\":5}],\"prompt\":\"住宅从两条汇合道路向外蔓延，主路旁较密，背街与绿地相互穿插。\",\"radius\":65},{\"blend\":50,\"center\":[-70,-65],\"foundation\":174.51648313020422,\"id\":\"market\",\"name\":\"老集市\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"market-port-0\",\"position\":[80,-25],\"width\":6},{\"guideId\":\"market-orchard\",\"id\":\"market-port-1\",\"position\":[-45,80],\"width\":5},{\"guideId\":\"market-homes\",\"id\":\"market-port-2\",\"position\":[80,55],\"width\":5}],\"prompt\":\"老街沿商路生长，路口密集，两侧支巷错开，外围留出果树和空院。\",\"radius\":80},{\"blend\":40,\"center\":[-135,120],\"foundation\":167.82784749148453,\"id\":\"orchard\",\"name\":\"林园住居\",\"ports\":[{\"guideId\":\"market-orchard\",\"id\":\"orchard-port-0\",\"position\":[25,-60],\"width\":5},{\"guideId\":\"homes-orchard\",\"id\":\"orchard-port-1\",\"position\":[60,20],\"width\":5}],\"prompt\":\"疏落住居沿弯路和分叉小径延伸，树林穿入建筑之间，路末只有零星房屋。\",\"radius\":60},{\"blend\":40,\"center\":[105,-135],\"foundation\":173.82830460984522,\"id\":\"workshops\",\"name\":\"工坊街\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"workshops-port-0\",\"position\":[-55,25],\"width\":6},{\"guideId\":\"craft-homes\",\"id\":\"workshops-port-1\",\"position\":[5,55],\"width\":5.5}],\"prompt\":\"沿运输路形成一条不规则工坊街，仓房和住居混合，侧面留下作业空地。\",\"radius\":55}],\"version\":1}",
+      "summary": "住宅从两条汇合道路向外蔓延，主路旁较密，背街与绿地相互穿插。",
+      "streets": [
+        {
+          "id": "homes-back-lane",
+          "name": "homes-back-lane",
+          "points": [
+            [
+              -26,
+              14
+            ],
+            [
+              0,
+              27
+            ],
+            [
+              32,
+              37
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "homes-craft-road",
+          "name": "homes-craft-road",
+          "points": [
+            [
+              -5,
+              -65
+            ],
+            [
+              -10,
+              -40
+            ],
+            [
+              -10,
+              -17
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5.5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "homes-east-lane",
+          "name": "homes-east-lane",
+          "points": [
+            [
+              18,
+              0
+            ],
+            [
+              26,
+              -23
+            ],
+            [
+              46,
+              -39
+            ],
+            [
+              59,
+              -52
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3.5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "homes-garden-road",
+          "name": "homes-garden-road",
+          "points": [
+            [
+              -65,
+              45
+            ],
+            [
+              -43,
+              34
+            ],
+            [
+              -26,
+              14
+            ],
+            [
+              -10,
+              -17
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "homes-main-road",
+          "name": "homes-main-road",
+          "points": [
+            [
+              -65,
+              -55
+            ],
+            [
+              -40,
+              -33
+            ],
+            [
+              -10,
+              -17
+            ],
+            [
+              18,
+              0
+            ],
+            [
+              41,
+              12
+            ],
+            [
+              61,
+              38
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "homes-south-lane",
+          "name": "homes-south-lane",
+          "points": [
+            [
+              41,
+              12
+            ],
+            [
+              32,
+              37
+            ],
+            [
+              19,
+              58
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3.5,
+          "tags": [
+            "compact-preview"
+          ]
+        }
+      ],
+      "buildings": [
+        {
+          "id": "homes-building-0",
+          "x": -45.3629286509241,
+          "z": -55.46965014993163,
+          "width": 7.82135550188832,
+          "depth": 9.536544623784721,
+          "height": 7.981342784827575,
+          "use": "住宅",
+          "rotation": -0.7216548508647612
+        },
+        {
+          "id": "homes-building-1",
+          "x": -56.67464643389562,
+          "z": -30.36902795834274,
+          "width": 7.813015496591106,
+          "depth": 6.959763810038567,
+          "height": 4.903630118118599,
+          "use": "住宅",
+          "rotation": 2.419937802725032
+        },
+        {
+          "id": "homes-building-10",
+          "x": -55.3268093284852,
+          "z": 55.77522321196467,
+          "width": 10.16553249466233,
+          "depth": 10.98722121398896,
+          "height": 7.878862358396873,
+          "use": "街角小店",
+          "rotation": -2.677945044588987
+        },
+        {
+          "id": "homes-building-11",
+          "x": -46.0455693374214,
+          "z": 14.918832878772966,
+          "width": 8.731852524448186,
+          "depth": 9.604316377546638,
+          "height": 5.366259397473186,
+          "use": "社区屋",
+          "rotation": 0.866302262552679
+        },
+        {
+          "id": "homes-building-12",
+          "x": -23.341947269535282,
+          "z": 34.21691163647617,
+          "width": 10.103918919572607,
+          "depth": 8.18392974883318,
+          "height": 5.266098275082186,
+          "use": "住宅",
+          "rotation": -2.275290391037114
+        },
+        {
+          "id": "homes-building-13",
+          "x": 33.89889816565545,
+          "z": -13.948207507685648,
+          "width": 6.595252150669694,
+          "depth": 9.919720003847033,
+          "height": 8.476829315535724,
+          "use": "住宅",
+          "rotation": -1.9055331641117113
+        },
+        {
+          "id": "homes-building-14",
+          "x": 22.103884264343208,
+          "z": -35.26211334999334,
+          "width": 6.136084879050031,
+          "depth": 9.436368741095066,
+          "height": 6.773099868791178,
+          "use": "街角小店",
+          "rotation": 0.6747409422235527
+        },
+        {
+          "id": "homes-building-15",
+          "x": 36.8430205429959,
+          "z": -46.82929699234157,
+          "width": 9.958177252206951,
+          "depth": 7.405283567961305,
+          "height": 5.216561875771731,
+          "use": "社区屋",
+          "rotation": 0.6747409422235527
+        },
+        {
+          "id": "homes-building-16",
+          "x": 52.401883349895044,
+          "z": -27.380718483717644,
+          "width": 9.836608804995194,
+          "depth": 8.941769387573004,
+          "height": 7.358003628673032,
+          "use": "住宅",
+          "rotation": -2.4668517113662407
+        },
+        {
+          "id": "homes-building-17",
+          "x": 44.231612486746954,
+          "z": 40.51322650588422,
+          "width": 8.435485526220873,
+          "depth": 9.27104719541967,
+          "height": 5.514361385488883,
+          "use": "住宅",
+          "rotation": -1.9163519073766089
+        },
+        {
+          "id": "homes-building-18",
+          "x": -8.402451022315862,
+          "z": 37.62370277842453,
+          "width": 10.63540205382742,
+          "depth": 10.54078434035182,
+          "height": 7.932599370600656,
+          "use": "街角小店",
+          "rotation": 2.677945044588987
+        },
+        {
+          "id": "homes-building-19",
+          "x": 15.368954823461715,
+          "z": 42.51625752483166,
+          "width": 7.189025157364085,
+          "depth": 9.936481582000852,
+          "height": 4.268743975320831,
+          "use": "社区屋",
+          "rotation": 2.8387077852148215
+        },
+        {
+          "id": "homes-building-2",
+          "x": -22.62887367429296,
+          "z": -37.59740423512836,
+          "width": 7.9925380032509565,
+          "depth": 6.600241395179182,
+          "height": 5.643762825988233,
+          "use": "街角小店",
+          "rotation": -0.4899573262537283
+        },
+        {
+          "id": "homes-building-3",
+          "x": -33.187942368607885,
+          "z": -17.799150433287878,
+          "width": 6.498267927905545,
+          "depth": 6.723644209094346,
+          "height": 5.949171758024022,
+          "use": "社区屋",
+          "rotation": 2.6516353273360647
+        },
+        {
+          "id": "homes-building-4",
+          "x": 3.155988108038666,
+          "z": -24.87617925926623,
+          "width": 8.744137285044417,
+          "depth": 7.553674106486142,
+          "height": 6.739956135628745,
+          "use": "住宅",
+          "rotation": -0.5456550545269917
+        },
+        {
+          "id": "homes-building-5",
+          "x": -3.3344824808759306,
+          "z": 5.389556227200302,
+          "width": 9.58029902097769,
+          "depth": 10.089879306033254,
+          "height": 6.894672384718433,
+          "use": "住宅",
+          "rotation": 2.5959375990628013
+        },
+        {
+          "id": "homes-building-6",
+          "x": 18.010730618360633,
+          "z": 16.797743502318575,
+          "width": 9.194276789436117,
+          "depth": 11.703931219875813,
+          "height": 7.167466028826311,
+          "use": "街角小店",
+          "rotation": 2.6607053733944572
+        },
+        {
+          "id": "homes-building-7",
+          "x": 55.68368006478444,
+          "z": 8.714875286804489,
+          "width": 9.840914933243766,
+          "depth": 6.131516933441162,
+          "height": 8.200271043227986,
+          "use": "社区屋",
+          "rotation": -0.9151007005533605
+        },
+        {
+          "id": "homes-building-8",
+          "x": 1.8679624174535991,
+          "z": -44.90348747685974,
+          "width": 8.008847759570926,
+          "depth": 10.196807592641562,
+          "height": 7.2636271812953055,
+          "use": "住宅",
+          "rotation": -1.7681918866447774
+        },
+        {
+          "id": "homes-building-9",
+          "x": -21.565420391625473,
+          "z": -49.59016403867555,
+          "width": 6.214285432593897,
+          "depth": 11.568033864721656,
+          "height": 4.911962647223845,
+          "use": "住宅",
+          "rotation": 1.3734007669450157
+        }
+      ]
+    },
+    {
+      "townId": "market",
+      "worldKey": "{\"ecology\":[{\"biome\":\"grassland\",\"density\":0.85,\"id\":\"meadow-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":35,\"scale\":[0.55,0.95],\"spacing\":11},{\"biome\":\"grassland\",\"density\":0.25,\"id\":\"meadow-pines\",\"kind\":\"pine\",\"maxSlope\":40,\"scale\":[0.55,0.85],\"spacing\":15},{\"biome\":\"grassland\",\"density\":0.3,\"id\":\"meadow-scrub\",\"kind\":\"shrub\",\"maxSlope\":40,\"scale\":[0.5,1],\"spacing\":9}],\"id\":\"compact-four-towns\",\"prompt\":\"500×500米自然生长的聚落群：老集市最密，工坊沿商路延伸，住居沿支巷聚集，林园稀疏；道路弯折、错接，树木与空院穿入聚落。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"grassland\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"grassland\",\"region\":\"northeast\"},{\"biome\":\"grassland\",\"region\":\"northwest\"},{\"biome\":\"grassland\",\"region\":\"south\"},{\"biome\":\"grassland\",\"region\":\"southeast\"},{\"biome\":\"grassland\",\"region\":\"southwest\"},{\"biome\":\"grassland\",\"region\":\"west\"}],\"landforms\":[{\"center\":[-55,-235],\"height\":26,\"radius\":[110,70]},{\"center\":[-230,-60],\"height\":28,\"radius\":[80,105]},{\"center\":[245,20],\"height\":6,\"radius\":[80,110]},{\"center\":[0,230],\"height\":22,\"radius\":[140,65]},{\"center\":[0,50],\"height\":6,\"radius\":[180,160]}],\"seed\":147,\"size\":500,\"version\":1},\"revision\":3,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"craft-homes\",\"name\":\"craft-homes\",\"points\":[[110,-80],[135,-45],[100,-5],[110,25]],\"tags\":[\"compact-preview\"],\"width\":5.5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"homes-orchard\",\"name\":\"homes-orchard\",\"points\":[[50,135],[15,150],[-40,128],[-75,140]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-craft\",\"name\":\"market-craft\",\"points\":[[10,-90],[29,-97],[50,-110]],\"tags\":[\"compact-preview\"],\"width\":6},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-homes\",\"name\":\"market-homes\",\"points\":[[10,-10],[29,9],[50,35]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-orchard\",\"name\":\"market-orchard\",\"points\":[[-115,15],[-122,37],[-110,60]],\"tags\":[\"compact-preview\"],\"width\":5}],\"towns\":[{\"blend\":45,\"center\":[115,90],\"foundation\":170.73196372260213,\"id\":\"homes\",\"name\":\"新街住居\",\"ports\":[{\"guideId\":\"market-homes\",\"id\":\"homes-port-0\",\"position\":[-65,-55],\"width\":5},{\"guideId\":\"craft-homes\",\"id\":\"homes-port-1\",\"position\":[-5,-65],\"width\":5.5},{\"guideId\":\"homes-orchard\",\"id\":\"homes-port-2\",\"position\":[-65,45],\"width\":5}],\"prompt\":\"住宅从两条汇合道路向外蔓延，主路旁较密，背街与绿地相互穿插。\",\"radius\":65},{\"blend\":50,\"center\":[-70,-65],\"foundation\":174.51648313020422,\"id\":\"market\",\"name\":\"老集市\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"market-port-0\",\"position\":[80,-25],\"width\":6},{\"guideId\":\"market-orchard\",\"id\":\"market-port-1\",\"position\":[-45,80],\"width\":5},{\"guideId\":\"market-homes\",\"id\":\"market-port-2\",\"position\":[80,55],\"width\":5}],\"prompt\":\"老街沿商路生长，路口密集，两侧支巷错开，外围留出果树和空院。\",\"radius\":80},{\"blend\":40,\"center\":[-135,120],\"foundation\":167.82784749148453,\"id\":\"orchard\",\"name\":\"林园住居\",\"ports\":[{\"guideId\":\"market-orchard\",\"id\":\"orchard-port-0\",\"position\":[25,-60],\"width\":5},{\"guideId\":\"homes-orchard\",\"id\":\"orchard-port-1\",\"position\":[60,20],\"width\":5}],\"prompt\":\"疏落住居沿弯路和分叉小径延伸，树林穿入建筑之间，路末只有零星房屋。\",\"radius\":60},{\"blend\":40,\"center\":[105,-135],\"foundation\":173.82830460984522,\"id\":\"workshops\",\"name\":\"工坊街\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"workshops-port-0\",\"position\":[-55,25],\"width\":6},{\"guideId\":\"craft-homes\",\"id\":\"workshops-port-1\",\"position\":[5,55],\"width\":5.5}],\"prompt\":\"沿运输路形成一条不规则工坊街，仓房和住居混合，侧面留下作业空地。\",\"radius\":55}],\"version\":1}",
+      "summary": "老街沿商路生长，路口密集，两侧支巷错开，外围留出果树和空院。",
+      "streets": [
+        {
+          "id": "market-back-lane",
+          "name": "market-back-lane",
+          "points": [
+            [
+              -35,
+              -22
+            ],
+            [
+              -9,
+              -29
+            ],
+            [
+              29,
+              -34
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "market-east-road",
+          "name": "market-east-road",
+          "points": [
+            [
+              80,
+              55
+            ],
+            [
+              56,
+              46
+            ],
+            [
+              30,
+              28
+            ],
+            [
+              6,
+              1
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "market-garden-road",
+          "name": "market-garden-road",
+          "points": [
+            [
+              6,
+              1
+            ],
+            [
+              2,
+              29
+            ],
+            [
+              -17,
+              51
+            ],
+            [
+              -45,
+              80
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "market-north-lane",
+          "name": "market-north-lane",
+          "points": [
+            [
+              26,
+              -8
+            ],
+            [
+              29,
+              -34
+            ],
+            [
+              13,
+              -57
+            ],
+            [
+              -8,
+              -71
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3.5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "market-old-road",
+          "name": "market-old-road",
+          "points": [
+            [
+              80,
+              -25
+            ],
+            [
+              53,
+              -21
+            ],
+            [
+              26,
+              -8
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              -22,
+              5
+            ],
+            [
+              -50,
+              0
+            ],
+            [
+              -77,
+              -9
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 6,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "market-west-lane",
+          "name": "market-west-lane",
+          "points": [
+            [
+              -22,
+              5
+            ],
+            [
+              -35,
+              -22
+            ],
+            [
+              -58,
+              -37
+            ],
+            [
+              -74,
+              -34
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3.5,
+          "tags": [
+            "compact-preview"
+          ]
+        }
+      ],
+      "buildings": [
+        {
+          "id": "market-building-0",
+          "x": 67.84806503849659,
+          "z": -32.33834322470807,
+          "width": 8.85385558847338,
+          "depth": 6.184492219705135,
+          "height": 5.379488939419389,
+          "use": "商住楼",
+          "rotation": 0.14707835538840233
+        },
+        {
+          "id": "market-building-1",
+          "x": 63.932395073980864,
+          "z": -10.93437145457908,
+          "width": 6.573208697605878,
+          "depth": 7.665266746189445,
+          "height": 5.349411921110004,
+          "use": "小店",
+          "rotation": -2.994514298201391
+        },
+        {
+          "id": "market-building-10",
+          "x": 10.005006956402593,
+          "z": 41.287224494325194,
+          "width": 7.827476735925302,
+          "depth": 8.273047112859786,
+          "height": 9.749298297567293,
+          "use": "客舍",
+          "rotation": -2.2831539248892256
+        },
+        {
+          "id": "market-building-11",
+          "x": -2.3731682912164143,
+          "z": 59.61782158797294,
+          "width": 10.348842753097415,
+          "depth": 10.396727206651121,
+          "height": 5.854036911390722,
+          "use": "住宅",
+          "rotation": -2.2831539248892256
+        },
+        {
+          "id": "market-building-12",
+          "x": -31.55764333480177,
+          "z": 46.14883187063406,
+          "width": 6.703841351205483,
+          "depth": 9.2465462051332,
+          "height": 10.730536458315328,
+          "use": "商住楼",
+          "rotation": 0.8029402234548506
+        },
+        {
+          "id": "market-building-13",
+          "x": -48.08057515377703,
+          "z": 62.151925191366075,
+          "width": 8.226104561705142,
+          "depth": 9.451094539370388,
+          "height": 5.291934323962778,
+          "use": "小店",
+          "rotation": 0.8029402234548506
+        },
+        {
+          "id": "market-building-14",
+          "x": 59.86133401997856,
+          "z": 60.870485641113696,
+          "width": 8.230393358040601,
+          "depth": 8.021558874752373,
+          "height": 5.635923401918262,
+          "use": "客舍",
+          "rotation": 2.782821983319221
+        },
+        {
+          "id": "market-building-15",
+          "x": 68.2952762503227,
+          "z": 38.37997302686265,
+          "width": 7.580917859682813,
+          "depth": 10.176874078810215,
+          "height": 5.397493510739878,
+          "use": "住宅",
+          "rotation": -0.3587706702705724
+        },
+        {
+          "id": "market-building-16",
+          "x": 44.36917856717186,
+          "z": 56.94385394479276,
+          "width": 9.19135709432885,
+          "depth": 11.817333112936467,
+          "height": 7.124037098605186,
+          "use": "商住楼",
+          "rotation": 2.536047989984823
+        },
+        {
+          "id": "market-building-17",
+          "x": 49.280456535505145,
+          "z": 26.002549713966985,
+          "width": 6.320609197951853,
+          "depth": 9.84667280735448,
+          "height": 6.035856964066625,
+          "use": "小店",
+          "rotation": -0.6055446636049704
+        },
+        {
+          "id": "market-building-18",
+          "x": 28.396701392368865,
+          "z": 41.426781069298855,
+          "width": 9.306465104687959,
+          "depth": 6.010464706923813,
+          "height": 11.366718435194343,
+          "use": "客舍",
+          "rotation": 2.536047989984823
+        },
+        {
+          "id": "market-building-19",
+          "x": 17.57735017847505,
+          "z": -24.542538826344437,
+          "width": 7.642271366436034,
+          "depth": 9.511868165340275,
+          "height": 9.284781669732183,
+          "use": "住宅",
+          "rotation": 1.4559197213779975
+        },
+        {
+          "id": "market-building-2",
+          "x": 47.39649617671541,
+          "z": -0.26103049827618996,
+          "width": 10.51467122649774,
+          "depth": 11.16435121698305,
+          "height": 11.301220460329205,
+          "use": "客舍",
+          "rotation": -2.692869309579072
+        },
+        {
+          "id": "market-building-20",
+          "x": 36.991519766195935,
+          "z": -31.969822935491656,
+          "width": 9.514486448839307,
+          "depth": 8.083912933710963,
+          "height": 8.595005202107131,
+          "use": "商住楼",
+          "rotation": -1.6856729322117965
+        },
+        {
+          "id": "market-building-21",
+          "x": 36.64029413912752,
+          "z": -45.3344522616874,
+          "width": 9.742317400174215,
+          "depth": 8.461037820205092,
+          "height": 8.016341369831935,
+          "use": "小店",
+          "rotation": -0.9629943306809363
+        },
+        {
+          "id": "market-building-22",
+          "x": 2.5710142618592418,
+          "z": -48.08843830419964,
+          "width": 10.080696946475655,
+          "depth": 9.918206704314798,
+          "height": 6.2142726625315845,
+          "use": "客舍",
+          "rotation": 2.178598322908857
+        },
+        {
+          "id": "market-building-23",
+          "x": 24.873385911608867,
+          "z": -63.603131625764604,
+          "width": 9.383940249914303,
+          "depth": 11.189794164150953,
+          "height": 8.130870347144082,
+          "use": "住宅",
+          "rotation": -0.9629943306809363
+        },
+        {
+          "id": "market-building-24",
+          "x": -31.695317341108744,
+          "z": -36.79040508945786,
+          "width": 10.23681370797567,
+          "depth": 10.221129680983722,
+          "height": 9.070048864698038,
+          "use": "商住楼",
+          "rotation": -0.5779019369622456
+        },
+        {
+          "id": "market-building-25",
+          "x": -14.146068302868144,
+          "z": -39.14936342410411,
+          "width": 9.85725544183515,
+          "depth": 11.15359262097627,
+          "height": 11.94174478459172,
+          "use": "小店",
+          "rotation": 0.26299473168091947
+        },
+        {
+          "id": "market-building-26",
+          "x": 2.0343245432495385,
+          "z": -21.680217370670476,
+          "width": 6.721742998575792,
+          "depth": 6.534053080715239,
+          "height": 7.6860910437535495,
+          "use": "客舍",
+          "rotation": -3.010765257515736
+        },
+        {
+          "id": "market-building-3",
+          "x": -7.608494234861643,
+          "z": 15.989678987206949,
+          "width": 7.77345106145367,
+          "depth": 11.770087241660804,
+          "height": 7.543020779732615,
+          "use": "住宅",
+          "rotation": -2.999695598985629
+        },
+        {
+          "id": "market-building-4",
+          "x": -10.801955039354262,
+          "z": -6.364546644241377,
+          "width": 8.843724294798449,
+          "depth": 7.63456710241735,
+          "height": 8.965238932752982,
+          "use": "商住楼",
+          "rotation": 0.14189705460416405
+        },
+        {
+          "id": "market-building-5",
+          "x": -31.307786313812173,
+          "z": 16.37895838658854,
+          "width": 10.10646018688567,
+          "depth": 8.187498880550265,
+          "height": 9.314440958434716,
+          "use": "小店",
+          "rotation": 2.9648837975197564
+        },
+        {
+          "id": "market-building-6",
+          "x": -48.615040784986284,
+          "z": 10.545698536887182,
+          "width": 6.3953776764683425,
+          "depth": 8.648715998511761,
+          "height": 8.880569253582507,
+          "use": "客舍",
+          "rotation": 2.9648837975197564
+        },
+        {
+          "id": "market-building-7",
+          "x": -44.96243742610018,
+          "z": -9.908880272875003,
+          "width": 6.717159287305549,
+          "depth": 6.8916505593806505,
+          "height": 10.562222128966823,
+          "use": "住宅",
+          "rotation": -0.176708856070037
+        },
+        {
+          "id": "market-building-8",
+          "x": -56.424027935108235,
+          "z": -16.075525013679663,
+          "width": 10.189151400933042,
+          "depth": 10.09917352348566,
+          "height": 7.986536740558222,
+          "use": "商住楼",
+          "rotation": -0.32175055439664235
+        },
+        {
+          "id": "market-building-9",
+          "x": -72.30021424725565,
+          "z": -19.74583493586408,
+          "width": 8.98518521944061,
+          "depth": 7.929275093134493,
+          "height": 6.066883079241961,
+          "use": "小店",
+          "rotation": -0.32175055439664235
+        }
+      ]
+    },
+    {
+      "townId": "orchard",
+      "worldKey": "{\"ecology\":[{\"biome\":\"grassland\",\"density\":0.85,\"id\":\"meadow-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":35,\"scale\":[0.55,0.95],\"spacing\":11},{\"biome\":\"grassland\",\"density\":0.25,\"id\":\"meadow-pines\",\"kind\":\"pine\",\"maxSlope\":40,\"scale\":[0.55,0.85],\"spacing\":15},{\"biome\":\"grassland\",\"density\":0.3,\"id\":\"meadow-scrub\",\"kind\":\"shrub\",\"maxSlope\":40,\"scale\":[0.5,1],\"spacing\":9}],\"id\":\"compact-four-towns\",\"prompt\":\"500×500米自然生长的聚落群：老集市最密，工坊沿商路延伸，住居沿支巷聚集，林园稀疏；道路弯折、错接，树木与空院穿入聚落。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"grassland\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"grassland\",\"region\":\"northeast\"},{\"biome\":\"grassland\",\"region\":\"northwest\"},{\"biome\":\"grassland\",\"region\":\"south\"},{\"biome\":\"grassland\",\"region\":\"southeast\"},{\"biome\":\"grassland\",\"region\":\"southwest\"},{\"biome\":\"grassland\",\"region\":\"west\"}],\"landforms\":[{\"center\":[-55,-235],\"height\":26,\"radius\":[110,70]},{\"center\":[-230,-60],\"height\":28,\"radius\":[80,105]},{\"center\":[245,20],\"height\":6,\"radius\":[80,110]},{\"center\":[0,230],\"height\":22,\"radius\":[140,65]},{\"center\":[0,50],\"height\":6,\"radius\":[180,160]}],\"seed\":147,\"size\":500,\"version\":1},\"revision\":3,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"craft-homes\",\"name\":\"craft-homes\",\"points\":[[110,-80],[135,-45],[100,-5],[110,25]],\"tags\":[\"compact-preview\"],\"width\":5.5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"homes-orchard\",\"name\":\"homes-orchard\",\"points\":[[50,135],[15,150],[-40,128],[-75,140]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-craft\",\"name\":\"market-craft\",\"points\":[[10,-90],[29,-97],[50,-110]],\"tags\":[\"compact-preview\"],\"width\":6},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-homes\",\"name\":\"market-homes\",\"points\":[[10,-10],[29,9],[50,35]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-orchard\",\"name\":\"market-orchard\",\"points\":[[-115,15],[-122,37],[-110,60]],\"tags\":[\"compact-preview\"],\"width\":5}],\"towns\":[{\"blend\":45,\"center\":[115,90],\"foundation\":170.73196372260213,\"id\":\"homes\",\"name\":\"新街住居\",\"ports\":[{\"guideId\":\"market-homes\",\"id\":\"homes-port-0\",\"position\":[-65,-55],\"width\":5},{\"guideId\":\"craft-homes\",\"id\":\"homes-port-1\",\"position\":[-5,-65],\"width\":5.5},{\"guideId\":\"homes-orchard\",\"id\":\"homes-port-2\",\"position\":[-65,45],\"width\":5}],\"prompt\":\"住宅从两条汇合道路向外蔓延，主路旁较密，背街与绿地相互穿插。\",\"radius\":65},{\"blend\":50,\"center\":[-70,-65],\"foundation\":174.51648313020422,\"id\":\"market\",\"name\":\"老集市\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"market-port-0\",\"position\":[80,-25],\"width\":6},{\"guideId\":\"market-orchard\",\"id\":\"market-port-1\",\"position\":[-45,80],\"width\":5},{\"guideId\":\"market-homes\",\"id\":\"market-port-2\",\"position\":[80,55],\"width\":5}],\"prompt\":\"老街沿商路生长，路口密集，两侧支巷错开，外围留出果树和空院。\",\"radius\":80},{\"blend\":40,\"center\":[-135,120],\"foundation\":167.82784749148453,\"id\":\"orchard\",\"name\":\"林园住居\",\"ports\":[{\"guideId\":\"market-orchard\",\"id\":\"orchard-port-0\",\"position\":[25,-60],\"width\":5},{\"guideId\":\"homes-orchard\",\"id\":\"orchard-port-1\",\"position\":[60,20],\"width\":5}],\"prompt\":\"疏落住居沿弯路和分叉小径延伸，树林穿入建筑之间，路末只有零星房屋。\",\"radius\":60},{\"blend\":40,\"center\":[105,-135],\"foundation\":173.82830460984522,\"id\":\"workshops\",\"name\":\"工坊街\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"workshops-port-0\",\"position\":[-55,25],\"width\":6},{\"guideId\":\"craft-homes\",\"id\":\"workshops-port-1\",\"position\":[5,55],\"width\":5.5}],\"prompt\":\"沿运输路形成一条不规则工坊街，仓房和住居混合，侧面留下作业空地。\",\"radius\":55}],\"version\":1}",
+      "summary": "疏落住居沿弯路和分叉小径延伸，树林穿入建筑之间，路末只有零星房屋。",
+      "streets": [
+        {
+          "id": "orchard-garden-road",
+          "name": "orchard-garden-road",
+          "points": [
+            [
+              25,
+              -60
+            ],
+            [
+              9,
+              -37
+            ],
+            [
+              -5,
+              -9
+            ],
+            [
+              14,
+              7
+            ],
+            [
+              37,
+              16
+            ],
+            [
+              60,
+              20
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "orchard-north-path",
+          "name": "orchard-north-path",
+          "points": [
+            [
+              9,
+              -37
+            ],
+            [
+              -12,
+              -38
+            ],
+            [
+              -40,
+              -48
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "orchard-south-path",
+          "name": "orchard-south-path",
+          "points": [
+            [
+              14,
+              7
+            ],
+            [
+              10,
+              31
+            ],
+            [
+              25,
+              53
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "orchard-west-path",
+          "name": "orchard-west-path",
+          "points": [
+            [
+              -5,
+              -9
+            ],
+            [
+              -25,
+              4
+            ],
+            [
+              -38,
+              28
+            ],
+            [
+              -49,
+              51
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3,
+          "tags": [
+            "compact-preview"
+          ]
+        }
+      ],
+      "buildings": [
+        {
+          "id": "orchard-building-0",
+          "x": -0.5573783808408539,
+          "z": -49.47417203223494,
+          "width": 10.5432824047748,
+          "depth": 9.990177165716887,
+          "height": 5.185926069738343,
+          "use": "园艺住居",
+          "rotation": 0.9629943306809361
+        },
+        {
+          "id": "orchard-building-1",
+          "x": 20.672919838712044,
+          "z": -28.21290027797008,
+          "width": 10.493025632109493,
+          "depth": 11.604752301704139,
+          "height": 8.369706327561289,
+          "use": "农具房",
+          "rotation": -2.0344439357957027
+        },
+        {
+          "id": "orchard-building-10",
+          "x": 2.6728830652450615,
+          "z": 45.09143079251277,
+          "width": 9.234263766789809,
+          "depth": 10.892106804996729,
+          "height": 5.014010572107509,
+          "use": "住宅",
+          "rotation": 2.1692152202734336
+        },
+        {
+          "id": "orchard-building-11",
+          "x": 28.879998021482045,
+          "z": 39.3007667546667,
+          "width": 6.835637965938076,
+          "depth": 7.758711528964341,
+          "height": 6.402708864537999,
+          "use": "社区屋",
+          "rotation": -0.9723774333163594
+        },
+        {
+          "id": "orchard-building-12",
+          "x": -41.559841053812114,
+          "z": -35.46957624098836,
+          "width": 8.866561686387286,
+          "depth": 11.725648392923176,
+          "height": 7.67942729848437,
+          "use": "园艺住居",
+          "rotation": 2.79856871316909
+        },
+        {
+          "id": "orchard-building-2",
+          "x": -11.936117769401942,
+          "z": -24.876051759185195,
+          "width": 9.345652226125821,
+          "depth": 9.542438336648047,
+          "height": 6.855552405817434,
+          "use": "住宅",
+          "rotation": 1.1071487177940904
+        },
+        {
+          "id": "orchard-building-3",
+          "x": 0.004548362383800075,
+          "z": 11.107945738152312,
+          "width": 6.72720228577964,
+          "depth": 9.078092663548887,
+          "height": 4.445109935244545,
+          "use": "社区屋",
+          "rotation": 2.4416997838705496
+        },
+        {
+          "id": "orchard-building-4",
+          "x": 41.76546195362498,
+          "z": 4.767950441029024,
+          "width": 8.437519907252863,
+          "depth": 10.804751923307776,
+          "height": 4.713136155391112,
+          "use": "园艺住居",
+          "rotation": -0.17219081452293902
+        },
+        {
+          "id": "orchard-building-5",
+          "x": 47.292775954467345,
+          "z": 29.193153678331832,
+          "width": 6.721633619396016,
+          "depth": 10.056798021309078,
+          "height": 5.137713867938146,
+          "use": "农具房",
+          "rotation": 2.969401839066854
+        },
+        {
+          "id": "orchard-building-6",
+          "x": -17.550268001225415,
+          "z": 11.095070939397832,
+          "width": 7.169666696805507,
+          "depth": 6.766608060803264,
+          "height": 7.207263646181673,
+          "use": "住宅",
+          "rotation": -2.5652174329986095
+        },
+        {
+          "id": "orchard-building-7",
+          "x": -29.373677863749002,
+          "z": -7.094790387561535,
+          "width": 7.7010004131589085,
+          "depth": 10.671663835644722,
+          "height": 4.806023861514404,
+          "use": "社区屋",
+          "rotation": 0.5763752205911836
+        },
+        {
+          "id": "orchard-building-8",
+          "x": -20.336133406540405,
+          "z": 25.115134817548338,
+          "width": 10.906593511113897,
+          "depth": 10.493312068283558,
+          "height": 7.544340684311464,
+          "use": "园艺住居",
+          "rotation": -2.0672190801997785
+        },
+        {
+          "id": "orchard-building-9",
+          "x": -47.46374643653936,
+          "z": 21.339952791409935,
+          "width": 6.295928561827168,
+          "depth": 8.003658276982605,
+          "height": 7.7830784532707185,
+          "use": "农具房",
+          "rotation": 1.0743735733900146
+        }
+      ]
+    },
+    {
+      "townId": "workshops",
+      "worldKey": "{\"ecology\":[{\"biome\":\"grassland\",\"density\":0.85,\"id\":\"meadow-canopy\",\"kind\":\"broadleaf\",\"maxSlope\":35,\"scale\":[0.55,0.95],\"spacing\":11},{\"biome\":\"grassland\",\"density\":0.25,\"id\":\"meadow-pines\",\"kind\":\"pine\",\"maxSlope\":40,\"scale\":[0.55,0.85],\"spacing\":15},{\"biome\":\"grassland\",\"density\":0.3,\"id\":\"meadow-scrub\",\"kind\":\"shrub\",\"maxSlope\":40,\"scale\":[0.5,1],\"spacing\":9}],\"id\":\"compact-four-towns\",\"prompt\":\"500×500米自然生长的聚落群：老集市最密，工坊沿商路延伸，住居沿支巷聚集，林园稀疏；道路弯折、错接，树木与空院穿入聚落。\",\"recipe\":{\"constraints\":[{\"biome\":\"grassland\",\"region\":\"center\"},{\"biome\":\"grassland\",\"region\":\"east\"},{\"biome\":\"grassland\",\"region\":\"north\"},{\"biome\":\"grassland\",\"region\":\"northeast\"},{\"biome\":\"grassland\",\"region\":\"northwest\"},{\"biome\":\"grassland\",\"region\":\"south\"},{\"biome\":\"grassland\",\"region\":\"southeast\"},{\"biome\":\"grassland\",\"region\":\"southwest\"},{\"biome\":\"grassland\",\"region\":\"west\"}],\"landforms\":[{\"center\":[-55,-235],\"height\":26,\"radius\":[110,70]},{\"center\":[-230,-60],\"height\":28,\"radius\":[80,105]},{\"center\":[245,20],\"height\":6,\"radius\":[80,110]},{\"center\":[0,230],\"height\":22,\"radius\":[140,65]},{\"center\":[0,50],\"height\":6,\"radius\":[180,160]}],\"seed\":147,\"size\":500,\"version\":1},\"revision\":3,\"roads\":[{\"closed\":false,\"curve\":\"polyline\",\"id\":\"craft-homes\",\"name\":\"craft-homes\",\"points\":[[110,-80],[135,-45],[100,-5],[110,25]],\"tags\":[\"compact-preview\"],\"width\":5.5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"homes-orchard\",\"name\":\"homes-orchard\",\"points\":[[50,135],[15,150],[-40,128],[-75,140]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-craft\",\"name\":\"market-craft\",\"points\":[[10,-90],[29,-97],[50,-110]],\"tags\":[\"compact-preview\"],\"width\":6},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-homes\",\"name\":\"market-homes\",\"points\":[[10,-10],[29,9],[50,35]],\"tags\":[\"compact-preview\"],\"width\":5},{\"closed\":false,\"curve\":\"polyline\",\"id\":\"market-orchard\",\"name\":\"market-orchard\",\"points\":[[-115,15],[-122,37],[-110,60]],\"tags\":[\"compact-preview\"],\"width\":5}],\"towns\":[{\"blend\":45,\"center\":[115,90],\"foundation\":170.73196372260213,\"id\":\"homes\",\"name\":\"新街住居\",\"ports\":[{\"guideId\":\"market-homes\",\"id\":\"homes-port-0\",\"position\":[-65,-55],\"width\":5},{\"guideId\":\"craft-homes\",\"id\":\"homes-port-1\",\"position\":[-5,-65],\"width\":5.5},{\"guideId\":\"homes-orchard\",\"id\":\"homes-port-2\",\"position\":[-65,45],\"width\":5}],\"prompt\":\"住宅从两条汇合道路向外蔓延，主路旁较密，背街与绿地相互穿插。\",\"radius\":65},{\"blend\":50,\"center\":[-70,-65],\"foundation\":174.51648313020422,\"id\":\"market\",\"name\":\"老集市\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"market-port-0\",\"position\":[80,-25],\"width\":6},{\"guideId\":\"market-orchard\",\"id\":\"market-port-1\",\"position\":[-45,80],\"width\":5},{\"guideId\":\"market-homes\",\"id\":\"market-port-2\",\"position\":[80,55],\"width\":5}],\"prompt\":\"老街沿商路生长，路口密集，两侧支巷错开，外围留出果树和空院。\",\"radius\":80},{\"blend\":40,\"center\":[-135,120],\"foundation\":167.82784749148453,\"id\":\"orchard\",\"name\":\"林园住居\",\"ports\":[{\"guideId\":\"market-orchard\",\"id\":\"orchard-port-0\",\"position\":[25,-60],\"width\":5},{\"guideId\":\"homes-orchard\",\"id\":\"orchard-port-1\",\"position\":[60,20],\"width\":5}],\"prompt\":\"疏落住居沿弯路和分叉小径延伸，树林穿入建筑之间，路末只有零星房屋。\",\"radius\":60},{\"blend\":40,\"center\":[105,-135],\"foundation\":173.82830460984522,\"id\":\"workshops\",\"name\":\"工坊街\",\"ports\":[{\"guideId\":\"market-craft\",\"id\":\"workshops-port-0\",\"position\":[-55,25],\"width\":6},{\"guideId\":\"craft-homes\",\"id\":\"workshops-port-1\",\"position\":[5,55],\"width\":5.5}],\"prompt\":\"沿运输路形成一条不规则工坊街，仓房和住居混合，侧面留下作业空地。\",\"radius\":55}],\"version\":1}",
+      "summary": "沿运输路形成一条不规则工坊街，仓房和住居混合，侧面留下作业空地。",
+      "streets": [
+        {
+          "id": "workshops-craft-lane",
+          "name": "workshops-craft-lane",
+          "points": [
+            [
+              -10,
+              0
+            ],
+            [
+              -19,
+              -24
+            ],
+            [
+              -38,
+              -44
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 4,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "workshops-haul-road",
+          "name": "workshops-haul-road",
+          "points": [
+            [
+              -55,
+              25
+            ],
+            [
+              -35,
+              16
+            ],
+            [
+              -10,
+              0
+            ],
+            [
+              10,
+              -9
+            ],
+            [
+              35,
+              -16
+            ],
+            [
+              52,
+              -12
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 6,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "workshops-homes-road",
+          "name": "workshops-homes-road",
+          "points": [
+            [
+              5,
+              55
+            ],
+            [
+              12,
+              28
+            ],
+            [
+              10,
+              -9
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 5.5,
+          "tags": [
+            "compact-preview"
+          ]
+        },
+        {
+          "id": "workshops-yard-lane",
+          "name": "workshops-yard-lane",
+          "points": [
+            [
+              12,
+              28
+            ],
+            [
+              35,
+              35
+            ],
+            [
+              49,
+              47
+            ]
+          ],
+          "curve": "polyline",
+          "closed": false,
+          "width": 3.5,
+          "tags": [
+            "compact-preview"
+          ]
+        }
+      ],
+      "buildings": [
+        {
+          "id": "workshops-building-0",
+          "x": -44.161138559679664,
+          "z": 34.391961945924365,
+          "width": 6.244110461790115,
+          "depth": 10.97610126575455,
+          "height": 4.769521479960531,
+          "use": "木工作坊",
+          "rotation": -2.7187387274568526
+        },
+        {
+          "id": "workshops-building-1",
+          "x": -43.905085821666965,
+          "z": 4.523456412157067,
+          "width": 8.332222014665604,
+          "depth": 9.635161353740841,
+          "height": 6.028914005495608,
+          "use": "工匠住居",
+          "rotation": 0.4228539261329407
+        },
+        {
+          "id": "workshops-building-10",
+          "x": 21.717603245451436,
+          "z": 0.09323000386136593,
+          "width": 10.626928244251758,
+          "depth": 10.699323625769466,
+          "height": 7.104643744882196,
+          "use": "仓房",
+          "rotation": -1.5167948264189282
+        },
+        {
+          "id": "workshops-building-11",
+          "x": -33.64952524346796,
+          "z": -17.441368505533305,
+          "width": 9.443903693696484,
+          "depth": 11.971308005042374,
+          "height": 6.134175485698506,
+          "use": "铁工作坊",
+          "rotation": 2.3305590816706676
+        },
+        {
+          "id": "workshops-building-12",
+          "x": -12.949512799004813,
+          "z": -37.1063803277733,
+          "width": 10.630672170314938,
+          "depth": 6.929560003336519,
+          "height": 6.749130360316485,
+          "use": "木工作坊",
+          "rotation": -0.8110335719191256
+        },
+        {
+          "id": "workshops-building-13",
+          "x": -45.211593366188524,
+          "z": -32.869606435388505,
+          "width": 8.861359323142096,
+          "depth": 6.369231554679573,
+          "height": 4.739862717455253,
+          "use": "工匠住居",
+          "rotation": 2.3305590816706676
+        },
+        {
+          "id": "workshops-building-14",
+          "x": 30.953458727730915,
+          "z": 23.288962668835502,
+          "width": 8.924603339051828,
+          "depth": 7.863930129446089,
+          "height": 6.4880207411479205,
+          "use": "仓房",
+          "rotation": -0.29544083714372
+        },
+        {
+          "id": "workshops-building-2",
+          "x": -29.30900895549439,
+          "z": -4.114222319252672,
+          "width": 7.898141806013882,
+          "depth": 6.803994145710021,
+          "height": 7.97613181732595,
+          "use": "仓房",
+          "rotation": 0.5693131911006619
+        },
+        {
+          "id": "workshops-building-3",
+          "x": -14.592111316517876,
+          "z": 18.880930241648137,
+          "width": 7.993574340594932,
+          "depth": 6.611542372964323,
+          "height": 6.784000815590844,
+          "use": "铁工作坊",
+          "rotation": -2.5722794624891314
+        },
+        {
+          "id": "workshops-building-4",
+          "x": -0.316209571077807,
+          "z": 7.816010263453507,
+          "width": 7.35549416183494,
+          "depth": 6.1200818018987775,
+          "height": 5.959527748404071,
+          "use": "木工作坊",
+          "rotation": -2.7187387274568526
+        },
+        {
+          "id": "workshops-building-5",
+          "x": 1.985961013925789,
+          "z": -18.133236183284566,
+          "width": 9.277922599809244,
+          "depth": 6.354944815859199,
+          "height": 4.459137965226546,
+          "use": "工匠住居",
+          "rotation": 0.4228539261329407
+        },
+        {
+          "id": "workshops-building-6",
+          "x": 19.59975622375556,
+          "z": -23.22262610828956,
+          "width": 10.113846697146073,
+          "depth": 8.224688317626715,
+          "height": 8.859988224925473,
+          "use": "仓房",
+          "rotation": 0.2730087030867106
+        },
+        {
+          "id": "workshops-building-7",
+          "x": 35.35514420700679,
+          "z": -3.3468077690465954,
+          "width": 7.394152290886268,
+          "depth": 9.026792795397341,
+          "height": 8.079932485474274,
+          "use": "铁工作坊",
+          "rotation": -2.8685839505030826
+        },
+        {
+          "id": "workshops-building-8",
+          "x": -4.381144249141412,
+          "z": 33.35234914741048,
+          "width": 10.597286684438586,
+          "depth": 11.758506002370268,
+          "height": 5.958340122364461,
+          "use": "木工作坊",
+          "rotation": 1.317122230656254
+        },
+        {
+          "id": "workshops-building-9",
+          "x": 23.14799468331672,
+          "z": 12.187669083535015,
+          "width": 8.85870948806405,
+          "depth": 11.509151613805443,
+          "height": 8.145178054459393,
+          "use": "工匠住居",
+          "rotation": -1.5167948264189282
+        }
+      ]
+    }
+  ]
+}

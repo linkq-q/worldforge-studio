@@ -1,0 +1,6383 @@
+{
+  "sourceMapId": "map-09d705ff-5c13-48ce",
+  "sourceMapName": "环巷与集市组成的中世纪城镇",
+  "assets": [
+    {
+      "id": "asset-fcf47977-3477-4321",
+      "name": "中世纪沿街民居 1",
+      "updatedAt": 1790657450637,
+      "role": "house",
+      "modelJson": {
+        "name": "中世纪三层联排屋",
+        "type": "lowpoly",
+        "format": 2,
+        "nodes": [
+          {
+            "id": "house",
+            "name": "房屋主体",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                7.501,
+                9.648,
+                7.767
+              ],
+              "center": [
+                0.003,
+                4.266,
+                0.116
+              ],
+              "axes": [
+                [
+                  0.995,
+                  0.076,
+                  -0.0653
+                ],
+                [
+                  -0.0837,
+                  0.9888,
+                  -0.1232
+                ],
+                [
+                  0.0552,
+                  0.128,
+                  0.9902
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "mount01_door",
+            "name": "木门",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                0.7,
+                3
+              ]
+            },
+            "mounted": true,
+            "_obb": {
+              "size": [
+                1.786,
+                2.46,
+                0.282
+              ],
+              "center": [
+                0.047,
+                1.138,
+                -0.003
+              ],
+              "axes": [
+                [
+                  0.9833,
+                  0.1806,
+                  0.02
+                ],
+                [
+                  -0.1802,
+                  0.9834,
+                  -0.0214
+                ],
+                [
+                  -0.0235,
+                  0.0175,
+                  0.9996
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "dormer",
+            "name": "老虎窗",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.1,
+                7.3,
+                1.6
+              ]
+            },
+            "_obb": {
+              "size": [
+                1.2,
+                1.427,
+                1.439
+              ],
+              "center": [
+                0,
+                0.355,
+                0
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0.7421,
+                  0.6703
+                ],
+                [
+                  0,
+                  -0.6703,
+                  0.7421
+                ]
+              ],
+              "_mainAxis": 2
+            }
+          },
+          {
+            "id": "m0",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                0.35,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6,
+                "height": 0.7,
+                "depth": 6
+              },
+              "color": 10130314
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "cobblestone"
+              }
+            ]
+          },
+          {
+            "id": "m1",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                1.85,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.7,
+                "height": 2.3,
+                "depth": 5.7
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m2",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                4.1,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.9,
+                "height": 2.2,
+                "depth": 6.9
+              },
+              "color": 14076070
+            }
+          },
+          {
+            "id": "m3",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                6.2,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.2,
+                "height": 2,
+                "depth": 6.2
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m4",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -2.72,
+                1.85,
+                -2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.28,
+                "height": 2.3,
+                "depth": 0.28
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m5",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -2.72,
+                1.85,
+                2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.28,
+                "height": 2.3,
+                "depth": 0.28
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m6",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.72,
+                1.85,
+                -2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.28,
+                "height": 2.3,
+                "depth": 0.28
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m7",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.72,
+                1.85,
+                2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.28,
+                "height": 2.3,
+                "depth": 0.28
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m8",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                0.82,
+                2.85
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.7,
+                "height": 0.22,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m9",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                2.9,
+                2.85
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.7,
+                "height": 0.22,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m10",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                1.85,
+                2.85
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 2.1,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m11",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.9,
+                1.85,
+                2.85
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 2.1,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m12",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                3.05,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.9,
+                "height": 0.24,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m13",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                5.15,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.9,
+                "height": 0.24,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m14",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -2.4,
+                4.1,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 2,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m15",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -0.8,
+                4.1,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 2,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m16",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0.8,
+                4.1,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 2,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m17",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.4,
+                4.1,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 2,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m18",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -2.4,
+                3.55,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "patch",
+              "params": {
+                "vertices": [
+                  4.440892098500626e-16,
+                  -0.44999999999999973,
+                  0,
+                  0.8000000000000003,
+                  -0.44999999999999973,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0.8000000000000003,
+                  -0.44999999999999973,
+                  0,
+                  4.440892098500626e-16,
+                  0.4500000000000002,
+                  0,
+                  0,
+                  0,
+                  0,
+                  4.440892098500626e-16,
+                  0.4500000000000002,
+                  0,
+                  -0.7999999999999998,
+                  0.4500000000000002,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.7999999999999998,
+                  0.4500000000000002,
+                  0,
+                  4.440892098500626e-16,
+                  -0.44999999999999973,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "d": 0.14
+              },
+              "color": 7032628
+            }
+          },
+          {
+            "id": "m19",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.4,
+                3.5,
+                3.3
+              ]
+            },
+            "mesh": {
+              "type": "patch",
+              "params": {
+                "vertices": [
+                  0,
+                  -0.3999999999999999,
+                  0,
+                  0.8000000000000003,
+                  -0.3999999999999999,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0.8000000000000003,
+                  -0.3999999999999999,
+                  0,
+                  0,
+                  0.3999999999999999,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0.3999999999999999,
+                  0,
+                  -0.7999999999999998,
+                  0.3999999999999999,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.7999999999999998,
+                  0.3999999999999999,
+                  0,
+                  0,
+                  -0.3999999999999999,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "d": 0.14
+              },
+              "color": 7032628
+            }
+          },
+          {
+            "id": "m20",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                5.25,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.2,
+                "height": 0.22,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m21",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.15,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.2,
+                "height": 0.22,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m22",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.6,
+                6.2,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.18,
+                "height": 1.7,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m23",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                6.2,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.18,
+                "height": 1.7,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m24",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.6,
+                6.2,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.18,
+                "height": 1.7,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m25",
+            "parent": "mount01_door",
+            "transform": {
+              "pos": [
+                0,
+                1.05,
+                -0.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.3,
+                "height": 2.1,
+                "depth": 0.18
+              },
+              "color": 8014374
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "wood",
+                "variant": "walnut"
+              }
+            ]
+          },
+          {
+            "id": "m26",
+            "parent": "mount01_door",
+            "transform": {
+              "pos": [
+                0,
+                2.15,
+                -0.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.5,
+                "height": 0.18,
+                "depth": 0.24
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m27",
+            "parent": "mount01_door",
+            "transform": {
+              "pos": [
+                0.42,
+                1.05,
+                0.08
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.12,
+                "depth": 0.1
+              },
+              "color": 14267482
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "gold"
+              }
+            ]
+          },
+          {
+            "id": "m28",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 1.1,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m29",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                2.45,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1400000000000001,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m30",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                1.35,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1400000000000001,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m31",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -2.35,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m32",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.45,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m33",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.1,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m34",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.9,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 1.1,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m35",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.9,
+                2.45,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1400000000000001,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m36",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.9,
+                1.35,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1400000000000001,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m37",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.45,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m38",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.35,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m39",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.9,
+                1.9,
+                2.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.1,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m40",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.6,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.85,
+                "height": 1.15,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m41",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.6,
+                4.675,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0899999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m42",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.6,
+                3.525,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0899999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m43",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -2.025,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.15,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m44",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.175,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.15,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m45",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.6,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.15,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m46",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.85,
+                "height": 1.15,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m47",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                4.675,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0899999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m48",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                3.525,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0899999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m49",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -0.425,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.15,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m50",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0.425,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.15,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m51",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.15,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m52",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.6,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.85,
+                "height": 1.15,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m53",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.6,
+                4.675,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0899999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m54",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.6,
+                3.525,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0899999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m55",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.175,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.15,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m56",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.025,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.15,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m57",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.6,
+                4.1,
+                3.32
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.15,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m58",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.8,
+                "height": 1,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m59",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1,
+                6.7,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.04,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m60",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1,
+                5.7,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.04,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m61",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.4,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m62",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -0.6,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m63",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m64",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.8,
+                "height": 1,
+                "depth": 0.14
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m65",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1,
+                6.7,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.04,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m66",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1,
+                5.7,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.04,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m67",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0.6,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m68",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1.4,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1,
+                "depth": 0.18
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m69",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                1,
+                6.2,
+                2.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m70",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                3.02,
+                4.1,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1,
+                "depth": 0.8
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m71",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                2.98,
+                4.1,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.18,
+                "height": 1.2,
+                "depth": 1
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m72",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.3,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.6,
+                "height": 0.17999999999999997,
+                "depth": 6.9
+              },
+              "color": 11882542
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "brick"
+              }
+            ]
+          },
+          {
+            "id": "m73",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.5,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.4799999999999995,
+                "height": 0.17999999999999997,
+                "depth": 5.313000000000001
+              },
+              "color": 9387298
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "brick"
+              }
+            ]
+          },
+          {
+            "id": "m74",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.7,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.359999999999999,
+                "height": 0.17999999999999997,
+                "depth": 3.7260000000000004
+              },
+              "color": 11882542
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "brick"
+              }
+            ]
+          },
+          {
+            "id": "m75",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.9,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.239999999999999,
+                "height": 0.17999999999999997,
+                "depth": 2.139
+              },
+              "color": 9387298
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "brick"
+              }
+            ]
+          },
+          {
+            "id": "m76",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                8.1,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.119999999999999,
+                "height": 0.17999999999999997,
+                "depth": 0.5519999999999997
+              },
+              "color": 11882542
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "brick"
+              }
+            ]
+          },
+          {
+            "id": "m77",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                8.12,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.7,
+                "height": 0.16,
+                "depth": 0.3
+              },
+              "color": 9387298
+            }
+          },
+          {
+            "id": "m78",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.45,
+                -2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.6,
+                "height": 0.5,
+                "depth": 0.2
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m79",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.9,
+                -2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 4.4,
+                "height": 0.5,
+                "depth": 0.2
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m80",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.45,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.6,
+                "height": 0.5,
+                "depth": 0.2
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m81",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                0,
+                7.9,
+                2.95
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 4.4,
+                "height": 0.5,
+                "depth": 0.2
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m82",
+            "parent": "dormer",
+            "transform": {
+              "pos": [
+                0,
+                0.25,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1,
+                "height": 0.9,
+                "depth": 0.9
+              },
+              "color": 15260864
+            }
+          },
+          {
+            "id": "m83",
+            "parent": "dormer",
+            "transform": {
+              "pos": [
+                0,
+                0.25,
+                0.46
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.5,
+                "depth": 0.12
+              },
+              "color": 9418436
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "glass",
+                "variant": "blue"
+              }
+            ]
+          },
+          {
+            "id": "m84",
+            "parent": "dormer",
+            "transform": {
+              "pos": [
+                0,
+                0.56,
+                0.46
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.62,
+                "height": 0.12,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m85",
+            "parent": "dormer",
+            "transform": {
+              "pos": [
+                0,
+                -0.06,
+                0.46
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.62,
+                "height": 0.12,
+                "depth": 0.16
+              },
+              "color": 4863268
+            }
+          },
+          {
+            "id": "m86",
+            "parent": "dormer",
+            "transform": {
+              "pos": [
+                0,
+                0.75,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2,
+                "height": 0.14,
+                "depth": 1.1
+              },
+              "color": 11882542
+            }
+          },
+          {
+            "id": "m87",
+            "parent": "dormer",
+            "transform": {
+              "pos": [
+                0,
+                0.88,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.7,
+                "height": 0.14,
+                "depth": 0.7
+              },
+              "color": 9387298
+            }
+          },
+          {
+            "id": "m88",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                7.9,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.7,
+                "height": 1.4,
+                "depth": 0.7
+              },
+              "color": 10130314
+            },
+            "tags": [
+              {
+                "tag": "base",
+                "value": "stone",
+                "variant": "brick"
+              }
+            ]
+          },
+          {
+            "id": "m89",
+            "parent": "house",
+            "transform": {
+              "pos": [
+                -1.9,
+                8.62,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 0.16,
+                "depth": 0.9
+              },
+              "color": 9387298
+            }
+          }
+        ],
+        "_meta": {
+          "skipAutoCenter": true,
+          "ai": {
+            "v": 1,
+            "ts": 1790657439900,
+            "provider": "deepseek",
+            "data": "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",
+            "edits": ""
+          },
+          "mounts": [
+            {
+              "id": "mount01_door",
+              "mountedGroupId": "mount01_door",
+              "name": "木门",
+              "source": {
+                "type": "codegen"
+              },
+              "description": "",
+              "visible": true,
+              "ts": 1790657439900
+            }
+          ],
+          "semanticSnapshot": {
+            "v": 1,
+            "auto": true,
+            "text": "中世纪三层联排屋 · 3组/90mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:house 房屋主体 @p(0,0,0)\n  M:[m2 box 6.9×2.2×6.9 (0,4.1,0) 薄向上(Y)]\n  G:mount01_door 木门 @p(0,0.7,3) 挂:house\n    M:[m25 box 1.3×2.1×0.18 (0,1.8,3) 薄向前(Z)] | M:[m26 box 1.5×0.18×0.24 (0,2.8,3) 轴右(X)]\n  G:dormer 老虎窗 @p(1.1,7.3,1.6)\n    M:[m82 box 1×0.9×0.9 (1.1,7.6,1.6)]",
+            "stats": {
+              "groups": 3,
+              "meshes": 90,
+              "labeledMeshes": 0,
+              "labelCoverage": 0,
+              "batchLabels": 0,
+              "autoChains": 0,
+              "snapshotChars": 634
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "asset-44b4b653-aeaa-4cb2",
+      "name": "中世纪沿街民居 2",
+      "updatedAt": 1790657427817,
+      "role": "shop",
+      "modelJson": {
+        "name": "中世纪商宅",
+        "type": "lowpoly",
+        "format": 2,
+        "nodes": [
+          {
+            "id": "body",
+            "name": "石砌主体",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                8.044,
+                10.683,
+                11.341
+              ],
+              "center": [
+                -0.168,
+                4.29,
+                0.029
+              ],
+              "axes": [
+                [
+                  0.9854,
+                  -0.1566,
+                  0.0664
+                ],
+                [
+                  0.0639,
+                  0.7025,
+                  0.7088
+                ],
+                [
+                  -0.1576,
+                  -0.6942,
+                  0.7023
+                ]
+              ],
+              "_mainAxis": 2
+            }
+          },
+          {
+            "id": "roof",
+            "name": "板岩山墙屋顶",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                6.8,
+                1.968,
+                6.787
+              ],
+              "center": [
+                0,
+                7.196,
+                -0.007
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  1,
+                  -0.0005
+                ],
+                [
+                  0,
+                  0.0005,
+                  1
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "chimney",
+            "name": "砖砌烟囱",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                1.15,
+                3.75,
+                1.15
+              ],
+              "center": [
+                1.7,
+                6.875,
+                -1.2
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "shopfront",
+            "name": "拱形店面",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                3.16,
+                3.627,
+                0.413
+              ],
+              "center": [
+                -0.025,
+                1.64,
+                3.039
+              ],
+              "axes": [
+                [
+                  0.9913,
+                  0.1315,
+                  0.0083
+                ],
+                [
+                  -0.1315,
+                  0.9913,
+                  -0.0014
+                ],
+                [
+                  -0.0085,
+                  0.0003,
+                  1
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "awning",
+            "name": "条纹遮阳篷",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                3,
+                0.523,
+                1.125
+              ],
+              "center": [
+                0,
+                3.045,
+                3.595
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0.892,
+                  0.4519
+                ],
+                [
+                  0,
+                  -0.4519,
+                  0.892
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "windows",
+            "name": "二层窗",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                5.539,
+                1.6,
+                2.368
+              ],
+              "center": [
+                0.745,
+                5,
+                2.1
+              ],
+              "axes": [
+                [
+                  0.9261,
+                  0,
+                  -0.3772
+                ],
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  0.3772,
+                  0,
+                  0.9261
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "lamp",
+            "name": "门灯",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                0.34,
+                0.8,
+                0.34
+              ],
+              "center": [
+                1.75,
+                2.35,
+                3.12
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "m0",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                1.7,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6,
+                "height": 3.4,
+                "depth": 6
+              },
+              "color": 10130314
+            }
+          },
+          {
+            "id": "m1",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                4.85,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.5,
+                "height": 2.9,
+                "depth": 5.5
+              },
+              "color": 10130314
+            }
+          },
+          {
+            "id": "m2",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                -2.72,
+                1.7,
+                -2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.55,
+                "height": 3.4,
+                "depth": 0.55
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m3",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                -2.5,
+                4.85,
+                -2.5
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 2.9,
+                "depth": 0.5
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m4",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                -2.72,
+                1.7,
+                2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.55,
+                "height": 3.4,
+                "depth": 0.55
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m5",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                -2.5,
+                4.85,
+                2.5
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 2.9,
+                "depth": 0.5
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m6",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.72,
+                1.7,
+                -2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.55,
+                "height": 3.4,
+                "depth": 0.55
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m7",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.5,
+                4.85,
+                -2.5
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 2.9,
+                "depth": 0.5
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m8",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.72,
+                1.7,
+                2.72
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.55,
+                "height": 3.4,
+                "depth": 0.55
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m9",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.5,
+                4.85,
+                2.5
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 2.9,
+                "depth": 0.5
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m10",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                3.5,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.15,
+                "height": 0.28,
+                "depth": 6.15
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m11",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                7.15,
+                -1.67
+              ],
+              "quat": [
+                -0.23,
+                0,
+                0,
+                0.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.7,
+                "height": 0.22,
+                "depth": 3.76
+              },
+              "color": 3948872
+            }
+          },
+          {
+            "id": "m12",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                7.15,
+                1.68
+              ],
+              "quat": [
+                0.97,
+                0,
+                0,
+                -0.23
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.7,
+                "height": 0.22,
+                "depth": 3.76
+              },
+              "color": 3948872
+            }
+          },
+          {
+            "id": "m13",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                8.05,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.8,
+                "height": 0.26,
+                "depth": 0.5
+              },
+              "color": 5067868
+            }
+          },
+          {
+            "id": "m14",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                6.75,
+                -2.65
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.5,
+                "height": 0.9,
+                "depth": 0.3
+              },
+              "color": 10130314
+            }
+          },
+          {
+            "id": "m15",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                7.45,
+                -2.65
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 4.4,
+                "height": 0.7,
+                "depth": 0.3
+              },
+              "color": 10130314
+            }
+          },
+          {
+            "id": "m16",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                6.75,
+                2.65
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.5,
+                "height": 0.9,
+                "depth": 0.3
+              },
+              "color": 10130314
+            }
+          },
+          {
+            "id": "m17",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                7.45,
+                2.65
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 4.4,
+                "height": 0.7,
+                "depth": 0.3
+              },
+              "color": 10130314
+            }
+          },
+          {
+            "id": "m18",
+            "parent": "chimney",
+            "transform": {
+              "pos": [
+                1.7,
+                6.6,
+                -1.2
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.95,
+                "height": 3.2,
+                "depth": 0.95
+              },
+              "color": 9390645
+            }
+          },
+          {
+            "id": "m19",
+            "parent": "chimney",
+            "transform": {
+              "pos": [
+                1.7,
+                8.35,
+                -1.2
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.15,
+                "height": 0.35,
+                "depth": 1.15
+              },
+              "color": 7288870
+            }
+          },
+          {
+            "id": "m20",
+            "parent": "chimney",
+            "transform": {
+              "pos": [
+                1.7,
+                8.6,
+                -1.2
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.7,
+                "height": 0.3,
+                "depth": 0.7
+              },
+              "color": 2763824
+            }
+          },
+          {
+            "id": "m21",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                -1.15,
+                1.2,
+                3.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 2.4,
+                "depth": 0.35
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m22",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                1.15,
+                1.2,
+                3.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 2.4,
+                "depth": 0.35
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m23",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                0,
+                2.65,
+                3.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.8,
+                "height": 0.5,
+                "depth": 0.35
+              },
+              "color": 8222317
+            }
+          },
+          {
+            "id": "m24",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                0,
+                1.15,
+                3.07
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.8,
+                "height": 2.3,
+                "depth": 0.2
+              },
+              "color": 5914408
+            }
+          },
+          {
+            "id": "m25",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                0,
+                1.15,
+                3.1
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 2.3,
+                "depth": 0.22
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m26",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                0.6,
+                1.15,
+                3.18
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 0.14,
+                "depth": 0.14
+              },
+              "color": 3816770
+            }
+          },
+          {
+            "id": "m27",
+            "parent": "shopfront",
+            "transform": {
+              "pos": [
+                0,
+                3.05,
+                3.12
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.6,
+                "height": 0.5,
+                "depth": 0.22
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m28",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -1.25,
+                3.08,
+                3.55
+              ],
+              "quat": [
+                0.28,
+                0,
+                0,
+                0.96
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.08,
+                "depth": 1.01
+              },
+              "color": 11680308
+            }
+          },
+          {
+            "id": "m29",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -0.75,
+                3.08,
+                3.55
+              ],
+              "quat": [
+                0.28,
+                0,
+                0,
+                0.96
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.08,
+                "depth": 1.01
+              },
+              "color": 15262422
+            }
+          },
+          {
+            "id": "m30",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -0.25,
+                3.08,
+                3.55
+              ],
+              "quat": [
+                0.28,
+                0,
+                0,
+                0.96
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.08,
+                "depth": 1.01
+              },
+              "color": 11680308
+            }
+          },
+          {
+            "id": "m31",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                0.25,
+                3.08,
+                3.55
+              ],
+              "quat": [
+                0.28,
+                0,
+                0,
+                0.96
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.08,
+                "depth": 1.01
+              },
+              "color": 15262422
+            }
+          },
+          {
+            "id": "m32",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                0.75,
+                3.08,
+                3.55
+              ],
+              "quat": [
+                0.28,
+                0,
+                0,
+                0.96
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.08,
+                "depth": 1.01
+              },
+              "color": 11680308
+            }
+          },
+          {
+            "id": "m33",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                1.25,
+                3.08,
+                3.55
+              ],
+              "quat": [
+                0.28,
+                0,
+                0,
+                0.96
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.08,
+                "depth": 1.01
+              },
+              "color": 15262422
+            }
+          },
+          {
+            "id": "m34",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                0,
+                2.75,
+                3.97
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 3,
+                "height": 0.22,
+                "depth": 0.1
+              },
+              "color": 11680308
+            }
+          },
+          {
+            "id": "m35",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -1.4,
+                3.07,
+                3.545
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.08,
+                "height": 0.08,
+                "depth": 1
+              },
+              "color": 3816770
+            }
+          },
+          {
+            "id": "m36",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                1.4,
+                3.07,
+                3.545
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.08,
+                "height": 0.08,
+                "depth": 1
+              },
+              "color": 3816770
+            }
+          },
+          {
+            "id": "m37",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                -1.3,
+                5,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1,
+                "height": 1.3,
+                "depth": 0.2
+              },
+              "color": 3099221
+            }
+          },
+          {
+            "id": "m38",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                -1.3,
+                5.72,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2,
+                "height": 0.16,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m39",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                -1.3,
+                4.28,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2,
+                "height": 0.16,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m40",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                -1.85,
+                5,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.3,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m41",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                -0.75,
+                5,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.3,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m42",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                -1.3,
+                5,
+                2.79
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.3,
+                "depth": 0.24
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m43",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.3,
+                5,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1,
+                "height": 1.3,
+                "depth": 0.2
+              },
+              "color": 3099221
+            }
+          },
+          {
+            "id": "m44",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.3,
+                5.72,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2,
+                "height": 0.16,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m45",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.3,
+                4.28,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2,
+                "height": 0.16,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m46",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                0.75,
+                5,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.3,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m47",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.85,
+                5,
+                2.77
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 1.3,
+                "depth": 0.26
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m48",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.3,
+                5,
+                2.79
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 1.3,
+                "depth": 0.24
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m49",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                2.77,
+                5,
+                0.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.2,
+                "height": 1.2,
+                "depth": 0.9
+              },
+              "color": 3099221
+            }
+          },
+          {
+            "id": "m50",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                2.77,
+                5.66,
+                0.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.14,
+                "depth": 1.1
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m51",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                2.77,
+                4.34,
+                0.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.14,
+                "depth": 1.1
+              },
+              "color": 8018490
+            }
+          },
+          {
+            "id": "m52",
+            "parent": "lamp",
+            "transform": {
+              "pos": [
+                1.75,
+                2.5,
+                3.12
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.5,
+                "depth": 0.12
+              },
+              "color": 3816770
+            }
+          },
+          {
+            "id": "m53",
+            "parent": "lamp",
+            "transform": {
+              "pos": [
+                1.75,
+                2.15,
+                3.12
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.34,
+                "height": 0.4,
+                "depth": 0.34
+              },
+              "color": 16764779
+            },
+            "tags": [
+              {
+                "tag": "emissive",
+                "value": 0.9
+              }
+            ]
+          }
+        ],
+        "_meta": {
+          "skipAutoCenter": true,
+          "ai": {
+            "v": 1,
+            "ts": 1790657426485,
+            "provider": "deepseek",
+            "data": "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",
+            "edits": ""
+          },
+          "semanticSnapshot": {
+            "v": 1,
+            "auto": true,
+            "text": "中世纪商宅 · 7组/54mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 石砌主体 @p(0,0,0)\n  M:[m0 box 6×3.4×6 (0,1.7,0) 薄向上(Y)]\n  G:roof 板岩山墙屋顶 @p(0,0,0)\n    M:[m11 box 6.7×0.22×3.8 (0,7.2,-1.7) 轴右(X)]\n  G:chimney 砖砌烟囱 @p(0,0,0)\n    M:[m18 box 0.95×3.2×0.95 (1.7,6.6,-1.2) 轴上(Y)]\n  G:shopfront 拱形店面 @p(0,0,0)\n    M:[m24 box 1.8×2.3×0.2 (0,1.2,3.1) 薄向前(Z)]\n  G:awning 条纹遮阳篷 @p(0,0,0)\n    M:[m34 box 3×0.22×0.1 (0,2.8,4) 轴右(X)]\n  G:windows 二层窗 @p(0,0,0)\n    M:[m37 box 1×1.3×0.2 (-1.3,5,2.8) 薄向前(Z)]\n  G:lamp 门灯 @p(0,0,0)\n    M:[m53 box 0.34×0.4×0.34 (1.8,2.2,3.1)]",
+            "stats": {
+              "groups": 7,
+              "meshes": 54,
+              "labeledMeshes": 0,
+              "labelCoverage": 0,
+              "batchLabels": 0,
+              "autoChains": 0,
+              "snapshotChars": 861
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "asset-00e544fb-f018-4a87",
+      "name": "中世纪沿街民居 3",
+      "updatedAt": 1790657428772,
+      "role": "workshop",
+      "modelJson": {
+        "name": "中世纪赭石工坊",
+        "type": "lowpoly",
+        "format": 2,
+        "nodes": [
+          {
+            "id": "body",
+            "name": "主体墙体",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                11.372,
+                12.158,
+                9.997
+              ],
+              "center": [
+                0.568,
+                4.448,
+                -0.37
+              ],
+              "axes": [
+                [
+                  0.7851,
+                  0.6189,
+                  -0.0247
+                ],
+                [
+                  -0.5316,
+                  0.6529,
+                  -0.5396
+                ],
+                [
+                  -0.3178,
+                  0.4367,
+                  0.8416
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "door",
+            "name": "窄前门",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                3
+              ]
+            },
+            "_obb": {
+              "size": [
+                1.373,
+                2.477,
+                0.231
+              ],
+              "center": [
+                -0.902,
+                1.224,
+                0.03
+              ],
+              "axes": [
+                [
+                  0.9996,
+                  0.0217,
+                  0.0192
+                ],
+                [
+                  -0.0217,
+                  0.9998,
+                  -0.0028
+                ],
+                [
+                  -0.0193,
+                  0.0024,
+                  0.9998
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "windows",
+            "name": "铅条小窗",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                1.192,
+                3.13,
+                4.605
+              ],
+              "center": [
+                2.103,
+                3.131,
+                2.07
+              ],
+              "axes": [
+                [
+                  0.8188,
+                  0.0332,
+                  0.5731
+                ],
+                [
+                  -0.2881,
+                  0.8872,
+                  0.3603
+                ],
+                [
+                  -0.4965,
+                  -0.4601,
+                  0.7361
+                ]
+              ],
+              "_mainAxis": 2
+            }
+          },
+          {
+            "id": "roof",
+            "name": "三段错落屋顶",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                7.509,
+                2.478,
+                6.706
+              ],
+              "center": [
+                0.134,
+                6.677,
+                -0.288
+              ],
+              "axes": [
+                [
+                  0.8977,
+                  -0.0176,
+                  0.4402
+                ],
+                [
+                  -0.0032,
+                  0.9989,
+                  0.0464
+                ],
+                [
+                  -0.4406,
+                  -0.0431,
+                  0.8967
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "chimney",
+            "name": "烟囱",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                0.86,
+                1.75,
+                0.86
+              ],
+              "center": [
+                -1.9,
+                7.075,
+                -1.6
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "awning",
+            "name": "门头遮棚",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                3
+              ]
+            },
+            "_obb": {
+              "size": [
+                1.6,
+                0.876,
+                0.751
+              ],
+              "center": [
+                -0.9,
+                2.709,
+                0.371
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0.9937,
+                  0.1123
+                ],
+                [
+                  0,
+                  -0.1123,
+                  0.9937
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "mount01_sign",
+            "name": "工坊招牌",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                3
+              ]
+            },
+            "mounted": true,
+            "_obb": {
+              "size": [
+                0.9,
+                0.99,
+                0.209
+              ],
+              "center": [
+                0.9,
+                3.664,
+                0.253
+              ],
+              "axes": [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0.9915,
+                  -0.1301
+                ],
+                [
+                  0,
+                  0.1301,
+                  0.9915
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "m0",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                2.7,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6,
+                "height": 5.4,
+                "depth": 6
+              },
+              "color": 13214283
+            }
+          },
+          {
+            "id": "m1",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                0.35,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.12,
+                "height": 0.7,
+                "depth": 6.12
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m2",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                5.5,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 6.1,
+                "height": 0.28,
+                "depth": 6.1
+              },
+              "color": 14201951
+            }
+          },
+          {
+            "id": "m3",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                -2.83,
+                2.75,
+                -2.83
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.34,
+                "height": 5.5,
+                "depth": 0.34
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m4",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                -2.83,
+                2.75,
+                2.83
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.34,
+                "height": 5.5,
+                "depth": 0.34
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m5",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.83,
+                2.75,
+                -2.83
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.34,
+                "height": 5.5,
+                "depth": 0.34
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m6",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.83,
+                2.85,
+                2.83
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.34,
+                "height": 5.7,
+                "depth": 0.34
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m7",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                4.9,
+                2.89
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.7,
+                "height": 0.3,
+                "depth": 0.22
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m8",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                0,
+                2.6,
+                2.89
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.7,
+                "height": 0.26,
+                "depth": 0.22
+              },
+              "color": 4271129
+            }
+          },
+          {
+            "id": "m9",
+            "parent": "body",
+            "transform": {
+              "pos": [
+                2.89,
+                3.6,
+                -1.1
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.22,
+                "height": 2.2,
+                "depth": 0.22
+              },
+              "color": 4271129
+            }
+          },
+          {
+            "id": "m10",
+            "parent": "door",
+            "transform": {
+              "pos": [
+                -0.9,
+                1.15,
+                0.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1,
+                "height": 2.3,
+                "depth": 0.16
+              },
+              "color": 4139543
+            }
+          },
+          {
+            "id": "m11",
+            "parent": "door",
+            "transform": {
+              "pos": [
+                -0.9,
+                2.36,
+                0.03
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.16,
+                "height": 0.18,
+                "depth": 0.2
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m12",
+            "parent": "door",
+            "transform": {
+              "pos": [
+                -1.48,
+                1.15,
+                0.03
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.16,
+                "height": 2.3,
+                "depth": 0.2
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m13",
+            "parent": "door",
+            "transform": {
+              "pos": [
+                -0.32,
+                1.15,
+                0.03
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.16,
+                "height": 2.3,
+                "depth": 0.2
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m14",
+            "parent": "door",
+            "transform": {
+              "pos": [
+                -0.5,
+                1.2,
+                0.11
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 0.1,
+                "depth": 0.06
+              },
+              "color": 3107674
+            }
+          },
+          {
+            "id": "m15",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                3.4,
+                3.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 1.1,
+                "depth": 0.14
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m16",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                3.4,
+                3.04
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.74,
+                "height": 0.9400000000000001,
+                "depth": 0.18000000000000002
+              },
+              "color": 5067870
+            }
+          },
+          {
+            "id": "m17",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                3.4,
+                3.05
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.07,
+                "height": 0.9400000000000001,
+                "depth": 0.2
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m18",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                3.4,
+                3.05
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.74,
+                "height": 0.07,
+                "depth": 0.2
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m19",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                4.02,
+                3.04
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m20",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                2.78,
+                3.04
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m21",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                1.5,
+                3.02
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.7,
+                "height": 0.8,
+                "depth": 0.14
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m22",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                1.5,
+                3.04
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5399999999999999,
+                "height": 0.64,
+                "depth": 0.18000000000000002
+              },
+              "color": 5067870
+            }
+          },
+          {
+            "id": "m23",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                1.5,
+                3.05
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.07,
+                "height": 0.64,
+                "depth": 0.2
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m24",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                1.5,
+                3.05
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5399999999999999,
+                "height": 0.07,
+                "depth": 0.2
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m25",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                1.97,
+                3.04
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.8999999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m26",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                1.5,
+                1.03,
+                3.04
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.8999999999999999,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m27",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                3.02,
+                3.4,
+                0.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 1.1,
+                "depth": 0.14
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m28",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                3.02,
+                3.4,
+                0.62
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.74,
+                "height": 0.9400000000000001,
+                "depth": 0.18000000000000002
+              },
+              "color": 5067870
+            }
+          },
+          {
+            "id": "m29",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                3.02,
+                3.4,
+                0.63
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.07,
+                "height": 0.9400000000000001,
+                "depth": 0.2
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m30",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                3.02,
+                3.4,
+                0.63
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.74,
+                "height": 0.07,
+                "depth": 0.2
+              },
+              "color": 7042176
+            }
+          },
+          {
+            "id": "m31",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                3.02,
+                4.02,
+                0.62
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m32",
+            "parent": "windows",
+            "transform": {
+              "pos": [
+                3.02,
+                2.78,
+                0.62
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.1,
+                "height": 0.14,
+                "depth": 0.18
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m33",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                6.59,
+                0.75
+              ],
+              "quat": [
+                0.94,
+                0,
+                0,
+                -0.34
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.6,
+                "height": 0.22,
+                "depth": 2.98
+              },
+              "color": 10242618
+            }
+          },
+          {
+            "id": "m34",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                6.59,
+                -1.55
+              ],
+              "quat": [
+                0.94,
+                0,
+                0,
+                0.34
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.6,
+                "height": 0.22,
+                "depth": 2.98
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m35",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                0,
+                7.59,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 5.699999999999999,
+                "height": 0.2,
+                "depth": 0.3
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m36",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.68,
+                5.8775,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 4.508
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m37",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.68,
+                6.3525,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 3.381
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m38",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.68,
+                6.8275,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 2.254
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m39",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.68,
+                7.3025,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 1.127
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m40",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.68,
+                5.8775,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 4.508
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m41",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.68,
+                6.3525,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 3.381
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m42",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.68,
+                6.8275,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 2.254
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m43",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.68,
+                7.3025,
+                -0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.495,
+                "depth": 1.127
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m44",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                1,
+                6.24,
+                2.25
+              ],
+              "quat": [
+                0.93,
+                0,
+                0,
+                -0.36
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 3.4,
+                "height": 0.22,
+                "depth": 1.77
+              },
+              "color": 11754053
+            }
+          },
+          {
+            "id": "m45",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                1,
+                6.24,
+                0.95
+              ],
+              "quat": [
+                0.93,
+                0,
+                0,
+                0.36
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 3.4,
+                "height": 0.22,
+                "depth": 1.77
+              },
+              "color": 10242618
+            }
+          },
+          {
+            "id": "m46",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                1,
+                6.89,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 3.5,
+                "height": 0.2,
+                "depth": 0.3
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m47",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.58,
+                5.79,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 2.548
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m48",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.58,
+                6.09,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 1.911
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m49",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.58,
+                6.39,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 1.274
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m50",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.58,
+                6.69,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 0.637
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m51",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.58,
+                5.79,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 2.548
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m52",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.58,
+                6.09,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 1.911
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m53",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.58,
+                6.39,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 1.274
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m54",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                2.58,
+                6.69,
+                1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.32,
+                "depth": 0.637
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m55",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -1.6,
+                6.14,
+                -0.8
+              ],
+              "quat": [
+                0.94,
+                0,
+                0,
+                -0.34
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.6,
+                "height": 0.22,
+                "depth": 1.56
+              },
+              "color": 10242618
+            }
+          },
+          {
+            "id": "m56",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -1.6,
+                6.14,
+                -2
+              ],
+              "quat": [
+                0.94,
+                0,
+                0,
+                0.34
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.6,
+                "height": 0.22,
+                "depth": 1.56
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m57",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -1.6,
+                6.69,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.7,
+                "height": 0.2,
+                "depth": 0.3
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m58",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.78,
+                5.765,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 2.352
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m59",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.78,
+                6.015,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 1.7639999999999998
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m60",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.78,
+                6.265,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 1.176
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m61",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -2.78,
+                6.515,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 0.588
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m62",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.42,
+                5.765,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 2.352
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m63",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.42,
+                6.015,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 1.7639999999999998
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m64",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.42,
+                6.265,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 1.176
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m65",
+            "parent": "roof",
+            "transform": {
+              "pos": [
+                -0.42,
+                6.515,
+                -1.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.27,
+                "depth": 0.588
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m66",
+            "parent": "chimney",
+            "transform": {
+              "pos": [
+                -1.9,
+                7,
+                -1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.7,
+                "height": 1.6,
+                "depth": 0.7
+              },
+              "color": 11569724
+            }
+          },
+          {
+            "id": "m67",
+            "parent": "chimney",
+            "transform": {
+              "pos": [
+                -1.9,
+                7.85,
+                -1.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.86,
+                "height": 0.2,
+                "depth": 0.86
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m68",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -0.9,
+                2.88,
+                0.39
+              ],
+              "quat": [
+                -0.22,
+                0,
+                0,
+                0.98
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.6,
+                "height": 0.12,
+                "depth": 0.81
+              },
+              "color": 8272430
+            }
+          },
+          {
+            "id": "m69",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -1.6,
+                2.5,
+                0.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 0.5,
+                "depth": 0.14
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m70",
+            "parent": "awning",
+            "transform": {
+              "pos": [
+                -0.2,
+                2.5,
+                0.6
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.14,
+                "height": 0.5,
+                "depth": 0.14
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m71",
+            "parent": "mount01_sign",
+            "transform": {
+              "pos": [
+                0.9,
+                3.9,
+                0.2
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.1,
+                "height": 0.5,
+                "depth": 0.1
+              },
+              "color": 5913892
+            }
+          },
+          {
+            "id": "m72",
+            "parent": "mount01_sign",
+            "transform": {
+              "pos": [
+                0.9,
+                3.45,
+                0.28
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 0.55,
+                "depth": 0.1
+              },
+              "color": 3107674
+            }
+          },
+          {
+            "id": "m73",
+            "parent": "mount01_sign",
+            "transform": {
+              "pos": [
+                0.9,
+                3.45,
+                0.35
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.7,
+                "height": 0.1,
+                "depth": 0.06
+              },
+              "color": 14201951
+            }
+          }
+        ],
+        "_meta": {
+          "skipAutoCenter": true,
+          "ai": {
+            "v": 1,
+            "ts": 1790657427390,
+            "provider": "deepseek",
+            "data": "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",
+            "edits": ""
+          },
+          "mounts": [
+            {
+              "id": "mount01_sign",
+              "mountedGroupId": "mount01_sign",
+              "name": "工坊招牌",
+              "source": {
+                "type": "codegen"
+              },
+              "description": "",
+              "visible": true,
+              "ts": 1790657427390
+            }
+          ],
+          "semanticSnapshot": {
+            "v": 1,
+            "auto": true,
+            "text": "中世纪赭石工坊 · 7组/74mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 主体墙体 @p(0,0,0)\n  M:[m0 box 6×5.4×6 (0,2.7,0)]\n  G:door 窄前门 @p(0,0,3)\n    M:[m10 box 1×2.3×0.16 (-0.9,1.2,3) 薄向前(Z)]\n  G:windows 铅条小窗 @p(0,0,0)\n    M:[m15 box 0.9×1.1×0.14 (1.5,3.4,3) 薄向前(Z)]\n  G:roof 三段错落屋顶 @p(0,0,0)\n    M:[m33 box 5.6×0.22×3 (0,6.6,0.8) 轴右(X)]\n    G:chimney 烟囱 @p(0,0,0)\n      M:[m66 box 0.7×1.6×0.7 (-1.9,7,-1.6) 轴上(Y)]\n  G:awning 门头遮棚 @p(0,0,3)\n    M:[m68 box 1.6×0.12×0.81 (-0.9,2.9,3.4) 薄向上(Y)]\n  G:mount01_sign 工坊招牌 @p(0,0,3) 挂:body\n    M:[m72 box 0.9×0.55×0.1 (0.9,3.5,3.3) 薄向前(Z)] | M:[m71 box 0.1×0.5×0.1 (0.9,3.9,3.2) 轴上(Y)]",
+            "stats": {
+              "groups": 7,
+              "meshes": 74,
+              "labeledMeshes": 0,
+              "labelCoverage": 0,
+              "batchLabels": 0,
+              "autoChains": 0,
+              "snapshotChars": 926
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "asset-c985c7df-95b4-4b5a",
+      "name": "城镇果树",
+      "updatedAt": 1790657424388,
+      "role": "tree",
+      "modelJson": {
+        "name": "小苹果树",
+        "type": "lowpoly",
+        "format": 2,
+        "nodes": [
+          {
+            "id": "fruits",
+            "name": "红果",
+            "transform": {
+              "pos": [
+                0.55,
+                2.5,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                5.414,
+                6.128,
+                3.537
+              ],
+              "center": [
+                -0.693,
+                0.807,
+                -0.073
+              ],
+              "axes": [
+                [
+                  0.8423,
+                  -0.5263,
+                  -0.1163
+                ],
+                [
+                  0.537,
+                  0.838,
+                  0.0967
+                ],
+                [
+                  0.0465,
+                  -0.1439,
+                  0.9885
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "trunk",
+            "name": "歪斜树干",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -0.55,
+                -2.5,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                1.117,
+                2.673,
+                1.541
+              ],
+              "center": [
+                0.396,
+                1.202,
+                -0.13
+              ],
+              "axes": [
+                [
+                  0.902,
+                  -0.2055,
+                  -0.3796
+                ],
+                [
+                  0.212,
+                  0.9769,
+                  -0.0251
+                ],
+                [
+                  0.376,
+                  -0.0579,
+                  0.9248
+                ]
+              ],
+              "_mainAxis": 1
+            }
+          },
+          {
+            "id": "branches",
+            "name": "张开主枝",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                2.713,
+                1.899,
+                2.333
+              ],
+              "center": [
+                -0.501,
+                0.788,
+                0.048
+              ],
+              "axes": [
+                [
+                  0.897,
+                  -0.442,
+                  0.0033
+                ],
+                [
+                  0.3918,
+                  0.7915,
+                  -0.469
+                ],
+                [
+                  0.2047,
+                  0.422,
+                  0.8832
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "canopy",
+            "name": "叶团",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                0,
+                0,
+                0
+              ]
+            },
+            "_obb": {
+              "size": [
+                4.243,
+                2.028,
+                3.063
+              ],
+              "center": [
+                -0.483,
+                1.625,
+                0.026
+              ],
+              "axes": [
+                [
+                  0.9969,
+                  0.0228,
+                  -0.0749
+                ],
+                [
+                  -0.026,
+                  0.9988,
+                  -0.0419
+                ],
+                [
+                  0.0739,
+                  0.0438,
+                  0.9963
+                ]
+              ],
+              "_mainAxis": 0
+            }
+          },
+          {
+            "id": "m0",
+            "parent": "trunk",
+            "transform": {
+              "pos": [
+                0,
+                0.17,
+                0
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.5,
+                "height": 0.35,
+                "depth": 0.5
+              },
+              "color": 5519908
+            }
+          },
+          {
+            "id": "m1",
+            "parent": "trunk",
+            "transform": {
+              "pos": [
+                0.35,
+                0.11,
+                0.15
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.9,
+                "height": 0.22,
+                "depth": 0.28
+              },
+              "color": 5519908
+            }
+          },
+          {
+            "id": "m2",
+            "parent": "trunk",
+            "transform": {
+              "pos": [
+                -0.2,
+                0.11,
+                -0.3
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.28,
+                "height": 0.22,
+                "depth": 0.85
+              },
+              "color": 5519908
+            }
+          },
+          {
+            "id": "m3",
+            "parent": "trunk",
+            "transform": {
+              "pos": [
+                0.1,
+                0.1,
+                0.4
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.24,
+                "height": 0.2,
+                "depth": 0.6
+              },
+              "color": 5519908
+            }
+          },
+          {
+            "id": "m4",
+            "parent": "trunk",
+            "transform": {
+              "pos": [
+                0.28,
+                1.4,
+                -0.26
+              ],
+              "quat": [
+                0.56,
+                0.44,
+                0.44,
+                0.56
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.27,
+                "height": 0.52,
+                "depth": 0.52
+              },
+              "color": 7031343
+            }
+          },
+          {
+            "id": "m5",
+            "parent": "trunk",
+            "transform": {
+              "pos": [
+                0.28,
+                1.4,
+                0.24
+              ],
+              "quat": [
+                0.56,
+                0.44,
+                0.44,
+                0.56
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.27,
+                "height": 0.06,
+                "depth": 0.21
+              },
+              "color": 9069632
+            }
+          },
+          {
+            "id": "m6",
+            "parent": "branches",
+            "transform": {
+              "pos": [
+                -0.95,
+                0.53,
+                0.35
+              ],
+              "quat": [
+                0.18,
+                0.68,
+                0.68,
+                0.18
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 2.17,
+                "height": 0.22,
+                "depth": 0.22
+              },
+              "color": 7031343
+            }
+          },
+          {
+            "id": "m7",
+            "parent": "branches",
+            "transform": {
+              "pos": [
+                0.5,
+                0.5,
+                -0.2
+              ],
+              "quat": [
+                0.65,
+                0.27,
+                0.27,
+                0.65
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.41,
+                "height": 0.22,
+                "depth": 0.22
+              },
+              "color": 7031343
+            }
+          },
+          {
+            "id": "m8",
+            "parent": "branches",
+            "transform": {
+              "pos": [
+                -0.2,
+                0.7,
+                0.9
+              ],
+              "quat": [
+                0.43,
+                0.56,
+                0.56,
+                0.43
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.46,
+                "height": 0.22,
+                "depth": 0.22
+              },
+              "color": 7031343
+            }
+          },
+          {
+            "id": "m9",
+            "parent": "branches",
+            "transform": {
+              "pos": [
+                -0.52,
+                0.6,
+                -0.85
+              ],
+              "quat": [
+                0.29,
+                0.64,
+                0.64,
+                0.29
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.59,
+                "height": 0.22,
+                "depth": 0.22
+              },
+              "color": 7031343
+            }
+          },
+          {
+            "id": "m10",
+            "parent": "branches",
+            "transform": {
+              "pos": [
+                0.18,
+                0.73,
+                0.55
+              ],
+              "quat": [
+                0.56,
+                0.44,
+                0.44,
+                0.56
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.49,
+                "height": 0.22,
+                "depth": 0.22
+              },
+              "color": 7031343
+            }
+          },
+          {
+            "id": "m11",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                -1.8,
+                1.25,
+                0.35
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.4249999999999998,
+                "height": 1.0924999999999998,
+                "depth": 1.4249999999999998
+              },
+              "color": 4026412
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m12",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                0.9,
+                1.2,
+                -0.2
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.35,
+                "height": 1.035,
+                "depth": 1.35
+              },
+              "color": 5147706
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m13",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                -0.4,
+                1.65,
+                0.85
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.275,
+                "height": 0.9774999999999999,
+                "depth": 1.275
+              },
+              "color": 6727754
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m14",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                -1,
+                1.45,
+                -0.8
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2000000000000002,
+                "height": 0.9199999999999999,
+                "depth": 1.2000000000000002
+              },
+              "color": 4026412
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m15",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                0.3,
+                1.7,
+                0.5
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.2000000000000002,
+                "height": 0.9199999999999999,
+                "depth": 1.2000000000000002
+              },
+              "color": 5147706
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m16",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                -0.45,
+                2.05,
+                0.1
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.4249999999999998,
+                "height": 1.0924999999999998,
+                "depth": 1.4249999999999998
+              },
+              "color": 6727754
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m17",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                -1.25,
+                1.85,
+                0.2
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0499999999999998,
+                "height": 0.8049999999999999,
+                "depth": 1.0499999999999998
+              },
+              "color": 4026412
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m18",
+            "parent": "canopy",
+            "transform": {
+              "pos": [
+                0.2,
+                2,
+                -0.35
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 1.0499999999999998,
+                "height": 0.8049999999999999,
+                "depth": 1.0499999999999998
+              },
+              "color": 5147706
+            },
+            "tags": [
+              {
+                "tag": "foliage",
+                "value": "leaf"
+              }
+            ]
+          },
+          {
+            "id": "m19",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -1.6,
+                1,
+                0.75
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.26,
+                "depth": 0.26
+              },
+              "color": 12597547
+            }
+          },
+          {
+            "id": "m20",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -1.52,
+                1.08,
+                0.83
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.12,
+                "depth": 0.12
+              },
+              "color": 14703173
+            }
+          },
+          {
+            "id": "m21",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                0.7,
+                0.95,
+                0.15
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.26,
+                "depth": 0.26
+              },
+              "color": 12597547
+            }
+          },
+          {
+            "id": "m22",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                0.78,
+                1.03,
+                0.23
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.12,
+                "depth": 0.12
+              },
+              "color": 14703173
+            }
+          },
+          {
+            "id": "m23",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -0.2,
+                1.5,
+                1.05
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.26,
+                "depth": 0.26
+              },
+              "color": 12597547
+            }
+          },
+          {
+            "id": "m24",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -0.12,
+                1.58,
+                1.13
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.12,
+                "depth": 0.12
+              },
+              "color": 14703173
+            }
+          },
+          {
+            "id": "m25",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -0.9,
+                1.25,
+                -0.55
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.26,
+                "depth": 0.26
+              },
+              "color": 12597547
+            }
+          },
+          {
+            "id": "m26",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                -0.82,
+                1.33,
+                -0.47
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.12,
+                "depth": 0.12
+              },
+              "color": 14703173
+            }
+          },
+          {
+            "id": "m27",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                0.4,
+                1.55,
+                0.15
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.26,
+                "height": 0.26,
+                "depth": 0.26
+              },
+              "color": 12597547
+            }
+          },
+          {
+            "id": "m28",
+            "parent": "fruits",
+            "transform": {
+              "pos": [
+                0.48,
+                1.63,
+                0.23
+              ]
+            },
+            "mesh": {
+              "type": "box",
+              "params": {
+                "width": 0.12,
+                "height": 0.12,
+                "depth": 0.12
+              },
+              "color": 14703173
+            }
+          }
+        ],
+        "_meta": {
+          "skipAutoCenter": true,
+          "ai": {
+            "v": 1,
+            "ts": 1790657422948,
+            "provider": "deepseek",
+            "data": "nenWWLHmg77WoIr0wccV5XUroRpEpC3GBaq0Tuj1KW+T3cNYFM28t8mxwiztSDEtBt9RxBk/1qDiT9PRsEQcLq5YWIfndue4zk8n8xstCKWCimBfPr8OGnvb7JXIVgHqRrskSA7dCQzCAaRJ3/JgTvYW59xcd/5UXGQrOtjKZfGB5TcLCBfd5qoLJ2OEjkUp+mgWL7Y+zSNlCcMgSmF/tFu+UA0Gtt6uQmB4j6mb2PiLakVg0HG50yYsl0Qokw12kVJlrWUeYc/KXUa98tpu++TxxWUAN0Wv3I9IQpjONvIF5BTh54QOgxKnHMVDG0w+Tmem+4n6JKK9oduMFHT2fMlsfyAa0fDfcRlCtGEcpMcchswmJgCeZ8sNAwOQgGkBNQ+GvnDwQCqo57F5Qo/L1byqGAUUEU8Zcb17pVq4GGy5hr3UZn1RwoYeVUtjqWyxg38cNlozqNSg7Ip+XkqzBRJTcV8XCbqDyOQPT4iUQfNBvFRPCjZS3khFW0hs47cgfnFGbUKjuqQtfZvH+OI2o0kHCNr05qXKIdTZgsnTrcS+aYOPgU9MbmnHLFKn/KDkExPgUIhH1Ahh2QWwFGUOuINQrznRWB7R8cKW23l3eWAKxfoMpM+DDU6StVtWbk3ILVGbMSZ8eCcpebZ3TcPYdLkYwL/Abbn41sJEFGDtJdvcmI8gaTHVokuMdG+RHM9/tXZymPLgNjpqxzNWOohkrYa4FMlyNC+XAWXlK7XEq+6nKv2ajEHksUNvQ7Dej6lHp2jmYzOxsGkLYIA3un5S4nNXOytMYLMolcSnZh7guLl4Wm9i92pzjb/cQabCFRBBFwkbsufGN74YcFrgIpFHxFcjOy3fRRzQNrjC46N7Ibw+hu1BoLf6E4kIJNTkBY80mYxnppTldeFLqeY6BDSPVO6eqTkPitpGNcPOb8XOln7KC/DY61YOBWq88r6/tRJXvJE618KQ6S++25SDxDS7pHPEdN3T7Q9cXrIE8ZxQFrsCiqghrggodBIjSckK0j+1CTTeltAlPSESmaRcmoPAI6pK3NJIxwTuZ+Sqfwa7u0d/F7FJK2V/l9n3u7SMxw0TLLGqufc4co79Nj5F4N5tZgx3JuV/zSIhjelYw89JI12WS5Snv0hMNXY0T32pxlioTobTuFkmFSBV87Js5+UXMjI999zjR0UKabc70X/wePA8R2Ox+DrDZpEpV8JQ0pzLC/UgTciJKMcc77viyZLMjk08QdjQaaLmjOQilfdj1P6rfAHX4kUC3HIONd9Ap/CgWwExo6x7hmJ1lh2zmssLQ8i2B+HTHA1OskasxldFISzTGEb1P2N14yPgVH3P3Sa7xuPRqLqBVWr9bgHz3rVeKI/OQH+xJJWRCA9DDa878yNwYkPoKP0+FCpGK2970prTP7sa+IOEwIbAGeGalsZSIEpO3rd/x7ffq0jM+QJX0mlmWiEes07/admbqbZPoh6Lgzt/380JJhDJC3vSWsZN24YBjo7XiqyO2vGC2WqlXAupkjnGn7eA6+X8NkboA968KGRC3++MdnAfUDBU6HSekqMa8s94mmitsW6LQl1B8WIh5QPR1uqocWt7PgTaRgQ9x10Hm1+/uZTnNoLYFEdBOEZR6keMf+KRdVAW58/ns8o3mkzuh9NaDK9GBAgQpK9QDO6vF58gIT3XLDQyEtBwFOE/m3KAiGHwJ2/b4nL9DRCu5FhSm9QBRscUgzKuK4p/FMxnB56qMU7/4WGetnLE851IEUnmF4WhxIBdkRcGGDvPiQ9x/K8lHgJiSZe95CENF1RSxMHGz6zzVlhqn3PltcyLEg1MVUwqvaUXFe3j9UuNzLNGiLYb+X+pEtdiWyvikNBYFldiy3obgHd4cx/yHykZG/eDNjdQYvkNRvuas57tOXxlYiNKJXY=",
+            "edits": ""
+          },
+          "semanticSnapshot": {
+            "v": 1,
+            "auto": true,
+            "text": "小苹果树 · 4组/29mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:fruits 红果 @p(0.6,2.5,0)\n  M:[m19 box 0.26×0.26×0.26 (-1,3.5,0.8)]\n  G:trunk 歪斜树干 @p(0,0,0)\n    M:[m4 box 2.3×0.52×0.52 (0.3,1.4,-0.3) 轴上(Y)]\n  G:branches 张开主枝 @p(0.6,2.5,0)\n    M:[m6 box 2.2×0.22×0.22 (-0.4,3,0.4) 轴(-1.3,3.6,0.4)→(0.5,2.5,0.4)]\n  G:canopy 叶团 @p(0.6,2.5,0)\n    M:[m11 box 1.4×1.1×1.4 (-1.2,3.8,0.4)]",
+            "stats": {
+              "groups": 4,
+              "meshes": 29,
+              "labeledMeshes": 0,
+              "labelCoverage": 0,
+              "batchLabels": 0,
+              "autoChains": 0,
+              "snapshotChars": 682
+            }
+          }
+        }
+      }
+    }
+  ]
+}
