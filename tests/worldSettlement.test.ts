@@ -5,7 +5,7 @@ import {
 } from '../src/shared/worldSettlement';
 import { createUrbanLayout } from '../src/shared/mapUrbanLayout';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
-import { buildingsOverlap, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
+import { buildingsOverlap, segmentBuildingFootprint, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
 
 type Point = [number, number];
 
@@ -366,7 +366,6 @@ describe('world settlement growth', () => {
     });
     expect(patch.buildings.find(building => building.id === landmark.id)).toEqual(landmark);
     expect(patch.streets.some(street => street.tags.includes('landmark-access'))).toBe(true);
-    const landmarkBounds = townBuildingBounds(landmark);
     for (const building of patch.buildings.filter(building => building.id !== landmark.id)) {
       expect(buildingsOverlap(building, landmark)).toBe(false);
     }
@@ -375,7 +374,7 @@ describe('world settlement growth', () => {
       const [a, b] = [street.points[index - 1], street.points[index]];
       expect(street === access
         ? segmentBuildingFootprint(a, b, landmark, street.width / 2)
-        : segmentBox(a, b, landmarkBounds, street.width / 2)).toBe(false);
+        : segmentBuildingFootprint(a, b, landmark, street.width / 2 + 1)).toBe(false);
     }
     const direction: Point = [Math.sin(landmark.rotation!), Math.cos(landmark.rotation!)];
     const door: Point = [
@@ -450,6 +449,37 @@ describe('world settlement growth', () => {
     expect(result.landmarks.every(landmark => !('siting' in landmark))).toBe(true);
     expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
   }, 10_000);
+
+  it('reserves a complete civic program before filling the surrounding street blocks', () => {
+    const plan=fixture(),town=plan.towns[0],base=sampler(plan);
+    town.radius=112;town.ports=[];town.targetWaterBodyId='sea';plan.roads=[];
+    const sample:WorldSettlementSampler=(x,z)=>{
+      const original=base(x,z),lx=x-town.center[0],lz=z-town.center[1],water=lx < -94;
+      return {...original,height:water?-3:14+lz*.008,waterLevel:water?0:null,waterBodyId:null};
+    };
+    const requirements=[
+      {id:'fish-market',use:'fish market',width:12,depth:10,height:6,assetKey:'market',siting:'waterfront'},
+      {id:'cargo-storehouse',use:'cargo storehouse',width:13,depth:10,height:7,assetKey:'warehouse',siting:'waterfront'},
+      {id:'island-school',use:'island school',width:14,depth:11,height:7,assetKey:'school',siting:'central'},
+      {id:'meeting-hall',use:'meeting hall',width:11,depth:9,height:7,assetKey:'hall',siting:'central'},
+      {id:'farm-exchange',use:'farm exchange',width:10,depth:8,height:6,assetKey:'exchange',siting:'gateway'}
+    ] as const;
+    const result=createWorldSettlementLandmarkLayout(plan,town.id,sample,{
+      kind:'city',pattern:'organic',seed:6103402,density:.65,waterfrontBias:.8,waterSetback:7
+    },requirements);
+    expect(result.landmarks.map(building=>building.id)).toEqual(requirements.map(building=>building.id));
+    expect(result.patch.buildings.filter(building=>!requirements.some(item=>item.id===building.id)).length)
+      .toBeGreaterThanOrEqual(24);
+    expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius)
+      .toBeGreaterThanOrEqual(.8);
+    expect(result.patch.streets.some(street=>street.tags.includes('sea-landing'))).toBe(true);
+    for(const landmark of result.landmarks) {
+      const access=result.patch.streets.find(street=>street.id===`${town.id}-landmark-${landmark.id}`);
+      expect(access,landmark.id).toBeDefined();
+      expect(access!.points.length,landmark.id).toBeGreaterThanOrEqual(2);
+    }
+    expect(validateTownPatch(plan,result.patch)).toEqual(result.patch);
+  },10_000);
 
   it('does not invent a waterfront site when the sampled town has no water', () => {
     const plan = fixture();
