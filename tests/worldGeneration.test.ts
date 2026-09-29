@@ -421,16 +421,16 @@ describe('world generation compiler', () => {
         {region:'southeast' as const,biome:'ocean' as const},{region:'southwest' as const,biome:'ocean' as const},
         {region:'center' as const,biome:'grassland' as const}
       ],landforms:[{center:[0,0] as [number,number],radius:[70,60] as [number,number],height:7}]};
-    const audit=auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:78}]);
-    expect(audit).toMatchObject({adequate:false,requiredSpan:156});
+    const audit=auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:145}]);
+    expect(audit).toMatchObject({adequate:false,requiredSpan:290});
     expect(audit!.largestDryComponentSamples).toBeLessThan(audit!.requiredDrySamples);
     const broadDryCore=((x:number,z:number)=>({height:Math.abs(x)<=160&&Math.abs(z)<=160?8:-4,
       waterLevel:Math.abs(x)<=160&&Math.abs(z)<=160?null:0,waterBodyId:null})) as ReturnType<typeof createWorldSampler>;
-    expect(auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:78}],broadDryCore))
-      .toMatchObject({adequate:true,requiredSpan:156});
+    expect(auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:145}],broadDryCore))
+      .toMatchObject({adequate:true,requiredSpan:290});
     const raw={plan:{version:1,id:'small-island',revision:1,
       prompt:'An inhabited island port',recipe,ecology:[],roads:[],towns:[{id:'port',name:'Port',prompt:'Port town',
-        radius:78,blend:40,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.72,
+        radius:145,blend:40,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.72,
         publicBuildings:[]}] }};
     const input={prompt:'An inhabited island port',seed:17,size:500,generateAssets:true,repairAttempts:1 as const};
     expect(()=>createWorldSitingEvidence(parseWorldIntentDraft(raw,input)))
@@ -441,7 +441,7 @@ describe('world generation compiler', () => {
     const repairMessages=mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>;
     expect(JSON.parse(repairMessages.at(-1)!.content)).toMatchObject({
       error:expect.stringContaining('world_island_landmass_insufficient'),
-      terrainHint:{islandLandmass:expect.objectContaining({adequate:false,requiredSpan:156})},
+      terrainHint:{islandLandmass:expect.objectContaining({adequate:false,requiredSpan:290})},
       instruction:expect.stringContaining('passable route between them')
     });
   });
