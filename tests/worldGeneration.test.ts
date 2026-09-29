@@ -221,6 +221,25 @@ describe('world generation compiler', () => {
     }));
   });
 
+  it('uses its one allowed intent repair when sampled siting cannot support the proposed town', async () => {
+    const {layout}=soloLayout();
+    const impossible=rawSoloIntent() as any;
+    impossible.plan.towns[0].targetWaterBodyId='sea';
+    impossible.plan.towns[0].waterfrontBias=.9;
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(impossible))
+      .mockResolvedValueOnce(JSON.stringify(rawSoloIntent()))
+      .mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld({...request,repairAttempts:1},{} as MapStore);
+    expect(result.bundle.plan.towns).toHaveLength(1);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
+    const repairMessages=mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>;
+    expect(JSON.parse(repairMessages.at(-1)!.content)).toMatchObject({
+      error:expect.stringContaining('world_no_site_candidates'),
+      instruction:expect.stringContaining('If the sampled site or public-building layout failed')
+    });
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
+  });
+
   it('reports a tiny inland knot and missing sea landing in a large harbor town', () => {
     const building=(id:string,x:number,z:number)=>({id,x,z,width:8,depth:8,height:6,use:'home'});
     const small={buildings:Array.from({length:11},(_,index)=>building('b'+index,(index%4)*4,Math.floor(index/4)*4)),

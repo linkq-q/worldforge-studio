@@ -687,24 +687,27 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     {role:'user',content:JSON.stringify({...request,...(reusableAssets.length?{reusableAssets}:{})})}];
   let compiled:ReturnType<typeof compileWorldDraft>|undefined;
   let intent:WorldIntentDraft|undefined;
+  let evidence:WorldSitingEvidence|undefined;
   for(let attempt=0;attempt<=(request.repairAttempts??0);attempt++) {
     const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.intent-repair':'world.intent',signal});
     let draft:unknown;
     try {
       draft=parseJson(content);
-      intent=parseWorldIntentDraft(draft,request);
+      const proposed=parseWorldIntentDraft(draft,request);
+      const sites=createWorldSitingEvidence(proposed);
+      intent=proposed;
+      evidence=sites;
       break;
     }
     catch(error) {
       recordGenerationTrace('world.rejected',{attempt,draft,error:error instanceof Error?error.message:String(error)});
       if(attempt===(request.repairAttempts??0)) throw error;
       messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
-        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. Preserve requested destinations and topology; do not invent road points or settlement centers.'})});
+        instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays. If the sampled site or public-building layout failed, choose a buildable region and adjust town radius, public footprint count, sizes or siting to fit the land. Preserve requested destinations and topology; do not invent road points or settlement centers.'})});
     }
   }
-  if(intent) {
+  if(intent&&evidence) {
     recordGenerationTrace('world.intent',{intent});
-    const evidence=createWorldSitingEvidence(intent);
     recordGenerationTrace('world.siting',{evidence});
     const layoutMessages:ChatMessage[]=[{role:'system',content:WORLD_LAYOUT_PROMPT},{role:'user',content:JSON.stringify({
       intent,evidence,...(reusableAssets.length?{reusableAssets}:{})})}];
