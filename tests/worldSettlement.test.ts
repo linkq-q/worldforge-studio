@@ -340,7 +340,9 @@ describe('world settlement growth', () => {
     expect(waterfront.tags).toContain('working-waterfront');
     expect(coastDistance(landing.points.at(-1)!)).toBeLessThan(coastDistance(landing.points[0]));
     expect(coastDistance(landing.points.at(-1)!)).toBeLessThanOrEqual(20);
+    expect(landing.tags).toContain('harbor-quay');
     expect(landing.width).toBeGreaterThanOrEqual(6.4);
+    expect(landing.points.slice(1).reduce((length,point,index)=>length+Math.hypot(point[0]-landing.points[index][0],point[1]-landing.points[index][1]),0)).toBeGreaterThanOrEqual(5);
     expect(validateTownPatch(plan,patch)).toEqual(patch);
   });
 
@@ -478,6 +480,7 @@ describe('world settlement growth', () => {
     expect(waterfront.tags).toContain('working-waterfront');
     expect(landing.points.at(-1)![0]+92).toBeLessThan(landing.points[0][0]+92);
     expect(landing.points.at(-1)![0]+92).toBeLessThanOrEqual(20);
+    expect(landing.tags).toContain('harbor-quay');
     expect(landing.width).toBeGreaterThanOrEqual(6.4);
     expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.72);
   });
@@ -497,13 +500,15 @@ describe('world settlement growth', () => {
       {id:'school',use:'school',width:11,depth:9,height:5,assetKey:'school',siting:'central'},
       {id:'net-workshop',use:'net workshop',width:10,depth:8,height:5,assetKey:'workshop',siting:'waterfront'}
     ]);
-    expect(result.patch.buildings.length).toBeGreaterThanOrEqual(20);
-    expect(result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length).toBeGreaterThanOrEqual(17);
+    expect(result.patch.buildings.length).toBeGreaterThanOrEqual(32);
+    expect(result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length).toBeGreaterThanOrEqual(29);
     expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.7);
     const working=result.patch.streets.find(street=>street.tags.includes('working-waterfront'))!;
     expect(working.width).toBeGreaterThanOrEqual(6.4);
-    expect(Math.min(...working.points.map(point=>point[0]+96))).toBeLessThanOrEqual(20);
+    expect(Math.min(...working.points.map(point=>point[0]+96))-working.width/2).toBeLessThanOrEqual(20);
     const landing=result.patch.streets.find(street=>street.tags.includes('sea-landing'))!;
+    expect(landing.tags).toContain('harbor-quay');
+    expect(landing.width).toBeGreaterThanOrEqual(6.4);
     expect(landing.points.at(-1)![0]+96).toBeLessThan(landing.points[0][0]+96);
     expect(landing.points.at(-1)![0]+96).toBeLessThanOrEqual(20);
   });

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
-import { worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
@@ -34,6 +34,11 @@ async function waitFor(predicate: () => boolean): Promise<void> {
 }
 
 describe('main editor streamed world renderer', () => {
+  it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
+    expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
+    expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');
+  });
+
   it('derives a coastal sand band without turning inland lowlands into beach', () => {
     const tile = { x: 0, z: 0, size: 16 };
     const tileData = (ocean: number): WorldTileData => {
