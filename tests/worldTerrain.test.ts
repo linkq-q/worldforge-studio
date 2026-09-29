@@ -521,6 +521,7 @@ describe('composable world terrain operations', () => {
       expect(borderDry).toBeLessThanOrEqual(1);
       expect(Math.max(...edgeHeights)).toBeLessThan(8);
       expect(percentile(coastSlopes, 0.95)).toBeLessThan(1.2);
+      expect(percentile(residuals.flat(), 0.1)).toBeLessThan(-3);
       expect(percentile(residuals.flat().map(Math.abs), 0.5)).toBeGreaterThan(1);
       expect(maxAxisSeparation).toBeGreaterThan(160);
 
@@ -737,7 +738,8 @@ describe('composable world terrain operations', () => {
           region: { kind: 'circle', center: [-55,55], radius: 48 } }
       ]
     };
-    const medianAngularResiduals: number[] = [], radialCorrelations: number[] = [], ridgeShares: number[] = [];
+    const medianAngularResiduals: number[] = [], channelTroughDepths: number[] = [];
+    const radialCorrelations: number[] = [], ridgeShares: number[] = [];
     const percentile = (values: number[], fraction: number) => values.sort((a, b) => a - b)
       [Math.floor((values.length - 1) * fraction)];
     const correlation = (a: number[], b: number[]) => {
@@ -760,6 +762,7 @@ describe('composable world terrain operations', () => {
           / offsets.length;
       }));
       medianAngularResiduals.push(percentile(residuals.flat().map(Math.abs), 0.5));
+      channelTroughDepths.push(-percentile(residuals.flat(), 0.1));
       radialCorrelations.push(correlation(residuals[0], residuals[1]), correlation(residuals[1], residuals[2]));
       ridgeShares.push(residuals.flat().filter(value => value > 0.25).length / residuals.flat().length);
 
@@ -771,6 +774,7 @@ describe('composable world terrain operations', () => {
     }
     const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
     expect(mean(medianAngularResiduals)).toBeGreaterThan(1.1);
+    expect(mean(channelTroughDepths)).toBeGreaterThan(3.1);
     expect(mean(radialCorrelations)).toBeGreaterThan(0.58);
     expect(mean(ridgeShares)).toBeGreaterThan(0.3);
   });

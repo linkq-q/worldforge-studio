@@ -523,7 +523,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
             const radius = Math.sqrt(d2);
             const aspect = Math.atan2((z - form.center[1]) / form.radius[1],
               (x - form.center[0]) / form.radius[0]);
-            const channelCount = clamp(Math.round((form.radius[0] + form.radius[1]) / 34), 5, 8);
+            const channelCount = clamp(Math.round((form.radius[0] + form.radius[1]) / 34), 5, 6);
             const formScale = Math.max(...form.radius);
             const phase = noise(form.center[0] / formScale, form.center[1] / formScale,
               seed + 1877) * Math.PI;
@@ -538,8 +538,13 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
                 - twist * (radius - 0.55) * 0.7 + branchWarp) * 0.28;
             const channel = smooth(0.25, 0.82, drainageWave);
             const rib = smooth(0.15, 0.86, -drainageWave);
-            const drainageAmplitude = Math.min(5.5, form.height * 0.11) * smooth(28, 42, form.height);
-            authoredDrainageDetail += slopeBand * drainageAmplitude * (rib * 0.32 - channel * 0.82);
+            // Multi-metre cuts remain legible in a 500m overview; the C2 slope band still
+            // takes them to zero before the summit and footprint boundary.
+            const drainageAmplitude = Math.min(12, form.height * 0.21) * smooth(28, 42, form.height)
+              * mix(0.55, 1, smooth(0.25, 0.5, form.height / Math.min(...form.radius)));
+            // Do not turn a mountain-backed beach into a drainage cliff.
+            const drainageMask = slopeBand * smooth(3, 12, height);
+            authoredDrainageDetail += drainageMask * drainageAmplitude * (rib * 0.32 - channel * 0.82);
           }
         }
       }
