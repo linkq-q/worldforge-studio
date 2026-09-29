@@ -253,6 +253,38 @@ describe('world generation compiler', () => {
     expect(layoutMessages[0].content).toContain('match its assetKey and authored [width,height,depth] exactly');
   });
 
+  it('reuses an offered asset when Stage 2 repeats its id as the asset key', async () => {
+    const asset = reusableAsset();
+    const { layout } = soloLayout();
+    (layout.assets as WorldAssetRequest[]) = [{
+      key: asset.id, name: 'Existing house', role: 'house', prompt: 'Reuse the existing house',
+      dimensions: [8, 7, 9], strategy: 'assembly'
+    }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(layout));
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset), saveAsset: vi.fn() } as unknown as MapStore;
+
+    const result = await generateWorld({ ...request, generateAssets: true, reusableAssetIds: [asset.id] }, store);
+
+    expect(result.draft.assets[0].existingAssetId).toBe(asset.id);
+    expect(result.assetSources?.[0]).toMatchObject({ assetId: asset.id, provider: 'existing' });
+    expect(store.saveAsset).not.toHaveBeenCalled();
+  });
+
+  it('rejects an incompatible exact reusable id before paid asset generation', async () => {
+    const asset = reusableAsset();
+    const { layout } = soloLayout();
+    (layout.assets as WorldAssetRequest[]) = [{
+      key: asset.id, name: 'Oversized house', role: 'house', prompt: 'A much larger house',
+      dimensions: [18, 7, 19], strategy: 'assembly'
+    }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(layout));
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset), saveAsset: vi.fn() } as unknown as MapStore;
+
+    await expect(generateWorld({ ...request, generateAssets: true, reusableAssetIds: [asset.id] }, store))
+      .rejects.toThrow(`world_reusable_asset_conflict:${asset.id}:dimensions`);
+    expect(store.saveAsset).not.toHaveBeenCalled();
+  });
+
   it('allows a terrain-only intent without inventing a town', () => {
     const input:WorldGenerationRequest={prompt:'A remote volcanic snowfield',seed:17,size:1400,generateAssets:false};
     const intent={plan:{version:1,id:'terrain-only',revision:1,prompt:input.prompt,
