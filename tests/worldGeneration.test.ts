@@ -397,6 +397,7 @@ describe('world generation compiler', () => {
       terrainHint:expect.objectContaining({sampledCells:81,seaCells:expect.any(Number),dryCells:expect.any(Number)})
     });
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
+    expect(JSON.parse(repairMessages.at(-1)!.content).instruction).toContain('non-ocean corner constraints');
   });
 
   it('tells GPT when every sampled town candidate lacks a buildable network', async () => {
@@ -546,6 +547,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('The root has only plan; recipe, ecology, towns and roads are children of plan');
     expect(messages[0].content).toContain('for size 500: -250..250');
     expect(messages[0].content).toContain('every map edge must sample as ocean');
+    expect(messages[0].content).toContain('Do not assign non-ocean corner constraints on a sea island');
     expect(messages[0].content).toContain('combined 2*radius by 2*radius cores');
     expect(messages[0].content).toContain('Assign at most one biome constraint to each broad region');
     expect(messages[0].content).toContain('heightScale around 0.02..0.04');
