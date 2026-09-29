@@ -3,6 +3,7 @@ import { createWorldSampler, createWorldTerrainContext, dominantBiome, parseWorl
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
   type WorldRecipe } from '../src/shared/worldTerrain';
 import { waterBoundaryContainsPoint, waterBoundaryDistance } from '../src/shared/mapWater';
+import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
   it('turns the requested sentence into explicit directional constraints', () => {
@@ -404,6 +405,134 @@ describe('composable world terrain operations', () => {
       expect(borderDry).toBe(0);
       expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(8.5);
       expect(percentile(settlementSlopes, 0.95)).toBeLessThan(0.32);
+    }
+  });
+
+  it('uses four compact ocean sides plus a broad authored core without changing non-island controls', () => {
+    const recipe: WorldRecipe = {
+      version: 1, seed: 6103402, size: 500, reliefProfile: 'compact', heightScale: 0.1,
+      constraints: [
+        { region: 'west', biome: 'ocean' }, { region: 'east', biome: 'ocean' },
+        { region: 'north', biome: 'ocean' }, { region: 'south', biome: 'ocean' }
+      ],
+      landforms: [
+        { center: [0,15], radius: [220,210], height: 8 },
+        { center: [10,130], radius: [145,75], height: 5 },
+        { center: [5,35], radius: [155,125], height: 4 },
+        { center: [0,-145], radius: [125,90], height: 58 },
+        { center: [-95,-120], radius: [75,55], height: 30 },
+        { center: [90,-125], radius: [70,52], height: 34 },
+        { center: [25,-90], radius: [38,70], height: -10 },
+        { center: [-185,45], radius: [55,70], height: 18 },
+        { center: [185,20], radius: [52,68], height: 16 },
+        { center: [-105,160], radius: [75,45], height: 2 },
+        { center: [115,155], radius: [78,42], height: 2 }
+      ],
+      terrainBrushes: [
+        { id: 'harbor-terrace', mode: 'flatten', region: { kind: 'circle', center: [-55,112], radius: 62 },
+          height: 3, strength: 0.35, feather: 24 },
+        { id: 'town-coastal-grade', mode: 'grade',
+          region: { kind: 'path', points: [[-100,115],[-72,108],[-42,102],[-12,94]], width: 28 },
+          heights: [3,3,4,5], strength: 0.45, feather: 14 },
+        { id: 'mountain-trail-slope', mode: 'grade',
+          region: { kind: 'path', points: [[-12,82],[-8,45],[4,5],[18,-35],[25,-75]], width: 12 },
+          heights: [5,7,10,16,23], strength: 0.3, feather: 18 },
+        { id: 'north-natural-gully', mode: 'lower',
+          region: { kind: 'path', points: [[36,-190],[28,-155],[20,-120],[8,-82]], width: 18 },
+          amount: 7, feather: 22 }
+      ]
+    };
+    const controlPoints = [[0,0],[120,60],[0,-130],[200,200]] as Array<[number, number]>;
+    const controlHeights: Record<number, number[][]> = {
+      6103402: [
+        [-36.46380285830869,-39.13025069690908,-41.30290843773296,-21.43678263844177],
+        [-28.58565451464436,-38.891974860581925,-41.59735313553267,-21.43678263844177],
+        [-30.242735663100557,-34.314475882526196,-41.466237024453704,-21.43678263844177]
+      ],
+      99173: [
+        [-41.346580055208335,-44.090259154492564,-45.775962198170134,-32.35528552930164],
+        [-33.46840198239825,-42.516542849441706,-45.367311577307575,-32.35528552930164],
+        [-35.0442612084656,-39.05324928587915,-45.24505126404188,-32.35528552930164]
+      ]
+    };
+    const percentile = (values: number[], fraction: number) => values.sort((a, b) => a - b)
+      [Math.floor((values.length - 1) * fraction)];
+    for (const seed of [6103402, 99173]) {
+      const sample = createWorldSampler({ ...recipe, seed }), side = 17;
+      const dry = Array.from({ length: side }, () => Array.from({ length: side }, () => false));
+      let dryCount = 0, borderDry = 0;
+      for (let iz = 0; iz < side; iz++) for (let ix = 0; ix < side; ix++) {
+        const isDry = sample(-250 + ix * 31.25, -250 + iz * 31.25).height > 2;
+        dry[iz][ix] = isDry;
+        if (isDry) dryCount++;
+        if (isDry && (ix === 0 || iz === 0 || ix === side - 1 || iz === side - 1)) borderDry++;
+      }
+      const visited = new Set<string>();
+      let largest = 0, span: [number, number] = [0, 0];
+      for (let iz = 0; iz < side; iz++) for (let ix = 0; ix < side; ix++) {
+        if (!dry[iz][ix] || visited.has(`${ix}:${iz}`)) continue;
+        let count = 0, minX = ix, maxX = ix, minZ = iz, maxZ = iz;
+        const pending: Array<[number, number]> = [[ix, iz]];
+        while (pending.length > 0) {
+          const [x, z] = pending.pop()!, key = `${x}:${z}`;
+          if (visited.has(key) || !dry[z]?.[x]) continue;
+          visited.add(key); count++;
+          minX = Math.min(minX, x); maxX = Math.max(maxX, x); minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+          pending.push([x - 1, z], [x + 1, z], [x, z - 1], [x, z + 1]);
+        }
+        if (count > largest) { largest = count; span = [(maxX - minX) * 31.25, (maxZ - minZ) * 31.25]; }
+      }
+      const edgeHeights: number[] = [], coastSlopes: number[] = [];
+      for (let index = 0; index <= 50; index++) {
+        const value = -250 + index * 10;
+        edgeHeights.push(sample(-250, value).height, sample(250, value).height,
+          sample(value, -250).height, sample(value, 250).height);
+      }
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 36) {
+        let previous = sample(Math.cos(angle) * 250, Math.sin(angle) * 250).height;
+        for (let radius = 248; radius >= 0; radius -= 2) {
+          const x = Math.cos(angle) * radius, z = Math.sin(angle) * radius, height = sample(x, z).height;
+          if (previous <= 0 && height > 0) { coastSlopes.push(sampleWorldSlope(sample, x, z)); break; }
+          previous = height;
+        }
+      }
+      const count = 144;
+      const profiles = [0.45, 0.6, 0.75].map(radius => Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2;
+        return sample(Math.cos(angle) * 125 * radius, -145 + Math.sin(angle) * 90 * radius).height;
+      }));
+      const residuals = profiles.map(profile => profile.map((height, index) => height
+        - [-5,-4,-3,3,4,5].reduce((sum, offset) => sum + profile[(index + offset + count) % count], 0) / 6));
+      const port = findWorldSiteCandidates({ ...recipe, seed }, {
+        id: 'port', radius: 105, blend: 32, region: 'center', waterfrontBias: 0.9, targetWaterBodyId: 'sea'
+      });
+      const farm = findWorldSiteCandidates({ ...recipe, seed }, {
+        id: 'farm', radius: 55, blend: 24, region: 'northwest', waterfrontBias: 0.1
+      });
+      let maxAxisSeparation = 0;
+      for (const a of port) for (const b of farm) {
+        maxAxisSeparation = Math.max(maxAxisSeparation,
+          Math.max(Math.abs(a.center[0] - b.center[0]), Math.abs(a.center[1] - b.center[1])));
+      }
+      expect(dryCount).toBeGreaterThan(85);
+      expect(largest / dryCount).toBeGreaterThan(0.98);
+      expect(span[0]).toBeGreaterThan(350);
+      expect(span[1]).toBeGreaterThan(330);
+      expect(borderDry).toBeLessThanOrEqual(1);
+      expect(Math.max(...edgeHeights)).toBeLessThan(8);
+      expect(percentile(coastSlopes, 0.95)).toBeLessThan(1.2);
+      expect(percentile(residuals.flat().map(Math.abs), 0.5)).toBeGreaterThan(1);
+      expect(maxAxisSeparation).toBeGreaterThan(160);
+
+      const controls: WorldRecipe[] = [
+        { ...recipe, seed, landforms: [], terrainBrushes: [] },
+        { ...recipe, seed, landforms: [{ center: [0,15], radius: [159,210], height: 8 }], terrainBrushes: [] },
+        { ...recipe, seed, landforms: [{ center: [61,0], radius: [220,210], height: 8 }], terrainBrushes: [] }
+      ];
+      for (const [index, controlRecipe] of controls.entries()) {
+        const control = createWorldSampler(controlRecipe);
+        expect(controlPoints.map(([x, z]) => control(x, z).height)).toEqual(controlHeights[seed][index]);
+      }
     }
   });
 

@@ -432,10 +432,14 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
   // Stored recipes without a profile predate scale-aware relief and must replay exactly.
   const compactRelief = recipe.reliefProfile === 'compact';
   const terrainScale = compactRelief ? clamp(size / 6400, 0.125, 1) : 1;
-  const boundedIslandMass = compactRelief
-    && constraints.some(constraint => constraint.region === 'center' && constraint.biome !== 'ocean')
-    && (['west', 'east', 'north', 'south', 'northwest', 'northeast', 'southwest', 'southeast'] as const)
-      .every(region => constraints.some(constraint => constraint.region === region && constraint.biome === 'ocean'));
+  const cardinalOceanRing = (['west', 'east', 'north', 'south'] as const)
+    .every(region => constraints.some(constraint => constraint.region === region && constraint.biome === 'ocean'));
+  // A world-scale central footprint is authored island mass; local mountains and headlands are not.
+  const authoredIslandCore = (recipe.landforms ?? []).some(form => form.height > 0
+    && Math.hypot(...form.center) <= size * 0.12 && Math.min(...form.radius) >= size * 0.32);
+  const boundedIslandMass = compactRelief && cardinalOceanRing
+    && (constraints.some(constraint => constraint.region === 'center' && constraint.biome !== 'ocean')
+      || authoredIslandCore);
   const waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed);
   const sample = (x: number, z: number): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
