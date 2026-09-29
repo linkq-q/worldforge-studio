@@ -3,12 +3,17 @@ import { createEmptyMap, getObjectWorldTransforms, type EditableMap, type MapAss
 import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { applyMapOperations } from '../shared/mapOperations';
 import { validateWorldRecipe, createWorldSampler } from '../shared/worldTerrain';
+import { WORLD_REGIONS, type WorldRecipe, type WorldRegion, type WorldTerrainBrush } from '../shared/worldTerrain';
+import { validateEcologyRules, type EcologyRule } from '../shared/worldEcology';
+import { findWorldRoute, findWorldSiteCandidates,
+  type WorldSiteCandidate, type WorldSiteIntent } from '../shared/worldSiting';
 import { validateWorldPlan, validateWorldBundle, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
 import { auditWorldSettlement, generateWorldSettlement, type WorldSettlementOptions } from '../shared/worldSettlement';
 import { generateModel, llmChat, type ChatMessage } from './modelApi';
 import { generateMapCodeSuggestion } from './mapCodePlanner';
 import { createMapAssetGenerator } from './mapAssetGenerator';
 import { recordGenerationTrace } from './generationTrace';
+import { buildWorldArchitecturePrompt, WORLD_ARCHITECTURE_PROMPT_MAX_CHARS } from './worldArchitecturePrompt';
 import type { MapStore } from './mapStore';
 
 export interface WorldGenerationRequest {
@@ -43,6 +48,50 @@ export interface WorldDraft {
   settlements: Array<{ townId: string; options: WorldSettlementOptions }>;
   assets: WorldAssetRequest[];
 }
+
+interface WorldIntentTown extends WorldSiteIntent {
+  name: string;
+  prompt: string;
+  terrainMode: 'conform';
+}
+interface WorldIntentRoad {
+  id: string;
+  name: string;
+  fromTownId: string;
+  toTownId: string;
+  width: number;
+  tags: string[];
+}
+interface WorldIntentDraft {
+  plan: {
+    version: 1;
+    id: string;
+    revision: number;
+    prompt: string;
+    recipe: WorldRecipe;
+    ecology: EcologyRule[];
+    towns: WorldIntentTown[];
+    roads: WorldIntentRoad[];
+  };
+}
+interface WorldLayoutChoice {
+  towns: Array<{ townId: string; candidateId: string }>;
+  settlements: Array<{ townId: string; options: WorldSettlementOptions }>;
+  assets: WorldAssetRequest[];
+}
+
+const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. Return JSON only: {plan}.
+This is terrain intent, not final geometry. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
+recipe={version:1,seed,size,heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. landforms=[{center:[x,z],radius:[rx,rz],height}]. Brush regions are {kind:'circle',center,radius} or {kind:'path',points,width}; waterBodies=[{id,type:'lake'|'river',region,levels,depth}]. biomePatches=[{id,region,biome,feather?}]. It owns broad terrain, water and biome intent. Do not guess sampled heights, grade heights or town construction pads; the server samples and grades bounded access after choosing sites.
+towns=[{id,name,prompt,radius,blend,terrainMode:'conform',region,waterfrontBias?,targetWaterBodyId?}]. region is one of ${Object.keys(WORLD_REGIONS).join('|')}. targetWaterBodyId is an authored lake/river id or 'sea'. Describe livelihood, population scale, external logistics, public services, spatial nodes and era in prompt. No center, foundation, ports or landmark coordinates.
+roads=[{id,name,fromTownId,toTownId,width,tags}]. They express topology and purpose only; the server routes them over sampled terrain. No points or invented elevations.
+ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?}]. Never enumerate ordinary buildings or vegetation. Preserve the user's named destinations and relations. Limits: <=12 towns, <=32 roads, <=8 ecology rules, <=16 landforms.`;
+
+const WORLD_LAYOUT_PROMPT = `Choose only from supplied sampled site candidates. Return JSON only:
+{towns:[{townId,candidateId}],settlements:[{townId,options}],assets:[]}.
+Choose exactly one candidate per town and only compatible road pairs. Never return recipe, terrain heights, centers, ports or world-road points. The server materializes those from actual samples.
+options={kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias:0..1,maxRoadSlope?,maxSiteSlope?,waterSetback?,landmarks?}. landmarks are local public-building preferences {id,x,z,width,depth,height,use,rotation?,assetKey,enterable}; invalid or unreachable footprints are rejected, never faked.
+Before local layout consider livelihood, population scale, external logistics, public services, spatial nodes, single-model versus modular architecture, traffic and housing. Use roughly one public or landmark building per 10..20 ordinary buildings when the settlement supports it. assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?,strategy?:'single'|'assembly',existingAssetId?}], at most 12; use only supplied reusable asset ids.`;
 
 export const WORLD_GENERATION_PROMPT = `You design a playable continuous world in metres. Return JSON only: {plan,settlements,assets}. GPT owns spatial intent and unique architecture; deterministic tools grow ordinary streets/buildings and stream vegetation. Never enumerate trees or ordinary houses. No final rendering style in the world data.
 plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
@@ -88,6 +137,160 @@ export function validateWorldGenerationRequest(input: unknown): WorldGenerationR
   }
   return {prompt:r.prompt.trim(),seed:r.seed,size:r.size,generateAssets:r.generateAssets !== false,repairAttempts:r.repairAttempts??0,
     ...(reusableAssetIds?.length ? {reusableAssetIds:[...reusableAssetIds]} : {})};
+}
+
+function generationId(input: unknown, code: string): string {
+  if (typeof input !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(input)) throw new Error(code);
+  return input;
+}
+function finite(input: unknown, min: number, max: number, code: string): number {
+  if (typeof input !== 'number' || !Number.isFinite(input) || input < min || input > max) throw new Error(code);
+  return input;
+}
+
+export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRequest): WorldIntentDraft {
+  const root = exactRecord(structuredClone(input), ['plan'], 'invalid_world_intent', 'world_unknown_intent_field');
+  const raw = exactRecord(root.plan, ['version','id','revision','prompt','recipe','ecology','towns','roads'],
+    'invalid_world_intent','world_unknown_intent_plan_field');
+  if (raw.version !== 1 || raw.prompt !== request.prompt) throw new Error('world_prompt_request_mismatch');
+  const recipe = validateWorldRecipe(raw.recipe as WorldRecipe);
+  if (recipe.seed !== request.seed || recipe.size !== request.size) throw new Error('world_recipe_request_mismatch');
+  if (!Array.isArray(raw.towns) || !raw.towns.length || raw.towns.length > 12 || !Array.isArray(raw.roads) || raw.roads.length > 32) {
+    throw new Error('invalid_world_intent');
+  }
+  const townIds = new Set<string>();
+  const towns = raw.towns.map(value => {
+    const item = exactRecord(value, ['id','name','prompt','radius','blend','terrainMode','region','waterfrontBias','targetWaterBodyId'],
+      'invalid_world_intent_town','world_unknown_intent_town_field');
+    const id = generationId(item.id, 'invalid_world_intent_town');
+    if (townIds.has(id) || typeof item.name !== 'string' || !item.name.trim() || typeof item.prompt !== 'string'
+      || item.terrainMode !== 'conform' || typeof item.region !== 'string' || !Object.hasOwn(WORLD_REGIONS,item.region)) {
+      throw new Error('invalid_world_intent_town');
+    }
+    townIds.add(id);
+    const targetWaterBodyId = item.targetWaterBodyId;
+    if (targetWaterBodyId !== undefined && (typeof targetWaterBodyId !== 'string'
+      || (targetWaterBodyId !== 'sea' && !recipe.waterBodies?.some(body => body.id === targetWaterBodyId)))) {
+      throw new Error('world_intent_unknown_water_body:'+id);
+    }
+    return {id,name:item.name,prompt:item.prompt,radius:finite(item.radius,Math.min(100,recipe.size/10),1000,'invalid_world_intent_town'),
+      blend:finite(item.blend,Math.min(100,recipe.size/25),2000,'invalid_world_intent_town'),terrainMode:'conform' as const,
+      region:item.region as WorldRegion,
+      ...(item.waterfrontBias===undefined?{}:{waterfrontBias:finite(item.waterfrontBias,0,1,'invalid_world_intent_town')}),
+      ...(targetWaterBodyId===undefined?{}:{targetWaterBodyId})};
+  });
+  const roadIds = new Set<string>();
+  const roads = raw.roads.map(value => {
+    const item = exactRecord(value,['id','name','fromTownId','toTownId','width','tags'],
+      'invalid_world_intent_road','world_unknown_intent_road_field');
+    const id=generationId(item.id,'invalid_world_intent_road');
+    if(roadIds.has(id)||typeof item.name!=='string'||!item.name.trim()||typeof item.fromTownId!=='string'||typeof item.toTownId!=='string'
+      ||item.fromTownId===item.toTownId||!townIds.has(item.fromTownId)||!townIds.has(item.toTownId)
+      ||!Array.isArray(item.tags)||item.tags.length>16||item.tags.some(tag=>typeof tag!=='string'||tag.length>64)) {
+      throw new Error('invalid_world_intent_road');
+    }
+    roadIds.add(id);
+    return {id,name:item.name,fromTownId:item.fromTownId,toTownId:item.toTownId,width:finite(item.width,2,64,'invalid_world_intent_road'),tags:[...item.tags] as string[]};
+  });
+  return {plan:{version:1,id:generationId(raw.id,'invalid_world_intent'),revision:finite(raw.revision,1,Number.MAX_SAFE_INTEGER,'invalid_world_intent'),
+    prompt:request.prompt,recipe,ecology:validateEcologyRules(raw.ecology),towns,roads}};
+}
+
+export interface WorldSitingEvidence {
+  towns: Array<{ id: string; candidates: WorldSiteCandidate[] }>;
+  connections: Array<{ roadId: string; fromCandidateId: string; toCandidateId: string; available: boolean; length?: number; maxSlope?: number }>;
+}
+
+function portToward(from: WorldSiteCandidate, to: WorldSiteCandidate, radius: number): [number,number] {
+  const dx=to.center[0]-from.center[0],dz=to.center[1]-from.center[1],length=Math.hypot(dx,dz),desired:[number,number]=[dx/length,dz/length];
+  const direction=[...from.accessDirections].sort((a,b)=>b[0]*desired[0]+b[1]*desired[1]-a[0]*desired[0]-a[1]*desired[1])[0]??desired;
+  const scale=radius/Math.max(Math.abs(direction[0]),Math.abs(direction[1]));
+  return [Math.round(direction[0]*scale*1e6)/1e6,Math.round(direction[1]*scale*1e6)/1e6];
+}
+
+function gradeAccess(id:string,points:Array<[number,number]>,width:number,sample:ReturnType<typeof createWorldSampler>):WorldTerrainBrush {
+  const dense:Array<[number,number]>=[];
+  for(let segment=1;segment<points.length;segment++) {
+    const a=points[segment-1],b=points[segment],length=Math.hypot(b[0]-a[0],b[1]-a[1]),steps=Math.max(1,Math.ceil(length/8));
+    for(let i=segment===1?0:1;i<=steps;i++) dense.push([a[0]+(b[0]-a[0])*i/steps,a[1]+(b[1]-a[1])*i/steps]);
+  }
+  return {id,mode:'grade',region:{kind:'path',points:dense,width},heights:dense.map(point=>sample(point[0],point[1]).height),feather:2};
+}
+
+export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
+  const sample=createWorldSampler(intent.plan.recipe);
+  const towns=intent.plan.towns.map(town=>({id:town.id,candidates:findWorldSiteCandidates(intent.plan.recipe,town)}));
+  for(const town of towns) if(!town.candidates.length) throw new Error('world_no_site_candidates:'+town.id);
+  const connections:WorldSitingEvidence['connections']=[];
+  for(const road of intent.plan.roads) {
+    let ready=0;
+    const fromTown=intent.plan.towns.find(t=>t.id===road.fromTownId)!,toTown=intent.plan.towns.find(t=>t.id===road.toTownId)!;
+    const fromCandidates=towns.find(t=>t.id===road.fromTownId)!.candidates,toCandidates=towns.find(t=>t.id===road.toTownId)!.candidates;
+    for(const from of fromCandidates) for(const to of toCandidates) {
+      const fp=portToward(from,to,fromTown.radius),tp=portToward(to,from,toTown.radius);
+      const fromPort:[number,number]=[from.center[0]+fp[0],from.center[1]+fp[1]],toPort:[number,number]=[to.center[0]+tp[0],to.center[1]+tp[1]];
+      const localFrom=findWorldRoute(sample,from.center,fromPort,road.width),localTo=findWorldRoute(sample,to.center,toPort,road.width);
+      const route=localFrom&&localTo?findWorldRoute(sample,fromPort,toPort,road.width):null;
+      let available=false;
+      if(route&&localFrom&&localTo&&ready<1) {
+        const recipe={...intent.plan.recipe,terrainBrushes:[...(intent.plan.recipe.terrainBrushes??[]),
+          gradeAccess(`access-${road.id}-${fromTown.id}`,localFrom.points,road.width,sample),
+          gradeAccess(`access-${road.id}-${toTown.id}`,localTo.points,road.width,sample)]};
+        const planned=createWorldSampler(recipe);
+        const plan:WorldPlan={version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,recipe,
+          ecology:intent.plan.ecology,roads:[{id:road.id,name:road.name,points:route.points,curve:'polyline',closed:false,width:road.width,tags:road.tags}],
+          towns:[{id:fromTown.id,name:fromTown.name,prompt:fromTown.prompt,center:from.center,radius:fromTown.radius,blend:fromTown.blend,
+            foundation:from.foundation,terrainMode:'conform',ports:[{id:`${road.id}-${fromTown.id}`,guideId:road.id,position:fp,width:road.width}]},
+          {id:toTown.id,name:toTown.name,prompt:toTown.prompt,center:to.center,radius:toTown.radius,blend:toTown.blend,
+            foundation:to.foundation,terrainMode:'conform',ports:[{id:`${road.id}-${toTown.id}`,guideId:road.id,position:tp,width:road.width}]}]};
+        try {
+          generateWorldSettlement(plan,fromTown.id,planned,{kind:fromTown.radius>=120?'city':'village',pattern:'organic',density:.4,waterfrontBias:fromTown.waterfrontBias??0});
+          generateWorldSettlement(plan,toTown.id,planned,{kind:toTown.radius>=120?'city':'village',pattern:'organic',density:.4,waterfrontBias:toTown.waterfrontBias??0});
+          available=true;ready++;
+        } catch {}
+      }
+      connections.push({roadId:road.id,fromCandidateId:from.id,toCandidateId:to.id,available,
+        ...(route?{length:route.length,maxSlope:route.maxSlope}:{})});
+    }
+    if(!connections.some(item=>item.roadId===road.id&&item.available)) throw new Error('world_no_route_candidates:'+road.id);
+  }
+  return {towns,connections};
+}
+
+export function materializeWorldIntent(intent: WorldIntentDraft, evidence: WorldSitingEvidence, input: unknown,
+  request: WorldGenerationRequest): ReturnType<typeof compileWorldDraft> {
+  const root=exactRecord(structuredClone(input),['towns','settlements','assets'],'invalid_world_layout','world_unknown_layout_field');
+  if(!Array.isArray(root.towns)) throw new Error('invalid_world_layout');
+  const chosen=new Map<string,WorldSiteCandidate>();
+  for(const value of root.towns) {
+    const item=exactRecord(value,['townId','candidateId'],'invalid_world_layout','world_unknown_layout_town_field');
+    if(typeof item.townId!=='string'||typeof item.candidateId!=='string'||chosen.has(item.townId)) throw new Error('invalid_world_layout');
+    const candidate=evidence.towns.find(t=>t.id===item.townId)?.candidates.find(c=>c.id===item.candidateId);
+    if(!candidate) throw new Error('world_unknown_site_candidate:'+item.townId);
+    chosen.set(item.townId,candidate);
+  }
+  if(chosen.size!==intent.plan.towns.length||intent.plan.towns.some(t=>!chosen.has(t.id))) throw new Error('world_site_choice_mismatch');
+  const sample=createWorldSampler(intent.plan.recipe),ports=new Map<string,Array<{id:string;guideId:string;position:[number,number];width:number}>>(),construction:WorldTerrainBrush[]=[];
+  const roads=intent.plan.roads.map(road=>{
+    const from=chosen.get(road.fromTownId)!,to=chosen.get(road.toTownId)!;
+    const fromTown=intent.plan.towns.find(t=>t.id===road.fromTownId)!,toTown=intent.plan.towns.find(t=>t.id===road.toTownId)!;
+    const fp=portToward(from,to,fromTown.radius),tp=portToward(to,from,toTown.radius);
+    const fromPort:[number,number]=[from.center[0]+fp[0],from.center[1]+fp[1]],toPort:[number,number]=[to.center[0]+tp[0],to.center[1]+tp[1]];
+    const route=findWorldRoute(sample,fromPort,toPort,road.width);
+    if(!route) throw new Error('world_road_unreachable:'+road.id);
+    const fromAccess=findWorldRoute(sample,from.center,fromPort,road.width),toAccess=findWorldRoute(sample,to.center,toPort,road.width);
+    if(!fromAccess||!toAccess) throw new Error('world_town_access_unreachable:'+road.id);
+    construction.push(gradeAccess(`access-${road.id}-${fromTown.id}`,fromAccess.points,road.width,sample),
+      gradeAccess(`access-${road.id}-${toTown.id}`,toAccess.points,road.width,sample));
+    ports.set(fromTown.id,[...(ports.get(fromTown.id)??[]),{id:`${road.id}-${fromTown.id}`,guideId:road.id,position:fp,width:road.width}]);
+    ports.set(toTown.id,[...(ports.get(toTown.id)??[]),{id:`${road.id}-${toTown.id}`,guideId:road.id,position:tp,width:road.width}]);
+    return {id:road.id,name:road.name,points:route.points,curve:'polyline' as const,closed:false,width:road.width,tags:road.tags};
+  });
+  const towns=intent.plan.towns.map(town=>{const site=chosen.get(town.id)!;return {id:town.id,name:town.name,prompt:town.prompt,
+    center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform' as const,ports:ports.get(town.id)??[]};});
+  const recipe={...intent.plan.recipe,terrainBrushes:[...(intent.plan.recipe.terrainBrushes??[]),...construction]};
+  return compileWorldDraft({plan:{version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,
+    recipe,ecology:intent.plan.ecology,towns,roads},settlements:root.settlements,assets:root.assets},request);
 }
 
 export function compileWorldDraft(input: unknown, request: WorldGenerationRequest): {draft:WorldDraft;bundle:WorldBundle} {
@@ -201,13 +404,15 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
       let modelJson:unknown;
       if(strategy==='assembly') {
         const [w,h,d]=request.dimensions??[32,16,32];
+        const architecturePrompt=buildWorldArchitecturePrompt(request.prompt,request.dimensions);
         const map=createEmptyMap(request.name,undefined,[Math.max(16,w+8),Math.max(16,h+4),Math.max(16,d+8)],'voxel-pro');
         const generated:MapAsset[]=[];
         const createAsset=createMapAssetGenerator(store,map,[],'deepseek',null,signal??new AbortController().signal);
         const suggestion=await generateMapCodeSuggestion(
-          request.prompt+`\nBuild ONLY the ${w}m by ${d}m footprint architecture, height ${h}m, centered on origin. Use connected reusable components and actual clear openings >=2m wide. Preserve a walkable ground floor from the +Z entrance through the structure/courtyard. Do not fill the footprint with a solid slab or closed complete-building asset. No external town, water, trees or terrain.`,
+          architecturePrompt,
           map,[],{provider:'gpt',promptMode:'main',scope:'scene',minNewAssets:2,maxNewAssets:6,spatialPolicy:'diagnose',
-            signal,createAsset:async(r,report)=>{const a=await createAsset(r,report);generated.push(a);return a;}});
+            userPromptMaxChars:WORLD_ARCHITECTURE_PROMPT_MAX_CHARS,signal,
+            createAsset:async(r,report)=>{const a=await createAsset(r,report);generated.push(a);return a;}});
         const result=applyMapOperations(map,suggestion.operations);
         modelJson=assembleWorldModel(result,generated);
         recordGenerationTrace('world.assembly',{key:request.key,code:suggestion.codePlan,objects:result.objects.length,assets:generated.map(a=>a.id)});
@@ -230,17 +435,40 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     return {id:asset.id,name:asset.name,prompt:asset.prompt,tags:asset.tags??[],mode:asset.mode,
       ...(asset.libraryMetadata?{libraryMetadata:asset.libraryMetadata}:{})};
   }));
-  const messages:ChatMessage[]=[{role:'system',content:WORLD_GENERATION_PROMPT},
+  const messages:ChatMessage[]=[{role:'system',content:WORLD_INTENT_PROMPT},
     {role:'user',content:JSON.stringify({...request,...(reusableAssets.length?{reusableAssets}:{})})}];
   let compiled:ReturnType<typeof compileWorldDraft>|undefined;
+  let intent:WorldIntentDraft|undefined;
   for(let attempt=0;attempt<=(request.repairAttempts??0);attempt++) {
-    const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.repair':'world.plan',signal});
+    const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.intent-repair':'world.intent',signal});
     let draft:unknown;
-    try {draft=parseJson(content);compiled=compileWorldDraft(draft,request);break;}
+    try {
+      draft=parseJson(content);
+      const object=draft&&typeof draft==='object'&&!Array.isArray(draft)?draft as Record<string,unknown>:undefined;
+      // Accept stored pre-siting drafts through the strict legacy compiler; new generations use intent -> sampled choice.
+      if(object&&Array.isArray(object.settlements)&&Array.isArray(object.assets)) compiled=compileWorldDraft(draft,request);
+      else intent=parseWorldIntentDraft(draft,request);
+      break;
+    }
     catch(error) {
       recordGenerationTrace('world.rejected',{attempt,draft,error:error instanceof Error?error.message:String(error)});
       if(attempt===(request.repairAttempts??0)) throw error;
-      messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),terrain:terrainEvidence(draft),instruction:'Repair the JSON using actual terrain evidence. Preserve the requested destinations and topology. Return the complete corrected JSON.'})});
+      messages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:error instanceof Error?error.message:String(error),
+        instruction:'Repair the intent JSON only. Preserve the requested destinations and topology. Do not invent heights, centers or road points.'})});
+    }
+  }
+  if(intent) {
+    recordGenerationTrace('world.intent',{intent});
+    const evidence=createWorldSitingEvidence(intent);
+    recordGenerationTrace('world.siting',{evidence});
+    const layoutMessages:ChatMessage[]=[{role:'system',content:WORLD_LAYOUT_PROMPT},{role:'user',content:JSON.stringify({
+      intent,evidence,...(reusableAssets.length?{reusableAssets}:{})})}];
+    const content=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,traceStage:'world.layout',signal});
+    let layout:unknown;
+    try {layout=parseJson(content);compiled=materializeWorldIntent(intent,evidence,layout,request);}
+    catch(error) {
+      recordGenerationTrace('world.rejected',{stage:'layout',layout,error:error instanceof Error?error.message:String(error)});
+      throw error;
     }
   }
   if(!compiled) throw new Error('world_generation_failed');

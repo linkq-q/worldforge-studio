@@ -3,7 +3,8 @@ import { Euler, Quaternion } from 'three';
 import { createEmptyMap, createMapObject, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import {
-  assembleWorldModel, compileWorldDraft, generateWorld, generateWorldAssets, validateWorldGenerationRequest, worldAssetStrategy,
+  assembleWorldModel, compileWorldDraft, createWorldSitingEvidence, generateWorld, generateWorldAssets,
+  materializeWorldIntent, parseWorldIntentDraft, validateWorldGenerationRequest, worldAssetStrategy,
   WORLD_GENERATION_PROMPT, type WorldAssetRequest, type WorldGenerationRequest
 } from '../src/server/worldGeneration';
 import type { MapStore } from '../src/server/mapStore';
@@ -34,6 +35,27 @@ function validDraft() {
     settlements: [{ townId: 'market-town', options: { kind: 'city' as const, pattern: 'organic' as const, seed: 9, density: 0.8 } }],
     assets: []
   };
+}
+
+function rawSeedIntent() {
+  return { plan: {
+    version: 1, id: 'dune-spring-coast', revision: 1,
+    prompt: 'Desert spring town linked to a coastal fishing village',
+    recipe: {
+      version: 1, seed: 9012901, size: 2000, heightScale: 0.11,
+      constraints: [
+        {region:'west',biome:'ocean'},{region:'northwest',biome:'ocean'},{region:'southwest',biome:'ocean'},
+        {region:'center',biome:'desert'},{region:'east',biome:'desert'},{region:'northeast',biome:'desert'},{region:'south',biome:'desert'}
+      ],
+      waterBodies: [{id:'fresh-spring',type:'lake',region:{kind:'circle',center:[160,-140],radius:58},levels:[9],depth:3}]
+    },
+    ecology: [],
+    towns: [
+      {id:'spring-town',name:'Spring Town',prompt:'A compact caravan town beside the spring',radius:130,blend:80,terrainMode:'conform',region:'center',waterfrontBias:.7,targetWaterBodyId:'fresh-spring'},
+      {id:'fishing-village',name:'Fishing Village',prompt:'A small fishing village on the landward side of the coast',radius:100,blend:80,terrainMode:'conform',region:'west',waterfrontBias:.85,targetWaterBodyId:'sea'}
+    ],
+    roads: [{id:'trade-road',name:'Fish and caravan road',fromTownId:'fishing-village',toTownId:'spring-town',width:4,tags:['trade-route']}]
+  }};
 }
 
 function reusableAsset(id = 'asset-existing'): MapAsset {
@@ -150,6 +172,30 @@ describe('world generation compiler', () => {
     await expect(generateWorld(request, {} as MapStore)).rejects.toThrow('world_unknown_draft_field:unexpected');
     expect(mocks.llmChat).toHaveBeenCalledTimes(1);
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({attempt:0}));
+  });
+
+  it('uses sampled candidates instead of guessed town centers for seed 9012901', async () => {
+    const input: WorldGenerationRequest = {prompt:'Desert spring town linked to a coastal fishing village',seed:9012901,size:2000,generateAssets:false};
+    const intent=rawSeedIntent(),parsed=parseWorldIntentDraft(intent,input),evidence=createWorldSitingEvidence(parsed);
+    const connections=evidence.connections.filter(item=>item.available);
+    expect(connections.length).toBeGreaterThan(0);
+    expect(evidence.towns.find(town=>town.id==='fishing-village')!.candidates[0]).toEqual(expect.objectContaining({
+      dryRatio:expect.any(Number),passableDirections:expect.any(Number),water:expect.objectContaining({type:'sea'})
+    }));
+    const settlements=[
+      {townId:'spring-town',options:{kind:'city' as const,pattern:'organic' as const,density:.45,waterfrontBias:.7}},
+      {townId:'fishing-village',options:{kind:'village' as const,pattern:'organic' as const,density:.4,waterfrontBias:.85}}
+    ];
+    const connection=connections[0];
+    const layout={towns:[{townId:'fishing-village',candidateId:connection.fromCandidateId},
+      {townId:'spring-town',candidateId:connection.toCandidateId}],settlements,assets:[]};
+    expect(()=>materializeWorldIntent(parsed,evidence,layout,input)).not.toThrow();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(intent)).mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld(input,{} as MapStore);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(result.bundle.plan.towns.find(town=>town.id==='fishing-village')!.center).not.toEqual([-450,250]);
+    expect(result.bundle.plan.roads[0].points.length).toBeGreaterThanOrEqual(2);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.siting',expect.objectContaining({evidence:expect.any(Object)}));
   });
 });
 
