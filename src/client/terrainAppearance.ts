@@ -9,6 +9,8 @@ const ROCK_COLOR = new THREE.Color('#8b857a');
 const SOIL_COLOR = new THREE.Color('#8f704d');
 const PAVING_COLOR = new THREE.Color('#aaa498');
 const SNOW_COLOR = new THREE.Color('#edf3f7');
+const GRASS_COLOR = new THREE.Color('#789255');
+const FOREST_COLOR = new THREE.Color('#42643c');
 
 export interface TerrainPaletteColors {
   base: string;
@@ -47,6 +49,8 @@ export function terrainVertexColor(
   const weight = (tags: readonly VisualZoneTag[]) => surfaceWeight
     ? surfaceWeight(x, z, tags)
     : terrainSemanticSurfaceWeight(map, x, z, tags);
+  base.lerp(new THREE.Color(palette?.grass ?? GRASS_COLOR), weight(['grass']) * 0.78);
+  base.lerp(new THREE.Color(palette?.foliage ?? FOREST_COLOR), weight(['forest']) * 0.84);
   base.lerp(new THREE.Color(palette?.dry ?? DRY_COLOR), weight(['dry']) * 0.62);
   base.lerp(new THREE.Color(palette?.rock ?? ROCK_COLOR), weight(['rocky']) * 0.88);
   base.lerp(new THREE.Color(palette?.sand ?? SAND_COLOR), weight(['sand']) * 0.96);

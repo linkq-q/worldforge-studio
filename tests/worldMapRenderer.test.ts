@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
+import { worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
+import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
 
 const bundle = validateWorldBundle(JSON.parse(readFileSync(
   new URL('../scripts/fixtures/hierarchical-world.json', import.meta.url),
@@ -32,6 +34,28 @@ async function waitFor(predicate: () => boolean): Promise<void> {
 }
 
 describe('main editor streamed world renderer', () => {
+  it('derives a coastal sand band without turning inland lowlands into beach', () => {
+    const tile = { x: 0, z: 0, size: 16 };
+    const tileData = (ocean: number): WorldTileData => {
+      const weights = new Float32Array(4 * WORLD_BIOMES.length);
+      for (let index = 0; index < 4; index += 1) {
+        weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('ocean')] = ocean;
+        weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('grassland')] = 1 - ocean;
+      }
+      return {
+        heights: new Float32Array([4, 4, 4, 4]),
+        normals: new Float32Array(),
+        weights,
+        waterLevels: new Float32Array([0, 0, 0, 0]),
+        resolution: 2
+      };
+    };
+
+    expect(worldTileSurfaceWeight(tileData(0.4), tile, 8, 8, ['sand'])).toBe(1);
+    expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['sand'])).toBe(0);
+    expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['grass'])).toBe(1);
+  });
+
   it('does not add terrain skirts between equal-LOD tiles', async () => {
     const map = createEmptyMap();
     map.world = { bundle: smallBundle, assets: [] };

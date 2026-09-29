@@ -26,6 +26,18 @@ describe('terrain semantic appearance', () => {
     expect(red - blue).toBeGreaterThan(baseline[0] - baseline[2] + 0.35);
   });
 
+  it('uses sampled grass and forest semantics in the terrain vertex color', () => {
+    const map = createEmptyMap('biome appearance');
+    const baseline = terrainVertexColor(map, 0, 2, 0, undefined, 2, true, () => 0);
+    const grass = terrainVertexColor(map, 0, 2, 0, undefined, 2, true, (_x, _z, tags) => Number(tags.includes('grass')));
+    const forest = terrainVertexColor(map, 0, 2, 0, undefined, 2, true, (_x, _z, tags) => Number(tags.includes('forest')));
+
+    expect(grass[1]).toBeGreaterThan(baseline[1]);
+    expect(grass[1] - grass[0]).toBeGreaterThan(baseline[1] - baseline[0]);
+    expect(forest[1]).toBeGreaterThan(forest[0]);
+    expect(forest.reduce((sum, value) => sum + value, 0)).toBeLessThan(grass.reduce((sum, value) => sum + value, 0));
+  });
+
   it('keeps path and polygon surface semantics inside their real shapes', () => {
     const map = applyMapOperations(createEmptyMap('shaped surfaces'), [
       {
