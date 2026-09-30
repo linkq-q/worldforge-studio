@@ -277,7 +277,17 @@ export function parseWorldWhiteboxInitialPlan(content: string, request: WorldWhi
   return { rawPlan: response.plan, plan, technicalNormalizations };
 }
 
-function parseConstructionTown(value: unknown, settlementIds: Set<string>): WorldWhiteboxConstructionTown {
+function constructionSiting(value: unknown): 'central' | 'waterfront' | 'gateway' | 'high-ground' | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.length > 500) throw new Error('invalid_world_whitebox_public_building');
+  if (value === 'central' || value === 'waterfront' || value === 'gateway' || value === 'high-ground') return value;
+  if (/\b(?:shore|shoreline|waterfront|beach|waterside|seafront|dockside)\b|滨水|海岸|河岸|湖岸|码头/i.test(value)) return 'waterfront';
+  if (/\b(?:high ground|hilltop|ridge|summit|upper slope|lookout|cliff|crater rim)\b|高地|山脊|坡上|山顶|悬崖/i.test(value)) return 'high-ground';
+  if (/\b(?:gateway|gate|entrance|arrival|trailhead|bridge approach)\b|入口|门口|桥头/i.test(value)) return 'gateway';
+  return 'central';
+}
+
+function parseConstructionTown(value: unknown, settlementIds: Set<string>, issue: (townId: string, value: string) => void): WorldWhiteboxConstructionTown {
   const town = exact(value, ['id', 'name', 'kind', 'pattern', 'density', 'waterfrontBias', 'publicBuildings'],
     'invalid_world_whitebox_construction_town', 'world_unknown_whitebox_construction_town_field');
   const id = constructionId(town.id, 'invalid_world_whitebox_construction_town');
@@ -288,9 +298,9 @@ function parseConstructionTown(value: unknown, settlementIds: Set<string>): Worl
     const building = exact(value, ['id', 'use', 'width', 'depth', 'height', 'assetKey', 'enterable', 'siting'],
       'invalid_world_whitebox_public_building', 'world_unknown_whitebox_public_building_field');
     if (building.enterable !== undefined && building.enterable !== false) throw new Error('world_whitebox_direct_asset_required');
-    if (building.siting !== undefined && !['central', 'waterfront', 'gateway', 'high-ground'].includes(String(building.siting))) {
-      throw new Error('invalid_world_whitebox_public_building');
-    }
+    const siting = constructionSiting(building.siting);
+    if (siting && siting !== building.siting) issue(id,
+      `siting_prose_normalized:${String(building.id)}:${siting}`);
     return {
       id: constructionId(building.id, 'invalid_world_whitebox_public_building'),
       use: constructionText(building.use, 120, 'invalid_world_whitebox_public_building'),
@@ -299,7 +309,7 @@ function parseConstructionTown(value: unknown, settlementIds: Set<string>): Worl
       height: constructionNumber(building.height, 1, 300, 'invalid_world_whitebox_public_building'),
       assetKey: constructionId(building.assetKey, 'invalid_world_whitebox_public_building'),
       ...(building.enterable === false ? { enterable: false } : {}),
-      ...(building.siting ? { siting: building.siting as 'central' | 'waterfront' | 'gateway' | 'high-ground' } : {})
+      ...(siting ? { siting } : {})
     };
   });
   return { id, name: constructionText(town.name, 160, 'invalid_world_whitebox_construction_town'),
@@ -321,7 +331,9 @@ export function materializeWorldWhiteboxConstruction(
   if (!Array.isArray(root.towns) || !Array.isArray(root.assets)) throw new Error('invalid_world_whitebox_construction_response');
   const source = request.whiteboxPlan;
   const settlementIds = new Set(source.settlementPlan!.settlements.map(item => item.id));
-  const towns = root.towns.map(value => parseConstructionTown(value, settlementIds));
+  const diagnostics = new Map<string, string[]>();
+  const issue = (townId: string, value: string) => diagnostics.set(townId, [...diagnostics.get(townId) ?? [], value]);
+  const towns = root.towns.map(value => parseConstructionTown(value, settlementIds, issue));
   if (towns.length !== settlementIds.size || new Set(towns.map(town => town.id)).size !== settlementIds.size
     || [...settlementIds].some(id => !towns.some(town => town.id === id))) {
     throw new Error('world_whitebox_construction_town_mismatch');
@@ -341,8 +353,6 @@ export function materializeWorldWhiteboxConstruction(
   const regions = new Map(graph.regions.map(region => [region.id, region]));
   const paths = new Map(graph.paths.map(path => [path.id, path]));
   const sample = createWorldSampler(source.recipe);
-  const diagnostics = new Map<string, string[]>();
-  const issue = (townId: string, value: string) => diagnostics.set(townId, [...diagnostics.get(townId) ?? [], value]);
   const minimumRadius = Math.min(100, source.recipe.size / 10);
   const minimumBlend = Math.min(100, source.recipe.size / 25);
   const bound = source.recipe.size / 2;

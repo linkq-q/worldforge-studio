@@ -218,6 +218,30 @@ describe('whitebox world generation', () => {
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
+  it('loads a first-call prose siting as a visible technical normalization without retrying', () => {
+    const expansion = JSON.parse(JSON.stringify(constructionExpansion()));
+    expansion.towns[0].publicBuildings = [
+      { id: 'market', use: 'town meeting hall', width: 10, depth: 8, height: 6,
+        assetKey: 'market', siting: 'Front onto the shared gathering space near the quay-lane junction.' },
+      { id: 'fish-hall', use: 'fish exchange', width: 9, depth: 7, height: 5,
+        assetKey: 'fish-hall', siting: 'Place on the dry inner-shore terrace beside the route.' }
+    ];
+    expansion.assets.push(
+      { key: 'market', name: 'Market hall', role: 'landmark', prompt: 'Market hall', strategy: 'single' },
+      { key: 'fish-hall', name: 'Fish hall', role: 'landmark', prompt: 'Fish hall', strategy: 'single' }
+    );
+    const raw = JSON.stringify(expansion);
+    const result = materializeWorldWhiteboxConstruction(raw, {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(buildablePlan()),
+      generateAssets: true, assetGenerationLimit: 2, repairAttempts: 0
+    });
+    expect(result.towns[0].publicBuildings.map(building => building.siting)).toEqual(['central', 'waterfront']);
+    expect(result.diagnostics.flatMap(item => item.planningIssues)).toEqual(expect.arrayContaining([
+      'siting_prose_normalized:market:central', 'siting_prose_normalized:fish-hall:waterfront'
+    ]));
+    expect(JSON.stringify(expansion)).toBe(raw);
+  });
+
   it('asks the first call to co-design playable 500m terrain, coast, anchors and routes with valid schema', async () => {
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }));
     await generateWorldWhitebox(request);
