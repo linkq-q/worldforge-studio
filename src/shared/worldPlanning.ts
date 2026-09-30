@@ -239,7 +239,7 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
       keys(settlement, ['id', 'anchorId', 'role'], 'world_unknown_settlement_plan_field');
       const parsed = { id: safeId(settlement.id, 'world_invalid_settlement_id'),
         anchorId: safeId(settlement.anchorId, 'world_invalid_settlement_anchor'),
-        role: semanticText(settlement.role, 'world_invalid_settlement_role') };
+        role: text(settlement.role, 'world_invalid_settlement_role', 2000) };
       if (!anchors.has(parsed.anchorId)) fail('world_unknown_settlement_anchor');
       return parsed;
     }).sort(byId);
@@ -279,7 +279,6 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     const sequence = list(value.sequence, 128, 'world_exploration_sequence_quota')
       .map(id => safeId(id, 'world_invalid_exploration_sequence'));
     if (sequence.some(id => !poiIds.has(id))) fail('world_unknown_exploration_poi');
-    unique(sequence, 'world_duplicate_exploration_poi');
     result.explorationPlan = { pointsOfInterest, sequence };
   }
   if (raw.intentionalEmptyAreas !== undefined) {

@@ -110,6 +110,18 @@ describe('whitebox world generation', () => {
       { received: 'shortened echo', expected: prompt });
   });
 
+  it('preserves detailed settlement roles and intentional return visits in a first-call journey', async () => {
+    const plan = originalPlan();
+    const role = 'A working harbor district with dry access to the quay, civic terrace and upper homes. '.repeat(4);
+    plan.settlementPlan!.settlements[0].role = role;
+    plan.explorationPlan!.sequence = ['port', 'crossing', 'port', 'old-city'];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }));
+    const result = await generateWorldWhitebox(request);
+    expect(result.finalPlan.settlementPlan!.settlements.find(item => item.id === 'port-town')?.role).toBe(role);
+    expect(result.finalPlan.explorationPlan!.sequence).toEqual(['port', 'crossing', 'port', 'old-city']);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+  });
+
   it('loads a raw first-call whitebox with 0.6 shoreline variation and schema aliases without changing its semantic layout', () => {
     const source = originalPlan();
     const riverPath = { kind: 'path', points: [[0, 0], [30, 30]], width: 8 };
