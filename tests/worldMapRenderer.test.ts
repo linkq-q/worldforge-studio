@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
 import { buildMapGrassField } from '../src/client/mapGrassRenderer';
 import { getCollisionMeshBvhBuildStats, resetCollisionMeshBvhBuildStats } from '../src/client/mapMeshCollision';
-import { buildWorldWhiteboxOverlay, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
@@ -32,8 +32,8 @@ beforeEach(() => vi.stubGlobal('document', {
 }));
 afterEach(() => vi.unstubAllGlobals());
 
-async function waitFor(predicate: () => boolean): Promise<void> {
-  for (let attempt = 0; attempt < 600; attempt += 1) {
+async function waitFor(predicate: () => boolean, attempts = 600): Promise<void> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (predicate()) return;
     await new Promise(resolve => setTimeout(resolve, 10));
   }
@@ -233,6 +233,13 @@ describe('main editor streamed world renderer', () => {
     grass.dispose();
   });
 
+  it('reserves clean paint intervals after an expensive streamed chunk', () => {
+    expect(worldBuildPaintIntervals(0)).toBe(1);
+    expect(worldBuildPaintIntervals(4, 3)).toBe(3);
+    expect(worldBuildPaintIntervals(40, 3)).toBe(5);
+    expect(worldBuildPaintIntervals(4, 3, 113)).toBe(15);
+  });
+
   it('keeps compact-world ocean ownership fixed while large worlds follow the streamed focus', () => {
     expect(worldOceanAnchor(500, 160, -90)).toEqual({ x: 0, z: 0 });
     expect(worldOceanAnchor(64_000, 160, -90)).toEqual({ x: 160, z: -90 });
@@ -314,7 +321,7 @@ describe('main editor streamed world renderer', () => {
           if (object.userData.isStructuredWaterRoot === true) visible &&= object.visible;
         });
         return visible;
-      });
+      }, 1_000);
       expect(rendered.group.getObjectByName('water:world-ocean')).toBe(ocean);
       expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(sawProgressiveTerrain).toBe(true);

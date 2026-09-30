@@ -45,6 +45,8 @@ const FINE_TERRAIN_TEXTURE_SIZE = 256;
 const CONTENT_DISTANCE_LIMIT = 3_000;
 const WORLD_GRASS_CHUNK_INSTANCE_BUDGET = 15_000;
 const WORLD_GRASS_RESIDENT_INSTANCE_BUDGET = 120_000;
+const WORLD_STREAM_BUILD_FRAME_BUDGET_MS = 8;
+const WORLD_STREAM_MIN_BACKGROUND_PAINTS = 3;
 const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   strictMaterials: 0,
@@ -415,6 +417,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     // tiles in one frame; keep terrain work to one tile per paint interval.
     const terrainBatchSize = 1;
     for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
+      const batchStartedAt = performance.now();
       const batch = missingContent.slice(index, index + contentBatchSize);
       const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [
         key, await buildContentEntry(chunk, desiredContent.size)
@@ -431,10 +434,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       results.forEach(result => {
         if (result.status === 'fulfilled') mountContentEntry(result.value[1]);
       });
-      await yieldWorldBuild();
+      await yieldWorldBuild(performance.now() - batchStartedAt, limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS);
       if (revision !== requestRevision) { discardBuilt(); return false; }
     }
     for (let index = 0; index < missingTerrain.length && !disposed; index += terrainBatchSize) {
+      const batchStartedAt = performance.now();
       const batch = missingTerrain.slice(index, index + terrainBatchSize);
       const results = await Promise.allSettled(batch.map(async ([key, value]) => [key, await buildTerrainEntry(
         value.tile, value.signature, value.ocean, value.skirtSides
@@ -454,7 +458,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
           mountEntry(result.value[1]);
         }
       });
-      await yieldWorldBuild();
+      await yieldWorldBuild(performance.now() - batchStartedAt, limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS);
       if (revision !== requestRevision) { discardBuilt(); return false; }
     }
     if (disposed) {
@@ -1613,9 +1617,28 @@ function reconcileRequestKey(request: ReconcileRequest): string {
   return `${request.x}:${request.z}:${request.distance}`;
 }
 
-function yieldWorldBuild(): Promise<void> {
+export function worldBuildPaintIntervals(buildMs: number, minimumPaints = 1, mountFrameMs = 0): number {
+  return Math.max(
+    minimumPaints,
+    Math.ceil(Math.max(0, buildMs, mountFrameMs) / WORLD_STREAM_BUILD_FRAME_BUDGET_MS)
+  );
+}
+
+function yieldWorldBuild(buildMs: number, minimumPaints: number): Promise<void> {
   return new Promise(resolve => {
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(resolve, 0));
-    else setTimeout(resolve, 0);
+    if (typeof requestAnimationFrame !== 'function') { setTimeout(resolve, 0); return; }
+    let painted = 0;
+    let firstPaintAt = 0;
+    let targetPaints = minimumPaints;
+    const afterPaint = (paintAt: number): void => {
+      painted += 1;
+      if (painted === 1) firstPaintAt = paintAt;
+      // The first rendered frame pays the mounted geometry and texture uploads,
+      // so its interval can be more expensive than the preceding CPU build.
+      if (painted === 2) targetPaints = worldBuildPaintIntervals(buildMs, minimumPaints, paintAt - firstPaintAt);
+      if (painted < targetPaints) requestAnimationFrame(afterPaint);
+      else setTimeout(resolve, 0);
+    };
+    requestAnimationFrame(afterPaint);
   });
 }
