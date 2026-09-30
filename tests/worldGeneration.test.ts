@@ -291,7 +291,7 @@ describe('world generation compiler', () => {
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent(input)))
       .mockResolvedValueOnce(JSON.stringify(layout)).mockResolvedValueOnce(JSON.stringify(repaired));
     const store={loadAsset:vi.fn().mockResolvedValue(reusableAsset())} as unknown as MapStore;
-    const result=await generateWorld(input,store);
+    const result=await generateWorld({...input,repairAttempts:1},store);
     expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     expect(result.draft.assets.map(asset=>asset.role)).toEqual(['house','shop','workshop']);
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.raw',{layout});
@@ -318,12 +318,25 @@ describe('world generation compiler', () => {
     delete invalid.settlements[0].options.waterfrontBias;
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent()))
       .mockResolvedValueOnce(JSON.stringify(invalid)).mockResolvedValueOnce(JSON.stringify(layout));
-    const result=await generateWorld(request,{} as MapStore);
+    const result=await generateWorld({...request,repairAttempts:1},{} as MapStore);
     expect(result.bundle.plan.towns).toHaveLength(1);
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.raw',{layout:invalid});
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout.repair.raw',{layout});
     const repairPrompt=JSON.parse((mocks.llmChat.mock.calls[2][0] as Array<{role:string;content:string}>).at(-1)!.content);
     expect(repairPrompt.instruction).toContain('Copy towns and assets exactly');
+  });
+
+  it('does not repair a Stage 2 schema failure when repairs are disabled', async () => {
+    const {layout}=soloLayout();
+    const invalid=structuredClone(layout) as any;
+    invalid.settlements[0].options.waterSetback=48;
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(invalid));
+
+    await expect(generateWorld({...request,repairAttempts:0},{} as MapStore))
+      .rejects.toThrow('world_layout_unsupported_option:market-town:waterSetback');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat.mock.calls.map(call=>(call[1] as {traceStage:string}).traceStage))
+      .toEqual(['world.intent','world.layout']);
   });
 
   it('repairs an invalid GPT intent once and returns geometry audits', async () => {
@@ -488,15 +501,19 @@ describe('world generation compiler', () => {
       {kind:'village',density:.48,waterfrontBias:0},8)).toMatchObject({planningIssues:[]});
   });
 
-  it('stops rejected world geometry before any paid asset call', async () => {
-    const input={...request,prompt:'A complete island town',generateAssets:true,repairAttempts:0 as const};
+  it('returns raw aesthetic diagnostics with exactly one intent and one layout call', async () => {
+    const input={...request,prompt:'A complete island town',generateAssets:false,repairAttempts:0 as const};
     const intent=rawSoloIntent(input);
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(intent));
-    await expect(generateWorld(input,{} as MapStore)).rejects.toThrow('world_island_boundary_open');
+    const parsed=parseWorldIntentDraft(intent,input),evidence=createWorldSitingEvidence(parsed);
+    const layout={towns:[{townId:'market-town',candidateId:evidence.towns[0].candidates[0].id}],
+      settlements:[{townId:'market-town',options:{kind:'city',pattern:'organic',density:.8}}],assets:[]};
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(intent)).mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld(input,{} as MapStore);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat.mock.calls.map(call=>(call[1] as {traceStage:string}).traceStage))
+      .toEqual(['world.intent','world.layout']);
+    expect(result.diagnostics[0].planningIssues).toContain('island_boundary_open');
     expect(mocks.generateModel).not.toHaveBeenCalled();
-    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.rejected',expect.objectContaining({
-      attempt:0,error:expect.stringContaining('world_island_boundary_open')
-    }));
   });
 
   it('rejects a named island whose dry terrain is clipped by the world boundary', () => {
@@ -506,7 +523,7 @@ describe('world generation compiler', () => {
     expect(auditWorldIslandBoundary('A coastal town',recipe)).toBeNull();
   });
 
-  it('rejects an inhabited island whose connected dry interior cannot hold its town cores', async () => {
+  it('diagnoses an inhabited island whose connected dry interior cannot hold its town cores', () => {
     const recipe={version:1 as const,seed:17,size:500,heightScale:.1,
       constraints:[
         {region:'north' as const,biome:'ocean' as const},{region:'south' as const,biome:'ocean' as const},
@@ -522,22 +539,6 @@ describe('world generation compiler', () => {
       waterLevel:Math.abs(x)<=160&&Math.abs(z)<=160?null:0,waterBodyId:null})) as ReturnType<typeof createWorldSampler>;
     expect(auditWorldIslandLandmass('An inhabited island port',recipe,[{radius:145}],broadDryCore))
       .toMatchObject({adequate:true,requiredSpan:290});
-    const raw={plan:{version:1,id:'small-island',revision:1,
-      prompt:'An inhabited island port',recipe,ecology:[],roads:[],towns:[{id:'port',name:'Port',prompt:'Port town',
-        radius:145,blend:40,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.72,
-        publicBuildings:[]}] }};
-    const input={prompt:'An inhabited island port',seed:17,size:500,generateAssets:true,repairAttempts:1 as const};
-    expect(()=>createWorldSitingEvidence(parseWorldIntentDraft(raw,input)))
-      .toThrow('world_island_landmass_insufficient');
-    mocks.llmChat.mockResolvedValue(JSON.stringify(raw));
-    await expect(generateWorld(input,{} as MapStore)).rejects.toThrow('world_island_landmass_insufficient');
-    expect(mocks.generateModel).not.toHaveBeenCalled();
-    const repairMessages=mocks.llmChat.mock.calls[1][0] as Array<{role:string;content:string}>;
-    expect(JSON.parse(repairMessages.at(-1)!.content)).toMatchObject({
-      error:expect.stringContaining('world_island_landmass_insufficient'),
-      terrainHint:{islandLandmass:expect.objectContaining({adequate:false,requiredSpan:290})},
-      instruction:expect.stringContaining('passable route between them')
-    });
   });
 
   it('prompts for a settlement-specific economy and civic program before street layout', () => {
@@ -696,7 +697,7 @@ describe('world generation compiler', () => {
     expect(()=>materializeWorldIntent(intent,evidence,layout,request)).toThrow('world_layout_settlement_intent_mismatch:market-town');
   },15_000);
 
-  it('accepts only a final harbor patch with homes and an actual waterfront street', () => {
+  it('keeps waterfront quality as diagnostics instead of rejecting a renderable patch', () => {
     const input:WorldGenerationRequest={prompt:'A compact fishing town on a warm bay',seed:9012903,size:500,generateAssets:false};
     const intent=parseWorldIntentDraft(rawHarborIntent(input),input),evidence=createWorldSitingEvidence(intent);
     const candidate=evidence.towns[0].candidates[0],layout={towns:[{townId:'bay-town',candidateId:candidate.id}],
@@ -710,7 +711,7 @@ describe('world generation compiler', () => {
       foundation:sample(112,112).height};
     const forged={...evidence,towns:[{id:'bay-town',candidates:[inland]}],landmarkLayouts:[]};
     expect(()=>materializeWorldIntent(intent,forged,{...layout,towns:[{townId:'bay-town',candidateId:inland.id}]},input))
-      .toThrow('world_settlement_waterfront_unreachable:bay-town');
+      .not.toThrow();
   },15_000);
 
   it('keeps the server-owned prompt when every model response changes its echo', async () => {
