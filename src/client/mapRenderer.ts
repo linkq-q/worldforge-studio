@@ -3878,16 +3878,19 @@ function drawProceduralTerrainDetail(
     ctx.fillStyle = ctx.strokeStyle;
     ctx.globalAlpha = style.detailStrength * footprintFade * (0.1 + Math.max(0.25, selectedWeight) * 0.24);
     if (selected === 'soil' || selected === 'rocky') {
-      const radius = pixelsPerMetre * (selected === 'rocky' ? 0.05 + random() * 0.12 : 0.03 + random() * 0.08);
+      const radius = terrainDetailPixelSpan(
+        selected === 'rocky' ? 0.05 + random() * 0.12 : 0.03 + random() * 0.08,
+        pixelsPerMetre
+      );
       ctx.fillRect(point[0], point[1], radius, radius * (0.5 + random()));
     } else {
-      const length = pixelsPerMetre * (selected === 'sand'
+      const length = terrainDetailPixelSpan(selected === 'sand'
         ? 0.12 + random() * 0.28
-        : selected === 'paving' ? 0.08 + random() * 0.18 : 0.04 + random() * 0.12);
+        : selected === 'paving' ? 0.08 + random() * 0.18 : 0.04 + random() * 0.12, pixelsPerMetre);
       const angle = selected === 'sand'
         ? (style.sandRecipe === 'beach' ? 0.12 : -0.42)
         : random() * Math.PI;
-      ctx.lineWidth = Math.max(0.25, pixelsPerMetre * (selected === 'paving' ? 0.05 : 0.03));
+      ctx.lineWidth = Math.max(0.45, pixelsPerMetre * (selected === 'paving' ? 0.05 : 0.03));
       ctx.beginPath();
       ctx.moveTo(point[0] - Math.cos(angle) * length * 0.5, point[1] - Math.sin(angle) * length * 0.5);
       ctx.lineTo(point[0] + Math.cos(angle) * length * 0.5, point[1] + Math.sin(angle) * length * 0.5);
@@ -3944,23 +3947,30 @@ function drawProceduralTerrainPropertyDetail(
     ctx.fillStyle = ctx.strokeStyle;
     ctx.globalAlpha = style.detailStrength * footprintFade * (0.24 + Math.max(0.2, weight) * 0.4);
     if (surface === 'soil' || surface === 'rocky') {
-      const radius = pixelsPerMetre * (surface === 'rocky' ? 0.06 + random() * 0.16 : 0.035 + random() * 0.1);
+      const radius = terrainDetailPixelSpan(
+        surface === 'rocky' ? 0.06 + random() * 0.16 : 0.035 + random() * 0.1,
+        pixelsPerMetre
+      );
       ctx.fillRect(point[0], point[1], radius, radius * (0.45 + random() * 0.8));
       continue;
     }
-    const length = pixelsPerMetre * (surface === 'sand'
+    const length = terrainDetailPixelSpan(surface === 'sand'
       ? 0.12 + random() * 0.3
-      : surface === 'paving' ? 0.09 + random() * 0.2 : 0.04 + random() * 0.12);
+      : surface === 'paving' ? 0.09 + random() * 0.2 : 0.04 + random() * 0.12, pixelsPerMetre);
     const angle = surface === 'sand'
       ? (style.sandRecipe === 'beach' ? 0.12 : -0.42)
       : random() * Math.PI;
-    ctx.lineWidth = Math.max(0.25, pixelsPerMetre * (surface === 'paving' ? 0.055 : 0.032));
+    ctx.lineWidth = Math.max(0.45, pixelsPerMetre * (surface === 'paving' ? 0.055 : 0.032));
     ctx.beginPath();
     ctx.moveTo(point[0] - Math.cos(angle) * length * 0.5, point[1] - Math.sin(angle) * length * 0.5);
     ctx.lineTo(point[0] + Math.cos(angle) * length * 0.5, point[1] + Math.sin(angle) * length * 0.5);
     ctx.stroke();
   }
   ctx.restore();
+}
+
+export function terrainDetailPixelSpan(worldMetres: number, pixelsPerMetre: number): number {
+  return Math.max(0.75, worldMetres * pixelsPerMetre);
 }
 
 function terrainDetailSurfaceAt(

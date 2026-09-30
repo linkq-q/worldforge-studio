@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
-import { worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { worldCoastalSandWeight, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
@@ -56,9 +56,11 @@ describe('main editor streamed world renderer', () => {
       };
     };
 
-    expect(worldTileSurfaceWeight(tileData(0.4), tile, 8, 8, ['sand'])).toBe(1);
+    expect(worldTileSurfaceWeight(tileData(0.4), tile, 8, 8, ['sand'])).toBeGreaterThan(0.6);
     expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['sand'])).toBe(0);
     expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['grass'])).toBe(1);
+    expect(worldCoastalSandWeight(16, 0.4)).toBe(0);
+    expect(worldCoastalSandWeight(4, 0.4)).toBeGreaterThan(0.6);
   });
 
   it('exposes steep inland terrain as rock without changing flat biome weights', () => {

@@ -1106,8 +1106,7 @@ export function worldTileSurfaceWeight(
   const slopeX = THREE.MathUtils.lerp(height10 - height00, height11 - height01, slopeTz) / metresPerCell;
   const slopeZ = THREE.MathUtils.lerp(height01 - height00, height11 - height10, slopeTx) / metresPerCell;
   const steepRock = THREE.MathUtils.smoothstep(Math.hypot(slopeX, slopeZ), 0.28, 0.72) * (1 - ocean);
-  const beach = THREE.MathUtils.clamp(1 - Math.abs(height - 4) / 22, 0, 1)
-    * THREE.MathUtils.clamp(ocean * 2.5, 0, 1);
+  const beach = worldCoastalSandWeight(height, ocean);
   let weight = 0;
   for (const tag of tags) {
     if (tag === 'dry') {
@@ -1149,6 +1148,12 @@ export function worldTileSurfaceWeight(
     }
   }
   return THREE.MathUtils.clamp(weight, 0, 1);
+}
+
+export function worldCoastalSandWeight(height: number, oceanWeight: number): number {
+  const shore = THREE.MathUtils.smoothstep(oceanWeight, 0.12, 0.45);
+  const lowGround = 1 - THREE.MathUtils.smoothstep(height, 2, 8);
+  return shore * lowGround;
 }
 
 function interpolateTileScalar(
