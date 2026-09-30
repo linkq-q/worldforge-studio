@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEditableMapGroup,
   buildStructuredWaterGroup,
+  terrainDetailPixelSpan,
   terrainNormalPixelsFromHeight,
   quantizeCanvasToPalette
 } from '../src/client/mapRenderer';
@@ -64,6 +65,13 @@ function terrainBoundaryPoints(geometry: THREE.BufferGeometry): THREE.Vector3[] 
 }
 
 describe('terrain normal generation', () => {
+  it('keeps material grain visible on bounded streamed terrain textures', () => {
+    const streamedPixelsPerMetre = 128 / 125;
+    expect(terrainDetailPixelSpan(0.04, streamedPixelsPerMetre)).toBe(0.75);
+    expect(terrainDetailPixelSpan(0.4, streamedPixelsPerMetre)).toBe(0.75);
+    expect(terrainDetailPixelSpan(0.4, 4)).toBeCloseTo(1.6);
+  });
+
   it('refreshes and disposes the snow mask without adding terrain vertices or objects', async () => {
     const map = createEmptyMap();
     const rendered = await buildEditableMapGroup(map);
