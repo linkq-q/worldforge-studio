@@ -516,8 +516,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
           const smallHillBoost = Math.sqrt(form.height) * 1.3 * (1 - smooth(20, 40, form.height));
           authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
             slopeBand * Math.min(14, form.height * 0.16 + smallHillBoost));
-          if (compactRelief && form.height >= 28 && Math.min(...form.radius) >= 45) {
-            // Large authored mountains need coherent downslope structure, not isotropic noise alone.
+          const minRadius = Math.min(...form.radius);
+          if (compactRelief && form.height >= 18 && minRadius >= 18) {
+            // Authored compact relief needs coherent downslope structure, not isotropic noise alone.
             // Ellipse angle follows the local fall line; a slow phase warp bends channels without
             // breaking them into dots, while the slope band protects both summit and foothill.
             const radius = Math.sqrt(d2);
@@ -540,8 +541,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
             const rib = smooth(0.15, 0.86, -drainageWave);
             // Multi-metre cuts remain legible in a 500m overview; the C2 slope band still
             // takes them to zero before the summit and footprint boundary.
-            const drainageAmplitude = Math.min(12, form.height * 0.21) * smooth(28, 42, form.height)
-              * mix(0.55, 1, smooth(0.25, 0.5, form.height / Math.min(...form.radius)));
+            const drainageAmplitude = Math.min(12, form.height * 0.21)
+              * smooth(18, 30, form.height) * smooth(18, 30, minRadius)
+              * mix(0.55, 1, smooth(0.25, 0.5, form.height / minRadius));
             // Do not turn a mountain-backed beach into a drainage cliff.
             const drainageMask = slopeBand * smooth(3, 12, height);
             authoredDrainageDetail += drainageMask * drainageAmplitude * (rib * 0.32 - channel * 0.82);
@@ -557,8 +559,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     for (const brush of recipe.terrainBrushes ?? []) {
       const authoredFeather = brush.feather ?? 0;
       // Preserve deliberate drainage cuts; only bulk earthworks need the slope-safe expansion.
-      const narrowGully = brush.mode === 'lower' && brush.amount <= 4
-        && brush.region.kind === 'path' && brush.region.width <= 12;
+      const narrowGully = brush.mode === 'lower' && brush.amount <= 8
+        && brush.region.kind === 'path' && brush.region.width <= 16
+        && authoredFeather <= Math.max(12, brush.region.width * 1.5);
       const feather = compactRelief && (brush.mode === 'raise' || brush.mode === 'lower')
         && !narrowGully ? Math.max(authoredFeather, brush.amount * 3.75)
         : authoredFeather;
