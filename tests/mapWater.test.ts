@@ -4,6 +4,7 @@ import {
   carveWaterBasinInPlace,
   distanceToWater,
   prepareStructuredWaterInPlace,
+  riverEdgePairs,
   riverPathSamples,
   waterBoundaryPoints,
   waterSurfaceLevelAt
@@ -60,10 +61,21 @@ describe('structured water geometry', () => {
     const natural = riverPathSamples(river);
     expect(natural).toEqual(riverPathSamples(river));
     expect(natural).not.toEqual(straight);
+    expect(straight.every(sample => sample.width === river.width)).toBe(true);
     expect(natural[0]).toEqual(straight[0]);
     expect(natural.at(-1)).toEqual(straight.at(-1));
     expect(riverPathSamples({ ...river, seed: 18 })).not.toEqual(natural);
     expect(Math.max(...natural.map((sample) => Math.abs(sample.point[1])))).toBeGreaterThan(0.25);
+    expect(Math.min(...natural.slice(1, -1).map(sample => sample.width))).toBeLessThan(11);
+
+    const straightEdges = riverEdgePairs({ ...river, shorelineIrregularity: 0 });
+    const naturalEdges = riverEdgePairs(river);
+    expect(naturalEdges.slice(1, -1).some((edge, index) => {
+      const straightEdge = straightEdges[index + 1];
+      const leftShift = edge.left[1] - straightEdge.left[1];
+      const rightShift = edge.right[1] - straightEdge.right[1];
+      return Math.abs(leftShift - rightShift) > 0.5;
+    })).toBe(true);
   });
 
   it('carves a deep central bed across part of the river width instead of a single V-shaped line', () => {

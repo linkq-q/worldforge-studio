@@ -245,14 +245,17 @@ describe('composable world terrain operations', () => {
       height: 5, feather: 0
     }], waterBodies: [{
       id: 'river-mouth', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
-      levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0.8, shorelineIrregularity: 0
+      levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0.8, shorelineIrregularity: 0.35, seed: 27
     }] });
     const context = createWorldTerrainContext(recipe), prepared = context.waterBodies[0];
     const mouth = prepared.mapWater.points.at(-1)!;
 
     expect(mouth[0]).toBeGreaterThan(25);
+    expect(prepared.mapWater.shorelineIrregularity).toBe(0);
     expect(prepared.mapWater.levels?.at(-1)).toBe(0);
     expect(prepared.mapWater.widths?.at(-1)).toBeGreaterThan(8);
+    expect(new Set(prepared.mapWater.widths?.map(width => width.toFixed(3))).size).toBeGreaterThan(3);
+    expect(prepared.boundary).toEqual(waterBoundaryPoints(prepared.mapWater));
     expect(mouth).not.toEqual((recipe.waterBodies![0].region as { points: Array<[number, number]> }).points.at(-1));
     expect(context.sample(50, 0)).toMatchObject({ waterLevel: 0, waterBodyId: null, freshWaterWeight: 0 });
   });
