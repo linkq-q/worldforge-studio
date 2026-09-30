@@ -171,6 +171,16 @@ interface WorldWhiteboxPreviewDetails {
   finalPlan: WorldPlan;
   finalObservation: WorldWhiteboxObservation;
 }
+interface WorldConstructionDiagnostic {
+  townId?: string;
+  planningIssues?: string[];
+  code?: string;
+  message?: string;
+}
+interface WorldConstructionPreviewDetails {
+  paidCallCount: number;
+  diagnostics: string[];
+}
 import {
   TERRAIN_CLIFF_LAYOUTS,
   TERRAIN_GENERATION_PRESETS,
@@ -274,6 +284,7 @@ const VIEW_DIRECTIONS = {
 interface EditorState {
   maps: MapSummary[];
   assets: MapAsset[];
+  assetSummaries: MapAssetSummary[];
   assetLibraries: AssetLibrary[];
   libraryAssets: MapAsset[];
   renderSchemes: RenderScheme[];
@@ -311,6 +322,19 @@ interface EditorState {
   redoTransaction: MapTransactionSummary | null;
 }
 
+interface MapAssetSummary {
+  id: string;
+  name: string;
+  tags?: string[];
+  footprintRadius?: number;
+  sizeClass?: MapAsset['sizeClass'];
+  mode: string;
+  colliderBoxCount: number;
+  colliderFallbackUsed: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export function startMapEditor(app: HTMLElement): void {
   const editor = new MapEditor(app);
   void editor.start();
@@ -320,6 +344,7 @@ class MapEditor {
   private readonly state: EditorState = {
     maps: [],
     assets: [],
+    assetSummaries: [],
     assetLibraries: [],
     libraryAssets: [],
     renderSchemes: [],
@@ -369,6 +394,7 @@ class MapEditor {
   private worldWidth = 500;
   private worldGenerateAssets = true;
   private worldWhiteboxDetails: WorldWhiteboxPreviewDetails | null = null;
+  private worldConstructionDetails: WorldConstructionPreviewDetails | null = null;
   private worldPlaySpawn: [number, number, number] | null = null;
   private worldPlaySpawnYaw = 0;
   private hdriFiles: string[] = [];
@@ -416,6 +442,7 @@ class MapEditor {
   });
   /** View-only ghost boxes + streamed-in models for the running code-planner generation. */
   private generationPreview: GenerationPreviewOverlay | null = null;
+  private readonly assetHydrationRequests = new Map<string, Promise<MapAsset>>();
   private brushPreview: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null = null;
   private placementPreview: THREE.Object3D | null = null;
   private placingAssetId: string | null = null;
@@ -1294,7 +1321,7 @@ class MapEditor {
     const [maps, deletedMaps, assets, renderSchemes, colorPalettes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ maps: DeletedMapSummary[] }>('/api/editor/maps/trash'),
-      editorFetch<{ assets: MapAsset[] }>('/api/editor/assets'),
+      editorFetch<{ assets: MapAssetSummary[] }>('/api/editor/assets'),
       editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes'),
       editorFetch<{ colorPalettes: ColorPalette[] }>('/api/editor/color-palettes'),
       editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries'),
@@ -1302,7 +1329,10 @@ class MapEditor {
     ]);
     this.state.maps = maps.maps;
     this.deletedMaps = deletedMaps.maps;
-    this.state.assets = assets.assets;
+    this.state.assetSummaries = assets.assets;
+    if (!this.state.assetSummaries.some((asset) => asset.id === this.state.selectedAssetId)) {
+      this.state.selectedAssetId = null;
+    }
     this.state.renderSchemes = renderSchemes.renderSchemes;
     this.state.colorPalettes = colorPalettes.colorPalettes;
     if (!this.state.colorPalettes.some((palette) => palette.id === this.selectedPaletteId)) {
@@ -1332,7 +1362,7 @@ class MapEditor {
     }
     const reloadMs = performance.now() - reloadStartedAt;
     if (reloadMs > 250) {
-      console.info(`[perf] list reload: ${this.state.assets.length} assets in ${reloadMs.toFixed(0)}ms`);
+      console.info(`[perf] list reload: ${this.state.assetSummaries.length} asset summaries, ${this.state.assets.length} hydrated in ${reloadMs.toFixed(0)}ms`);
     }
     if (!this.state.map && this.state.maps.length === 0) {
       const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
@@ -1370,6 +1400,7 @@ class MapEditor {
       )
     ]);
     const savedMap = normalizeMap(map);
+    this.retainHydratedMapAssets(savedMap);
     const draftRecovery = await this.prepareBrowserMapDraftRecovery(savedMap);
     this.clearMapAiPreview();
     this.state.map = savedMap;
@@ -1419,6 +1450,50 @@ class MapEditor {
     this.renderPanels();
     if (draftRecovery) this.showMapDraftRecoveryDialog();
     return true;
+  }
+
+  private retainHydratedMapAssets(savedMap: EditableMap): void {
+    const requiredIds = new Set([
+      ...savedMap.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)),
+      ...savedMap.world?.assets.map((binding) => binding.assetId) ?? [],
+      ...(this.state.selectedAssetId ? [this.state.selectedAssetId] : [])
+    ]);
+    const hydrated = new Map([...this.state.assets, ...(savedMap.assets ?? [])].map((asset) => [asset.id, asset]));
+    this.state.assets = [...requiredIds].flatMap((id) => hydrated.get(id) ? [hydrated.get(id)!] : []);
+  }
+
+  private rememberHydratedAsset(asset: MapAsset): MapAsset {
+    const index = this.state.assets.findIndex((candidate) => candidate.id === asset.id);
+    if (index >= 0) this.state.assets[index] = asset;
+    else this.state.assets.push(asset);
+    if (!asset.libraryId) {
+      const summary = mapAssetSummary(asset);
+      const summaryIndex = this.state.assetSummaries.findIndex((candidate) => candidate.id === asset.id);
+      if (summaryIndex >= 0) this.state.assetSummaries[summaryIndex] = summary;
+      else this.state.assetSummaries.unshift(summary);
+    }
+    return asset;
+  }
+
+  private loadEditorAsset(assetId: string): Promise<MapAsset> {
+    const cached = this.state.assets.find((asset) => asset.id === assetId);
+    if (cached) return Promise.resolve(cached);
+    const pending = this.assetHydrationRequests.get(assetId);
+    if (pending) return pending;
+    const request = editorFetch<{asset: MapAsset}>('/api/editor/assets/' + encodeURIComponent(assetId))
+      .then(({asset}) => this.rememberHydratedAsset(asset))
+      .finally(() => this.assetHydrationRequests.delete(assetId));
+    this.assetHydrationRequests.set(assetId, request);
+    return request;
+  }
+
+  private async loadEditorAssets(assetIds: readonly string[]): Promise<MapAsset[]> {
+    const ids = [...new Set(assetIds.filter(Boolean))];
+    const assets: MapAsset[] = [];
+    for (let index = 0; index < ids.length; index += 4) {
+      assets.push(...await Promise.all(ids.slice(index, index + 4).map((id) => this.loadEditorAsset(id))));
+    }
+    return assets;
   }
 
   private async createMap(): Promise<void> {
@@ -1784,7 +1859,8 @@ class MapEditor {
           <label class="field compact map-ai-toggle"><span>生成建筑资产 · DeepSeek</span><input id="world-assets" type="checkbox" ${this.worldGenerateAssets ? 'checked' : ''} /></label>
           <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
           <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划（无建筑）</button>
-          <p class="empty inspector-note">白盒用于核对地形、聚落区位与路线，不生成建筑或植物。完整世界模式目前会从描述重新规划，尚不能沿已保存的白盒继续施工。</p>
+          ${map.world?.bundle.plan.whitebox ? `<button id="construct-world-whitebox" ${this.state.busy || this.state.dirty || Boolean(suggestion) ? 'disabled' : ''}>沿当前已保存白盒施工</button>` : ''}
+          <p class="empty inspector-note">白盒用于核对地形、聚落区位与路线，不生成建筑或植物。保存白盒后可沿原规划施工，每次最多生成 3 个资产且不做自动修复。新资产会保存到资产库；放弃地图预览不会删除它们。</p>
           ${map.world ? renderSavedWorldWhiteboxDetails(map.world) : ''}
           ${map.world ? `<label class="field compact"><span>前往聚落</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
@@ -1921,6 +1997,7 @@ class MapEditor {
           ${renderMapCompositionSummary(suggestion)}
           ${renderMapCodePlanSummary(suggestion)}
           ${this.worldWhiteboxDetails ? renderWorldWhiteboxDetails(this.worldWhiteboxDetails) : ''}
+          ${this.worldConstructionDetails ? renderWorldConstructionDetails(this.worldConstructionDetails) : ''}
           ${suggestion.agent ? `
             <details class="inspector-disclosure compact map-ai-composition-details">
               <summary><span><b>Scene Agent 轨迹</b><small>${suggestion.agent.iterations} 轮 · ${suggestion.agent.guideCount} 条引导 · ${suggestion.agent.objectCount} 个物体</small></span></summary>
@@ -2067,7 +2144,8 @@ class MapEditor {
       this.worldGenerateAssets = (event.target as HTMLInputElement).checked;
     });
     host.querySelector('#generate-world-ai')?.addEventListener('click', () => void this.generateWorldPreview());
-    host.querySelector('#generate-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview(true));
+    host.querySelector('#generate-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview('whitebox'));
+    host.querySelector('#construct-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview('construct-whitebox'));
     host.querySelector<HTMLSelectElement>('#world-town')?.addEventListener('change', event => {
       if (this.state.map) this.frameWorldTown(this.state.map, (event.target as HTMLSelectElement).value);
     });
@@ -2726,23 +2804,34 @@ class MapEditor {
 
   private mapAiPanelRenderedAt = 0;
 
-  private async generateWorldPreview(whitebox = false): Promise<void> {
+  private async generateWorldPreview(mode: 'generate' | 'whitebox' | 'construct-whitebox' = 'generate'): Promise<void> {
     const map = this.state.map;
-    if (!map || map.sceneMode !== 'outdoor' || this.state.busy || this.state.dirty || !this.mapAiPrompt.trim()) return;
+    if (!map || map.sceneMode !== 'outdoor' || this.state.busy || this.state.dirty) return;
+    const whitebox = mode === 'whitebox';
+    const construction = mode === 'construct-whitebox';
+    const savedWhiteboxPlan = map.world?.bundle.plan.whitebox ? map.world.bundle.plan : null;
+    if (construction && !savedWhiteboxPlan) {
+      this.state.message = '请先保存白盒规划，再沿白盒施工';
+      this.renderPanels();
+      return;
+    }
+    if (!construction && !this.mapAiPrompt.trim()) return;
     if (!map.world && !isCompositionEmptyMap(map)) {
       this.state.message = '请新建空白室外地图，再生成连续世界';
       this.renderPanels();
       return;
     }
     this.mapAiAbortController = new AbortController();
-    this.setBusy(true, '正在规划地形、城镇功能与道路…');
+    this.setBusy(true, construction ? '正在沿已保存白盒施工…' : '正在规划地形、城镇功能与道路…');
     try {
       const library = this.state.assetLibraries.find(item => item.id === this.activeAssetLibraryId);
+      const reusableAssetIds = this.mapAiReuseExistingAssets && library ? library.assetIds.slice(0, 64) : [];
       const result = await editorFetch<{
         bundle: WorldBundle;
         assetSources?: Array<{id: string; assetId: string; role: WorldAssetBinding['role'];
           ecologyKind?: WorldAssetBinding['ecologyKind']; ecologyRuleId?: string}>;
-        diagnostics?: Array<{townId: string; planningIssues: string[]}>;
+        diagnostics?: WorldConstructionDiagnostic[];
+        paidCallCount?: number;
         originalPlan?: unknown;
         initialPlan?: WorldPlan;
         observation?: WorldWhiteboxObservation;
@@ -2753,17 +2842,25 @@ class MapEditor {
         method: 'POST', signal: this.mapAiAbortController.signal,
         body: JSON.stringify(whitebox
           ? {mode: 'whitebox', prompt: this.mapAiPrompt, seed: map.seed, size: 500, generateAssets: false}
-          : {prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
-              generateAssets: this.worldGenerateAssets, repairAttempts: 0,
-              ...(this.mapAiReuseExistingAssets && library ? {reusableAssetIds: library.assetIds.slice(0, 64)} : {})})
+          : construction
+            ? {mode: 'construct-whitebox', whiteboxPlan: savedWhiteboxPlan,
+                generateAssets: this.worldGenerateAssets, assetGenerationLimit: 3, repairAttempts: 0,
+                ...(reusableAssetIds.length ? {reusableAssetIds} : {})}
+            : {prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
+                generateAssets: this.worldGenerateAssets, repairAttempts: 0,
+                ...(reusableAssetIds.length ? {reusableAssetIds} : {})})
       });
       if (whitebox && (!result.initialPlan || !result.observation || !result.adjustment
         || !result.finalPlan || !result.finalObservation)) throw new Error('world_whitebox_details_missing');
       const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role,
         ...(asset.ecologyKind ? {ecologyKind: asset.ecologyKind} : {}),
         ...(asset.ecologyRuleId ? {ecologyRuleId: asset.ecologyRuleId} : {})})) ?? [];
-      const generatedAssets = await Promise.all(bindings.map(async binding =>
-        (await editorFetch<{asset: MapAsset}>('/api/editor/assets/' + encodeURIComponent(binding.assetId))).asset));
+      const loadedAssets = await this.loadEditorAssets(bindings.map((binding) => binding.assetId));
+      const reusableIds = new Set(reusableAssetIds);
+      const generatedAssets = loadedAssets.filter(asset => !reusableIds.has(asset.id));
+      const reusedAssets = loadedAssets.filter((asset): asset is MapAsset & {libraryId: string} =>
+        reusableIds.has(asset.id) && typeof asset.libraryId === 'string');
+      const previewAssets = [...new Map([...(map.assets ?? []), ...loadedAssets].map(asset => [asset.id, asset])).values()];
       const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings}}];
       this.clearMapAiPreview();
       this.worldWhiteboxDetails = whitebox
@@ -2776,18 +2873,27 @@ class MapEditor {
             finalObservation: result.finalObservation!
           }
         : null;
+      const diagnosticMessages = worldConstructionDiagnosticMessages(result.diagnostics);
+      const paidCallCount = Math.max(0, Math.floor(result.paidCallCount ?? 0));
+      this.worldConstructionDetails = construction ? {paidCallCount, diagnostics: diagnosticMessages} : null;
       this.mapAiSuggestion = {
         summary: whitebox
           ? `白盒世界：${result.bundle.plan.featureGraph?.regions.length ?? 0} 个区域，${result.bundle.plan.featureGraph?.paths.length ?? 0} 条路径，${result.bundle.plan.featureGraph?.anchors.length ?? 0} 个锚点。`
-          : `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
-            + (result.diagnostics?.flatMap(item => item.planningIssues.map(issue => `${item.townId}: ${issue}`)).join('；') ?? ''),
-        operations, generatedAssets, renderPromptSuggestions: []
+          : construction
+            ? `沿白盒施工预览：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路，付费调用 ${paidCallCount} 次。`
+            : `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
+              + diagnosticMessages.join('；'),
+        operations, generatedAssets, reusedAssets, renderPromptSuggestions: []
       };
-      this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: [...(map.assets ?? []), ...generatedAssets]}, operations);
+      this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: previewAssets}, operations);
       this.mapAiComparisonMap = map;
       this.mapAiPreviewVisible = true;
       this.state.selectedObjectId = null;
-      this.state.message = whitebox ? '白盒世界已在原编辑器预览；确认后作为一次事务保存' : '世界已在原编辑器预览；确认后作为一次事务保存';
+      this.state.message = whitebox
+        ? '白盒世界已在原编辑器预览；确认后作为一次事务保存'
+        : construction
+          ? `沿白盒施工预览已生成；付费调用 ${paidCallCount} 次；确认后作为一次事务保存`
+          : '世界已在原编辑器预览；确认后作为一次事务保存';
       await this.refreshScene();
       this.frameWorldTown(this.mapAiPreviewMap);
     } catch (error) {
@@ -2948,7 +3054,10 @@ class MapEditor {
           const reloadAssets = liveSuggestion.generatedAssets.length > liveGeneratedAssetCount;
           liveGeneratedAssetCount = Math.max(liveGeneratedAssetCount, liveSuggestion.generatedAssets.length);
           livePreviewWork = livePreviewWork.then(async () => {
-            if (reloadAssets) await this.reloadLists();
+            if (reloadAssets) {
+              await this.reloadLists();
+              await this.loadEditorAssets(liveSuggestion.generatedAssets.map((asset) => asset.id));
+            }
             const candidateMap = applyMapOperations(this.mapWithEditorAssets(map), liveSuggestion.operations);
             if (!shouldPromoteLiveMapPreview(livePreviewObjectCount, candidateMap.objects.length)) return;
             livePreviewObjectCount = candidateMap.objects.length;
@@ -2971,7 +3080,10 @@ class MapEditor {
       await livePreviewWork;
       if (livePreviewFailure) throw livePreviewFailure;
       if (automatic && this.mapAiRoundSavePromise) await this.mapAiRoundSavePromise;
-      if (suggestion.generatedAssets.length > 0) await this.reloadLists();
+      if (suggestion.generatedAssets.length > 0) {
+        await this.reloadLists();
+        await this.loadEditorAssets(suggestion.generatedAssets.map((asset) => asset.id));
+      }
       const addedObjects = suggestion.operations.filter((operation) => operation.type === 'object.add').length;
       const removedObjects = suggestion.operations.filter((operation) => operation.type === 'object.remove').length;
       const continuedComposition = previousSuggestion?.composition && !suggestion.composition
@@ -3070,6 +3182,7 @@ class MapEditor {
         () => {}
       );
       await this.reloadLists();
+      await this.loadEditorAssets(suggestion.generatedAssets.map((asset) => asset.id));
       const combinedSuggestion = previousSuggestion ? {
         ...suggestion,
         operations: [...previousSuggestion.operations, ...suggestion.operations],
@@ -3543,6 +3656,7 @@ class MapEditor {
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
     this.worldWhiteboxDetails = null;
+    this.worldConstructionDetails = null;
     this.mapAiLastFailure = null;
     this.mapAiReplayToken = null;
     this.pendingCompositionPlan = null;
@@ -4369,8 +4483,10 @@ class MapEditor {
       host.innerHTML = '';
       return;
     }
-    const availableAssets = this.state.assets;
-    const selectedAsset = object.assetId ? availableAssets.find((asset) => asset.id === object.assetId) : undefined;
+    const selectedAsset = object.assetId ? this.state.assets.find((asset) => asset.id === object.assetId) : undefined;
+    const availableAssets = selectedAsset && !this.state.assetSummaries.some((asset) => asset.id === selectedAsset.id)
+      ? [mapAssetSummary(selectedAsset), ...this.state.assetSummaries]
+      : this.state.assetSummaries;
     const resolvedLight = resolvedMapObjectLight(object, selectedAsset);
     const inheritedLight = object.light === undefined && Boolean(selectedAsset?.light);
     const selectionOpen = host.querySelector<HTMLDetailsElement>(`[data-selection-id="${CSS.escape(object.id)}"]`)?.open ?? true;
@@ -4429,10 +4545,17 @@ class MapEditor {
         this.renderPanels();
       }
     });
-    host.querySelector<HTMLSelectElement>('[data-object-asset]')?.addEventListener('change', (event) => {
-      object.assetId = (event.target as HTMLSelectElement).value || null;
-      this.markDirty();
-      void this.refreshScene();
+    host.querySelector<HTMLSelectElement>('[data-object-asset]')?.addEventListener('change', async (event) => {
+      const assetId = (event.target as HTMLSelectElement).value || null;
+      try {
+        if (assetId) await this.loadEditorAsset(assetId);
+        object.assetId = assetId;
+        this.markDirty();
+        await this.refreshScene();
+      } catch (error) {
+        this.state.message = `资产载入失败：${error instanceof Error ? error.message : '未知错误'}`;
+        this.renderPanels();
+      }
     });
     host.querySelector<HTMLSelectElement>('[data-object-height-mode]')?.addEventListener('change', (event) => {
       object.heightMode = (event.target as HTMLSelectElement).value === 'fixed' ? 'fixed' : 'terrain';
@@ -4651,7 +4774,7 @@ class MapEditor {
   private renderAssetPanel(): void {
     const host = this.app.querySelector<HTMLElement>('#asset-panel');
     if (!host) return;
-    const availableAssets = this.state.assets;
+    const availableAssets = this.state.assetSummaries;
     const selectedAsset = availableAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? availableAssets[0] ?? null;
     if (this.state.selectedAssetId !== selectedAsset?.id) this.state.selectedAssetId = selectedAsset?.id ?? null;
     const assetPanelOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="assets"]')?.open ?? Boolean(this.placingAssetId);
@@ -4679,7 +4802,7 @@ class MapEditor {
             .map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
         ` : ''}
         <p class="empty">${selectedAsset
-          ? `模式 ${selectedAsset.mode.toUpperCase()} · 尺寸 ${selectedAsset.sizeClass ?? '未分类'} · 占地半径 ${(selectedAsset.footprintRadius ?? 0.5).toFixed(2)}m · 自动碰撞箱 ${selectedAsset.colliderPlan.boxes.length} 个${selectedAsset.colliderPlan.fallbackUsed ? ' · 已回退整体边界' : ''}`
+          ? `模式 ${selectedAsset.mode.toUpperCase()} · 尺寸 ${selectedAsset.sizeClass ?? '未分类'} · 占地半径 ${(selectedAsset.footprintRadius ?? 0.5).toFixed(2)}m · 自动碰撞箱 ${selectedAsset.colliderBoxCount} 个${selectedAsset.colliderFallbackUsed ? ' · 已回退整体边界' : ''}`
           : '尚未选择资产'}</p>
         <button id="place-selected-asset" ${selectedAsset ? '' : 'disabled'}>${this.placingAssetId === selectedAsset?.id ? '取消放置' : '放入地图'}</button>
         <button id="bind-selected-asset" class="secondary small" ${this.selectedObject() && selectedAsset ? '' : 'disabled'}>绑定到选中物体</button>
@@ -4707,19 +4830,26 @@ class MapEditor {
       }
       void this.beginAssetPlacement();
     });
-    host.querySelector('#bind-selected-asset')?.addEventListener('click', () => {
+    host.querySelector('#bind-selected-asset')?.addEventListener('click', async () => {
       const object = this.selectedObject();
-      if (!object || !this.state.selectedAssetId) return;
-      object.assetId = this.state.selectedAssetId;
-      this.markDirty();
-      void this.refreshScene();
-      this.renderPanels();
+      const assetId = this.state.selectedAssetId;
+      if (!object || !assetId) return;
+      try {
+        await this.loadEditorAsset(assetId);
+        object.assetId = assetId;
+        this.markDirty();
+        await this.refreshScene();
+        this.renderPanels();
+      } catch (error) {
+        this.state.message = `资产载入失败：${error instanceof Error ? error.message : '未知错误'}`;
+        this.renderPanels();
+      }
     });
     this.bindAssetLibraryManager(host);
     void this.renderAssetPreview();
   }
 
-  private renderAssetLibraryManager(selectedAsset: MapAsset | null, open: boolean): string {
+  private renderAssetLibraryManager(selectedAsset: MapAssetSummary | null, open: boolean): string {
     const selectedLibrary = this.state.assetLibraries.find((library) => library.id === this.activeAssetLibraryId) ?? null;
     const libraryAsset = this.state.libraryAssets.find((asset) => asset.id === this.selectedLibraryAssetId) ?? null;
     const metadata = libraryAsset?.libraryMetadata;
@@ -6195,7 +6325,7 @@ class MapEditor {
         method: 'POST',
         body: JSON.stringify({ prompt, mode: this.state.map?.assetGenerationMode ?? 'voxel', paletteId })
       });
-      this.state.assets.unshift(asset);
+      this.rememberHydratedAsset(asset);
       this.state.selectedAssetId = asset.id;
       this.state.message = '资产已生成';
       this.renderPanels();
@@ -6206,16 +6336,27 @@ class MapEditor {
 
   private async renderAssetPreview(): Promise<void> {
     if (!this.previewScene || !this.previewCamera || !this.previewRenderer || !this.previewModelRoot) return;
-    const asset = this.previewingLibraryAsset
+    const libraryAsset = this.previewingLibraryAsset
       ? this.state.libraryAssets.find((item) => item.id === this.selectedLibraryAssetId)
-      : this.state.assets.find((item) => item.id === this.state.selectedAssetId);
-    const assetId = asset?.id ?? null;
+      : null;
+    const assetId = libraryAsset?.id ?? (this.previewingLibraryAsset ? null : this.state.selectedAssetId);
     if (this.previewAssetId === assetId && (assetId === null || this.previewModel)) return;
     this.previewAssetId = assetId;
     const requestId = this.previewRequestId + 1;
     this.previewRequestId = requestId;
     this.clearAssetPreviewModel();
-    if (!asset?.modelJson) return;
+    if (!assetId) return;
+    let asset: MapAsset;
+    try {
+      asset = libraryAsset ?? await this.loadEditorAsset(assetId);
+    } catch (error) {
+      if (requestId === this.previewRequestId) {
+        this.state.message = `资产载入失败：${error instanceof Error ? error.message : '未知错误'}`;
+        this.updateToolbarState();
+      }
+      return;
+    }
+    if (!asset.modelJson) return;
     const model = await buildModelGroup(asset.modelJson);
     const selectedPreviewAssetId = this.previewingLibraryAsset ? this.selectedLibraryAssetId : this.state.selectedAssetId;
     if (requestId !== this.previewRequestId || selectedPreviewAssetId !== assetId || !this.previewModelRoot) {
@@ -6303,14 +6444,27 @@ class MapEditor {
   }
 
   private async beginAssetPlacement(): Promise<void> {
-    const asset = this.state.assets.find((item) => item.id === this.state.selectedAssetId);
-    if (!asset?.modelJson || !this.scene) return;
+    const assetId = this.state.selectedAssetId;
+    if (!assetId || !this.scene) return;
     this.cancelAssetPlacement();
-    this.placingAssetId = asset.id;
+    this.placingAssetId = assetId;
     this.state.tool = 'select';
     const requestId = ++this.placementRequestId;
-    this.state.message = '移动鼠标预览位置，左键放置，Esc 取消';
+    this.state.message = '正在载入资产…';
     this.renderPanels();
+    let asset: MapAsset;
+    try {
+      asset = await this.loadEditorAsset(assetId);
+    } catch (error) {
+      if (requestId === this.placementRequestId) {
+        this.cancelAssetPlacement();
+        this.state.message = `资产载入失败：${error instanceof Error ? error.message : '未知错误'}`;
+        this.renderPanels();
+      }
+      return;
+    }
+    if (!asset.modelJson) return;
+    this.state.message = '移动鼠标预览位置，左键放置，Esc 取消';
     const preview = await buildModelGroup(asset.modelJson);
     if (requestId !== this.placementRequestId || this.placingAssetId !== asset.id || !this.scene) {
       disposeObject(preview);
@@ -7723,6 +7877,21 @@ class MapEditor {
   }
 }
 
+function mapAssetSummary(asset: MapAsset): MapAssetSummary {
+  return {
+    id: asset.id,
+    name: asset.name,
+    tags: asset.tags,
+    footprintRadius: asset.footprintRadius,
+    sizeClass: asset.sizeClass,
+    mode: asset.mode,
+    colliderBoxCount: asset.colliderPlan.boxes.length,
+    colliderFallbackUsed: asset.colliderPlan.fallbackUsed,
+    createdAt: asset.createdAt,
+    updatedAt: asset.updatedAt
+  };
+}
+
 function drawCanvasCover(
   context: CanvasRenderingContext2D,
   source: HTMLCanvasElement,
@@ -8426,6 +8595,25 @@ function renderWorldWhiteboxDetails(details: WorldWhiteboxPreviewDetails): strin
       <details><summary>调整决定</summary><pre>${json(details.adjustment)}</pre></details>
       <details><summary>最终规划</summary><pre>${json(details.finalPlan)}</pre></details>
       <details><summary>最终观察指标</summary><pre>${json(details.finalObservation)}</pre></details>
+    </div>
+  </details>`;
+}
+
+function worldConstructionDiagnosticMessages(diagnostics?: WorldConstructionDiagnostic[]): string[] {
+  return diagnostics?.flatMap((diagnostic) => [
+    ...(diagnostic.planningIssues ?? []).map(issue => diagnostic.townId ? `${diagnostic.townId}: ${issue}` : issue),
+    ...(diagnostic.message ? [`${diagnostic.code ? `${diagnostic.code}: ` : ''}${diagnostic.message}`] : [])
+  ]) ?? [];
+}
+
+function renderWorldConstructionDetails(details: WorldConstructionPreviewDetails): string {
+  return `<details class="inspector-disclosure compact map-ai-composition-details" open>
+    <summary><span><b>沿白盒施工预览</b><small>付费调用 ${details.paidCallCount} 次 · 资产生成上限 3</small></span></summary>
+    <div class="inspector-body asset-library-details">
+      <p class="empty">施工诊断</p>
+      ${details.diagnostics.length
+        ? `<div class="style-tags">${details.diagnostics.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>`
+        : '<p class="empty">未报告诊断</p>'}
     </div>
   </details>`;
 }

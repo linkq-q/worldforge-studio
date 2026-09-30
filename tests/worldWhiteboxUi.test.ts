@@ -10,6 +10,24 @@ describe('whitebox world planning UI', () => {
     expect(source).toContain("{mode: 'whitebox', prompt: this.mapAiPrompt, seed: map.seed, size: 500, generateAssets: false}");
   });
 
+  it('continues from the saved canonical whitebox with a bounded first-pass construction request', () => {
+    expect(source).toContain('id="construct-world-whitebox"');
+    expect(source).toContain('沿当前已保存白盒施工');
+    expect(source).toContain("mode: 'construct-whitebox'");
+    expect(source).toContain('whiteboxPlan: savedWhiteboxPlan');
+    expect(source).toContain('assetGenerationLimit: 3');
+    expect(source).toContain('repairAttempts: 0');
+    expect(source).toContain("generateWorldPreview('construct-whitebox')");
+    expect(source).toContain("const operations: MapOperation[] = [{type: 'world.set'");
+  });
+
+  it('shows construction cost and diagnostics in the original editor preview', () => {
+    expect(source).toContain('paidCallCount?: number;');
+    expect(source).toContain('沿白盒施工预览');
+    expect(source).toContain('付费调用');
+    expect(source).toContain('施工诊断');
+  });
+
   it('shows the complete whitebox planning trace in escaped details', () => {
     expect(source).toContain('白盒规划检查');
     expect(source).toContain('原始规划');

@@ -1041,7 +1041,7 @@ async function handleEditorObjects(req: Req, res: Res, store: MapStore, parts: s
 
 async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
   if (req.method === 'GET' && parts.length === 3) {
-    sendJson(res, 200, { assets: await store.listAssets() });
+    sendJson(res, 200, { assets: await store.listAssetSummaries() });
     return;
   }
   if (req.method === 'POST' && parts[3] === 'generate') {

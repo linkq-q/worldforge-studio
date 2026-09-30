@@ -95,6 +95,19 @@ export interface GenerateAssetInput {
   libraryMetadata?: Partial<AssetLibraryMetadata>;
 }
 
+export interface MapAssetSummary {
+  id: string;
+  name: string;
+  tags?: string[];
+  footprintRadius?: number;
+  sizeClass?: MapAsset['sizeClass'];
+  mode: string;
+  colliderBoxCount: number;
+  colliderFallbackUsed: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 interface UndoTransaction {
   summary: MapTransactionSummary;
   map: EditableMap;
@@ -555,6 +568,27 @@ export class MapStore {
     return assets
       .filter((asset): asset is MapAsset => asset !== null && !asset.libraryId)
       .sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
+  async listAssetSummaries(): Promise<MapAssetSummary[]> {
+    await this.ensureReady();
+    const files = (await readdir(this.assetsDir).catch(() => [])).filter((file) => file.endsWith('.json'));
+    const summaries: MapAssetSummary[] = [];
+    // Keep only a small number of full model JSON documents live while reducing
+    // the catalogue to metadata. Large local catalogues otherwise spike server
+    // memory before the client has requested a single model.
+    for (let index = 0; index < files.length; index += 32) {
+      const batch = await Promise.all(files.slice(index, index + 32).map(async (file) => {
+        try {
+          const asset = await this.loadAsset(path.basename(file, '.json'));
+          return asset.libraryId ? null : assetSummary(asset);
+        } catch {
+          return null;
+        }
+      }));
+      summaries.push(...batch.filter((asset): asset is MapAssetSummary => asset !== null));
+    }
+    return summaries.sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
   async loadAsset(id: string): Promise<MapAsset> {
@@ -1311,5 +1345,20 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
       : undefined,
     createdAt: finiteNumber(input.createdAt, now),
     updatedAt: finiteNumber(input.updatedAt, now)
+  };
+}
+
+function assetSummary(asset: MapAsset): MapAssetSummary {
+  return {
+    id: asset.id,
+    name: asset.name,
+    tags: asset.tags,
+    footprintRadius: asset.footprintRadius,
+    sizeClass: asset.sizeClass,
+    mode: asset.mode,
+    colliderBoxCount: asset.colliderPlan.boxes.length,
+    colliderFallbackUsed: asset.colliderPlan.fallbackUsed,
+    createdAt: asset.createdAt,
+    updatedAt: asset.updatedAt
   };
 }
