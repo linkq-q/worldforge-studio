@@ -154,6 +154,7 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
       .toEqual(['world.whitebox.initial-plan', 'world.whitebox.construction']);
     expect(mocks.llmChat.mock.calls.every(([, options]) => options.provider === 'gpt' && options.maxAttempts === 1)).toBe(true);
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[1][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel.mock.calls.every(([, options]) => options.providers?.join() === 'deepseek')).toBe(true);
