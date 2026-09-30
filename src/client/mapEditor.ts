@@ -1,7 +1,7 @@
 import type { MapCatalog } from '../shared/experiments';
 import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
-import type { WorldBundle } from '../shared/worldPlanning';
+import type { WorldBundle, WorldPlan, WorldWhiteboxObservation } from '../shared/worldPlanning';
 import type { WorldAssetBinding } from '../shared/worldMapState';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
@@ -162,6 +162,15 @@ import {
   type MapTransactionSummary
 } from '../shared/mapOperations';
 import { createGenerationPreviewOverlay, type GenerationPreviewOverlay } from './generationPreviewOverlay';
+
+interface WorldWhiteboxPreviewDetails {
+  originalPlan: unknown;
+  initialPlan: WorldPlan;
+  observation: WorldWhiteboxObservation;
+  adjustment: { decision: 'keep' | 'patch'; patch?: unknown };
+  finalPlan: WorldPlan;
+  finalObservation: WorldWhiteboxObservation;
+}
 import {
   TERRAIN_CLIFF_LAYOUTS,
   TERRAIN_GENERATION_PRESETS,
@@ -359,6 +368,7 @@ class MapEditor {
   private playMode: PlayModeController | null = null;
   private worldWidth = 500;
   private worldGenerateAssets = true;
+  private worldWhiteboxDetails: WorldWhiteboxPreviewDetails | null = null;
   private worldPlaySpawn: [number, number, number] | null = null;
   private worldPlaySpawnYaw = 0;
   private hdriFiles: string[] = [];
@@ -1773,6 +1783,7 @@ class MapEditor {
           <p id="world-size-hint" class="empty inspector-note">面积约 ${Math.round((this.worldWidth / MAP_SIZE_PRESETS[1].size[0]) ** 2)} 张中地图（${MAP_SIZE_PRESETS[1].size[0]} × ${MAP_SIZE_PRESETS[1].size[2]} 米）</p>
           <label class="field compact map-ai-toggle"><span>生成建筑资产 · DeepSeek</span><input id="world-assets" type="checkbox" ${this.worldGenerateAssets ? 'checked' : ''} /></label>
           <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
+          <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划</button>
           <p class="empty inspector-note">先规划地形、聚落功能与交通，再生成街区和群落。大建筑沿用部件装配；地形和内容按附近区块加载。</p>
           ${map.world ? `<label class="field compact"><span>前往聚落</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
@@ -1908,6 +1919,7 @@ class MapEditor {
           </div>
           ${renderMapCompositionSummary(suggestion)}
           ${renderMapCodePlanSummary(suggestion)}
+          ${this.worldWhiteboxDetails ? renderWorldWhiteboxDetails(this.worldWhiteboxDetails) : ''}
           ${suggestion.agent ? `
             <details class="inspector-disclosure compact map-ai-composition-details">
               <summary><span><b>Scene Agent 轨迹</b><small>${suggestion.agent.iterations} 轮 · ${suggestion.agent.guideCount} 条引导 · ${suggestion.agent.objectCount} 个物体</small></span></summary>
@@ -1961,6 +1973,8 @@ class MapEditor {
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
       const worldButton = host.querySelector<HTMLButtonElement>('#generate-world-ai');
       if (worldButton) worldButton.disabled = blocked || Boolean(this.mapAiSuggestion) || (!map.world && !isCompositionEmptyMap(map));
+      const whiteboxButton = host.querySelector<HTMLButtonElement>('#generate-world-whitebox');
+      if (whiteboxButton) whiteboxButton.disabled = blocked || Boolean(this.mapAiSuggestion) || (!map.world && !isCompositionEmptyMap(map));
     });
     host.querySelector<HTMLInputElement>('#map-ai-focus-prompt')?.addEventListener('input', (event) => {
       this.mapAiFocusPrompt = (event.target as HTMLInputElement).value;
@@ -2052,6 +2066,7 @@ class MapEditor {
       this.worldGenerateAssets = (event.target as HTMLInputElement).checked;
     });
     host.querySelector('#generate-world-ai')?.addEventListener('click', () => void this.generateWorldPreview());
+    host.querySelector('#generate-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview(true));
     host.querySelector<HTMLSelectElement>('#world-town')?.addEventListener('change', event => {
       if (this.state.map) this.frameWorldTown(this.state.map, (event.target as HTMLSelectElement).value);
     });
@@ -2710,7 +2725,7 @@ class MapEditor {
 
   private mapAiPanelRenderedAt = 0;
 
-  private async generateWorldPreview(): Promise<void> {
+  private async generateWorldPreview(whitebox = false): Promise<void> {
     const map = this.state.map;
     if (!map || map.sceneMode !== 'outdoor' || this.state.busy || this.state.dirty || !this.mapAiPrompt.trim()) return;
     if (!map.world && !isCompositionEmptyMap(map)) {
@@ -2727,12 +2742,22 @@ class MapEditor {
         assetSources?: Array<{id: string; assetId: string; role: WorldAssetBinding['role'];
           ecologyKind?: WorldAssetBinding['ecologyKind']; ecologyRuleId?: string}>;
         diagnostics?: Array<{townId: string; planningIssues: string[]}>;
+        originalPlan?: unknown;
+        initialPlan?: WorldPlan;
+        observation?: WorldWhiteboxObservation;
+        adjustment?: {decision: 'keep' | 'patch'; patch?: unknown};
+        finalPlan?: WorldPlan;
+        finalObservation?: WorldWhiteboxObservation;
       }>('/api/editor/worlds/generate', {
         method: 'POST', signal: this.mapAiAbortController.signal,
-        body: JSON.stringify({prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
-          generateAssets: this.worldGenerateAssets, repairAttempts: 0,
-          ...(this.mapAiReuseExistingAssets && library ? {reusableAssetIds: library.assetIds.slice(0, 64)} : {})})
+        body: JSON.stringify(whitebox
+          ? {mode: 'whitebox', prompt: this.mapAiPrompt, seed: map.seed, size: 500, generateAssets: false}
+          : {prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
+              generateAssets: this.worldGenerateAssets, repairAttempts: 0,
+              ...(this.mapAiReuseExistingAssets && library ? {reusableAssetIds: library.assetIds.slice(0, 64)} : {})})
       });
+      if (whitebox && (!result.initialPlan || !result.observation || !result.adjustment
+        || !result.finalPlan || !result.finalObservation)) throw new Error('world_whitebox_details_missing');
       const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role,
         ...(asset.ecologyKind ? {ecologyKind: asset.ecologyKind} : {}),
         ...(asset.ecologyRuleId ? {ecologyRuleId: asset.ecologyRuleId} : {})})) ?? [];
@@ -2740,16 +2765,28 @@ class MapEditor {
         (await editorFetch<{asset: MapAsset}>('/api/editor/assets/' + encodeURIComponent(binding.assetId))).asset));
       const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings}}];
       this.clearMapAiPreview();
+      this.worldWhiteboxDetails = whitebox
+        ? {
+            originalPlan: result.originalPlan ?? result.initialPlan!,
+            initialPlan: result.initialPlan!,
+            observation: result.observation!,
+            adjustment: result.adjustment!,
+            finalPlan: result.finalPlan!,
+            finalObservation: result.finalObservation!
+          }
+        : null;
       this.mapAiSuggestion = {
-        summary: `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
-          + (result.diagnostics?.flatMap(item => item.planningIssues.map(issue => `${item.townId}: ${issue}`)).join('；') ?? ''),
+        summary: whitebox
+          ? `白盒世界：${result.bundle.plan.featureGraph?.regions.length ?? 0} 个区域，${result.bundle.plan.featureGraph?.paths.length ?? 0} 条路径，${result.bundle.plan.featureGraph?.anchors.length ?? 0} 个锚点。`
+          : `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
+            + (result.diagnostics?.flatMap(item => item.planningIssues.map(issue => `${item.townId}: ${issue}`)).join('；') ?? ''),
         operations, generatedAssets, renderPromptSuggestions: []
       };
       this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: [...(map.assets ?? []), ...generatedAssets]}, operations);
       this.mapAiComparisonMap = map;
       this.mapAiPreviewVisible = true;
       this.state.selectedObjectId = null;
-      this.state.message = '世界已在原编辑器预览；确认后作为一次事务保存';
+      this.state.message = whitebox ? '白盒世界已在原编辑器预览；确认后作为一次事务保存' : '世界已在原编辑器预览；确认后作为一次事务保存';
       await this.refreshScene();
       this.frameWorldTown(this.mapAiPreviewMap);
     } catch (error) {
@@ -3504,6 +3541,7 @@ class MapEditor {
 
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
+    this.worldWhiteboxDetails = null;
     this.mapAiLastFailure = null;
     this.mapAiReplayToken = null;
     this.pendingCompositionPlan = null;
@@ -8374,6 +8412,21 @@ async function extractPaletteColorsFromImage(file: File, maxColors: number): Pro
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] ?? char));
+}
+
+function renderWorldWhiteboxDetails(details: WorldWhiteboxPreviewDetails): string {
+  const json = (value: unknown) => escapeHtml(JSON.stringify(value, null, 2));
+  const metrics = details.finalObservation;
+  return `<details class="inspector-disclosure compact map-ai-composition-details" open>
+    <summary><span><b>白盒规划检查</b><small>${metrics.pointsOfInterest.realizedCount}/${metrics.pointsOfInterest.plannedCount} 个兴趣点 · ${metrics.routes.length} 条路线 · ${details.adjustment.decision === 'patch' ? '已调整' : '保留初稿'}</small></span></summary>
+    <div class="inspector-body asset-library-details">
+      <details><summary>原始规划</summary><pre>${json(details.originalPlan)}</pre></details>
+      <details><summary>观察指标</summary><pre>${json(details.observation)}</pre></details>
+      <details><summary>调整决定</summary><pre>${json(details.adjustment)}</pre></details>
+      <details><summary>最终规划</summary><pre>${json(details.finalPlan)}</pre></details>
+      <details><summary>最终观察指标</summary><pre>${json(details.finalObservation)}</pre></details>
+    </div>
+  </details>`;
 }
 
 function downloadJson(file: string, value: unknown): void {

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
-import { worldCoastalSandWeight, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { buildWorldWhiteboxOverlay, worldCoastalSandWeight, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
@@ -54,6 +54,26 @@ function sampleOceanFloor(
 }
 
 describe('main editor streamed world renderer', () => {
+  it('renders whitebox semantic paths and anchors above sampled terrain', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.featureGraph = {
+      regions: [{ id: 'region', kind: 'district', name: 'Region', center: [0, 0], radius: 100 }],
+      paths: [{ id: 'route', kind: 'trail', name: 'Route', points: [[-10, 0], [10, 0]], width: 4 }],
+      anchors: [{ id: 'poi', kind: 'landmark', position: [3, 4], regionId: 'region' }],
+      relations: []
+    };
+    const overlay = buildWorldWhiteboxOverlay(plan, (x, z) => ({ height: x + z }));
+    const path = overlay.getObjectByName('world-whitebox-path:route') as THREE.Line;
+    const ribbon = overlay.getObjectByName('world-whitebox-path-surface:route') as THREE.Mesh;
+    const anchor = overlay.getObjectByName('world-whitebox-anchor:poi') as THREE.Mesh;
+    expect(path.geometry.getAttribute('position').getY(0)).toBeCloseTo(-9.2);
+    expect(path.geometry.getAttribute('position').count).toBeGreaterThan(2);
+    expect(ribbon.geometry.getAttribute('position').count).toBeGreaterThan(0);
+    expect(anchor.position.toArray()).toEqual([3, 10.3, 4]);
+    expect((path.material as THREE.LineBasicMaterial).depthTest).toBe(false);
+  });
+
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');

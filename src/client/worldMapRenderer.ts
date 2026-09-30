@@ -11,7 +11,7 @@ import { createDefaultMapLayout } from '../shared/mapLayout';
 import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag } from '../shared/visualDirection';
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
-import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding } from '../shared/worldPlanning';
+import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import type { ColorPalette } from '../shared/colorPalette';
@@ -57,6 +57,65 @@ const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
 export function worldRoadSurfaceMaterial(road: Pick<MapGuide,'id'|'tags'>): 'brick-paver'|'cobblestone'|'compacted-earth' {
   if(road.tags.includes('harbor-quay')) return 'cobblestone';
   return road.id.startsWith('town:')||road.tags.some(tag=>/street|settlement|town/i.test(tag))?'brick-paver':'compacted-earth';
+}
+
+export function buildWorldWhiteboxOverlay(
+  plan: WorldPlan,
+  sample: (x: number, z: number) => { height: number; waterLevel?: number | null }
+): THREE.Group {
+  const root = new THREE.Group();
+  root.name = 'world-whitebox-overlay';
+  if (!plan.whitebox || !plan.featureGraph) return root;
+  const visibleHeight = (x: number, z: number) => {
+    const surface = sample(x, z);
+    return Math.max(surface.height, surface.waterLevel ?? surface.height) + 0.8;
+  };
+  for (const path of plan.featureGraph.paths) {
+    const color = /river|water|canal/i.test(path.kind) ? 0x468ff2
+      : /trail|foot|hike/i.test(path.kind) ? 0xf6b46c : 0x35d7ff;
+    const points: THREE.Vector3[] = [];
+    for (let index = 1; index < path.points.length; index++) {
+      const from = path.points[index - 1], to = path.points[index];
+      const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / 6));
+      for (let step = index === 1 ? 0 : 1; step <= steps; step++) {
+        const t = step / steps, x = from[0] + (to[0] - from[0]) * t, z = from[1] + (to[1] - from[1]) * t;
+        points.push(new THREE.Vector3(x, visibleHeight(x, z), z));
+      }
+    }
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, depthTest: false }));
+    line.name = `world-whitebox-path:${path.id}`;
+    line.renderOrder = 20;
+    root.add(line);
+    const ribbon: number[] = [];
+    const halfWidth = Math.max(0.8, Math.min(4, path.width / 2));
+    for (let index = 1; index < points.length; index++) {
+      const a = points[index - 1], b = points[index], dx = b.x - a.x, dz = b.z - a.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance < 1e-6) continue;
+      const ox = -dz / distance * halfWidth, oz = dx / distance * halfWidth;
+      ribbon.push(a.x + ox, a.y, a.z + oz, a.x - ox, a.y, a.z - oz, b.x + ox, b.y, b.z + oz,
+        b.x + ox, b.y, b.z + oz, a.x - ox, a.y, a.z - oz, b.x - ox, b.y, b.z - oz);
+    }
+    const surface = new THREE.BufferGeometry();
+    surface.setAttribute('position', new THREE.Float32BufferAttribute(ribbon, 3));
+    surface.computeVertexNormals();
+    const strip = new THREE.Mesh(surface, new THREE.MeshBasicMaterial({ color, depthTest: false,
+      side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
+    strip.name = `world-whitebox-path-surface:${path.id}`;
+    strip.renderOrder = 19;
+    root.add(strip);
+  }
+  const anchorGeometry = new THREE.ConeGeometry(1.8, 5, 8);
+  const anchorMaterial = new THREE.MeshBasicMaterial({ color: 0xffb547, depthTest: false });
+  for (const anchor of plan.featureGraph.anchors) {
+    const marker = new THREE.Mesh(anchorGeometry, anchorMaterial);
+    marker.name = `world-whitebox-anchor:${anchor.id}`;
+    marker.position.set(anchor.position[0], visibleHeight(...anchor.position) + 2.5, anchor.position[1]);
+    marker.renderOrder = 21;
+    root.add(marker);
+  }
+  return root;
 }
 
 interface GlobalBuilding extends TownBuilding { x: number; z: number; townId: string }
@@ -172,6 +231,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   modelsRoot.name = 'modelsRoot';
   modelsRoot.userData.isModelRoot = true;
   root.add(modelsRoot);
+  const whiteboxOverlay = buildWorldWhiteboxOverlay(bundle.plan, sample);
+  root.add(whiteboxOverlay);
 
   const assetsById = new Map((map.assets ?? []).map(asset => [asset.id, asset]));
   const bindingsByKey = new Map(world.assets.map(binding => [binding.key, binding]));
@@ -1007,9 +1068,24 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       contentEntries.forEach(entry => { unmountContentEntry(entry); disposeContentEntry(entry); });
       contentEntries.clear();
       if (compactOcean) disposeStructuredWaterGroup(compactOcean);
+      disposeWorldWhiteboxOverlay(whiteboxOverlay);
       root.clear();
     }
   };
+}
+
+function disposeWorldWhiteboxOverlay(root: THREE.Object3D): void {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  root.traverse(object => {
+    const rendered = object as THREE.Mesh | THREE.Line;
+    if (rendered.geometry) geometries.add(rendered.geometry);
+    const material = rendered.material;
+    if (Array.isArray(material)) material.forEach(value => materials.add(value));
+    else if (material) materials.add(material);
+  });
+  geometries.forEach(geometry => geometry.dispose());
+  materials.forEach(material => material.dispose());
 }
 
 function validateWorldAssets(
