@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
-import { worldCoastalSandWeight, worldGrassLayers, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { worldCoastalSandWeight, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
@@ -64,6 +64,11 @@ describe('main editor streamed world renderer', () => {
     expect(worldCoastalSandWeight(4, 0.4)).toBeGreaterThan(0.6);
   });
 
+  it('keeps compact-world ocean ownership fixed while large worlds follow the streamed focus', () => {
+    expect(worldOceanAnchor(500, 160, -90)).toEqual({ x: 0, z: 0 });
+    expect(worldOceanAnchor(64_000, 160, -90)).toEqual({ x: 160, z: -90 });
+  });
+
   it('exposes steep inland terrain as rock without changing flat biome weights', () => {
     const tile = { x: 0, z: 0, size: 20 };
     const weights = new Float32Array(9 * WORLD_BIOMES.length);
@@ -101,6 +106,13 @@ describe('main editor streamed world renderer', () => {
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
       expect(rendered.getDebugStats().grassBlades).toBeGreaterThan(0);
       expect(rendered.getDebugStats().grassBlades).toBeLessThanOrEqual(3_500);
+      const camera = new THREE.PerspectiveCamera();
+      camera.position.set(160, 100, 0);
+      camera.lookAt(160, 0, 0);
+      rendered.update(1 / 60, camera, 1_000);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      await waitFor(() => rendered.getDebugStats().streaming?.pendingTiles === 0);
+      expect(rendered.group.getObjectByName('water:world-ocean')).toBe(ocean);
       expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);
