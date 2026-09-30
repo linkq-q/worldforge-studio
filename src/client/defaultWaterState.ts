@@ -14,6 +14,15 @@ export const RENDER_PLAN_WATER_BASE_STATE = {
   uRippleDecalEnabled: false
 } as const;
 
+export function renderPlanDirectionalWaves(
+  waterBodyType: unknown,
+  configured: Record<string, unknown> | undefined
+): Record<string, unknown> | undefined {
+  return waterBodyType === 'ocean' && configured === undefined
+    ? { enabled: false }
+    : configured;
+}
+
 export interface WaterStateImporter {
   importState(state: Record<string, unknown>): void;
 }

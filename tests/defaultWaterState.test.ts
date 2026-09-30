@@ -3,7 +3,8 @@ import {
   DEFAULT_WATER_STATE,
   RENDER_PLAN_WATER_BASE_STATE,
   applyDefaultWaterState,
-  applyRenderPlanWaterBaseState
+  applyRenderPlanWaterBaseState,
+  renderPlanDirectionalWaves
 } from '../src/client/defaultWaterState';
 
 describe('default water state', () => {
@@ -46,5 +47,13 @@ describe('default water state', () => {
       uToonPatternEnabled: true,
       uRippleDecalEnabled: false
     });
+  });
+
+  it('drops inherited directional bands only from ocean water', () => {
+    const configured = { enabled: true, ridgeSharpness: 3 };
+    expect(renderPlanDirectionalWaves('ocean', undefined)).toEqual({ enabled: false });
+    expect(renderPlanDirectionalWaves('ocean', configured)).toBe(configured);
+    expect(renderPlanDirectionalWaves('lake', configured)).toBe(configured);
+    expect(renderPlanDirectionalWaves('river', undefined)).toBeUndefined();
   });
 });

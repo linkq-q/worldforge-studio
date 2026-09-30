@@ -21,7 +21,11 @@ import {
 } from '@voxel-studio/render-runtime/postprocess';
 import { WaterSurface, WaterfallSurface, WaterSceneCapture } from '@voxel-studio/render-runtime/environment';
 import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
-import { applyRenderPlanWaterBaseState, DEFAULT_WATER_STATE } from './defaultWaterState';
+import {
+  applyRenderPlanWaterBaseState,
+  DEFAULT_WATER_STATE,
+  renderPlanDirectionalWaves
+} from './defaultWaterState';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
 import {
   bindDistanceFogDepth,
@@ -632,9 +636,11 @@ export class RenderRuntimeAdapter {
             tintStrength: 0.72,
             reflectionDamping: 0.65
           },
-          directionalWaves: waveDirection === undefined && style?.waveSharpness === undefined
-            ? undefined
-            : {
+          directionalWaves: renderPlanDirectionalWaves(
+            mesh.userData.waterBodyType,
+            waveDirection === undefined && style?.waveSharpness === undefined
+              ? undefined
+              : {
                 primaryDirection: waveDirection === undefined
                   ? undefined
                   : [Math.cos(waveDirection), Math.sin(waveDirection)],
@@ -642,7 +648,8 @@ export class RenderRuntimeAdapter {
                   ? undefined
                   : [-Math.sin(waveDirection), Math.cos(waveDirection)],
                 ridgeSharpness: style?.waveSharpness
-              },
+              }
+          ),
           uOpacity: style?.opacity ?? recipe.opacity
         });
         configureWaterReflection(surface, {
