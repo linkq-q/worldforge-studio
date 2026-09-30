@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
-import { worldCoastalSandWeight, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { worldCoastalSandWeight, worldGrassLayers, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
@@ -59,6 +59,7 @@ describe('main editor streamed world renderer', () => {
     expect(worldTileSurfaceWeight(tileData(0.4), tile, 8, 8, ['sand'])).toBeGreaterThan(0.6);
     expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['sand'])).toBe(0);
     expect(worldTileSurfaceWeight(tileData(0), tile, 8, 8, ['grass'])).toBe(1);
+    expect(worldGrassLayers(tileData(0), tile)[0].densities.every(density => density > 0.7)).toBe(true);
     expect(worldCoastalSandWeight(16, 0.4)).toBe(0);
     expect(worldCoastalSandWeight(4, 0.4)).toBeGreaterThan(0.6);
   });
@@ -96,6 +97,10 @@ describe('main editor streamed world renderer', () => {
         if (object.name === 'terrain' && object.visible) terrains.push(object as THREE.Mesh);
       });
       expect(terrains).toHaveLength(16);
+      const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
+      expect(ocean.userData.waterOceanTerrain).toBeDefined();
+      expect(rendered.getDebugStats().grassBlades).toBeGreaterThan(0);
+      expect(rendered.getDebugStats().grassBlades).toBeLessThanOrEqual(3_500);
       expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);

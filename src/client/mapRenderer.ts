@@ -173,6 +173,8 @@ export interface MapRenderOptions {
   terrainVisible?: boolean;
   /** Streamed tiles do not apply a whole-map ocean apron to each local tile. */
   oceanCoast?: boolean;
+  /** Streamed ocean owners can retain the existing water coast binding without expanding their terrain mesh. */
+  waterOceanCoast?: boolean;
   /** Render-only continuous semantic weights, expressed in this map's local XZ coordinates. */
   terrainSurfaceWeight?: TerrainSurfaceWeightSampler;
   /** Camera-derived world focus used before the first streamed renderer frame. */
@@ -296,7 +298,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     applySceneArt();
   };
 
-  const waterRoot = buildStructuredWaterGroup(map, coast);
+  const waterRoot = buildStructuredWaterGroup(map, options.waterOceanCoast ? mapOceanCoast(map) : coast);
   waterRoot.visible = map.sceneMode !== 'indoor';
   modelsRoot.add(waterRoot);
   const objectGroups = createObjectGroups(map);
