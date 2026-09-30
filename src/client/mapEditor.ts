@@ -1785,6 +1785,7 @@ class MapEditor {
           <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
           <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划</button>
           <p class="empty inspector-note">先规划地形、聚落功能与交通，再生成街区和群落。大建筑沿用部件装配；地形和内容按附近区块加载。</p>
+          ${map.world ? renderSavedWorldWhiteboxDetails(map.world.bundle.plan) : ''}
           ${map.world ? `<label class="field compact"><span>前往聚落</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
         <details class="map-ai-advanced" ${advancedOpen ? 'open' : ''}>
@@ -8425,6 +8426,47 @@ function renderWorldWhiteboxDetails(details: WorldWhiteboxPreviewDetails): strin
       <details><summary>调整决定</summary><pre>${json(details.adjustment)}</pre></details>
       <details><summary>最终规划</summary><pre>${json(details.finalPlan)}</pre></details>
       <details><summary>最终观察指标</summary><pre>${json(details.finalObservation)}</pre></details>
+    </div>
+  </details>`;
+}
+
+function renderSavedWorldWhiteboxDetails(plan: WorldPlan): string {
+  if (!plan.whitebox) return '';
+  const text = (value: string) => escapeHtml(value);
+  const regions = new Map(plan.featureGraph?.regions.map((region) => [region.id, region]));
+  const anchors = new Map(plan.featureGraph?.anchors.map((anchor) => [anchor.id, anchor]));
+  const paths = new Map(plan.featureGraph?.paths.map((path) => [path.id, path]));
+  const pointsOfInterest = new Map(plan.explorationPlan?.pointsOfInterest.map((point) => [point.id, point]));
+  const anchorRegion = (anchorId: string) => {
+    const anchor = anchors.get(anchorId);
+    const region = anchor ? regions.get(anchor.regionId) : undefined;
+    return region ? `${text(region.name)} (${text(region.id)})` : text(anchorId);
+  };
+  const list = (items: string[]) => items.length ? `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>` : '<p class="empty">无</p>';
+  const concept = plan.concept;
+  const settlements = plan.settlementPlan?.settlements ?? [];
+  const routes = plan.mobilityPlan?.routes ?? [];
+  const exploration = plan.explorationPlan;
+  return `<details class="inspector-disclosure compact map-ai-composition-details">
+    <summary><span><b>已保存的白盒语义</b><small>${settlements.length} 个聚落角色 · ${routes.length} 条移动路线 · ${exploration?.pointsOfInterest.length ?? 0} 个兴趣点</small></span></summary>
+    <div class="inspector-body asset-library-details">
+      <div><b>创作概念</b>${concept
+        ? `<p>${text(concept.premise)}</p><p>${text(concept.experience)}</p>${list(concept.themes.map(text))}`
+        : '<p class="empty">无</p>'}</div>
+      <div><b>聚落角色</b>${list(settlements.map((settlement) => `${text(settlement.id)} · ${anchorRegion(settlement.anchorId)} · ${text(settlement.role)}`))}</div>
+      <div><b>移动路线</b>${list(routes.map((route) => {
+        const path = paths.get(route.pathId);
+        const pathLabel = path ? `${text(path.name)} (${text(path.id)})` : text(route.pathId);
+        return `${text(route.id)} · ${pathLabel} · ${text(route.mode)} · ${route.connects.map(anchorRegion).join(' → ')}`;
+      }))}</div>
+      <div><b>兴趣点与探索顺序</b>
+        ${list((exploration?.pointsOfInterest ?? []).map((point) => `${text(point.id)} · ${anchorRegion(point.anchorId)} · ${text(point.purpose)}`))}
+        ${exploration?.sequence.length ? `<p>${exploration.sequence.map((id) => {
+          const point = pointsOfInterest.get(id);
+          return point ? `${text(id)} (${text(point.purpose)})` : text(id);
+        }).join(' → ')}</p>` : '<p class="empty">无探索顺序</p>'}
+      </div>
+      <details><summary>完整 JSON</summary><pre>${escapeHtml(JSON.stringify(plan, null, 2))}</pre></details>
     </div>
   </details>`;
 }
