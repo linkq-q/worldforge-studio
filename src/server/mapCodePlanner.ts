@@ -4429,7 +4429,7 @@ function shouldAutoRepairCodeIssue(issue: CodeExecutionIssue): boolean {
   return Boolean(issue.repairHint) && issue.key !== 'authored_scene_missing_structure';
 }
 
-const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Every old string must occur exactly once; when a property value repeats, include enough of its containing call and id to make the anchor unique. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
+const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Every old string must occur exactly once; when a property value repeats, include enough of its containing call and id to make the anchor unique. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, loop bounds, loop structure, asset declarations, terrain, or circulation. You may fix the failing expression inside a placement loop while preserving its iteration count and placements. If the listed issue cannot be fixed locally, return {"edits":[]}.';
 const LOCAL_SUBSTRATE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_substrate_conflict:<groupId>, edit only that group in api.design and the directly responsible local shoreline, terrain or placement calls. Preserve its focus, route topology, assembly topology, other groups and all unrelated placements. Declare dry, water, amphibious or underwater from the intended experience; do not translate the whole group to a distant valid point. If intent is ambiguous, keep the current composition and return {"edits":[]}.';
 
 function retainCodePlan(
@@ -5124,8 +5124,9 @@ function supportsSeededEnvironmentVariants(requirement: CodeAssetRequirement): b
     && !/animal|creature|bird|fish|deer|sheep|动物|生物|鸟|鱼|鹿|羊/i.test(semantic);
 }
 
-function normalizeCodeAssetKey(value: string): string {
-  const source = String(value ?? '').trim().toLowerCase();
+function normalizeCodeAssetKey(value: unknown): string {
+  const key = value && typeof value === 'object' && 'key' in value ? value.key : value;
+  const source = String(key ?? '').trim().toLowerCase();
   const ascii = source
     .trim()
     .replace(/[^a-z0-9_-]/g, '-')
@@ -6357,6 +6358,14 @@ function normalizeCodeEnvironmentRegion(value: unknown): VisualZoneRegion {
     throw new Error('invalid_map_code_environment_region');
   }
   const input = value as Record<string, unknown>;
+  if (['minX', 'maxX', 'minZ', 'maxZ'].every(key => input[key] !== undefined)) {
+    const minX = finite(input.minX);
+    const maxX = finite(input.maxX);
+    const minZ = finite(input.minZ);
+    const maxZ = finite(input.maxZ);
+    if (minX >= maxX || minZ >= maxZ) throw new Error('invalid_map_code_environment_region');
+    return { kind: 'polygon', points: [[minX, minZ], [maxX, minZ], [maxX, maxZ], [minX, maxZ]] };
+  }
   if (input.kind === 'circle') {
     const center = input.center === undefined ? [finite(input.x), finite(input.z)] as Point2 : point2(input.center);
     return { kind: 'circle', x: center[0], z: center[1], radius: Math.max(0, finite(input.radius)) };

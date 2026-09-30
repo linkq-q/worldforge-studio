@@ -351,6 +351,19 @@ describe('map code planner', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it('accepts an explicit asset key object without guessing a missing key', async () => {
+    const suggestion = await generateMapCodeSuggestion('生成木屋', createEmptyMap(), [], {
+      approvedCode: `function plan(api) {
+      api.requireAsset({key:'lodge',name:'木屋',prompt:'Alpine timber lodge',dimensions:[5,4,5],role:'structure'});
+      api.place({assetId:api.asset({key:'lodge'}),position:[0,0],role:'structure'});
+    }`, scope:'scene',minNewAssets:0,maxNewAssets:1,revisionMode:'first-pass',discoveryOnly:true
+    });
+    expect(suggestion.operations.some(operation => operation.type === 'object.add')).toBe(true);
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.asset(undefined);
+    }`, createEmptyMap())).toThrow();
+  });
+
   it('recovers a model-written grass elevation band on a large map without an LLM call', async () => {
     const map = createEmptyMap('botanical garden', 'botanical-garden', [192, 24, 192]);
     const fetchImpl = vi.fn();
@@ -2122,6 +2135,24 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.code).toContain("surface:'paving'");
   });
 
+  it('allows a targeted repair of an expression inside a placement loop', async () => {
+    const invalid = `function plan(api) {
+      const liftLines=[{a:[1,2]}];
+      for(let l=0;l<liftLines.length;l++) api.place({name:'缆车塔',position:[l.a[0],l.a[1]]});
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true, content: JSON.stringify({edits:[{old:'l.a[0],l.a[1]',new:'liftLines[l].a[0],liftLines[l].a[1]'}]})
+    }), {status:200,headers:{'Content-Type':'application/json'}}));
+    const suggestion = await generateMapCodeSuggestion('生成缆车塔', createEmptyMap(), [], {
+      approvedCode: invalid, apiBase:'https://example.test', provider:'gpt', fetchImpl,
+      minNewAssets:0, maxNewAssets:0, scope:'scene', discoveryOnly:true
+    });
+    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+    expect(suggestion.codePlan?.placementCount).toBe(1);
+    const body = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
+    expect(body.messages.at(-1).content).toContain('You may fix the failing expression inside a placement loop');
+  });
+
   it('explains valid bridge crossing geometry when repairing an off-water bridge', async () => {
     const invalid = `function plan(api) {
       api.water('canal', { type:'lake', points:[[-8,-4],[8,-4],[8,4],[-8,4]], level:0.2 });
@@ -3596,6 +3627,17 @@ describe('map code planner', () => {
     expect(density?.type).toBe('grass.density.set');
     if (density?.type !== 'grass.density.set') throw new Error('missing shared grass field');
     expect(density.densities).toEqual(new Array(9).fill(1));
+  });
+
+  it('accepts rectangular bounds as an environment sample region', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const bounds = {minX:-5,maxX:5,minZ:-4,maxZ:4};
+      const rectangle = api.environmentSample([1,1], {region:bounds});
+      const polygon = api.environmentSample([1,1], {region:{kind:'polygon',points:[[-5,-4],[5,-4],[5,4],[-5,4]]}});
+      api.place({name:rectangle.regionDistance===polygon.regionDistance?'matching-region':'different-region',position:[0,0,0]});
+    }`, createEmptyMap());
+    expect(suggestion.operations.some(operation => operation.type === 'object.add'
+      && operation.object.name === 'matching-region')).toBe(true);
   });
 
   it('samples deterministic clustered marks with per-mark spacing and quotas', () => {
