@@ -244,7 +244,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       focusZ,
       distance > CONTENT_DISTANCE_LIMIT ? distance : 0
     );
-    const oceanOwner = tiles.find(tile => tileContains(tile, focusX, focusZ));
+    const oceanAnchor = worldOceanAnchor(bundle.plan.recipe.size, focusX, focusZ);
+    const oceanOwner = tiles.find(tile => tileContains(tile, oceanAnchor.x, oceanAnchor.z))
+      ?? tiles.find(tile => tileContains(tile, focusX, focusZ));
     const desiredTerrain = new Map(tiles.map(tile => {
       const logicalKey = tileKey(tile);
       const skirtSides = terrainSkirtSides(tile, tiles);
@@ -1340,6 +1342,10 @@ function normalizedReconcileRequest(
 
 function sameReconcileRequest(left: ReconcileRequest | null, right: ReconcileRequest | null): boolean {
   return Boolean(left && right && left.x === right.x && left.z === right.z && left.distance === right.distance);
+}
+
+export function worldOceanAnchor(size: number, focusX: number, focusZ: number): { x: number; z: number } {
+  return size <= CONTENT_DISTANCE_LIMIT ? { x: 0, z: 0 } : { x: focusX, z: focusZ };
 }
 
 export function worldGrassLayers(data: WorldTileData, tile: WorldTile): MapGrassLayer[] {
