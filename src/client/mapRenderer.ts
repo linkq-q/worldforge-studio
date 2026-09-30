@@ -177,6 +177,8 @@ export interface MapRenderOptions {
   waterOceanCoast?: boolean;
   /** Render-only continuous semantic weights, expressed in this map's local XZ coordinates. */
   terrainSurfaceWeight?: TerrainSurfaceWeightSampler;
+  /** Supplies terrain below water that extends beyond a streamed tile's local height field. */
+  waterTerrainHeight?: (x: number, z: number) => number;
   /** Camera-derived world focus used before the first streamed renderer frame. */
   worldInitialView?: { x: number; z: number; distance: number };
   /** Derived object-free terrain chunks skip object, light, grass, and culling updates. */
@@ -244,6 +246,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
   const terrainBorderSides = options.terrainBorderSides ?? true;
   const terrainBorderDepth = options.terrainBorderDepth;
   const terrainSurfaceWeight = options.terrainSurfaceWeight;
+  const waterTerrainHeight = options.waterTerrainHeight;
   const terrain = buildTerrain(map, coast, terrainTextureSize, terrainBorderSides, terrainBorderDepth, terrainSurfaceWeight);
   terrain.visible = map.sceneMode !== 'indoor' && options.terrainVisible !== false;
   const sandFlow = terrain.userData.sandFlow as TerrainSandFlowState;
@@ -298,7 +301,11 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     applySceneArt();
   };
 
-  const waterRoot = buildStructuredWaterGroup(map, options.waterOceanCoast ? mapOceanCoast(map) : coast);
+  const waterRoot = buildStructuredWaterGroup(
+    map,
+    options.waterOceanCoast ? mapOceanCoast(map) : coast,
+    waterTerrainHeight
+  );
   waterRoot.visible = map.sceneMode !== 'indoor';
   modelsRoot.add(waterRoot);
   const objectGroups = createObjectGroups(map);
@@ -511,7 +518,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       const nextCoast = mapOceanCoast(next);
       terrain.geometry = buildTerrainGeometry(next, nextCoast, terrainSurfaceWeight);
       replaceTerrainSkirt(terrain, next, terrainBorderSides, terrainBorderDepth, terrainSurfaceWeight);
-      refreshStructuredWaterTerrain(waterRoot, next, nextCoast);
+      refreshStructuredWaterTerrain(waterRoot, next, nextCoast, waterTerrainHeight);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined, terrainTextureSize, terrainSurfaceWeight);
@@ -1244,7 +1251,11 @@ function paddedSandZones(zones: readonly THREE.Vector4[]): THREE.Vector4[] {
   return Array.from({ length: 8 }, (_, index) => zones[index]?.clone() ?? new THREE.Vector4());
 }
 
-export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoast(map)): THREE.Group {
+export function buildStructuredWaterGroup(
+  map: EditableMap,
+  coast = mapOceanCoast(map),
+  terrainHeightAt?: (x: number, z: number) => number
+): THREE.Group {
   const group = new THREE.Group();
   group.name = 'waterBodies';
   group.userData.isStructuredWaterRoot = true;
@@ -1263,7 +1274,12 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
   });
   for (const waters of groupConnectedWaterBodies(visibleWaters)) {
     const water = waters[0];
-    const shore = createCompositeWaterShoreBinding(map, waters, water.type === 'ocean' ? coast : null);
+    const shore = createCompositeWaterShoreBinding(
+      map,
+      waters,
+      water.type === 'ocean' ? coast : null,
+      waters.some((candidate) => candidate.type === 'river') ? terrainHeightAt : undefined
+    );
     const isComposite = waters.length > 1;
     const usesGrid = water.type !== 'ocean' && (isComposite || water.type === 'lake');
     const geometry = water.type === 'ocean'
@@ -1367,7 +1383,12 @@ function boundaryDistance(x: number, z: number, boundary: Array<[number, number]
   return distance;
 }
 
-function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly MapWaterBody[], coast: OceanCoastField | null = null): WaterShoreBinding {
+function createCompositeWaterShoreBinding(
+  map: EditableMap,
+  waters: readonly MapWaterBody[],
+  coast: OceanCoastField | null = null,
+  terrainHeightAt?: (x: number, z: number) => number
+): WaterShoreBinding {
   const boundaries = waters.map(waterBoundaryPoints);
   const points = boundaries.flat();
   const minX = Math.min(...points.map((point) => point[0]));
@@ -1391,11 +1412,16 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
     for (let column = 0; column < resolution; column += 1) {
       const u = (column + 0.5) / resolution;
       const x = center[0] + (u - 0.5) * size;
-      if (depthData && Math.abs(x) <= map.box.size[0] / 2 && Math.abs(z) <= map.box.size[2] / 2) {
+      const insideLocalTerrain = Math.abs(x) <= map.box.size[0] / 2 && Math.abs(z) <= map.box.size[2] / 2;
+      if (depthData && (terrainHeightAt || insideLocalTerrain)) {
         const owner = depthOwners.find((candidate) => pointInPolygon(x, z, candidate.boundary));
-        if (owner && owner.water.carveTerrain !== false) {
+        const canSampleTerrain = insideLocalTerrain || (owner?.water.type === 'river' && terrainHeightAt);
+        if (owner && canSampleTerrain && owner.water.carveTerrain !== false) {
           const level = owner.water.type === 'river' ? sampleRiverProfile(x, z, owner.samples).level : owner.water.level;
-          const encoded = Math.round(THREE.MathUtils.clamp((level - sampleTerrainHeight(map, x, z)) / 64, 0, 1) * 65535);
+          const terrainHeight = !insideLocalTerrain && terrainHeightAt && owner.water.type === 'river'
+            ? terrainHeightAt(x, z)
+            : sampleTerrainHeight(map, x, z);
+          const encoded = Math.round(THREE.MathUtils.clamp((level - terrainHeight) / 64, 0, 1) * 65535);
           const offset = (row * resolution + column) * 4;
           depthData[offset] = encoded >> 8;
           depthData[offset + 1] = encoded & 255;
@@ -1513,7 +1539,12 @@ function createOceanTerrainBinding(map: EditableMap, water: MapWaterBody, field:
   };
 }
 
-function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap, coast: OceanCoastField | null): void {
+function refreshStructuredWaterTerrain(
+  root: THREE.Object3D,
+  map: EditableMap,
+  coast: OceanCoastField | null,
+  terrainHeightAt?: (x: number, z: number) => number
+): void {
   root.traverse((object) => {
     const mesh = object as THREE.Mesh;
     if (!mesh.isMesh) return;
@@ -1524,7 +1555,12 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap, c
       .map((id) => map.waterBodies.find((water) => water.id === id))
       .filter(Boolean) as MapWaterBody[];
     if (waters.length === 0) return;
-    const nextShore = createCompositeWaterShoreBinding(map, waters, waters[0].type === 'ocean' ? coast : null);
+    const nextShore = createCompositeWaterShoreBinding(
+      map,
+      waters,
+      waters[0].type === 'ocean' ? coast : null,
+      waters.some((candidate) => candidate.type === 'river') ? terrainHeightAt : undefined
+    );
     const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
     if (shore?.texture?.isDataTexture) {
       const source = nextShore.texture.image as { data: Uint8Array; width: number; height: number };

@@ -498,7 +498,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       oceanCoast: false,
       waterOceanCoast: includeOcean,
       terrainOnly: true,
-      terrainSurfaceWeight: (x, z, tags) => worldTileSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
+      terrainSurfaceWeight: (x, z, tags) => worldTileSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags),
+      waterTerrainHeight: (x, z) => sample(centerX + x, centerZ + z).height
     });
     applyWorldTerrainEdgeNormals(rendered.group, tile, centerX, centerZ);
     const renderedAt = performance.now();
@@ -1304,7 +1305,7 @@ export function worldTileSurfaceWeight(
         weight,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert) * (1 - freshWaterCover),
         beach,
-        freshWaterBank * 0.38
+        freshWaterBank * 0.08
       );
     } else if (tag === 'rocky') {
       weight = Math.max(

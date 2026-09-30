@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEditableMapGroup,
   buildStructuredWaterGroup,
+  disposeStructuredWaterGroup,
   riverBankTransitionSamples,
   terrainDetailPixelSpan,
   terrainNormalPixelsFromHeight,
@@ -418,6 +419,45 @@ describe('structured map water rendering', () => {
       materials.forEach((material) => material.dispose());
       (mesh.userData.waterShore?.texture as THREE.Texture | undefined)?.dispose();
     });
+  });
+
+  it('fills river terrain depth beyond the local owner tile through the world sampler', () => {
+    const map = createEmptyMap('streamed river owner', 'streamed-river-owner', [20, 16, 20]);
+    map.terrain = { resolutionX: 2, resolutionZ: 2, heights: [0, 0, 0, 0] };
+    map.waterBodies = [{
+      id: 'long-river', name: 'Long river', type: 'river', level: 4, depth: 4, width: 8,
+      points: [[-40, 0], [0, 0], [40, 0]], levels: [4, 4, 4], shorelineSmoothness: 0
+    }];
+    const outsideOwnerDepthPixels = (root: THREE.Group): number => {
+      const river = root.getObjectByName('water:long-river') as THREE.Mesh;
+      const shore = river.userData.waterShore as {
+        center: [number, number];
+        size: number;
+        depthTexture: THREE.DataTexture;
+      };
+      const image = shore.depthTexture.image as unknown as {
+        data: Uint8Array;
+        width: number;
+        height: number;
+      };
+      let count = 0;
+      for (let row = 0; row < image.height; row += 1) {
+        const z = shore.center[1] + (0.5 - (row + 0.5) / image.height) * shore.size;
+        for (let column = 0; column < image.width; column += 1) {
+          const x = shore.center[0] + ((column + 0.5) / image.width - 0.5) * shore.size;
+          if ((Math.abs(x) > map.box.size[0] / 2 || Math.abs(z) > map.box.size[2] / 2)
+            && image.data[(row * image.width + column) * 4 + 2] === 255) count += 1;
+        }
+      }
+      return count;
+    };
+
+    const localDepth = buildStructuredWaterGroup(map);
+    const sampledDepth = buildStructuredWaterGroup(map, null, () => 0);
+    expect(outsideOwnerDepthPixels(localDepth)).toBe(0);
+    expect(outsideOwnerDepthPixels(sampledDepth)).toBeGreaterThan(0);
+    disposeStructuredWaterGroup(localDepth);
+    disposeStructuredWaterGroup(sampledDepth);
   });
 
   it('builds ocean shore distance from the terrain coastline', () => {

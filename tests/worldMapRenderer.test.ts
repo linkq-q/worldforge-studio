@@ -199,7 +199,8 @@ describe('main editor streamed world renderer', () => {
 
     const freshWaterBank = tileData(0);
     freshWaterBank.freshWaterWeights.fill(0.7);
-    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBeGreaterThan(0.3);
+    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBeGreaterThan(0);
+    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBeLessThanOrEqual(0.08);
     expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['grass'])).toBeLessThan(0.8);
     expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['water'])).toBeCloseTo(0.7);
 
