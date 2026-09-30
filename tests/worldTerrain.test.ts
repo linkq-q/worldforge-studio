@@ -146,6 +146,26 @@ describe('local continuous landforms',()=>{
 describe('composable world terrain operations', () => {
   const original = parseWorldPrompt('中央是草原', 77, 8000);
 
+  it('shapes a crater floor below its rim on an existing steep mound', () => {
+    const mound = validateWorldRecipe({
+      ...parseWorldPrompt('中央是草原', 99173, 500), reliefProfile: 'compact', heightScale: 0.02,
+      landforms: [{ center: [0, 0], radius: [70, 70], height: 45 }]
+    });
+    const before = createWorldSampler(mound);
+    expect(before(0, 0).height).toBeGreaterThan(before(30, 0).height + 10);
+
+    const recipe = validateWorldRecipe({ ...mound, terrainBrushes: [{
+      id: 'summit-crater', mode: 'crater', region: { kind: 'circle', center: [0, 0], radius: 30 },
+      depth: 8, rimHeight: 4, feather: 10
+    }] });
+    const sample = createWorldSampler(recipe), center = sample(0, 0).height;
+    const rim = [[30, 0], [0, 30], [-30, 0], [0, -30]]
+      .map(([x, z]) => sample(x, z).height);
+
+    expect(Math.min(...rim) - center).toBeCloseTo(12, 8);
+    expect(sample(41, 0)).toEqual(before(41, 0));
+  });
+
   it('applies bounded circle and path grades through the shared sampler', () => {
     const base = createWorldSampler(original), start = base(-100, 0).height, end = start - 20;
     const recipe = validateWorldRecipe({ ...original, terrainBrushes: [
@@ -399,6 +419,15 @@ describe('composable world terrain operations', () => {
     ] })).toThrow('invalid_world_terrain_id');
     expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
       { id: 'bad-grade', mode: 'grade', region: { kind: 'path', points: [[0, 0], [10, 0]], width: 4 }, heights: [1] }
+    ] })).toThrow('invalid_world_terrain_brush');
+    expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'bad-crater', mode: 'crater', region: { kind: 'path', points: [[0, 0], [10, 0]], width: 4 }, depth: 8, rimHeight: 4 } as never
+    ] })).toThrow('invalid_world_terrain_brush');
+    expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'bad-crater-depth', mode: 'crater', region: { kind: 'circle', center: [0, 0], radius: 10 }, depth: 0, rimHeight: 4 }
+    ] })).toThrow('invalid_world_terrain_brush');
+    expect(() => validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'bad-crater-rim', mode: 'crater', region: { kind: 'circle', center: [0, 0], radius: 10 }, depth: 8, rimHeight: 1001 }
     ] })).toThrow('invalid_world_terrain_brush');
   });
 

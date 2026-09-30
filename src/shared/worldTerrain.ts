@@ -30,6 +30,7 @@ type WorldTerrainBrushBase = { id: string; region: WorldTerrainRegion; feather?:
 export type WorldTerrainBrush =
   | (WorldTerrainBrushBase & { mode: 'raise'; amount: number })
   | (WorldTerrainBrushBase & { mode: 'lower'; amount: number })
+  | (WorldTerrainBrushBase & { mode: 'crater'; region: Extract<WorldTerrainRegion, { kind: 'circle' }>; depth: number; rimHeight: number })
   | (WorldTerrainBrushBase & { mode: 'flatten'; height: number; strength?: number })
   | (WorldTerrainBrushBase & { mode: 'grade'; region: Extract<WorldTerrainRegion, { kind: 'path' }>; heights: number[]; strength?: number });
 export interface WorldWaterBody {
@@ -212,6 +213,11 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
       if (raw.mode === 'raise' || raw.mode === 'lower') {
         if (!Number.isFinite(raw.amount) || raw.amount <= 0 || raw.amount > 1000) throw new Error('invalid_world_terrain_brush');
         return { ...common, mode: raw.mode, amount: raw.amount };
+      }
+      if (raw.mode === 'crater' && common.region.kind === 'circle') {
+        if (!Number.isFinite(raw.depth) || raw.depth <= 0 || raw.depth > 1000
+          || !Number.isFinite(raw.rimHeight) || raw.rimHeight <= 0 || raw.rimHeight > 1000) throw new Error('invalid_world_terrain_brush');
+        return { ...common, mode: raw.mode, region: common.region, depth: raw.depth, rimHeight: raw.rimHeight };
       }
       if (raw.mode === 'flatten') {
         if (!Number.isFinite(raw.height) || raw.height < -1000 || raw.height > 5000
@@ -528,6 +534,7 @@ export function createWorldSampler(input: WorldRecipe): WorldSampler {
 export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainContext {
   const recipe = validateWorldRecipe(input);
   const { seed, size, constraints } = recipe;
+  const terrainBrushes = recipe.terrainBrushes ?? [];
   // Stored recipes without a profile predate scale-aware relief and must replay exactly.
   const compactRelief = recipe.reliefProfile === 'compact';
   const terrainScale = compactRelief ? clamp(size / 6400, 0.125, 1) : 1;
@@ -554,8 +561,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     };
   });
   const shapedIslandCore = landforms.some(({ formPhase }) => formPhase !== null);
+  const craterRimReferences = new Map<number, number>();
   let waterBodies: PreparedWorldWaterBody[] = [];
-  const sample = (x: number, z: number): WorldSample => {
+  const sample = (x: number, z: number, brushLimit = terrainBrushes.length): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
     const warpX = fbm(x / (13000 * terrainScale) + 17, z / (13000 * terrainScale), seed + 41, 2);
     const warpZ = fbm(x / (13000 * terrainScale), z / (13000 * terrainScale) - 23, seed + 73, 2);
@@ -694,20 +702,32 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         * 360 * terrainScale * (recipe.heightScale ?? 1);
       height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude) + authoredDrainageDetail;
     }
-    for (const brush of recipe.terrainBrushes ?? []) {
+    for (let brushIndex = 0; brushIndex < brushLimit; brushIndex += 1) {
+      const brush = terrainBrushes[brushIndex];
       const authoredFeather = brush.feather ?? 0;
       // Preserve deliberate drainage cuts; only bulk earthworks need the slope-safe expansion.
       const narrowGully = brush.mode === 'lower' && brush.amount <= 8
         && brush.region.kind === 'path' && brush.region.width <= 16
         && authoredFeather <= Math.max(12, brush.region.width * 1.5);
-      const feather = compactRelief && (brush.mode === 'raise' || brush.mode === 'lower')
-        && !narrowGully ? Math.max(authoredFeather, brush.amount * 3.75)
-        : authoredFeather;
+      const feather = brush.mode === 'crater'
+        ? brush.feather ?? Math.min(2000, brush.region.radius * 0.25)
+        : compactRelief && (brush.mode === 'raise' || brush.mode === 'lower') && !narrowGully
+          ? Math.max(authoredFeather, brush.amount * 3.75) : authoredFeather;
       const area = regionSample(brush.region, x, z);
       const influence = area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
       if (influence <= 0) continue;
       if (brush.mode === 'raise' || brush.mode === 'lower') {
         height += brush.amount * influence * (brush.mode === 'raise' ? 1 : -1);
+        continue;
+      }
+      if (brush.mode === 'crater') {
+        const reference = craterRimReference(brush, brushIndex);
+        const distance = brush.region.radius - area.edge;
+        const target = area.inside
+          ? mix(reference - brush.depth, reference + brush.rimHeight,
+              smooth(brush.region.radius * 0.3, brush.region.radius, distance))
+          : reference + brush.rimHeight;
+        height = mix(height, target, influence);
         continue;
       }
       const target = brush.mode === 'flatten' ? brush.height : interpolatePath(brush.heights, area.t);
@@ -788,6 +808,21 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       weights, freshWaterWeight, waterLevel, waterBodyId
     };
   };
+  function craterRimReference(brush: Extract<WorldTerrainBrush, { mode: 'crater' }>, brushIndex: number): number {
+    const cached = craterRimReferences.get(brushIndex);
+    if (cached !== undefined) return cached;
+    const count = 16;
+    const reference = Array.from({ length: count }, (_, index) => {
+      const angle = index / count * Math.PI * 2;
+      return sample(brush.region.center[0] + Math.cos(angle) * brush.region.radius,
+        brush.region.center[1] + Math.sin(angle) * brush.region.radius, brushIndex).height;
+    }).reduce((sum, height) => sum + height, 0) / count;
+    craterRimReferences.set(brushIndex, reference);
+    return reference;
+  }
+  terrainBrushes.forEach((brush, index) => {
+    if (brush.mode === 'crater') craterRimReference(brush, index);
+  });
   waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed, (x, z) => sample(x, z).height);
   return {
     sample,
