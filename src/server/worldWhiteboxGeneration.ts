@@ -1,4 +1,5 @@
-import { createWorldSampler, type WorldSampler } from '../shared/worldTerrain';
+import { createWorldSampler, WORLD_BIOMES, WORLD_REGIONS, type WorldSampler } from '../shared/worldTerrain';
+import { DEFAULT_WATER_DEPTH } from '../shared/map';
 import {
   observeWorldWhitebox, validateWorldPlan,
   type Point, type WorldPlan, type WorldWhiteboxExecution
@@ -42,7 +43,7 @@ export function validateWorldWhiteboxRequest(input: unknown): WorldWhiteboxReque
     generateAssets: false, repairAttempts: 0 };
 }
 
-function parseInitialPlan(content: string, request: WorldWhiteboxRequest): {
+export function parseWorldWhiteboxInitialPlan(content: string, request: WorldWhiteboxRequest): {
   rawPlan: unknown; plan: WorldPlan; technicalNormalizations: string[]
 } {
   const response = object(JSON.parse(content), 'invalid_world_whitebox_response');
@@ -52,10 +53,54 @@ function parseInitialPlan(content: string, request: WorldWhiteboxRequest): {
   const recipe = object(raw.recipe, 'invalid_world_whitebox_recipe');
   if (recipe.seed !== request.seed || recipe.size !== request.size) throw new Error('world_whitebox_request_mismatch');
   const technicalNormalizations = raw.prompt === request.prompt ? [] : ['request_prompt_echo'];
-  if (technicalNormalizations.length) recordGenerationTrace('world.whitebox.request-echo-normalized', {
+  if (raw.prompt !== request.prompt) recordGenerationTrace('world.whitebox.request-echo-normalized', {
     received: raw.prompt, expected: request.prompt
   });
-  const plan = validateWorldPlan({ ...raw, prompt: request.prompt });
+  const normalizedRecipe: Record<string, unknown> = { ...recipe };
+  if (Array.isArray(recipe.waterBodies)) normalizedRecipe.waterBodies = recipe.waterBodies.map((value, index) => {
+    const water = object(value, 'invalid_world_water_body');
+    const normalized = { ...water };
+    if (normalized.region === undefined && normalized.path !== undefined) {
+      normalized.region = normalized.path;
+      delete normalized.path;
+      technicalNormalizations.push(`waterBodies[${index}].path_to_region`);
+    }
+    if (normalized.depth === undefined) {
+      normalized.depth = DEFAULT_WATER_DEPTH;
+      technicalNormalizations.push(`waterBodies[${index}].depth_default_${DEFAULT_WATER_DEPTH}`);
+    }
+    return normalized;
+  });
+  if (Array.isArray(recipe.biomePatches)) {
+    const broadPatches = recipe.biomePatches.filter(value => {
+      const patch = object(value, 'invalid_world_biome_patch');
+      return typeof patch.region === 'string' && Object.hasOwn(WORLD_REGIONS, patch.region);
+    });
+    if (broadPatches.length) {
+      const constraints = Array.isArray(recipe.constraints) ? recipe.constraints.map(value => ({ ...object(value, 'invalid_world_constraint') })) : [];
+      for (const value of broadPatches) {
+        const patch = object(value, 'invalid_world_biome_patch');
+        const biome = patch.biome === 'scree' ? 'mountains' : patch.biome;
+        if (!WORLD_BIOMES.includes(biome as typeof WORLD_BIOMES[number])) throw new Error('invalid_world_biome_patch');
+        const existing = constraints.find(item => item.region === patch.region);
+        if (existing && existing.biome !== biome) throw new Error('world_whitebox_conflicting_broad_biome');
+        if (!existing) constraints.push({ region: patch.region, biome });
+        technicalNormalizations.push(`biomePatches.${patch.region}_to_constraint_${biome}`);
+      }
+      normalizedRecipe.constraints = constraints;
+      normalizedRecipe.biomePatches = recipe.biomePatches.filter(value => !broadPatches.includes(value));
+    }
+  }
+  // A whitebox executes only the semantic graph. Some models also echo descriptive
+  // town/road/ecology notes into the later construction fields; retain them in rawPlan.
+  const planFields: Record<string, unknown> = { ...raw, prompt: request.prompt, recipe: normalizedRecipe };
+  for (const field of ['ecology', 'towns', 'roads']) {
+    if (Array.isArray(raw[field]) && raw[field].length) {
+      planFields[field] = [];
+      technicalNormalizations.push(`${field}_semantic_notes_only`);
+    }
+  }
+  const plan = validateWorldPlan(planFields);
   if (!plan.featureGraph || !plan.concept || !plan.settlementPlan || !plan.mobilityPlan
     || !plan.explorationPlan || !plan.intentionalEmptyAreas) throw new Error('world_whitebox_missing_semantic_plan');
   if (plan.towns.length || plan.roads.length || plan.ecology.length) throw new Error('world_whitebox_requires_semantic_graph');
@@ -148,7 +193,7 @@ export async function generateWorldWhitebox(input: unknown, signal?: AbortSignal
   const initialContent = await llmChat(initialMessages, { provider: 'gpt', temperature: 0.55,
     maxTokens: 12_000, traceStage: 'world.whitebox.initial-plan', signal });
   recordGenerationTrace('world.whitebox.initial-raw', { content: initialContent });
-  const { rawPlan, plan: initialPlan, technicalNormalizations } = parseInitialPlan(initialContent, request);
+  const { rawPlan, plan: initialPlan, technicalNormalizations } = parseWorldWhiteboxInitialPlan(initialContent, request);
   recordGenerationTrace('world.whitebox.initial-plan', initialPlan);
   const first = executeWorldWhitebox(initialPlan);
   const observation = observeWorldWhitebox(initialPlan, first.execution);

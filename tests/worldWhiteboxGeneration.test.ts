@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateWorld } from '../src/server/worldGeneration';
 import { applyWorldWhiteboxAdjustment, executeWorldWhitebox, generateWorldWhitebox,
-  validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
+  parseWorldWhiteboxInitialPlan, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
 import type { WorldPlan } from '../src/shared/worldPlanning';
 
@@ -124,6 +124,31 @@ describe('whitebox world generation', () => {
     expect(result.observation.technicalNormalizations).toEqual(['request_prompt_echo']);
     expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.whitebox.request-echo-normalized',
       { received: 'shortened echo', expected: prompt });
+  });
+
+  it('loads a raw first-call whitebox with 0.6 shoreline variation and schema aliases without changing its semantic layout', () => {
+    const source = originalPlan();
+    const riverPath = { kind: 'path', points: [[0, 0], [30, 30]], width: 8 };
+    const raw = { ...source, recipe: { ...source.recipe,
+      waterBodies: [
+        { id: 'bay', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },
+          levels: [0], depth: 8, shorelineIrregularity: 0.6 },
+        { id: 'river', type: 'river', path: riverPath, levels: [5, 0] }
+      ],
+      biomePatches: [{ region: 'north', biome: 'mountains' }, { region: 'northeast', biome: 'scree' }]
+    },
+    towns: [{ id: 'port', anchorId: 'harbor', role: 'working harbor' }],
+    roads: [{ id: 'road', pathId: 'harbor-road', character: 'busy quay' }],
+    ecology: [{ id: 'grove', regionId: 'bay', character: 'wind-shaped trees' }] };
+    const result = parseWorldWhiteboxInitialPlan(JSON.stringify({ plan: raw }), request);
+    expect(result.rawPlan).toEqual(raw);
+    expect(result.plan.recipe.waterBodies?.[0].shorelineIrregularity).toBe(0.6);
+    expect(result.plan.recipe.waterBodies?.[1]).toMatchObject({ region: riverPath, depth: 1.5 });
+    expect(result.plan.recipe.constraints).toContainEqual({ region: 'northeast', biome: 'mountains' });
+    expect(result.plan.featureGraph?.anchors.map(anchor => anchor.id).sort())
+      .toEqual(source.featureGraph!.anchors.map(anchor => anchor.id).sort());
+    expect(result.plan.towns).toEqual([]);
+    expect(result.technicalNormalizations).toContain('towns_semantic_notes_only');
   });
 
   it('samples creative terrain without applying density or realism gates', () => {

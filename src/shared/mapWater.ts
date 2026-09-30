@@ -38,7 +38,7 @@ export function waterBoundaryPoints(water: MapWaterBody): Array<[number, number]
   let points = cleanPoints(water.points);
   for (let round = 0; round < rounds; round += 1) points = chaikinClosed(points);
   points = capPoints(points);
-  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 0.4);
+  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 0.6);
   if (irregularity <= 0) return points;
   const center = points.reduce(
     (sum, point) => [sum[0] + point[0], sum[1] + point[1]] as [number, number],

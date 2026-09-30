@@ -891,7 +891,7 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
         shorelineSmoothness: clamp(finiteNumber(input.shorelineSmoothness, 0), 0, 1)
       }),
       ...(input.shorelineIrregularity === undefined ? {} : {
-        shorelineIrregularity: clamp(finiteNumber(input.shorelineIrregularity, 0), 0, 0.4)
+        shorelineIrregularity: clamp(finiteNumber(input.shorelineIrregularity, 0), 0, 0.6)
       }),
       ...((input.shorelineProfile === 'steep' || input.shorelineProfile === 'gentle')
         ? { shorelineProfile: input.shorelineProfile } : {}),
