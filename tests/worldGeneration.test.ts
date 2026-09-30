@@ -627,6 +627,22 @@ describe('world generation compiler', () => {
     expect(store.saveAsset).not.toHaveBeenCalled();
   });
 
+  it('reuses a model when its visual bounds differ slightly from nominal dimensions', async () => {
+    const asset = reusableAsset();
+    const { layout } = soloLayout();
+    (layout.assets as WorldAssetRequest[]) = [{
+      key: asset.id, name: 'Existing house', role: 'house', prompt: 'Reuse the existing house',
+      dimensions: [8.3, 7, 9.3], strategy: 'single'
+    }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(layout));
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset), saveAsset: vi.fn() } as unknown as MapStore;
+
+    const result = await generateWorld({ ...request, reusableAssetIds: [asset.id] }, store);
+
+    expect(result.draft.assets[0].existingAssetId).toBe(asset.id);
+    expect(store.saveAsset).not.toHaveBeenCalled();
+  });
+
   it('rejects an incompatible exact reusable id before paid asset generation', async () => {
     const asset = reusableAsset();
     const { layout } = soloLayout();
