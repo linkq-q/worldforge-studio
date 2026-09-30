@@ -717,15 +717,19 @@ describe('world generation compiler', () => {
         waterfrontBias:.8,targetWaterBodyId:'sea',publicBuildings:[
           {id:'fish-market',use:'waterfront fish market',width:15,depth:11,height:6,assetKey:'market',siting:'waterfront'},
           {id:'port-warehouse',use:'port warehouse',width:14,depth:10,height:6,assetKey:'warehouse',siting:'waterfront'},
-          {id:'courtyard-school',use:'courtyard school',width:18,depth:19,height:8,assetKey:'school',siting:'central'}]}]}};
+          {id:'courtyard-school',use:'courtyard school',width:100,depth:100,height:8,assetKey:'school',siting:'central'}]}]}};
     const intent=parseWorldIntentDraft(raw,input);
     let message='';
     try {createWorldSitingEvidence(intent);} catch(error) {message=error instanceof Error?error.message:String(error);}
-    expect(message).toContain('world_no_settlement_candidates:southwest-port:');
-    expect(message).toContain('southwest-port-site-6');
-    expect(message).toContain('world_settlement_no_landmark_site:port-warehouse:');
-    expect(message).toContain('southwest-port-site-7');
-    expect(message).toContain('world_settlement_no_waterfront_site:fish-market');
+    const prefix='world_no_settlement_candidates:southwest-port:';
+    expect(message.startsWith(prefix)).toBe(true);
+    const failures=JSON.parse(message.slice(prefix.length)) as Array<{candidateId:string;reason:string}>;
+    expect(failures.map(failure=>failure.candidateId))
+      .toEqual(Array.from({length:7},(_,index)=>`southwest-port-site-${index+1}`));
+    expect(failures.find(failure=>failure.candidateId==='southwest-port-site-6')?.reason)
+      .toContain('world_settlement_no_landmark_site:courtyard-school:');
+    expect(failures.find(failure=>failure.candidateId==='southwest-port-site-7')?.reason)
+      .toContain('world_settlement_no_waterfront_site:fish-market');
   },15_000);
 
   it('keeps one shared candidate graph for a three-town chain at 500 metres', () => {
