@@ -140,6 +140,18 @@ describe('world generation compiler', () => {
     expect(parseWorldIntentDraft(intent,request).plan.prompt).toBe(request.prompt);
   });
 
+  it('keeps a circular landform and treats a one-town loop as a local street request', () => {
+    const intent=rawSoloIntent() as any;
+    intent.plan.recipe.landforms=[{center:[0,0],radius:90,height:8}];
+    intent.plan.roads=[{id:'farm-lane',name:'Farm lane',fromTownId:'market-town',toTownId:'market-town',width:3,tags:['farm']}];
+    const parsed=parseWorldIntentDraft(intent,request);
+    expect(parsed.plan.recipe.landforms?.[0].radius).toEqual([90,90]);
+    expect(parsed.plan.roads).toEqual([]);
+    expect(intent.plan.recipe.landforms[0].radius).toBe(90);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.intent-local-road-ignored',
+      {id:'farm-lane',townId:'market-town'});
+  });
+
   it('keeps intent fields when GPT places ecology, towns, and roads beside plan', () => {
     const source = rawSoloIntent();
     const { ecology, towns, roads, ...plan } = source.plan;
