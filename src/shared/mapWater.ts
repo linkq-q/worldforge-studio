@@ -67,7 +67,44 @@ export function riverPathSamples(water: MapWaterBody): RiverPathSample[] {
   const smoothness = clamp(water.shorelineSmoothness ?? 0, 0, 1);
   const rounds = smoothness >= 0.7 ? 2 : smoothness > 0 ? 1 : 0;
   for (let round = 0; round < rounds; round += 1) samples = chaikinOpen(samples);
-  return capRiverSamples(samples);
+  samples = capRiverSamples(samples);
+  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 0.6);
+  if (irregularity <= 0 || samples.length < 3) return samples;
+  return perturbRiverSamples(samples, water.seed ?? 0, irregularity);
+}
+
+function perturbRiverSamples(
+  samples: readonly RiverPathSample[],
+  seed: number,
+  irregularity: number
+): RiverPathSample[] {
+  const distances = [0];
+  for (let index = 1; index < samples.length; index += 1) {
+    distances.push(distances[index - 1] + Math.hypot(
+      samples[index].point[0] - samples[index - 1].point[0],
+      samples[index].point[1] - samples[index - 1].point[1]
+    ));
+  }
+  const length = distances.at(-1) ?? 0;
+  if (length <= 0.000001) return samples.map(sample => ({ ...sample, point: [...sample.point] }));
+  const phases = [seededUnit(seed, 31), seededUnit(seed, 37), seededUnit(seed, 43)]
+    .map(value => value * Math.PI * 2);
+  return samples.map((sample, index) => {
+    if (index === 0 || index === samples.length - 1) return { ...sample, point: [...sample.point] };
+    const previous = samples[index - 1].point, next = samples[index + 1].point;
+    const dx = next[0] - previous[0], dz = next[1] - previous[1];
+    const tangentLength = Math.hypot(dx, dz) || 1;
+    const progress = distances[index] / length;
+    const endpointFade = Math.sin(progress * Math.PI) ** 2;
+    const wave = Math.sin(progress * Math.PI * 2 + phases[0]) * 0.58
+      + Math.sin(progress * Math.PI * 4 + phases[1]) * 0.28
+      + Math.sin(progress * Math.PI * 6 + phases[2]) * 0.14;
+    const offset = sample.width * irregularity * 0.45 * endpointFade * wave;
+    return {
+      ...sample,
+      point: [sample.point[0] - dz / tangentLength * offset, sample.point[1] + dx / tangentLength * offset]
+    };
+  });
 }
 
 export function ensureRiverSurfaceLevels(map: EditableMap, water: MapWaterBody): MapWaterBody {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createWorldSampler, createWorldTerrainContext, dominantBiome, parseWorldPrompt, sampleWorldSlope,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
   type WorldRecipe } from '../src/shared/worldTerrain';
-import { waterBoundaryContainsPoint, waterBoundaryDistance } from '../src/shared/mapWater';
+import { riverPathSamples, waterBoundaryContainsPoint, waterBoundaryDistance, waterBoundaryPoints } from '../src/shared/mapWater';
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
@@ -212,6 +212,24 @@ describe('composable world terrain operations', () => {
     expect(sample(-50, 0).waterLevel).toBeCloseTo(25, 10);
     expect(sample(50, 0).waterLevel).toBeCloseTo(12.5, 10);
     expect(sample(0, 20).waterLevel).toBeNull();
+  });
+
+  it('shares one irregular river path across its prepared boundary and terrain sampling', () => {
+    const recipe = validateWorldRecipe({ ...original, waterBodies: [{ id: 'natural-river', type: 'river',
+      region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 20 },
+      levels: [8, 5, 2], depth: 3, shorelineSmoothness: 0.8, shorelineIrregularity: 0.35, seed: 27 }] });
+    const context = createWorldTerrainContext(recipe), prepared = context.waterBodies[0];
+    const centerline = riverPathSamples(prepared.mapWater);
+
+    expect(prepared.mapWater.shorelineIrregularity).toBe(0.35);
+    expect(prepared.boundary).toEqual(waterBoundaryPoints(prepared.mapWater));
+    expect(centerline[0].point).toEqual([-100, 0]);
+    expect(centerline.at(-1)!.point).toEqual([100, 0]);
+    expect(Math.max(...centerline.map(sample => Math.abs(sample.point[1])))).toBeGreaterThan(0.4);
+    for (const point of centerline.slice(1, -1).filter((_, index) => index % 3 === 0)) {
+      expect(context.sample(...point.point).waterBodyId).toBe('natural-river');
+      expect(context.sample(...point.point).waterLevel).toBeCloseTo(point.level, 8);
+    }
   });
 
   it('joins lake and river banks continuously to the surrounding terrain', () => {

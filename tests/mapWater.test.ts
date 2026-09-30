@@ -45,6 +45,23 @@ describe('structured water geometry', () => {
     expect(samples.at(-1)).toMatchObject({ point: river.points.at(-1), level: 1 });
   });
 
+  it('applies deterministic river irregularity without moving either endpoint', () => {
+    const river: MapWaterBody = {
+      id: 'natural-river', name: 'Natural river', type: 'river', level: 0, depth: 1.5, width: 12,
+      points: [[-60, 0], [0, 0], [60, 0]], levels: [3, 2, 1],
+      shorelineSmoothness: 0.8, shorelineIrregularity: 0.35, seed: 17
+    };
+
+    const straight = riverPathSamples({ ...river, shorelineIrregularity: 0 });
+    const natural = riverPathSamples(river);
+    expect(natural).toEqual(riverPathSamples(river));
+    expect(natural).not.toEqual(straight);
+    expect(natural[0]).toEqual(straight[0]);
+    expect(natural.at(-1)).toEqual(straight.at(-1));
+    expect(riverPathSamples({ ...river, seed: 18 })).not.toEqual(natural);
+    expect(Math.max(...natural.map((sample) => Math.abs(sample.point[1])))).toBeGreaterThan(0.25);
+  });
+
   it('carves a deep central bed across part of the river width instead of a single V-shaped line', () => {
     const map = createEmptyMap('deep river', 'deep-river');
     map.terrain.heights.fill(3);

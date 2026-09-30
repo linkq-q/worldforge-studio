@@ -326,16 +326,8 @@ function prepareValidatedWorldWaterBodies(waters: WorldWaterBody[], worldSeed: n
       shorelineProfile: source.shorelineProfile,
       seed
     };
-    const smoothedRiver = authored.type === 'river' ? riverPathSamples(authored) : [];
     const mapWater: MapWaterBody = authored.type === 'river'
-      ? {
-          ...authored,
-          points: smoothedRiver.map((sample) => [...sample.point]),
-          levels: smoothedRiver.map((sample) => sample.level),
-          widths: smoothedRiver.map((sample) => sample.width),
-          shorelineSmoothness: 0,
-          shorelineIrregularity: 0
-        }
+      ? authored
       : {
           ...authored,
           points: waterBoundaryPoints(authored),
