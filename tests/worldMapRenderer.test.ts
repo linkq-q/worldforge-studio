@@ -260,6 +260,7 @@ describe('main editor streamed world renderer', () => {
     let streamed: Awaited<ReturnType<typeof buildEditableMapGroup>> | undefined;
     let sawProgressiveTerrain = false;
     let sawProgressiveContent = false;
+    let sawDeferredOcean = false;
     vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
       setTimeout(() => {
         paintYields += 1;
@@ -269,6 +270,7 @@ describe('main editor streamed world renderer', () => {
           if (stats.pendingTiles > 0) {
             sawProgressiveTerrain ||= mounted.filter(name => name.startsWith('world-tile:')).length > stats.terrainTiles;
             sawProgressiveContent ||= mounted.filter(name => name.startsWith('world-content:')).length > stats.contentChunks;
+            sawDeferredOcean ||= streamed.group.getObjectByName('water:world-ocean')?.parent?.visible === false;
           }
         }
         callback(performance.now());
@@ -291,6 +293,7 @@ describe('main editor streamed world renderer', () => {
         (terrain.material as THREE.MeshStandardMaterial).map?.image as HTMLCanvasElement
       ).width === 256)).toBe(true);
       const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
+      expect(ocean.parent?.visible).toBe(false);
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
       expect(ocean.userData.waterOceanTerrain.mapSize[0]).toBeGreaterThanOrEqual(500);
       expect(ocean.userData.waterOceanTerrain.mapSize[1]).toBeGreaterThanOrEqual(500);
@@ -304,11 +307,22 @@ describe('main editor streamed world renderer', () => {
       camera.lookAt(160, 0, 0);
       rendered.update(1 / 60, camera, 1_000);
       await new Promise(resolve => setTimeout(resolve, 20));
-      await waitFor(() => rendered.getDebugStats().streaming?.pendingTiles === 0);
+      await waitFor(() => {
+        if (rendered.getDebugStats().streaming?.pendingTiles !== 0) return false;
+        let visible = true;
+        rendered.modelsRoot.traverse(object => {
+          if (object.userData.isStructuredWaterRoot === true) visible &&= object.visible;
+        });
+        return visible;
+      });
       expect(rendered.group.getObjectByName('water:world-ocean')).toBe(ocean);
       expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(sawProgressiveTerrain).toBe(true);
       expect(sawProgressiveContent).toBe(true);
+      expect(sawDeferredOcean).toBe(true);
+      rendered.modelsRoot.traverse(object => {
+        if (object.userData.isStructuredWaterRoot === true) expect(object.visible).toBe(true);
+      });
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);
       const oceanFloor = ocean.userData.waterOceanTerrain as Parameters<typeof sampleOceanFloor>[0];

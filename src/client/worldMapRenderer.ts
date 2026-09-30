@@ -346,7 +346,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     : null;
   const compactOcean = compactOceanBuild?.group ?? null;
   const compactOceanCoast = compactOceanBuild?.coast ?? null;
-  if (compactOcean) modelsRoot.add(compactOcean);
+  if (compactOcean) {
+    compactOcean.visible = false;
+    modelsRoot.add(compactOcean);
+  }
 
   const initialRequest = normalizedReconcileRequest(
     options.worldInitialView?.x ?? map.spawnPoints[0]?.[0] ?? 0,
@@ -446,7 +449,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       }
       if (disposed || revision !== requestRevision) { discardBuilt(); return false; }
       results.forEach(result => {
-        if (result.status === 'fulfilled') mountEntry(result.value[1]);
+        if (result.status === 'fulfilled') {
+          if (!limits) setEntryWaterVisible(result.value[1], false);
+          mountEntry(result.value[1]);
+        }
       });
       await yieldWorldBuild();
       if (revision !== requestRevision) { discardBuilt(); return false; }
@@ -467,6 +473,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     for (const [key, entry] of builtTerrain) {
       if (!desiredTerrain.has(key)) { disposeEntry(entry); continue; }
       entries.set(key, entry);
+      setEntryWaterVisible(entry, true);
       if (!entry.terrainMount.parent) mountEntry(entry);
     }
     for (const [key, entry] of contentEntries) {
@@ -484,6 +491,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     rebuildPublicIndexes();
     rebuildCollision();
     updateLightingBounds(focusX, focusZ);
+    if (!limits && compactOcean) compactOcean.visible = true;
     listeners.forEach(listener => listener());
     return true;
   }
@@ -883,6 +891,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     entry.rendered.modelsRoot.position.set(centerX, 0, centerZ);
     modelsRoot.add(entry.rendered.modelsRoot);
     offsetWorldWaterBindings(entry.rendered.modelsRoot, centerX, centerZ);
+  }
+
+  function setEntryWaterVisible(entry: TileEntry, visible: boolean): void {
+    const water = entry.rendered.modelsRoot.getObjectByName('waterBodies');
+    if (water?.userData.isStructuredWaterRoot === true) water.visible = visible;
   }
 
   function unmountEntry(entry: TileEntry): void {
