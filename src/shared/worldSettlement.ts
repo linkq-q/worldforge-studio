@@ -122,7 +122,7 @@ export function generateWorldSettlement(
   if (shore) {
     const shorePoints = traceShore(shore, town, sample, settings, roadSafe);
     if (shorePoints.length >= 2) {
-      const workingWidth=Math.max(6.4,settings.arterialWidth);
+      const workingWidth=Math.max(settings.kind==='city'?6.4:4.6,settings.arterialWidth);
       const shoreRoad = guide(`${town.id}-waterfront`, shorePoints, workingWidth,
         ['settlement', settings.kind, 'arterial', 'waterfront','working-waterfront']);
       const link = routeToNetwork(shorePoints[Math.floor(shorePoints.length / 2)], roadNodes(streets), roadSafe, settings.roadWidth);
@@ -452,7 +452,8 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     parcelDepth: city ? 8.5 : town.radius>=90?9:10,
     buildingGap: city ? 1.2 : 7,
     roadBudget: city ? Math.round(26+density*10+Math.max(0,town.radius-100)/20)
-      : Math.max(7,Math.round(6+density*8+villageGrowth/16))
+      : Math.max(7,Math.round(6+density*8+villageGrowth/16),
+        town.population===undefined?0:Math.ceil(town.population/10))
   };
 }
 
@@ -766,7 +767,8 @@ function placeBuildings(
   const villageFloor=Math.round(8+Math.max(0,town.radius-60)*settings.density*.42);
   const occupancy=!city&&town.targetWaterBodyId==='sea'
     ? Math.min(1,settings.density+settings.waterfrontBias*.4):settings.density;
-  const ordinaryTarget = Math.max(city ? 24 : villageFloor, Math.round(candidates.length * occupancy));
+  const populationHomes=town.population===undefined?0:Math.ceil(town.population/5);
+  const ordinaryTarget = Math.max(city ? 24 : villageFloor, populationHomes, Math.round(candidates.length * occupancy));
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);
