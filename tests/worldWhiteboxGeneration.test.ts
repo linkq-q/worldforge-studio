@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { generateWorld } from '../src/server/worldGeneration';
+import { generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
-  parseWorldWhiteboxInitialPlan, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
+  parseWorldWhiteboxInitialPlan, validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
 import type { WorldPlan } from '../src/shared/worldPlanning';
 
-const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), recordGenerationTrace: vi.fn() }));
+const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
-  ...await importOriginal<typeof import('../src/server/modelApi')>(), llmChat: mocks.llmChat
+  ...await importOriginal<typeof import('../src/server/modelApi')>(), llmChat: mocks.llmChat, generateModel: mocks.generateModel
 }));
 vi.mock('../src/server/generationTrace', () => ({ recordGenerationTrace: mocks.recordGenerationTrace }));
 
@@ -55,8 +55,45 @@ function originalPlan(): WorldPlan {
   };
 }
 
+function buildablePlan(): WorldPlan {
+  return {
+    version: 1, id: 'buildable-whitebox', revision: 1, prompt: 'A compact woodland market village', whitebox: true,
+    recipe: { version: 1, seed: 91, size: 500, reliefProfile: 'compact', heightScale: 0.02,
+      constraints: [{ region: 'center', biome: 'grassland' }],
+      landforms: [{ center: [0, 0], radius: [180, 180], height: 12 }] },
+    ecology: [], towns: [], roads: [],
+    concept: { premise: 'A market in a woodland clearing', themes: ['trade'], experience: 'Arrive through the grove' },
+    featureGraph: {
+      regions: [{ id: 'village-region', kind: 'settlement', name: 'Market clearing', center: [0, 0], radius: 80 }],
+      paths: [{ id: 'arrival-path', kind: 'road', name: 'Arrival road', points: [[-120, 0], [0, 0], [120, 0]], width: 5 }],
+      anchors: [{ id: 'village-anchor', kind: 'settlement', position: [0, 0], regionId: 'village-region' }],
+      relations: []
+    },
+    settlementPlan: { settlements: [{ id: 'market-village', anchorId: 'village-anchor', role: 'homes around a working market' }] },
+    mobilityPlan: { routes: [{ id: 'arrival-route', pathId: 'arrival-path', mode: 'cart road', connects: ['village-anchor'] }] },
+    explorationPlan: { pointsOfInterest: [{ id: 'market', anchorId: 'village-anchor', purpose: 'trade' }], sequence: ['market'] },
+    intentionalEmptyAreas: []
+  };
+}
+
+function constructionExpansion(assetCount = 0) {
+  const assets: WorldAssetRequest[] = Array.from({ length: assetCount }, (_, index) => ({
+    key: `asset-${index + 1}`, name: `Asset ${index + 1}`, role: index === 1 ? 'tree' : 'house',
+    prompt: `Direct visible model ${index + 1}`, strategy: 'single',
+    ...(index === 1 ? { ecologyKind: 'broadleaf', ecologyRuleId: 'grove' } : {})
+  }));
+  return {
+    towns: [{ id: 'market-village', name: 'Market Village', kind: 'village', pattern: 'organic', density: 0.45,
+      publicBuildings: [] as Array<{ id: string; use: string; width: number; depth: number; height: number;
+        assetKey: string; siting?: 'central' | 'waterfront' | 'gateway' | 'high-ground' }> }],
+    ecology: [{ id: 'grove', kind: 'broadleaf', biome: 'grassland', density: 0.2, spacing: 14,
+      maxSlope: 35, scale: [0.8, 1.2] }],
+    assets
+  };
+}
+
 describe('whitebox world generation', () => {
-  beforeEach(() => { mocks.llmChat.mockReset(); mocks.recordGenerationTrace.mockReset(); });
+  beforeEach(() => { mocks.llmChat.mockReset(); mocks.generateModel.mockReset(); mocks.recordGenerationTrace.mockReset(); });
 
   it('keeps the whitebox request small and rejects asset generation or retries', () => {
     expect(validateWorldWhiteboxRequest(request)).toMatchObject({ size: 500, generateAssets: false, repairAttempts: 0 });
@@ -67,11 +104,13 @@ describe('whitebox world generation', () => {
   it('uses one GPT call and preserves the raw first plan through observation and final output', async () => {
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }));
     const result = await generateWorld(request, {} as MapStore);
-    if (!('mode' in result)) throw new Error('expected_whitebox_result');
+    if (!('mode' in result) || result.mode !== 'whitebox') throw new Error('expected_whitebox_result');
     expect(mocks.llmChat).toHaveBeenCalledTimes(1);
     expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
       .toEqual(['world.whitebox.initial-plan']);
     expect(mocks.llmChat.mock.calls.every(([, options]) => options.provider === 'gpt')).toBe(true);
+    expect(mocks.llmChat.mock.calls[0][1].maxAttempts).toBe(1);
+    expect(result.paidCallCount).toBe(1);
     expect(result.mode).toBe('whitebox');
     expect(result.bundle.patches).toEqual([]);
     expect(result.assetSources).toEqual([]);
@@ -160,5 +199,136 @@ describe('whitebox world generation', () => {
     const result = executeWorldWhitebox(plan);
     expect(result.execution.pointsOfInterest).toEqual([]);
     expect(result.surfaceFacts.heightRange.every(Number.isFinite)).toBe(true);
+  });
+
+  it('accepts only the fixed no-repair, three-asset construction contract', () => {
+    const valid = { mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0 };
+    expect(validateWorldWhiteboxConstructionRequest(valid)).toMatchObject({
+      mode: 'construct-whitebox', generateAssets: true, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, assetGenerationLimit: 4 })).toThrow('invalid_world_whitebox_construction_request');
+    expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, repairAttempts: 1 })).toThrow('invalid_world_whitebox_construction_request');
+  });
+
+  it('constructs the saved whitebox with one non-retrying GPT call and preserves every semantic coordinate', async () => {
+    const whiteboxPlan = buildablePlan();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan, generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.llmChat.mock.calls[0][1]).toMatchObject({ provider: 'gpt', maxAttempts: 1,
+      traceStage: 'world.whitebox.construction' });
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+    expect(result.paidCallCount).toBe(1);
+    expect(result.originalPlan).toEqual(whiteboxPlan);
+    expect(result.bundle.plan.recipe).toEqual(whiteboxPlan.recipe);
+    expect(result.bundle.plan.featureGraph).toEqual(whiteboxPlan.featureGraph);
+    expect(result.bundle.plan.mobilityPlan).toEqual(whiteboxPlan.mobilityPlan);
+    expect(result.bundle.plan.roads[0].points).toEqual(whiteboxPlan.featureGraph!.paths[0].points);
+    expect(result.bundle.plan.towns[0].center).toEqual(whiteboxPlan.featureGraph!.anchors[0].position);
+    expect(result.bundle.patches[0].buildings.length).toBeGreaterThan(0);
+  });
+
+  it('hard-rejects construction output that tries to rewrite the saved whitebox', async () => {
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ ...constructionExpansion(), recipe: { size: 1000 } }));
+    await expect(generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore)).rejects.toThrow('world_unknown_whitebox_construction_field');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('omits a named public building when GPT did not bind its explicit asset key', async () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8, height: 6,
+      assetKey: 'school', siting: 'central' }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.bundle.patches.flatMap(patch => patch.buildings).some(building => building.assetKey === 'school')).toBe(false);
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('explicit_asset_unbound:school:school');
+  });
+
+  it('caps construction at three direct DeepSeek assets and reports the paid attempts', async () => {
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion(3)));
+    mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    let id = 0;
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: `saved-${++id}` })) } as unknown as MapStore;
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0 }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(mocks.generateModel).toHaveBeenCalledTimes(3);
+    expect(mocks.generateModel.mock.calls.every(([, options]) => options.providers?.join() === 'deepseek')).toBe(true);
+    expect(result.assetSources).toHaveLength(3);
+    expect(result.paidCallCount).toBe(4);
+
+    mocks.llmChat.mockReset().mockResolvedValueOnce(JSON.stringify(constructionExpansion(4)));
+    mocks.generateModel.mockReset();
+    await expect(generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0 }, store)).rejects.toThrow('world_whitebox_asset_generation_limit');
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('rejects assembly requests before any paid asset generation', async () => {
+    const expansion = constructionExpansion(1);
+    expansion.assets[0].strategy = 'assembly';
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    await expect(generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore)).rejects.toThrow('world_whitebox_direct_asset_required');
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('reuses supplied assets without spending the three-call DeepSeek budget', async () => {
+    const expansion = constructionExpansion();
+    expansion.assets = [{ key: 'house', name: 'Existing house', role: 'house', prompt: 'Reuse it',
+      strategy: 'single', existingAssetId: 'existing-house' }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const asset = { id: 'existing-house', name: 'Existing house', prompt: 'A market house', tags: ['house'],
+      mode: 'voxel-pro', modelJson: { format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {
+        width: 8, height: 7, depth: 9 } } }] } };
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset), saveAsset: vi.fn() } as unknown as MapStore;
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0, reusableAssetIds: ['existing-house'] }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.paidCallCount).toBe(1);
+    expect(result.assetSources).toEqual([expect.objectContaining({ assetId: 'existing-house', provider: 'existing' })]);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('counts a failed DeepSeek request and returns the raw construction with diagnostics instead of repairing it', async () => {
+    const expansion = constructionExpansion(1);
+    expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8, height: 6,
+      assetKey: 'asset-1', siting: 'central' }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    mocks.generateModel.mockRejectedValueOnce(new Error('deepseek_unavailable'));
+    const store = { saveAsset: vi.fn() } as unknown as MapStore;
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0 }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.paidCallCount).toBe(2);
+    expect(result.assetSources).toEqual([]);
+    expect(result.diagnostics.flatMap(item => item.planningIssues)).toContain('asset_generation_failed:deepseek_unavailable');
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('explicit_asset_unbound:school:asset-1');
+    expect(result.bundle.patches.flatMap(patch => patch.buildings).some(building => building.assetKey === 'asset-1')).toBe(false);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.generateModel).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the first generated asset visible when a later paid asset request fails', async () => {
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion(2)));
+    mocks.generateModel.mockResolvedValueOnce({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] })
+      .mockRejectedValueOnce(new Error('second_asset_failed'));
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: 'saved-first' })) } as unknown as MapStore;
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 3, repairAttempts: 0 }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.paidCallCount).toBe(3);
+    expect(result.assetSources).toEqual([expect.objectContaining({ assetId: 'saved-first' })]);
+    expect(result.diagnostics.flatMap(item => item.planningIssues)).toContain('asset_generation_failed:second_asset_failed');
+    expect(mocks.generateModel).toHaveBeenCalledTimes(2);
   });
 });

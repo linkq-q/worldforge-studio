@@ -58,6 +58,7 @@ export interface ChatApiOptions {
   onProgress?: (event: AgentProgressEvent) => void;
   reasoningLogPath?: string | false;
   traceStage?: string;
+  maxAttempts?: 1 | 2 | 3;
 }
 
 interface ChatApiResponse {
@@ -312,14 +313,15 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
   });
   trace('chat.request', { startedAt, body: JSON.parse(String(init.body)) });
   let lastError: unknown;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  const maxAttempts = options.maxAttempts ?? 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     options.signal?.throwIfAborted();
     const attemptStartedAt = Date.now();
     trace('chat.attempt.start', { attempt });
     options.onProgress?.({
       phase: 'consulting',
       label: '正在连接上游模型流',
-      detail: `请求 ${attempt}/3`
+      detail: `请求 ${attempt}/${maxAttempts}`
     });
     let response: Response;
     let data: ChatApiResponse;
@@ -359,7 +361,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     } catch (error) {
       trace('chat.attempt.error', { attempt, elapsedMs: Date.now() - attemptStartedAt, error, cancelled: options.signal?.aborted || isAbortError(error) });
       if (options.signal?.aborted || isAbortError(error)) throw error;
-      if (attempt === 3) throw new Error('chat_service_unreachable');
+      if (attempt === maxAttempts) throw new Error('chat_service_unreachable');
       lastError = error;
       await abortableDelay(300, options.signal);
       continue;
@@ -370,7 +372,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     }
     const error = new Error(data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`));
     trace('chat.attempt.rejected', { attempt, error });
-    if (!isRetryableChatResponse(data, response.status) || attempt === 3) throw error;
+    if (!isRetryableChatResponse(data, response.status) || attempt === maxAttempts) throw error;
     lastError = error;
     await abortableDelay(/overload|rate.?limit|server busy/i.test(data.error ?? '') ? attempt * 1000 : 300, options.signal);
   }

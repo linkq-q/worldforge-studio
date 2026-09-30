@@ -378,6 +378,17 @@ describe('model API adapter', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
+  it('can disable transport retries for a paid single-call workflow', async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new TypeError('fetch failed'));
+
+    await expect(llmChat([{ role: 'user', content: 'construct this saved whitebox' }], {
+      apiBase: 'https://example.test',
+      fetchImpl,
+      maxAttempts: 1
+    })).rejects.toThrow('chat_service_unreachable');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it('retries when the model backend returns an empty chat response', async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: 'Empty AI response' }), { status: 502 }))

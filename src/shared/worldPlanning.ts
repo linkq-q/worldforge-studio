@@ -13,6 +13,7 @@ export interface WorldPlan {
   towns: TownIntent[];
   roads: MapGuide[];
   whitebox?: true;
+  generationPolicy?: 'raw-first-call';
   concept?: WorldConcept;
   featureGraph?: FeatureGraph;
   settlementPlan?: SettlementPlan;
@@ -298,7 +299,7 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
 /** Reject invalid contracts instead of silently relocating an agent's work. */
 export function validateWorldPlan(input: unknown): WorldPlan {
   const raw = record(input, 'world_invalid_plan');
-  keys(raw, ['version', 'id', 'revision', 'prompt', 'recipe', 'ecology', 'towns', 'roads', 'whitebox', 'concept', 'featureGraph',
+  keys(raw, ['version', 'id', 'revision', 'prompt', 'recipe', 'ecology', 'towns', 'roads', 'whitebox', 'generationPolicy', 'concept', 'featureGraph',
     'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas'], 'world_unknown_plan_field');
   if (raw.version !== 1) fail('world_invalid_plan_version');
   const revision = number(raw.revision, 1, Number.MAX_SAFE_INTEGER, 'world_invalid_revision');
@@ -359,6 +360,10 @@ export function validateWorldPlan(input: unknown): WorldPlan {
     if (raw.whitebox !== true) fail('world_invalid_whitebox_marker');
     plan.whitebox = true;
   }
+  if (raw.generationPolicy !== undefined) {
+    if (raw.generationPolicy !== 'raw-first-call') fail('world_invalid_generation_policy');
+    plan.generationPolicy = raw.generationPolicy;
+  }
   unique([plan.id, ...ecology.map(rule => rule.id), ...roads.map(road => road.id),
     ...towns.flatMap(town => [town.id, ...town.ports.map(port => port.id)])]);
   for (let i = 0; i < towns.length; i++) {
@@ -366,7 +371,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
     for (const other of towns.slice(i + 1)) {
       // Construction cores remain separate; their soft transition collars may overlap.
       const reach = town.radius + other.radius;
-      if (Math.abs(town.center[0] - other.center[0]) < reach
+      if (plan.generationPolicy !== 'raw-first-call' && Math.abs(town.center[0] - other.center[0]) < reach
         && Math.abs(town.center[1] - other.center[1]) < reach) fail('world_town_extents_overlap');
     }
     for (const port of town.ports) {
@@ -380,7 +385,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
     }
   }
   validateRoadGeometry(plan.roads, recipe.size);
-  if (!plan.whitebox) validateTerrain(plan);
+  if (!plan.whitebox && plan.generationPolicy !== 'raw-first-call') validateTerrain(plan);
   return plan;
 }
 
@@ -604,7 +609,7 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
     }
   }
   const result = { townId, worldKey, summary: text(raw.summary, 'world_invalid_patch_summary', 4000, true), streets, buildings };
-  validatePatchTerrain(plan, town, result);
+  if (plan.generationPolicy !== 'raw-first-call') validatePatchTerrain(plan, town, result);
   return result;
 }
 

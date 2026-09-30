@@ -16,7 +16,8 @@ import { generateMapCodeSuggestion } from './mapCodePlanner';
 import { createMapAssetGenerator } from './mapAssetGenerator';
 import { recordGenerationTrace } from './generationTrace';
 import { buildWorldArchitecturePrompt, WORLD_ARCHITECTURE_PROMPT_MAX_CHARS } from './worldArchitecturePrompt';
-import { generateWorldWhitebox } from './worldWhiteboxGeneration';
+import { generateWorldWhitebox, materializeWorldWhiteboxConstruction, validateWorldWhiteboxConstructionRequest,
+  WHITEBOX_CONSTRUCTION_PROMPT, type WorldWhiteboxConstructionRequest } from './worldWhiteboxGeneration';
 import type { MapStore } from './mapStore';
 
 export interface WorldGenerationRequest {
@@ -701,37 +702,16 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
   }
 }
 
-export function compileWorldDraft(input: unknown, request: WorldGenerationRequest): {draft:WorldDraft;bundle:WorldBundle} {
-  const root = exactRecord(structuredClone(input), ['plan','settlements','assets'], 'invalid_world_draft', 'world_unknown_draft_field');
-  const rawPlan = record(root.plan, 'invalid_world_draft'), rawRecipe = record(rawPlan.recipe, 'invalid_world_draft');
-  if (rawRecipe.seed !== request.seed || rawRecipe.size !== request.size) throw new Error('world_recipe_request_mismatch');
-  const recipe = validateWorldRecipe(rawRecipe as unknown as WorldPlan['recipe']);
-  const sample = cachedWorldSampler(createWorldSampler(recipe));
-  if (!Array.isArray(rawPlan.towns)) throw new Error('invalid_world_draft');
-  const towns = rawPlan.towns.map(townInput => {
-    const town = record(townInput, 'invalid_world_draft');
-    if (town.terrainMode !== 'conform') throw new Error('world_town_requires_conform');
-    if ('foundation' in town) return town;
-    if (!Array.isArray(town.center) || town.center.length !== 2 || town.center.some(value => !Number.isFinite(value))) {
-      throw new Error('invalid_world_draft');
-    }
-    return {...town,foundation:sample(town.center[0] as number,town.center[1] as number).height};
-  });
-  const plan = validateWorldPlan({...rawPlan,prompt:requestOwnedPrompt(rawPlan,request,'draft'),recipe,towns});
-  if (!Array.isArray(root.settlements) || !Array.isArray(root.assets) || root.assets.length > WORLD_ASSET_FAMILY_LIMIT) throw new Error('invalid_world_draft');
-  const settlements = root.settlements.map(item => {
-    const command = exactRecord(item, ['townId','options'], 'invalid_world_settlement_command', 'world_unknown_settlement_field');
-    if (typeof command.townId !== 'string') throw new Error('invalid_world_settlement_command');
-    const options = exactRecord(command.options,
-      ['kind','pattern','landmarks','seed','density','waterfrontBias','maxRoadSlope','maxSiteSlope','waterSetback'],
-      'invalid_world_settlement_options','world_unknown_settlement_option');
-    return {townId:command.townId,options:options as unknown as WorldSettlementOptions};
-  });
-  if (settlements.length !== plan.towns.length || new Set(settlements.map(s=>s.townId)).size !== plan.towns.length
-    || settlements.some(s=>!plan.towns.some(t=>t.id===s.townId))) throw new Error('world_settlement_command_mismatch');
-  const patches = settlements.map(s=>generateWorldSettlement(plan,s.townId,sample,s.options));
+export function validateWorldAssetRequests(
+  input: unknown,
+  plan: WorldPlan,
+  request: WorldGenerationRequest,
+  patches: TownPatch[],
+  requireCoverage = request.generateAssets !== false
+): WorldAssetRequest[] {
+  if (!Array.isArray(input) || input.length > WORLD_ASSET_FAMILY_LIMIT) throw new Error('invalid_world_draft');
   const keys = new Set<string>();
-  const assets = root.assets.map(assetInput => exactRecord(assetInput,
+  const assets = input.map(assetInput => exactRecord(assetInput,
     ['key','name','role','prompt','dimensions','enterable','strategy','existingAssetId','ecologyKind','ecologyRuleId'],
     'invalid_world_asset_request','world_unknown_asset_field')) as unknown as WorldAssetRequest[];
   for (const asset of assets) {
@@ -751,11 +731,11 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
     worldAssetStrategy(asset);
     keys.add(asset.key);
   }
-  for (const patch of patches) for (const b of patch.buildings) {
-    if (b.assetKey && !keys.has(b.assetKey)) throw new Error('unknown_world_building_asset:'+b.assetKey);
-    if (b.enterable && !assets.find(a=>a.key===b.assetKey)?.enterable) throw new Error('world_enterable_asset_required');
+  for (const patch of patches) for (const building of patch.buildings) {
+    if (building.assetKey && !keys.has(building.assetKey)) throw new Error('unknown_world_building_asset:'+building.assetKey);
+    if (building.enterable && !assets.find(asset=>asset.key===building.assetKey)?.enterable) throw new Error('world_enterable_asset_required');
   }
-  if (request.generateAssets !== false) {
+  if (requireCoverage) {
     const roles=new Set(assets.map(asset=>asset.role));
     const missingRoles=new Set<string>();
     for (const building of patches.flatMap(patch=>patch.buildings).filter(building=>!building.assetKey)) {
@@ -768,6 +748,39 @@ export function compileWorldDraft(input: unknown, request: WorldGenerationReques
     const missingEcology=plan.ecology.filter(rule=>!ecologyRuleIds.has(rule.id)).map(rule=>rule.id);
     if(missingEcology.length) throw new Error('world_missing_ecology_assets:'+missingEcology.join(','));
   }
+  return assets;
+}
+
+export function compileWorldDraft(input: unknown, request: WorldGenerationRequest): {draft:WorldDraft;bundle:WorldBundle} {
+  const root = exactRecord(structuredClone(input), ['plan','settlements','assets'], 'invalid_world_draft', 'world_unknown_draft_field');
+  const rawPlan = record(root.plan, 'invalid_world_draft'), rawRecipe = record(rawPlan.recipe, 'invalid_world_draft');
+  if (rawRecipe.seed !== request.seed || rawRecipe.size !== request.size) throw new Error('world_recipe_request_mismatch');
+  const recipe = validateWorldRecipe(rawRecipe as unknown as WorldPlan['recipe']);
+  const sample = cachedWorldSampler(createWorldSampler(recipe));
+  if (!Array.isArray(rawPlan.towns)) throw new Error('invalid_world_draft');
+  const towns = rawPlan.towns.map(townInput => {
+    const town = record(townInput, 'invalid_world_draft');
+    if (town.terrainMode !== 'conform') throw new Error('world_town_requires_conform');
+    if ('foundation' in town) return town;
+    if (!Array.isArray(town.center) || town.center.length !== 2 || town.center.some(value => !Number.isFinite(value))) {
+      throw new Error('invalid_world_draft');
+    }
+    return {...town,foundation:sample(town.center[0] as number,town.center[1] as number).height};
+  });
+  const plan = validateWorldPlan({...rawPlan,prompt:requestOwnedPrompt(rawPlan,request,'draft'),recipe,towns});
+  if (!Array.isArray(root.settlements)) throw new Error('invalid_world_draft');
+  const settlements = root.settlements.map(item => {
+    const command = exactRecord(item, ['townId','options'], 'invalid_world_settlement_command', 'world_unknown_settlement_field');
+    if (typeof command.townId !== 'string') throw new Error('invalid_world_settlement_command');
+    const options = exactRecord(command.options,
+      ['kind','pattern','landmarks','seed','density','waterfrontBias','maxRoadSlope','maxSiteSlope','waterSetback'],
+      'invalid_world_settlement_options','world_unknown_settlement_option');
+    return {townId:command.townId,options:options as unknown as WorldSettlementOptions};
+  });
+  if (settlements.length !== plan.towns.length || new Set(settlements.map(s=>s.townId)).size !== plan.towns.length
+    || settlements.some(s=>!plan.towns.some(t=>t.id===s.townId))) throw new Error('world_settlement_command_mismatch');
+  const patches = settlements.map(s=>generateWorldSettlement(plan,s.townId,sample,s.options));
+  const assets = validateWorldAssetRequests(root.assets, plan, request, patches);
   return {draft:{plan,settlements,assets},bundle:validateWorldBundle({plan,patches})};
 }
 
@@ -834,12 +847,20 @@ export function assembleWorldModel(map: EditableMap, assets: readonly MapAsset[]
   return {format:2,name:map.name,nodes,_meta:{worldforgeAssembly:true}};
 }
 
-export async function generateWorldAssets(requests: WorldAssetRequest[], store: MapStore, signal?:AbortSignal): Promise<WorldAssetResult[]> {
+export async function generateWorldAssets(
+  requests: WorldAssetRequest[],
+  store: MapStore,
+  signal?: AbortSignal,
+  options: { directOnly?: boolean; maxNewAssets?: number } = {}
+): Promise<WorldAssetResult[]> {
+  const newAssetCount=requests.filter(request=>!request.existingAssetId).length;
+  if(options.maxNewAssets!==undefined&&newAssetCount>options.maxNewAssets) throw new Error('world_whitebox_asset_generation_limit');
   const results:WorldAssetResult[]=[];
   // Two backend requests at a time keep cost and peak memory bounded.
   for(let i=0;i<requests.length;i+=2) {
     const batch=await Promise.all(requests.slice(i,i+2).map(async request=>{
       const strategy=worldAssetStrategy(request);
+      if(options.directOnly&&strategy!=='single') throw new Error('world_whitebox_direct_asset_required');
       if(request.existingAssetId) {
         const asset=await store.loadAsset(request.existingAssetId);
         return {id:request.key,name:request.name,role:request.role,modelJson:asset.modelJson,
@@ -875,9 +896,97 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
   return results;
 }
 
+function omitUnboundExplicitBuildings(
+  patches: TownPatch[],
+  assetKeys: ReadonlySet<string>,
+  issue: (townId: string, value: string) => void
+): TownPatch[] {
+  return patches.map(patch => ({ ...patch, buildings: patch.buildings.filter(building => {
+    if (!building.assetKey || assetKeys.has(building.assetKey)) return true;
+    issue(patch.townId, `explicit_asset_unbound:${building.id}:${building.assetKey}`);
+    return false;
+  }) }));
+}
+
+async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal?: AbortSignal) {
+  const rawPlan=(input as {whiteboxPlan?:unknown})?.whiteboxPlan;
+  const request=validateWorldWhiteboxConstructionRequest(input);
+  const reusableAssets=await Promise.all((request.reusableAssetIds??[]).map(async id=>{
+    const asset=await store.loadAsset(id).catch(()=>null);
+    if(!asset) throw new Error('unknown_reusable_world_asset:'+id);
+    const bounds=calculateModelVisualFrame(asset.modelJson).bounds;
+    return {id:asset.id,name:asset.name,prompt:asset.prompt,tags:asset.tags??[],mode:asset.mode,
+      visualSize:[bounds.max[0]-bounds.min[0],bounds.max[1]-bounds.min[1],bounds.max[2]-bounds.min[2]] as [number,number,number],
+      ...(asset.libraryMetadata?{libraryMetadata:asset.libraryMetadata}:{})};
+  }));
+  const content=await llmChat([
+    {role:'system',content:WHITEBOX_CONSTRUCTION_PROMPT},
+    {role:'user',content:JSON.stringify({whiteboxPlan:request.whiteboxPlan,assetGenerationLimit:request.assetGenerationLimit,
+      generateAssets:request.generateAssets,...(reusableAssets.length?{reusableAssets}:{})})}
+  ],{provider:'gpt',maxTokens:16000,temperature:.2,maxAttempts:1,traceStage:'world.whitebox.construction',signal});
+  recordGenerationTrace('world.whitebox.construction.raw',{content});
+  const materialized=materializeWorldWhiteboxConstruction(content,request);
+  const diagnostics=new Map(materialized.diagnostics.map(item=>[item.townId,[...item.planningIssues]]));
+  const issue=(townId:string,value:string)=>diagnostics.set(townId,[...diagnostics.get(townId)??[],value]);
+  const sample=createWorldSampler(materialized.plan.recipe),patches:TownPatch[]=[];
+  for(const town of materialized.towns) {
+    if(!materialized.plan.towns.some(item=>item.id===town.id)) continue;
+    const options:Omit<WorldSettlementOptions,'landmarks'>={kind:town.kind,pattern:town.pattern,density:town.density,
+      ...(town.waterfrontBias===undefined?{}:{waterfrontBias:town.waterfrontBias})};
+    try {
+      const patch=town.publicBuildings.length
+        ? createWorldSettlementLandmarkLayout(materialized.plan,town.id,sample,options,town.publicBuildings).patch
+        : generateWorldSettlement(materialized.plan,town.id,sample,options);
+      patches.push(patch);
+    } catch(error) {
+      const reason=error instanceof Error?error.message:String(error);
+      issue(town.id,'construction_unrealized:'+reason);
+      if(town.publicBuildings.length) {
+        try {
+          patches.push(generateWorldSettlement(materialized.plan,town.id,sample,options));
+          issue(town.id,'public_buildings_unrealized');
+        } catch(baseError) {
+          issue(town.id,'base_construction_unrealized:'+(baseError instanceof Error?baseError.message:String(baseError)));
+        }
+      }
+    }
+  }
+  const validationRequest:WorldGenerationRequest={prompt:materialized.plan.prompt,seed:materialized.plan.recipe.seed,
+    size:materialized.plan.recipe.size,generateAssets:false,repairAttempts:0,
+    ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})};
+  let assetRequests=validateWorldAssetRequests(materialized.assets,materialized.plan,validationRequest,[],false);
+  assetRequests=bindExactReusableAssetKeys(assetRequests,reusableAssets);
+  const requestedPatches=omitUnboundExplicitBuildings(patches,new Set(assetRequests.map(asset=>asset.key)),issue);
+  validateWorldAssetRequests(assetRequests,materialized.plan,validationRequest,requestedPatches,false);
+  let paidCallCount=1,assetSources:WorldAssetResult[]=[];
+  if(request.generateAssets||assetRequests.some(asset=>asset.existingAssetId)) {
+    for(const asset of assetRequests) {
+      if(!asset.existingAssetId) paidCallCount++;
+      try {
+        assetSources.push(...await generateWorldAssets([asset],store,signal,{directOnly:true,maxNewAssets:1}));
+      } catch(error) {
+        issue('world','asset_generation_failed:'+(error instanceof Error?error.message:String(error)));
+        recordGenerationTrace('world.whitebox.construction.asset-error',{key:asset.key,error});
+        break;
+      }
+    }
+  }
+  const visiblePatches=omitUnboundExplicitBuildings(requestedPatches,new Set(assetSources.map(asset=>asset.id)),issue);
+  const bundle=validateWorldBundle({plan:materialized.plan,patches:visiblePatches});
+  const resultDiagnostics=[...diagnostics].map(([townId,planningIssues])=>({townId,planningIssues}));
+  const draft:WorldDraft={plan:materialized.plan,settlements:materialized.settlements,assets:assetRequests};
+  recordGenerationTrace('world.whitebox.construction.preview',{draft,diagnostics:resultDiagnostics,
+    paidCallCount,assets:assetSources.map(asset=>({id:asset.id,assetId:asset.assetId,provider:asset.provider}))});
+  return {bundle,draft,diagnostics:resultDiagnostics,assetSources,originalPlan:structuredClone(rawPlan),
+    planningProvider:'gpt' as const,assetProvider:'deepseek' as const,paidCallCount,preview:true,
+    mode:'construct-whitebox' as const};
+}
+
 export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSignal) {
   if (input && typeof input === 'object' && !Array.isArray(input)
     && (input as Record<string, unknown>).mode === 'whitebox') return generateWorldWhitebox(input, signal);
+  if (input && typeof input === 'object' && !Array.isArray(input)
+    && (input as Record<string, unknown>).mode === 'construct-whitebox') return generateWorldFromWhitebox(input,store,signal);
   const request=validateWorldGenerationRequest(input);
   const reusableAssets=await Promise.all((request.reusableAssetIds??[]).map(async id=>{
     const asset=await store.loadAsset(id).catch(()=>null);
