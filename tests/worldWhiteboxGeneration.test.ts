@@ -95,6 +95,10 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('do not fake a bay or harbour with a round lake');
     expect(systemPrompt).toContain('every patch needs a unique id and a bounded shape');
     expect(systemPrompt).toContain('every river must include its complete region, levels and depth');
+    expect(systemPrompt).toContain('Trace river centerlines through plausible low ground');
+    expect(systemPrompt).toContain('long straight chord across hills reads like a canal');
+    expect(systemPrompt).toContain('gentle downstream slope');
+    expect(systemPrompt).toContain('compatible levels at confluences');
     expect(systemPrompt).toContain('never underwater');
     expect(systemPrompt).toContain('without an intentionally authored crossing');
     expect(systemPrompt).toContain('Show the whole inhabited footprint of a requested town');
