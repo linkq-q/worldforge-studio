@@ -794,7 +794,7 @@ function bindExactReusableAssetKeys(assets: WorldAssetRequest[], reusableAssets:
     if(asset.existingAssetId || !offered.has(asset.key)) return asset;
     const reusable=offered.get(asset.key)!,tags=new Set([...(reusable.tags??[]),...(reusable.libraryMetadata?.tags??[])]
       .map(tag=>tag.toLowerCase()));
-    if(asset.dimensions?.some((value,index)=>Math.abs(value-reusable.visualSize[index])>Math.max(0.1,value*.05))) {
+    if(asset.dimensions?.some((value,index)=>Math.abs(value-reusable.visualSize[index])>Math.max(0.1,value*.1))) {
       throw new Error(`world_reusable_asset_conflict:${asset.key}:dimensions:requested=${asset.dimensions.join('x')}:available=${reusable.visualSize.join('x')}`);
     }
     const taggedRole=(['house','shop','workshop','tree','landmark'] as const).find(role=>tags.has(role));

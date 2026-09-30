@@ -632,7 +632,7 @@ describe('world generation compiler', () => {
     const { layout } = soloLayout();
     (layout.assets as WorldAssetRequest[]) = [{
       key: asset.id, name: 'Existing house', role: 'house', prompt: 'Reuse the existing house',
-      dimensions: [8.3, 7, 9.3], strategy: 'single'
+      dimensions: [8.6, 7, 9.4], strategy: 'single'
     }];
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(layout));
     const store = { loadAsset: vi.fn().mockResolvedValue(asset), saveAsset: vi.fn() } as unknown as MapStore;
