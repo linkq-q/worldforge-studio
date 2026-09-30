@@ -1,0 +1,18 @@
+{
+  "name": "worldforge-codex",
+  "version": "0.1.0",
+  "description": "Use the active Codex model with WorldForge's scene harness and a separate 3D asset backend.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "WorldForge Studio",
+    "shortDescription": "Create and inspect WorldForge scenes with Codex.",
+    "longDescription": "Run WorldForge planning and visual review with the active Codex task model, while reusable 3D assets use a separate model backend.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use WorldForge to create a scene, inspect its preview, and refine it with the current Codex model."
+  }
+}
