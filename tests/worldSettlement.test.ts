@@ -572,6 +572,33 @@ describe('world settlement growth', () => {
     expect(landing.points.at(-1)![0]+96).toBeLessThanOrEqual(20);
   });
 
+  it.each([
+    { terrain: 'flat', seed: 17 },
+    { terrain: 'flat', seed: 103 },
+    { terrain: 'rising', seed: 59 }
+  ])('fills connected residential clusters from the center through outer streets on $terrain terrain (seed $seed)', ({ terrain, seed }) => {
+    const plan=fixture(),town=plan.towns[0],base=sampler(plan);
+    town.center=[0,0];town.radius=120;town.population=250;town.ports=[];plan.roads=[];
+    const sample:WorldSettlementSampler=(x,z)=>{
+      const original=base(x,z);
+      return {...original,height:terrain==='rising'?12+Math.abs(z)*.02:12,waterLevel:null,waterBodyId:null};
+    };
+    const patch=generateWorldSettlement(plan,town.id,sample,{
+      kind:'city',pattern:'organic',seed,density:.5,maxRoadSlope:.3,maxSiteSlope:.3
+    });
+    const homes=patch.buildings.filter(building=>building.use==='home'||building.use==='farmhouse');
+    const bands=[
+      homes.filter(building=>Math.hypot(building.x,building.z)<town.radius*.4),
+      homes.filter(building=>Math.hypot(building.x,building.z)>=town.radius*.4
+        &&Math.hypot(building.x,building.z)<town.radius*.68),
+      homes.filter(building=>Math.hypot(building.x,building.z)>=town.radius*.68)
+    ];
+    expect(Math.min(...bands.map(band=>band.length))).toBeGreaterThanOrEqual(5);
+    expect(bands[2].filter(building=>bands[2].some(other=>other!==building
+      &&Math.hypot(building.x-other.x,building.z-other.z)<=24)).length).toBeGreaterThanOrEqual(5);
+    expectStreetFacingBuildings(patch);
+  });
+
   it('bounds public-footprint retries and still fails explicitly when no site can fit', () => {
     const plan = fixture(), sample = sampler(plan);
     expect(() => createWorldSettlementLandmarkLayout(plan, 'town', sample, {

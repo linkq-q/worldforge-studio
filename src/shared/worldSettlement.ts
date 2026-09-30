@@ -765,6 +765,30 @@ function placeBuildings(
   };
   candidates.sort((a, b) => score(a) - score(b) || a.blockId.localeCompare(b.blockId)
     || a.roadId.localeCompare(b.roadId) || a.id.localeCompare(b.id));
+  if(town.population!==undefined) {
+    const districts:UrbanParcel[][]=[[],[],[]];
+    for(const parcel of candidates) {
+      const radius=distance(parcel.center,[0,0])/town.radius;
+      districts[radius<.4?0:radius<.68?1:2].push(parcel);
+    }
+    for(let district=0;district<districts.length;district++) {
+      const blocks=new Map<string,UrbanParcel[]>();
+      for(const parcel of districts[district]) blocks.set(parcel.blockId,[...(blocks.get(parcel.blockId)??[]),parcel]);
+      districts[district]=[];
+      while([...blocks.values()].some(block=>block.length)) for(const block of blocks.values()) {
+        districts[district].push(...block.splice(0,3));
+      }
+    }
+    const distributed:UrbanParcel[]=[],districtOrder=[0,0,1,0,1,2],offsets=[0,0,0];
+    while(distributed.length<candidates.length) {
+      let added=false;
+      for(const district of districtOrder) if(offsets[district]<districts[district].length) {
+        distributed.push(districts[district][offsets[district]++]);added=true;
+      }
+      if(!added) break;
+    }
+    candidates.splice(0,candidates.length,...distributed);
+  }
   const villageFloor=Math.round(8+Math.max(0,town.radius-60)*settings.density*.42);
   const occupancy=!city&&town.targetWaterBodyId==='sea'
     ? Math.min(1,settings.density+settings.waterfrontBias*.4):settings.density;
