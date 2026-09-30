@@ -201,12 +201,15 @@ describe('whitebox world generation', () => {
     expect(result.surfaceFacts.heightRange.every(Number.isFinite)).toBe(true);
   });
 
-  it('accepts only the fixed no-repair, three-asset construction contract', () => {
+  it('accepts a bounded no-repair construction asset budget', () => {
     const valid = { mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
       assetGenerationLimit: 3, repairAttempts: 0 };
     expect(validateWorldWhiteboxConstructionRequest(valid)).toMatchObject({
       mode: 'construct-whitebox', generateAssets: true, assetGenerationLimit: 3, repairAttempts: 0
     });
+    expect(validateWorldWhiteboxConstructionRequest({ ...valid, assetGenerationLimit: 2 }).assetGenerationLimit).toBe(2);
+    expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, assetGenerationLimit: -1 })).toThrow('invalid_world_whitebox_construction_request');
+    expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, assetGenerationLimit: 1.5 })).toThrow('invalid_world_whitebox_construction_request');
     expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, assetGenerationLimit: 4 })).toThrow('invalid_world_whitebox_construction_request');
     expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, repairAttempts: 1 })).toThrow('invalid_world_whitebox_construction_request');
   });
