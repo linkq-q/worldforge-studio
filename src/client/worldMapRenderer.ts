@@ -19,6 +19,7 @@ import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
 import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapObject, type MapWaterBody } from '../shared/map';
 import type { MapGuide } from '../shared/mapGuide';
+import type { MapGrassLayer } from '../shared/mapGrass';
 import type { PaletteCoverageReport } from './paletteMaterialRuntime';
 import {
   buildNormalizedEditableMapGroupCore,
@@ -39,6 +40,7 @@ const UNIFORM_TERRAIN_TILE_BUDGET = 64;
 const FINE_TERRAIN_RESOLUTION = 65;
 const TARGET_FINE_TERRAIN_SPACING = 1.5;
 const CONTENT_DISTANCE_LIMIT = 3_000;
+const WORLD_GRASS_INSTANCE_BUDGET = 3_500;
 const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   strictMaterials: 0,
@@ -360,6 +362,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       terrainBorderSides: skirtSides,
       terrainBorderDepth: 4,
       oceanCoast: false,
+      waterOceanCoast: includeOcean,
       terrainOnly: true,
       terrainSurfaceWeight: (x, z, tags) => worldTileSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags)
     });
@@ -394,7 +397,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
     const sampled = sampleWorldTile(bundle.plan.recipe, tile, 65, sample, false);
-    const contentMap = makeContentMap(tile, sampled.heights, chunk);
+    const contentMap = makeContentMap(tile, sampled, chunk);
     const rendered = await buildNormalizedEditableMapGroupCore(contentMap, {
       ...options,
       editorHelpers: false,
@@ -404,6 +407,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       oceanCoast: false
     });
     applyStyle(rendered, contentMap, tile);
+    rendered.setGrassStyle(worldGrassStyle(style.grass));
     const mount = new THREE.Group();
     mount.name = `world-content:${ecologyKey(chunk)}`;
     mount.position.set(centerX, 0, centerZ);
@@ -477,7 +481,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     normals.needsUpdate = true;
   }
 
-  function makeContentMap(tile: WorldTile, heights: Float32Array, chunk: EcologyChunk): EditableMap {
+  function makeContentMap(tile: WorldTile, sampled: WorldTileData, chunk: EcologyChunk): EditableMap {
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
     const contentKeys = new Set([ecologyKey(chunk)]);
@@ -500,8 +504,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       sceneMode: 'outdoor',
       room: null,
       interiorArtDirection: null,
-      terrain: { resolutionX: 65, resolutionZ: 65, heights: Array.from(heights) },
-      grassLayers: [],
+      terrain: { resolutionX: sampled.resolution, resolutionZ: sampled.resolution, heights: Array.from(sampled.heights) },
+      grassLayers: worldGrassLayers(sampled, tile),
       waterBodies: [],
       paintStrokes: [],
       objects,
@@ -892,7 +896,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     setGrassStyle: value => {
       if (sameValue(style.grass, value)) return;
       style.grass = value;
-      renderedEntries().forEach(entry => entry.rendered.setGrassStyle(value));
+      entries.forEach(entry => entry.rendered.setGrassStyle(value));
+      contentEntries.forEach(entry => entry.rendered.setGrassStyle(worldGrassStyle(value)));
     },
     setSceneArt: (plan, palette) => {
       if (sameValue(style.sceneArt, plan) && sameValue(style.sceneArtPalette, palette)) return;
@@ -1335,6 +1340,29 @@ function normalizedReconcileRequest(
 
 function sameReconcileRequest(left: ReconcileRequest | null, right: ReconcileRequest | null): boolean {
   return Boolean(left && right && left.x === right.x && left.z === right.z && left.distance === right.distance);
+}
+
+export function worldGrassLayers(data: WorldTileData, tile: WorldTile): MapGrassLayer[] {
+  const densities = Array.from({ length: data.resolution * data.resolution }, (_, index) => {
+    const x = tile.x + index % data.resolution / Math.max(1, data.resolution - 1) * tile.size;
+    const z = tile.z + Math.floor(index / data.resolution) / Math.max(1, data.resolution - 1) * tile.size;
+    const grass = worldTileSurfaceWeight(data, tile, x, z, ['grass', 'forest']);
+    const blocked = Math.max(
+      worldTileSurfaceWeight(data, tile, x, z, ['sand']),
+      worldTileSurfaceWeight(data, tile, x, z, ['rocky'])
+    );
+    return grass * (1 - blocked) * 0.72;
+  });
+  if (!densities.some(density => density > 0.01)) return [];
+  return [{
+    id: 'world-ground-cover', name: 'World ground cover', visible: true,
+    seed: stringSeed(tileKey(tile)), resolutionX: data.resolution, resolutionZ: data.resolution,
+    densities, preset: 'meadow', height: 0.82, mix: { short: 0.82, tall: 0.15, flowers: 0.03 }
+  }];
+}
+
+function worldGrassStyle(style: RuntimeGrassStyle): RuntimeGrassStyle {
+  return { ...style, maxInstances: Math.min(style.maxInstances, WORLD_GRASS_INSTANCE_BUDGET) };
 }
 
 function reconcileRequestKey(request: ReconcileRequest): string {
