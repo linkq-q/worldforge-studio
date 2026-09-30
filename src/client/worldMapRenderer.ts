@@ -1310,7 +1310,8 @@ export function worldTileSurfaceWeight(
   const ocean = interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean);
   const freshWater = interpolateTileScalar(data.freshWaterWeights, data.resolution, x0, z0, x1, z1, tx, tz);
   const freshWaterCover = THREE.MathUtils.smoothstep(freshWater, 0.9, 1);
-  const freshWaterBank = THREE.MathUtils.smoothstep(freshWater, 0.4, 0.72)
+  const freshWaterShore = THREE.MathUtils.smoothstep(freshWater, 0.4, 0.72);
+  const freshWaterBank = freshWaterShore
     * (1 - THREE.MathUtils.smoothstep(freshWater, 0.84, 1));
   const height = interpolateTileScalar(data.heights, data.resolution, x0, z0, x1, z1, tx, tz);
   const metresPerCell = tile.size / Math.max(1, data.resolution - 1);
@@ -1327,7 +1328,7 @@ export function worldTileSurfaceWeight(
   // Low inland riverbanks can share the ocean height band; keep that coastal
   // sand from outlining every freshwater channel as a continuous pale stripe.
   const beach = worldCoastalSandWeight(height, ocean)
-    * (1 - Math.max(freshWaterCover, freshWaterBank));
+    * (1 - freshWaterShore);
   let weight = 0;
   for (const tag of tags) {
     if (tag === 'dry') {
@@ -1338,15 +1339,14 @@ export function worldTileSurfaceWeight(
       weight = Math.max(
         weight,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert) * (1 - freshWaterCover),
-        beach,
-        freshWaterBank * 0.08
+        beach
       );
     } else if (tag === 'rocky') {
       weight = Math.max(
         weight,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.mountains),
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow) * 0.35,
-        steepRock * (1 - Math.max(freshWaterCover, freshWaterBank * 0.42))
+        steepRock * (1 - freshWaterShore)
       );
     } else if (tag === 'snow') {
       weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow));

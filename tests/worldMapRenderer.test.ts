@@ -199,8 +199,7 @@ describe('main editor streamed world renderer', () => {
 
     const freshWaterBank = tileData(0);
     freshWaterBank.freshWaterWeights.fill(0.7);
-    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBeGreaterThan(0);
-    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBeLessThanOrEqual(0.08);
+    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBe(0);
     expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['grass'])).toBeLessThan(0.8);
     expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['water'])).toBeCloseTo(0.7);
 
@@ -208,6 +207,26 @@ describe('main editor streamed world renderer', () => {
     lowRiverbank.freshWaterWeights.fill(0.7);
     expect(worldTileSurfaceWeight(lowRiverbank, tile, 8, 8, ['sand'])).toBeLessThanOrEqual(0.08);
 
+  });
+
+  it('does not outline freshwater banks with parallel sand and rock ribbons', () => {
+    const tile = { x: 0, z: 0, size: 20 };
+    const data = (heights: number[], freshWater: number, ocean: number): WorldTileData => {
+      const weights = new Float32Array(9 * WORLD_BIOMES.length);
+      for (let index = 0; index < 9; index += 1) {
+        weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('ocean')] = ocean;
+        weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('grassland')] = 1 - ocean;
+      }
+      return {
+        heights: new Float32Array(heights), normals: new Float32Array(), weights,
+        waterLevels: new Float32Array(9), freshWaterWeights: new Float32Array(9).fill(freshWater), resolution: 3
+      };
+    };
+
+    const lowTransition = data([4, 4, 4, 4, 4, 4, 4, 4, 4], 0.92, 0.4);
+    expect(worldTileSurfaceWeight(lowTransition, tile, 10, 10, ['sand'])).toBe(0);
+    const steepBank = data([0, 10, 20, 0, 10, 20, 0, 10, 20], 0.7, 0);
+    expect(worldTileSurfaceWeight(steepBank, tile, 10, 10, ['rocky'])).toBeLessThan(0.05);
   });
 
   it('gives compact grassland chunks dense ground cover within the resident streaming budget', () => {
