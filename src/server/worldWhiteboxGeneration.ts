@@ -49,7 +49,7 @@ export interface WorldWhiteboxConstructionMaterialization {
 }
 
 const INITIAL_PROMPT = `Design one playable 500 x 500 metre world from the user's description. Return a single JSON object {"plan":{...}} and nothing else. The plan is your original creative decision, not a scene template. In this one response, plan terrain, coastline, buildable settlement anchors and routes together at the 500 metre scale. Let terrain shape settlement, mobility and the exploration sequence; leave deliberate quiet areas. Keep unusual terrain if it makes the world interesting, while avoiding accidental near-vertical cliffs that make intended routes or settlements unusable. Do not list individual trees or houses and do not request 3D assets.
-Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox:true,recipe,ecology:[],towns:[],roads:[],concept,featureGraph,settlementPlan,mobilityPlan,explorationPlan,intentionalEmptyAreas}. ecology, towns and roads must be empty arrays. Copy prompt exactly from the request. recipe={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}], optional heightScale,landforms,terrainBrushes,waterBodies,biomePatches}. Copy seed exactly. For this 500 metre world, usually keep global heightScale around 0.08..0.15 so coasts and buildable slopes remain traversable. A compact island with strong ocean constraints may use about 0.02..0.04. These are creative guidelines, not hard limits: use an intentional exception when the requested world needs it, and express exceptional volcano or mountain relief with local landforms instead of accidentally exaggerating the whole terrain. Valid broad constraint regions: west/east/north/south/northwest/northeast/southwest/southeast/center; biomes: ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; north is negative Z, south is positive Z, west is negative X; sea level is 0. Ocean is terrain below 0, not an independent circular lake; do not fake a bay or harbour with a round lake. Shape land and coastline with broad constraints and landforms, not with a flat plate. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius},amount,feather?}; use only if useful. biomePatches entries are {id,region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},biome,feather?}; every patch needs a unique id and a bounded shape, never a compass region string. Fresh water bodies may be {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or {id,type:'river',region:{kind:'path',points:[[x,z],...],width},levels:[one height per path point],widths?:[one width per path point],depth,shorelineSmoothness?,shorelineIrregularity?}; every river must include its complete region, levels and depth. widths is optional and expresses intentional tributary or river-mouth widening; when present it has exactly one positive width per river path point. Trace river centerlines through plausible low ground with bends at the scale of their valleys; a long straight chord across hills reads like a canal. Keep ordinary river reaches at a gentle downstream slope and use compatible levels at confluences. A sharp fall calls for a distinct cascade or waterfall in the world concept, not a continuously tilted river surface. Let a river mouth meet the sea and its shoreline rather than stop at an inland straight cut. Avoid authoring a complete city with individual buildings at this stage.
+Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox:true,recipe,ecology:[],towns:[],roads:[],concept,featureGraph,settlementPlan,mobilityPlan,explorationPlan,intentionalEmptyAreas}. ecology, towns and roads must be empty arrays. Copy prompt exactly from the request. recipe={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}], optional heightScale,landforms,terrainBrushes,waterBodies,biomePatches}. Copy seed exactly. For this 500 metre world, usually keep global heightScale around 0.08..0.15 so coasts and buildable slopes remain traversable. A compact island with strong ocean constraints may use about 0.02..0.04. These are creative guidelines, not hard limits: use an intentional exception when the requested world needs it, and express exceptional volcano or mountain relief with local landforms instead of accidentally exaggerating the whole terrain. Valid broad constraint regions: west/east/north/south/northwest/northeast/southwest/southeast/center; biomes: ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; north is negative Z, south is positive Z, west is negative X; sea level is 0. Ocean is terrain below 0, not an independent circular lake; do not fake a bay or harbour with a round lake. Shape land and coastline with broad constraints and landforms, not with a flat plate. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius},amount,feather?}; use only if useful. biomePatches entries are {id,region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},biome,feather?}; every patch needs a unique id and a bounded shape, never a compass region string. Fresh water bodies may be {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or {id,type:'river',region:{kind:'path',points:[[x,z],...],width},levels:[one height per path point],widths?:[one width per path point],depth,shorelineSmoothness?,shorelineIrregularity?}; every river must include its complete region, levels and depth. widths is optional and expresses intentional tributary or river-mouth widening; when present it has exactly one positive width per river path point. Trace river centerlines through plausible low ground with bends at the scale of their valleys; a long straight chord across hills reads like a canal. Lowland alluvial rivers should show map-scale meanders with lateral swings of roughly several channel widths, purposeful widening and narrowing, and differing inner and outer banks; artificial canals and steep mountain streams may be straighter exceptions. Keep ordinary river reaches at a gentle downstream slope and use compatible levels at confluences. A sharp fall calls for a distinct cascade or waterfall in the world concept, not a continuously tilted river surface. Let a river mouth meet the sea and its shoreline rather than stop at an inland straight cut. Avoid authoring a complete city with individual buildings at this stage.
 concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius must be 1..250 metres; path width 0.1..256 metres; every path needs at least two distinct numeric points. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. Place harbour and lookout anchors on appropriate dry or shoreline terrain, never underwater. Trace routes over plausible ground; do not let a road cross open or deep water without an intentionally authored crossing. settlementPlan={settlements:[{id,anchorId,role}]}; describe districts and their density transition in roles, with each linked to an anchor. Show the whole inhabited footprint of a requested town, not just its centre: allocate connected, terrain-fitting regions for working, civic, residential and edge uses as appropriate, with streets and paths that allow outward growth. Give a town enough buildable area for ordinary homes and a few public services appropriate to its scale; a village is a sparser settlement, while a camp is only a small stop. Distinct districts should usually occupy distinct regions rather than several roles sharing one small circle. Let the extent respond to the usable coast, valley, slopes, routes and requested population instead of filling the whole map or compressing all life into one marker. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...]}]}; road types and walking trails may differ, and a bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
 
 export const WHITEBOX_CONSTRUCTION_PROMPT = `Expand one already-approved WorldForge whitebox into deterministic construction inputs. Return JSON only:
@@ -85,6 +85,75 @@ function constructionNumber(value: unknown, min: number, max: number, code: stri
 function constructionText(value: unknown, max: number, code: string): string {
   if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Error(code);
   return value;
+}
+
+function pointAtRouteDistance(points: Point[], target: number): Point {
+  let traversed = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const a = points[index - 1], b = points[index];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (target <= traversed + length) {
+      const t = length ? (target - traversed) / length : 0;
+      return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    }
+    traversed += length;
+  }
+  return [...points.at(-1)!] as Point;
+}
+
+function nearestRouteBoundaryPoints(points: Point[], center: Point, radius: number): Array<{ point: Point; outside: Point }> {
+  const epsilon = 1e-6;
+  const hits: Array<{ point: Point; distance: number }> = [];
+  let traversed = 0, nearestDistance = 0, nearestDistanceSquared = Infinity;
+  for (let index = 1; index < points.length; index += 1) {
+    const a = points[index - 1], b = points[index];
+    const dx = b[0] - a[0], dz = b[1] - a[1], lengthSquared = dx * dx + dz * dz;
+    if (lengthSquared <= epsilon) continue;
+    const length = Math.sqrt(lengthSquared);
+    const projection = Math.max(0, Math.min(1,
+      ((center[0] - a[0]) * dx + (center[1] - a[1]) * dz) / lengthSquared));
+    const projectedX = a[0] + dx * projection, projectedZ = a[1] + dz * projection;
+    const distanceSquared = (projectedX - center[0]) ** 2 + (projectedZ - center[1]) ** 2;
+    if (distanceSquared < nearestDistanceSquared) {
+      nearestDistanceSquared = distanceSquared;
+      nearestDistance = traversed + length * projection;
+    }
+    let enter = 0, exit = 1;
+    for (const [start, delta] of [[a[0] - center[0], dx], [a[1] - center[1], dz]] as const) {
+      if (Math.abs(delta) <= epsilon) {
+        if (Math.abs(start) > radius + epsilon) { enter = 1; exit = 0; break; }
+        continue;
+      }
+      const first = (-radius - start) / delta, second = (radius - start) / delta;
+      enter = Math.max(enter, Math.min(first, second));
+      exit = Math.min(exit, Math.max(first, second));
+    }
+    if (enter <= exit + epsilon) for (const position of new Set([enter, exit])) {
+      if (position < -epsilon || position > 1 + epsilon) continue;
+      const point: Point = [a[0] + dx * position, a[1] + dz * position];
+      const localX = point[0] - center[0], localZ = point[1] - center[1];
+      if (Math.abs(Math.max(Math.abs(localX), Math.abs(localZ)) - radius) <= epsilon) {
+        hits.push({ point, distance: traversed + length * position });
+      }
+    }
+    traversed += length;
+  }
+  const unique = hits.sort((a, b) => a.distance - b.distance).filter((hit, index, values) => index === 0
+    || Math.hypot(hit.point[0] - values[index - 1].point[0], hit.point[1] - values[index - 1].point[1]) > epsilon);
+  const selected: Array<{ point: Point; distance: number }> = [];
+  const add = (hit: { point: Point; distance: number } | undefined) => {
+    if (hit && !selected.some(value => Math.hypot(value.point[0] - hit.point[0], value.point[1] - hit.point[1]) <= epsilon)) {
+      selected.push(hit);
+    }
+  };
+  add([...unique].reverse().find(hit => hit.distance <= nearestDistance + epsilon));
+  add(unique.find(hit => hit.distance >= nearestDistance - epsilon));
+  return selected.map(hit => {
+    const direction = hit.distance < nearestDistance - epsilon ? -1
+      : hit.distance > nearestDistance + epsilon ? 1 : hit.distance > epsilon ? -1 : 1;
+    return { point: hit.point, outside: pointAtRouteDistance(points,
+      Math.max(0, Math.min(traversed, hit.distance + direction))) };
+  });
 }
 
 export function validateWorldWhiteboxRequest(input: unknown): WorldWhiteboxRequest {
@@ -256,7 +325,16 @@ export function materializeWorldWhiteboxConstruction(
   const minimumRadius = Math.min(100, source.recipe.size / 10);
   const minimumBlend = Math.min(100, source.recipe.size / 25);
   const bound = source.recipe.size / 2;
-  const constructedTowns = source.settlementPlan!.settlements.flatMap(settlement => {
+  const accessRoads: WorldPlan['roads'] = [];
+  const usedIds = new Set([source.id, ...source.ecology.map(item => item.id),
+    ...source.settlementPlan!.settlements.map(item => item.id), ...source.mobilityPlan!.routes.map(item => item.id)]);
+  const derivedId = (base: string) => {
+    let id = base, suffix = 2;
+    while (usedIds.has(id)) id = `${base}-${suffix++}`;
+    usedIds.add(id);
+    return id;
+  };
+  const constructedTowns = source.settlementPlan!.settlements.flatMap((settlement, settlementIndex) => {
     const authored = towns.find(town => town.id === settlement.id)!;
     const anchor = anchors.get(settlement.anchorId)!;
     const region = regions.get(anchor.regionId)!;
@@ -269,17 +347,51 @@ export function materializeWorldWhiteboxConstruction(
     if (radius !== region.radius) issue(settlement.id, 'settlement_radius_bounded_for_schema');
     const terrain = sample(anchor.position[0], anchor.position[1]);
     if (terrain.waterLevel !== null && terrain.waterLevel > terrain.height + 0.05) issue(settlement.id, 'settlement_anchor_on_water');
+    const ports: WorldPlan['towns'][number]['ports'] = [];
+    for (const [routeIndex, route] of source.mobilityPlan!.routes.entries()) {
+      if (!route.connects.includes(settlement.anchorId)) continue;
+      const path = paths.get(route.pathId)!;
+      const boundary = nearestRouteBoundaryPoints(path.points, anchor.position, radius);
+      if (!boundary.length) {
+        issue(settlement.id, `route_settlement_disconnected:${route.id}:${settlement.id}`);
+        continue;
+      }
+      const dry = boundary.filter(candidate => {
+        const surface = sample(candidate.point[0], candidate.point[1]);
+        return surface.waterLevel === null || surface.waterLevel <= surface.height + 0.05;
+      });
+      if (dry.length !== boundary.length) issue(settlement.id, `route_settlement_port_on_water:${route.id}:${settlement.id}`);
+      const width = Math.min(64, Math.max(2, path.width));
+      for (const candidate of dry) {
+        if (ports.length >= 16) { issue(settlement.id, 'settlement_port_quota'); break; }
+        const index = ports.length + 1;
+        const endpoint = [path.points[0], path.points.at(-1)!].some(point =>
+          Math.hypot(point[0] - candidate.point[0], point[1] - candidate.point[1]) <= 1e-6);
+        let guideId = route.id;
+        if (!endpoint) {
+          if (source.mobilityPlan!.routes.length + accessRoads.length >= 32) {
+            issue(settlement.id, `route_settlement_port_quota:${route.id}:${settlement.id}`);
+            continue;
+          }
+          guideId = derivedId(`whitebox-access-${routeIndex + 1}-${settlementIndex + 1}-${index}`);
+          accessRoads.push({ id: guideId, name: `${path.name} access`.slice(0, 160), points: [candidate.point, candidate.outside],
+            curve: 'polyline', closed: false, width, tags: [...new Set(['world-route', path.kind, 'town-access'])] });
+        }
+        ports.push({ id: derivedId(`whitebox-port-${routeIndex + 1}-${settlementIndex + 1}-${index}`), guideId,
+          position: [candidate.point[0] - anchor.position[0], candidate.point[1] - anchor.position[1]], width });
+      }
+    }
     return [{ id: settlement.id, name: authored.name, prompt: settlement.role,
       center: [...anchor.position] as Point, radius, blend: minimumBlend, foundation: Math.max(2, terrain.height),
-      terrainMode: 'conform' as const, ports: [] }];
+      terrainMode: 'conform' as const, ports }];
   });
-  const roads = source.mobilityPlan!.routes.map(route => {
+  const roads = [...source.mobilityPlan!.routes.map(route => {
     const path = paths.get(route.pathId)!;
     const width = Math.min(64, Math.max(2, path.width));
     if (width !== path.width) issue('world', `route_width_bounded:${route.id}`);
     return { id: route.id, name: path.name, points: path.points.map(point => [...point] as Point),
       curve: 'polyline' as const, closed: false, width, tags: [...new Set(['world-route', path.kind])] };
-  });
+  }), ...accessRoads];
   const observed = executeWorldWhitebox(source).surfaceFacts;
   for (const [pathId, wet] of Object.entries(observed.pathWaterSamples)) {
     if (wet > 0) issue('world', `path_water_samples:${pathId}:${wet}`);

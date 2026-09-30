@@ -4,9 +4,12 @@ import { describe, expect, it } from 'vitest';
 const source = readFileSync(new URL('../src/client/mapEditor.ts', import.meta.url), 'utf8');
 
 describe('whitebox world planning UI', () => {
-  it('keeps normal world generation and adds a fixed-size asset-free whitebox request', () => {
+  it('uses the bounded complete flow for the default world button and keeps standalone whitebox planning', () => {
     expect(source).toContain('id="generate-world-ai"');
     expect(source).toContain('id="generate-world-whitebox"');
+    expect(source).toContain("generateWorldPreview('generate-complete')");
+    expect(source).toContain("{mode: 'generate-complete', prompt: this.mapAiPrompt, seed: map.seed, size: 500");
+    expect(source).toContain('generateAssets: this.worldGenerateAssets, repairAttempts: 0');
     expect(source).toContain("{mode: 'whitebox', prompt: this.mapAiPrompt, seed: map.seed, size: 500, generateAssets: false}");
   });
 
@@ -24,7 +27,8 @@ describe('whitebox world planning UI', () => {
   it('shows construction cost and diagnostics in the original editor preview', () => {
     expect(source).toContain('paidCallCount?: number;');
     expect(source).toContain('沿白盒施工预览');
-    expect(source).toContain('付费调用');
+    expect(source).toContain('全流程付费调用');
+    expect(source).toContain("complete ? '全流程' : '本次施工'");
     expect(source).toContain('施工诊断');
   });
 

@@ -28,6 +28,11 @@ export interface WorldGenerationRequest {
   reusableAssetIds?: string[];
   repairAttempts?: 0 | 1 | 2 | 3;
 }
+interface CompleteWorldGenerationRequest extends WorldGenerationRequest {
+  mode: 'generate-complete';
+  size: 500;
+  repairAttempts: 0;
+}
 export interface WorldAssetRequest {
   key: string;
   name: string;
@@ -982,7 +987,32 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     mode:'construct-whitebox' as const};
 }
 
+function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGenerationRequest {
+  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds'],
+    'invalid_complete_world_generation_request','world_unknown_complete_generation_request_field');
+  const request=validateWorldGenerationRequest(raw);
+  if(raw.mode!=='generate-complete'||request.size!==500||request.repairAttempts!==0) {
+    throw new Error('invalid_complete_world_generation_request');
+  }
+  return {...request,mode:'generate-complete',size:500,repairAttempts:0};
+}
+
+async function generateCompleteWorld(input: unknown, store: MapStore, signal?: AbortSignal) {
+  const request=validateCompleteWorldGenerationRequest(input);
+  const whitebox=await generateWorldWhitebox({mode:'whitebox',prompt:request.prompt,seed:request.seed,size:500,
+    generateAssets:false,repairAttempts:0},signal);
+  const construction=await generateWorldFromWhitebox({mode:'construct-whitebox',whiteboxPlan:whitebox.finalPlan,
+    generateAssets:request.generateAssets!==false,assetGenerationLimit:3,repairAttempts:0,
+    ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})},store,signal);
+  return {...construction,mode:'generate-complete' as const,
+    originalPlan:whitebox.originalPlan,initialPlan:whitebox.initialPlan,observation:whitebox.observation,
+    adjustment:whitebox.adjustment,finalPlan:whitebox.finalPlan,finalObservation:whitebox.finalObservation,
+    paidCallCount:whitebox.paidCallCount+construction.paidCallCount};
+}
+
 export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSignal) {
+  if (input && typeof input === 'object' && !Array.isArray(input)
+    && (input as Record<string, unknown>).mode === 'generate-complete') return generateCompleteWorld(input,store,signal);
   if (input && typeof input === 'object' && !Array.isArray(input)
     && (input as Record<string, unknown>).mode === 'whitebox') return generateWorldWhitebox(input, signal);
   if (input && typeof input === 'object' && !Array.isArray(input)

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
-  parseWorldWhiteboxInitialPlan, validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
+  materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan,
+  validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
-import type { WorldPlan } from '../src/shared/worldPlanning';
+import { validateWorldPlan, type WorldPlan } from '../src/shared/worldPlanning';
 
 const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
@@ -122,6 +123,69 @@ describe('whitebox world generation', () => {
     });
   });
 
+  it('completes one 500m prompt in two first-pass GPT stages and at most three direct DeepSeek calls', async () => {
+    const plan = buildablePlan();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+      .mockResolvedValueOnce(JSON.stringify(constructionExpansion(3)));
+    mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    let id = 0;
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: `complete-${++id}` })) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: true, repairAttempts: 0 }, store);
+
+    if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
+      .toEqual(['world.whitebox.initial-plan', 'world.whitebox.construction']);
+    expect(mocks.llmChat.mock.calls.every(([, options]) => options.provider === 'gpt' && options.maxAttempts === 1)).toBe(true);
+    expect(JSON.parse(mocks.llmChat.mock.calls[1][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
+    expect(mocks.generateModel).toHaveBeenCalledTimes(3);
+    expect(mocks.generateModel.mock.calls.every(([, options]) => options.providers?.join() === 'deepseek')).toBe(true);
+    expect(result.paidCallCount).toBe(5);
+    expect(result.initialPlan).toEqual(result.finalPlan);
+    expect(result.adjustment).toEqual({ decision: 'keep', applied: false, skipped: true,
+      reason: 'raw_first_call_preserved' });
+  });
+
+  it('honours disabled asset generation in the complete flow', async () => {
+    const plan = buildablePlan();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+      .mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+
+    const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 0 }, {} as MapStore);
+
+    if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+    expect(result.paidCallCount).toBe(2);
+  });
+
+  it('rejects a fourth complete-flow asset before any DeepSeek call', async () => {
+    const plan = buildablePlan();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+      .mockResolvedValueOnce(JSON.stringify(constructionExpansion(4)));
+
+    await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: true, repairAttempts: 0 }, {} as MapStore))
+      .rejects.toThrow('world_whitebox_asset_generation_limit');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('keeps complete generation fixed at 500m with zero repair attempts', async () => {
+    const plan = buildablePlan();
+    await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 600, generateAssets: false, repairAttempts: 0 }, {} as MapStore))
+      .rejects.toThrow('invalid_complete_world_generation_request');
+    await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 1 }, {} as MapStore))
+      .rejects.toThrow('invalid_complete_world_generation_request');
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
   it('asks the first call to co-design playable 500m terrain, coast, anchors and routes with valid schema', async () => {
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }));
     await generateWorldWhitebox(request);
@@ -136,6 +200,8 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('every river must include its complete region, levels and depth');
     expect(systemPrompt).toContain('Trace river centerlines through plausible low ground');
     expect(systemPrompt).toContain('long straight chord across hills reads like a canal');
+    expect(systemPrompt).toContain('lateral swings of roughly several channel widths');
+    expect(systemPrompt).toContain('artificial canals and steep mountain streams may be straighter exceptions');
     expect(systemPrompt).toContain('gentle downstream slope');
     expect(systemPrompt).toContain('compatible levels at confluences');
     expect(systemPrompt).toContain('never underwater');
@@ -214,6 +280,50 @@ describe('whitebox world generation', () => {
     expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, repairAttempts: 1 })).toThrow('invalid_world_whitebox_construction_request');
   });
 
+  it('derives town ports only where a connected whitebox route reaches the dry town boundary', () => {
+    const whiteboxPlan = validateWorldPlan(buildablePlan());
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan, generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.towns[0].ports).toEqual([
+      { id: 'whitebox-port-1-1-1', guideId: 'whitebox-access-1-1-1', position: [-80, 0], width: 5 },
+      { id: 'whitebox-port-1-1-2', guideId: 'whitebox-access-1-1-2', position: [80, 0], width: 5 }
+    ]);
+    expect(result.plan.roads.find(road => road.id === 'arrival-route')?.points)
+      .toEqual(whiteboxPlan.featureGraph!.paths[0].points);
+    for (const port of result.plan.towns[0].ports) {
+      const road = result.plan.roads.find(candidate => candidate.id === port.guideId)!;
+      expect([road.points[0], road.points.at(-1)]).toContainEqual(port.position);
+    }
+    expect(result.plan.featureGraph).toEqual(whiteboxPlan.featureGraph);
+    expect(result.plan.recipe).toEqual(whiteboxPlan.recipe);
+  });
+
+  it('diagnoses disconnected and wet route approaches instead of inventing town ports', () => {
+    const disconnected = buildablePlan();
+    disconnected.featureGraph!.paths[0].points = [[120, 120], [180, 180]];
+    const disconnectedPlan = validateWorldPlan(disconnected);
+    const absent = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: disconnectedPlan, generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(absent.plan.towns[0].ports).toEqual([]);
+    expect(absent.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('route_settlement_disconnected:arrival-route:market-village');
+
+    const wet = buildablePlan();
+    wet.recipe.waterBodies = [{ id: 'east-gate-water', type: 'lake',
+      region: { kind: 'circle', center: [80, 0], radius: 8 }, levels: [20], depth: 3 }];
+    const wetPlan = validateWorldPlan(wet);
+    const dryOnly = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: wetPlan, generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(dryOnly.plan.towns[0].ports).toEqual([
+      { id: 'whitebox-port-1-1-1', guideId: 'whitebox-access-1-1-1', position: [-80, 0], width: 5 }
+    ]);
+    expect(dryOnly.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('route_settlement_port_on_water:arrival-route:market-village');
+  });
+
   it('constructs the saved whitebox with one non-retrying GPT call and preserves every semantic coordinate', async () => {
     const whiteboxPlan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
@@ -236,6 +346,7 @@ describe('whitebox world generation', () => {
     expect(result.bundle.plan.roads[0].points).toEqual(whiteboxPlan.featureGraph!.paths[0].points);
     expect(result.bundle.plan.towns[0].center).toEqual(whiteboxPlan.featureGraph!.anchors[0].position);
     expect(result.bundle.patches[0].buildings.length).toBeGreaterThan(0);
+    expect(result.bundle.patches[0].streets.some(street => street.tags.includes('port'))).toBe(true);
   });
 
   it('hard-rejects construction output that tries to rewrite the saved whitebox', async () => {

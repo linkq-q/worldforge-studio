@@ -180,6 +180,7 @@ interface WorldConstructionDiagnostic {
 interface WorldConstructionPreviewDetails {
   paidCallCount: number;
   diagnostics: string[];
+  complete: boolean;
 }
 import {
   TERRAIN_CLIFF_LAYOUTS,
@@ -1854,13 +1855,13 @@ class MapEditor {
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         ${map.sceneMode === 'outdoor' ? `<details class="map-ai-advanced" ${map.world ? 'open' : ''}>
           <summary>连续大世界</summary>
-          <label class="field compact"><span>世界宽度（米）</span><input id="world-width" type="number" min="500" max="256000" step="100" value="${this.worldWidth}" /></label>
-          <p id="world-size-hint" class="empty inspector-note">面积约 ${Math.round((this.worldWidth / MAP_SIZE_PRESETS[1].size[0]) ** 2)} 张中地图（${MAP_SIZE_PRESETS[1].size[0]} × ${MAP_SIZE_PRESETS[1].size[2]} 米）</p>
+          <label class="field compact"><span>完整生成范围（米）</span><input id="world-width" type="number" value="500" disabled /></label>
+          <p id="world-size-hint" class="empty inspector-note">固定生成 500 × 500 米世界。</p>
           <label class="field compact map-ai-toggle"><span>生成建筑资产 · DeepSeek</span><input id="world-assets" type="checkbox" ${this.worldGenerateAssets ? 'checked' : ''} /></label>
-          <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
+          <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>一句话完整生成 500m 世界</button>
           <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划（无建筑）</button>
           ${map.world?.bundle.plan.whitebox ? `<button id="construct-world-whitebox" ${this.state.busy || this.state.dirty || Boolean(suggestion) ? 'disabled' : ''}>沿当前已保存白盒施工</button>` : ''}
-          <p class="empty inspector-note">白盒用于核对地形、聚落区位与路线，不生成建筑或植物。保存白盒后可沿原规划施工，每次最多生成 3 个资产且不做自动修复。新资产会保存到资产库；放弃地图预览不会删除它们。</p>
+          <p class="empty inspector-note">完整生成保留首版白盒，随后沿其语义施工；全流程 2 次 GPT、最多 3 次 DeepSeek，不做自动修复。也可单独预览并保存白盒后再施工。新资产会保存到资产库；放弃地图预览不会删除它们。</p>
           ${map.world ? renderSavedWorldWhiteboxDetails(map.world) : ''}
           ${map.world ? `<label class="field compact"><span>前往聚落／规划点</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}${map.world!.bundle.patches.some(patch => patch.townId === town.id) ? '' : '（仅规划）'}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
@@ -2143,7 +2144,7 @@ class MapEditor {
     host.querySelector<HTMLInputElement>('#world-assets')?.addEventListener('change', event => {
       this.worldGenerateAssets = (event.target as HTMLInputElement).checked;
     });
-    host.querySelector('#generate-world-ai')?.addEventListener('click', () => void this.generateWorldPreview());
+    host.querySelector('#generate-world-ai')?.addEventListener('click', () => void this.generateWorldPreview('generate-complete'));
     host.querySelector('#generate-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview('whitebox'));
     host.querySelector('#construct-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview('construct-whitebox'));
     host.querySelector<HTMLSelectElement>('#world-town')?.addEventListener('change', event => {
@@ -2804,11 +2805,12 @@ class MapEditor {
 
   private mapAiPanelRenderedAt = 0;
 
-  private async generateWorldPreview(mode: 'generate' | 'whitebox' | 'construct-whitebox' = 'generate'): Promise<void> {
+  private async generateWorldPreview(mode: 'generate' | 'generate-complete' | 'whitebox' | 'construct-whitebox' = 'generate'): Promise<void> {
     const map = this.state.map;
     if (!map || map.sceneMode !== 'outdoor' || this.state.busy || this.state.dirty) return;
     const whitebox = mode === 'whitebox';
     const construction = mode === 'construct-whitebox';
+    const complete = mode === 'generate-complete';
     const savedWhiteboxPlan = map.world?.bundle.plan.whitebox ? map.world.bundle.plan : null;
     if (construction && !savedWhiteboxPlan) {
       this.state.message = '请先保存白盒规划，再沿白盒施工';
@@ -2822,7 +2824,8 @@ class MapEditor {
       return;
     }
     this.mapAiAbortController = new AbortController();
-    this.setBusy(true, construction ? '正在沿已保存白盒施工…' : '正在规划地形、城镇功能与道路…');
+    this.setBusy(true, construction ? '正在沿已保存白盒施工…'
+      : complete ? '正在生成首版白盒并沿其语义施工…' : '正在规划地形、城镇功能与道路…');
     try {
       const library = this.state.assetLibraries.find(item => item.id === this.activeAssetLibraryId);
       const reusableAssetIds = this.mapAiReuseExistingAssets && library ? library.assetIds.slice(0, 64) : [];
@@ -2846,11 +2849,15 @@ class MapEditor {
             ? {mode: 'construct-whitebox', whiteboxPlan: savedWhiteboxPlan,
                 generateAssets: this.worldGenerateAssets, assetGenerationLimit: 3, repairAttempts: 0,
                 ...(reusableAssetIds.length ? {reusableAssetIds} : {})}
-            : {prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
-                generateAssets: this.worldGenerateAssets, repairAttempts: 0,
-                ...(reusableAssetIds.length ? {reusableAssetIds} : {})})
+            : complete
+              ? {mode: 'generate-complete', prompt: this.mapAiPrompt, seed: map.seed, size: 500,
+                  generateAssets: this.worldGenerateAssets, repairAttempts: 0,
+                  ...(reusableAssetIds.length ? {reusableAssetIds} : {})}
+              : {prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
+                  generateAssets: this.worldGenerateAssets, repairAttempts: 0,
+                  ...(reusableAssetIds.length ? {reusableAssetIds} : {})})
       });
-      if (whitebox && (!result.initialPlan || !result.observation || !result.adjustment
+      if ((whitebox || complete) && (!result.initialPlan || !result.observation || !result.adjustment
         || !result.finalPlan || !result.finalObservation)) throw new Error('world_whitebox_details_missing');
       const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role,
         ...(asset.ecologyKind ? {ecologyKind: asset.ecologyKind} : {}),
@@ -2863,7 +2870,7 @@ class MapEditor {
       const previewAssets = [...new Map([...(map.assets ?? []), ...loadedAssets].map(asset => [asset.id, asset])).values()];
       const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings}}];
       this.clearMapAiPreview();
-      this.worldWhiteboxDetails = whitebox
+      this.worldWhiteboxDetails = whitebox || complete
         ? {
             originalPlan: result.originalPlan ?? result.initialPlan!,
             initialPlan: result.initialPlan!,
@@ -2875,14 +2882,19 @@ class MapEditor {
         : null;
       const diagnosticMessages = worldConstructionDiagnosticMessages(result.diagnostics);
       const paidCallCount = Math.max(0, Math.floor(result.paidCallCount ?? 0));
-      this.worldConstructionDetails = construction ? {paidCallCount, diagnostics: diagnosticMessages} : null;
+      this.worldConstructionDetails = construction || complete
+        ? {paidCallCount, diagnostics: diagnosticMessages, complete}
+        : null;
       this.mapAiSuggestion = {
         summary: whitebox
           ? `白盒世界：${result.bundle.plan.featureGraph?.regions.length ?? 0} 个区域，${result.bundle.plan.featureGraph?.paths.length ?? 0} 条路径，${result.bundle.plan.featureGraph?.anchors.length ?? 0} 个锚点。`
           : construction
             ? `沿白盒施工预览：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路，付费调用 ${paidCallCount} 次。`
-            : `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
-              + diagnosticMessages.join('；'),
+            : complete
+              ? `500m 完整世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路，全流程付费调用 ${paidCallCount} 次。`
+                + diagnosticMessages.join('；')
+              : `连续世界：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路。`
+                + diagnosticMessages.join('；'),
         operations, generatedAssets, reusedAssets, renderPromptSuggestions: []
       };
       this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: previewAssets}, operations);
@@ -2893,7 +2905,9 @@ class MapEditor {
         ? '白盒世界已在原编辑器预览；确认后作为一次事务保存'
         : construction
           ? `沿白盒施工预览已生成；付费调用 ${paidCallCount} 次；确认后作为一次事务保存`
-          : '世界已在原编辑器预览；确认后作为一次事务保存';
+          : complete
+            ? `500m 完整世界已在原编辑器预览；全流程付费调用 ${paidCallCount} 次；确认后作为一次事务保存`
+            : '世界已在原编辑器预览；确认后作为一次事务保存';
       await this.refreshScene();
       this.frameWorldTown(this.mapAiPreviewMap);
     } catch (error) {
@@ -8608,7 +8622,7 @@ function worldConstructionDiagnosticMessages(diagnostics?: WorldConstructionDiag
 
 function renderWorldConstructionDetails(details: WorldConstructionPreviewDetails): string {
   return `<details class="inspector-disclosure compact map-ai-composition-details" open>
-    <summary><span><b>沿白盒施工预览</b><small>付费调用 ${details.paidCallCount} 次 · 资产生成上限 3</small></span></summary>
+    <summary><span><b>${details.complete ? '一句话完整生成' : '沿白盒施工预览'}</b><small>${details.complete ? '全流程' : '本次施工'}付费调用 ${details.paidCallCount} 次 · DeepSeek 资产上限 3</small></span></summary>
     <div class="inspector-body asset-library-details">
       <p class="empty">施工诊断</p>
       ${details.diagnostics.length
