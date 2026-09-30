@@ -73,6 +73,8 @@ npm run dev
 
 ## 对外交付
 
+游戏服务端可通过带凭据的 HTTP API 请求生成、预览、确认和微调场景，使用 `npm run service` 启动专用实例。协议和服务端示例见 [场景生成服务 API](docs/service-api.md)。
+
 两个可以被下游项目直接依赖的入口。下游项目按 `file:` 或 git 依赖引入本仓库即可：
 
 ```bash

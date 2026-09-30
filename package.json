@@ -21,6 +21,7 @@
     "backup:data": "tsx scripts/backupMapData.ts",
     "test": "vitest run",
     "server": "tsx src/server/index.ts -- --release",
+    "service": "tsx src/server/index.ts -- --service",
     "map": "tsx src/server/mapCli.ts",
     "experiment": "tsx scripts/experiments.ts"
   },

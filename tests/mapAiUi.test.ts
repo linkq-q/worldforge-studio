@@ -48,6 +48,6 @@ describe('map AI controls', () => {
     expect(source).toContain("plan.options.provider ?? 'gpt'");
     expect(source).toContain("plan.options.assetProvider ?? ''");
     expect(httpSource).toContain('isModelProvider(body.assetProvider)');
-    expect(httpSource).toContain('body.assetProvider ?? modelProviderForChatProvider(provider)');
+    expect(httpSource).toContain("body.assetProvider ?? (currentCodexRun() ? 'deepseek' : modelProviderForChatProvider(provider))");
   });
 });

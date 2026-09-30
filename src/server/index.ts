@@ -6,9 +6,13 @@ import { handleStaticClient } from './staticClient';
 import { WORLD_FORGE_DEV_API_PORT } from '../shared/network';
 
 const development = process.argv.includes('--dev');
+const service = process.argv.includes('--service');
+if (service && !process.env.WORLDFORGE_SERVICE_TOKEN?.trim()) {
+  throw new Error('WORLDFORGE_SERVICE_TOKEN is required for the service API');
+}
 const port = Number(process.env.PORT ?? WORLD_FORGE_DEV_API_PORT);
 const host = process.env.HOST ?? '127.0.0.1';
-const store = new MapStore();
+const store = new MapStore(service ? { rootDir: process.env.WORLDFORGE_DATA_DIR ?? path.resolve('data/service-api') } : {});
 
 await store.ensureReady();
 
@@ -19,7 +23,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (await handleMapHttp(req, res, store)) return;
+    if (await handleMapHttp(req, res, store, service)) return;
     if (!development && await handleStaticClient(req, res, path.resolve(process.cwd(), 'dist'))) return;
     sendJson(res, 404, { error: 'not_found' });
   } catch (error) {
@@ -35,6 +39,10 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
+  if (service) {
+    console.log(`WorldForge service API: http://${host}:${port}/api/service/v1`);
+    return;
+  }
   const client = development ? 'http://localhost:5180' : `http://${host}:${port}`;
   console.log(`WorldForge Studio: ${client}`);
   console.log(`Local API: http://${host}:${port}`);

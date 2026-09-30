@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { timingSafeEqual } from 'node:crypto';
 import type http from 'node:http';
 import { hdriExtensionOf } from '../shared/hdri';
 import {
@@ -73,31 +74,99 @@ import { applyPaletteToModelJson, type ColorPalette } from '../shared/colorPalet
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
 import { generationTraceId, recordGenerationTrace, withGenerationTrace } from './generationTrace';
-import { createCodexRun, withCodexRun, pendingCodexRequests, respondToCodexRequest, closeCodexRun } from './codexBridge';
 import { generateWorld } from './worldGeneration';
+import {
+  closeCodexRun,
+  createCodexRun,
+  currentCodexRun,
+  pendingCodexRequests,
+  respondToCodexRequest,
+  withCodexRun
+} from './codexBridge';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
 
 const worldAgentManagers = new WeakMap<MapStore, WorldAgentRunManager>();
 
-export async function handleMapHttp(req: Req, res: Res, store: MapStore): Promise<boolean> {
-  const runId = req.headers['x-worldforge-codex-run'];
-  if (runId) {
-    if (typeof runId !== 'string' || !isLoopbackRequest(req)
-      || !new URL(req.url ?? '/', 'http://localhost').pathname.startsWith('/api/editor/')) {
+export async function handleMapHttp(req: Req, res: Res, store: MapStore, serviceOnly = false): Promise<boolean> {
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  if (pathname === '/api/service' || pathname.startsWith('/api/service/')) {
+    await handleServiceApi(req, res, store, pathname);
+    return true;
+  }
+  if (serviceOnly) {
+    sendJson(res, 404, { error: 'not_found' });
+    return true;
+  }
+  const codexRunId = req.headers['x-worldforge-codex-run'];
+  if (codexRunId) {
+    if (typeof codexRunId !== 'string' || !isLoopbackRequest(req) ||
+      !new URL(req.url ?? '/', 'http://localhost').pathname.startsWith('/api/editor/')) {
       sendJson(res, 403, { error: 'codex_run_local_only' });
       return true;
     }
-    try { return await withCodexRun(runId, () => handleMapHttpInContext(req, res, store)); }
-    catch (error) {
+    try {
+      return await withCodexRun(codexRunId, () => handleMapHttpInContext(req, res, store));
+    } catch (error) {
       if (error instanceof Error && error.message === 'unknown_codex_run') {
-        sendJson(res, 404, { error: error.message }); return true;
+        sendJson(res, 404, { error: error.message });
+        return true;
       }
       throw error;
     }
   }
   return handleMapHttpInContext(req, res, store);
+}
+
+async function handleServiceApi(req: Req, res: Res, store: MapStore, pathname: string): Promise<void> {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const configuredToken = process.env.WORLDFORGE_SERVICE_TOKEN?.trim();
+    if (!configuredToken) throw new HttpError(503, 'service_api_disabled');
+    const supplied = Buffer.from(/^Bearer (.+)$/i.exec(req.headers.authorization ?? '')?.[1] ?? '');
+    const expected = Buffer.from(configuredToken);
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+      res.setHeader('WWW-Authenticate', 'Bearer');
+      throw new HttpError(401, 'service_api_unauthorized');
+    }
+    if (req.headers['x-worldforge-codex-run']) throw new HttpError(400, 'service_api_codex_run_not_supported');
+    const match = /^\/api\/service\/v1\/maps(?:\/([a-zA-Z0-9_-]+)(?:\/(generate|refine|preview|transactions|visual-review))?)?$/.exec(pathname);
+    if (!match || match[1] === 'trash') throw new HttpError(404, 'not_found');
+    const [, mapId, action] = match;
+    const allowed = mapId
+      ? (action ? req.method === 'POST' : req.method === 'GET')
+      : req.method === 'POST';
+    if (!allowed) throw new HttpError(405, 'method_not_allowed');
+    const parts = ['api', 'service', 'maps', ...(mapId ? [mapId] : []), ...(action ? [action] : [])];
+    if (action) {
+      await withGenerationTrace(store.rootDir, { mapId, operation: action }, async () => {
+        res.setHeader('X-WorldForge-Trace-Id', generationTraceId()!);
+        await handleEditorMaps(req, res, store, parts, true);
+        recordGenerationTrace('request.complete', { status: res.statusCode, aborted: req.aborted });
+      });
+    } else {
+      await handleEditorMaps(req, res, store, parts, true);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'service_api_failed';
+    if (res.headersSent) {
+      sendSse(res, 'error', { error: message });
+      res.end();
+      return;
+    }
+    const status = error instanceof HttpError ? error.status
+      : error instanceof SyntaxError ? 400
+      : (error as NodeJS.ErrnoException)?.code === 'ENOENT' ? 404 : 500;
+    sendJson(res, status, { error: message });
+  }
+}
+
+function requireExpectedVersion(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1) {
+    throw new HttpError(400, 'expected_version_required');
+  }
+  return value;
 }
 
 async function handleMapHttpInContext(req: Req, res: Res, store: MapStore): Promise<boolean> {
@@ -188,39 +257,51 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     const abort = () => { if (!res.writableEnded) controller.abort(); };
     res.on('close', abort);
     try {
-      await withGenerationTrace(store.rootDir, {mapId:'world-preview',operation:'generate'}, async () => {
-        recordGenerationTrace('request.input',body);
-        sendJson(res,200,await generateWorld(body,store,controller.signal));
+      await withGenerationTrace(store.rootDir, { mapId: 'world-preview', operation: 'generate' }, async () => {
+        recordGenerationTrace('request.input', body);
+        sendJson(res, 200, await generateWorld(body, store, controller.signal));
       });
-    } catch(error) {
-      throw new HttpError(422,error instanceof Error?error.message:String(error));
-    } finally { res.off('close',abort); }
+    } catch (error) {
+      throw new HttpError(422, error instanceof Error ? error.message : String(error));
+    } finally { res.off('close', abort); }
     return;
   }
   if (parts[2] === 'codex-runs') {
     if (req.method === 'POST' && parts.length === 3) {
-      sendJson(res, 201, { runId: createCodexRun() }); return;
+      sendJson(res, 201, { runId: createCodexRun() });
+      return;
     }
+    const runId = parts[3];
+    if (!runId) throw new HttpError(404, 'not_found');
     try {
       if (req.method === 'GET' && parts[4] === 'next' && parts.length === 5) {
-        sendJson(res, 200, { requests: pendingCodexRequests(parts[3]) }); return;
+        sendJson(res, 200, { requests: pendingCodexRequests(runId) });
+        return;
       }
       if (req.method === 'POST' && parts[4] === 'respond' && parts.length === 5) {
-        const body = await readJson<{requestId?: string; content?: string}>(req);
+        const body = await readJson<{ requestId?: string; content?: string }>(req);
         if (!body.requestId || typeof body.content !== 'string') throw new HttpError(400, 'invalid_codex_response');
-        respondToCodexRequest(parts[3], body.requestId, body.content);
-        sendJson(res, 200, { ok: true }); return;
+        respondToCodexRequest(runId, body.requestId, body.content);
+        sendJson(res, 200, { ok: true });
+        return;
       }
       if (req.method === 'DELETE' && parts.length === 4) {
-        closeCodexRun(parts[3]); sendJson(res, 200, { ok: true }); return;
+        closeCodexRun(runId);
+        sendJson(res, 200, { ok: true });
+        return;
       }
     } catch (error) {
-      if (error instanceof Error && /^(unknown_codex_run|unknown_codex_request)$/.test(error.message)) throw new HttpError(404, error.message);
-      if (error instanceof Error && error.message === 'empty_codex_response') throw new HttpError(400, error.message);
+      if (error instanceof Error && (error.message === 'unknown_codex_run' || error.message === 'unknown_codex_request')) {
+        throw new HttpError(404, error.message);
+      }
+      if (error instanceof Error && error.message === 'empty_codex_response') {
+        throw new HttpError(400, error.message);
+      }
       throw error;
     }
     throw new HttpError(404, 'not_found');
   }
+
   if (req.method === 'GET' && parts.length === 2) {
     sendJson(res, 200, { ok: true, commands: mapEditorCliManifest() });
     return;
@@ -408,7 +489,7 @@ async function handleEditorHdri(req: Req, res: Res, store: MapStore, parts: stri
   throw new HttpError(404, 'not_found');
 }
 
-async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: string[], service = false): Promise<void> {
   if (req.method === 'GET' && parts.length === 3) {
     sendJson(res, 200, { maps: await store.listMapSummaries() });
     return;
@@ -442,6 +523,25 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
 
   const mapId = parts[3];
   if (!mapId) throw new HttpError(404, 'not_found');
+
+  if (service && parts[4] === 'preview' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{ operations?: MapOperation[]; expectedVersion?: number }>(req);
+    const expectedVersion = requireExpectedVersion(body.expectedVersion);
+    if (!Array.isArray(body.operations)) throw new HttpError(400, 'invalid_operations');
+    const map = await store.loadMap(mapId);
+    if (map.version !== expectedVersion) throw new HttpError(409, 'map_transaction_stale');
+    try {
+      const preview = applyMapOperations(map, body.operations);
+      const hydrated = await store.hydrateMap(preview);
+      if (hydrated.objects.some((object) => object.assetId && !hydrated.assets?.some((asset) => asset.id === object.assetId))) {
+        throw new Error('missing_preview_asset');
+      }
+      sendJson(res, 200, { map: hydrated, baseVersion: map.version });
+    } catch (error) {
+      throw new HttpError(400, error instanceof Error ? error.message : 'invalid_preview');
+    }
+    return;
+  }
 
   if (parts[4] === 'duplicate' && req.method === 'POST' && parts.length === 5) {
     const body = await readJson<{ name?: string }>(req);
@@ -583,6 +683,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       imageDataUrl?: string;
       provider?: ChatProvider;
       baseOperations?: MapOperation[];
+      expectedVersion?: number;
       parentTraceId?: string;
     }>(req);
     recordGenerationTrace('request.input', body);
@@ -602,6 +703,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     res.once('close', abortIfOpen);
     try {
       const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      if (service && (body.expectedVersion !== undefined || body.baseOperations?.length)) {
+        if (map.version !== requireExpectedVersion(body.expectedVersion)) throw new HttpError(409, 'map_transaction_stale');
+      }
       const mapWithAssets = { ...map, assets: dedupeAssets([...assets, ...(map.assets ?? [])]) };
       const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
         ? applyMapOperations(mapWithAssets, body.baseOperations)
@@ -626,6 +730,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       provider?: ChatProvider;
       assetProvider?: ModelProvider;
       baseOperations?: MapOperation[];
+      expectedVersion?: number;
       reuseExistingAssets?: boolean;
       assetLibraryId?: string;
       minNewAssets?: number;
@@ -645,14 +750,21 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       selectedObjectIds?: string[];
       parentTraceId?: string;
     }>(req);
+    if (service) {
+      body.assetProvider ??= 'deepseek';
+      body.sceneAgent ??= true;
+    }
     recordGenerationTrace('request.input', body);
-    const prompt = body.prompt?.trim();
+    const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
     if (body.assetProvider !== undefined && !isModelProvider(body.assetProvider)) {
       throw new HttpError(400, 'asset_provider_unavailable');
+    }
+    if (currentCodexRun() && body.assetProvider === 'gpt') {
+      throw new HttpError(400, 'codex_asset_gpt_provider_forbidden');
     }
     const controller = new AbortController();
     const stream = acceptsEventStream(req);
@@ -692,6 +804,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           : Promise.resolve([]),
         body.paletteId ? store.loadColorPalette(body.paletteId) : Promise.resolve(null)
       ]);
+      if (service && (body.expectedVersion !== undefined || body.baseOperations?.length)) {
+        if (map.version !== requireExpectedVersion(body.expectedVersion)) throw new HttpError(409, 'map_transaction_stale');
+      }
       const directedPrompt = prompt;
       if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
         throw new HttpError(409, 'map_composition_requires_empty_map');
@@ -705,7 +820,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const refinableObjectIds = baseOperations.flatMap((operation) => (
         operation.type === 'object.add' && operation.object.id ? [operation.object.id] : []
       ));
-      const modelProvider = body.assetProvider ?? modelProviderForChatProvider(provider);
+      const modelProvider = body.assetProvider ?? (currentCodexRun() ? 'deepseek' : modelProviderForChatProvider(provider));
       const planningAssets = dedupeAssets([
         ...assets,
         ...(planningMap.assets ?? []),
@@ -743,10 +858,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           suggestion.generationTraceId = generationTraceId();
           recordGenerationTrace('generation.result', { suggestion });
           if (stream) {
-            sendSse(res, 'result', { suggestion });
+            sendSse(res, 'result', { suggestion, ...(service ? { baseVersion: map.version } : {}) });
             res.end();
           } else {
-            sendJson(res, 200, { suggestion });
+            sendJson(res, 200, { suggestion, ...(service ? { baseVersion: map.version } : {}) });
           }
           return;
         }
@@ -761,10 +876,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         });
         recordGenerationTrace('composition.result', { plan });
         if (stream) {
-          sendSse(res, 'result', { plan });
+          sendSse(res, 'result', { plan, ...(service ? { baseVersion: map.version } : {}) });
           res.end();
         } else {
-          sendJson(res, 200, { plan });
+          sendJson(res, 200, { plan, ...(service ? { baseVersion: map.version } : {}) });
         }
         return;
       }
@@ -799,10 +914,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       suggestion.generationTraceId = generationTraceId();
       recordGenerationTrace('generation.result', { suggestion });
       if (stream) {
-        sendSse(res, 'result', { suggestion });
+        sendSse(res, 'result', { suggestion, ...(service ? { baseVersion: map.version } : {}) });
         res.end();
       } else {
-        sendJson(res, 200, { suggestion });
+        sendJson(res, 200, { suggestion, ...(service ? { baseVersion: map.version } : {}) });
       }
     } finally {
       req.off('aborted', abort);
@@ -821,8 +936,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       return;
     }
     if (req.method === 'POST' && parts.length === 5) {
-      const body = await readJson<Partial<MapTransactionRequest>>(req);
+      const body = await readJson<Partial<MapTransactionRequest> & { approved?: boolean; expectedVersion?: number }>(req);
       recordGenerationTrace('transaction.input', body);
+      const expectedVersion = service ? requireExpectedVersion(body.expectedVersion) : undefined;
+      if (service && body.approved !== true) throw new HttpError(400, 'map_approval_required');
       if (!isTransactionSource(body.source)) throw new HttpError(400, 'invalid_transaction_source');
       if (!Array.isArray(body.operations)) throw new HttpError(400, 'invalid_operations');
       try {
@@ -831,9 +948,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           source: body.source,
           operations: body.operations,
           ai: body.ai
-        }));
+        }, expectedVersion));
       } catch (error) {
-        throw new HttpError(400, error instanceof Error ? error.message : 'invalid_transaction');
+        const message = error instanceof Error ? error.message : 'invalid_transaction';
+        throw new HttpError(message === 'map_transaction_stale' ? 409 : 400, message);
       }
       return;
     }
@@ -943,7 +1061,8 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
     const modelJson = colorPalette
       ? applyPaletteToModelJson(generatedModelJson, colorPalette)
       : generatedModelJson;
-    const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, light: body.light, modelJson, mode });
+    const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, light: body.light, modelJson, mode,
+      ...(currentCodexRun() ? { provider: 'deepseek' as const } : {}) });
     sendJson(res, 201, { asset });
     return;
   }
