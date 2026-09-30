@@ -401,7 +401,7 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
   const connectedTownIds=new Set(intent.plan.roads.flatMap(road=>[road.fromTownId,road.toTownId]));
   for(const town of intent.plan.towns) if(!connectedTownIds.has(town.id)) {
     const evidence=towns.find(item=>item.id===town.id)!,viable:WorldSiteCandidate[]=[];
-    let lastFailure='world_no_settlement_candidates:'+town.id;
+    const failures:Array<{candidateId:string;reason:string}>=[];
     for(const site of evidence.candidates) {
       const plan:WorldPlan={version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,
         recipe:intent.plan.recipe,ecology:intent.plan.ecology,roads:[],towns:[{id:town.id,name:town.name,prompt:town.prompt,
@@ -419,9 +419,9 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
         }
         viable.push(site);landmarkLayouts.push(...layouts);
         if(viable.length>=2) break;
-      } catch(error) {lastFailure=error instanceof Error?error.message:String(error);}
+      } catch(error) {failures.push({candidateId:site.id,reason:error instanceof Error?error.message:String(error)});}
     }
-    if(!viable.length) throw new Error('world_no_settlement_candidates:'+town.id+':'+lastFailure);
+    if(!viable.length) throw new Error('world_no_settlement_candidates:'+town.id+':'+JSON.stringify(failures));
     evidence.candidates=viable;
   }
   type CandidateRoute={from:WorldSiteCandidate;to:WorldSiteCandidate;fromPort:[number,number];toPort:[number,number];

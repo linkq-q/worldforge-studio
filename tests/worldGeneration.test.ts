@@ -664,6 +664,36 @@ describe('world generation compiler', () => {
       assets:[{key:'market',name:'Market',role:'landmark',prompt:'A covered public market',dimensions:[12,6,10],enterable:true,strategy:'assembly'}]},input)).not.toThrow();
   },15_000);
 
+  it('preserves every candidate failure when no settlement layout is viable', () => {
+    const input:WorldGenerationRequest={prompt:'A 500 metre warm island harbor',seed:314159,size:500,generateAssets:false};
+    const raw={plan:{version:1,id:'warm-island-harbor-314159',revision:1,prompt:input.prompt,
+      recipe:{version:1,seed:input.seed,size:input.size,reliefProfile:'compact',heightScale:.03,constraints:[
+        {region:'west',biome:'ocean'},{region:'east',biome:'ocean'},{region:'north',biome:'ocean'},
+        {region:'south',biome:'ocean'},{region:'center',biome:'grassland'}],landforms:[
+        {center:[0,0],radius:[183,165],height:18},{center:[-65,35],radius:[105,105],height:10},
+        {center:[55,30],radius:[108,100],height:9},{center:[-55,95],radius:[78,76],height:5},
+        {center:[-35,-105],radius:[110,65],height:24},{center:[35,-112],radius:[85,57],height:16},
+        {center:[-112,-119],radius:[34,27],height:10},{center:[118,-40],radius:[29,39],height:8}],terrainBrushes:[
+        {id:'north-ridge-gully-west',mode:'lower',region:{kind:'path',points:[[-71,-129],[-60,-109],[-67,-89]],width:9},amount:8,feather:8},
+        {id:'north-ridge-gully-east',mode:'lower',region:{kind:'path',points:[[4,-139],[19,-117],[31,-99]],width:8},amount:7,feather:8},
+        {id:'southwest-bay-inlet',mode:'lower',region:{kind:'path',points:[[-190,114],[-169,97],[-153,88]],width:18},amount:5,feather:14},
+        {id:'east-farm-soft-ground',mode:'flatten',region:{kind:'circle',center:[93,47],radius:44},height:8,strength:.35,feather:16}]},
+      ecology:[],roads:[],towns:[{id:'southwest-port',name:'Southwest Port',prompt:'A continuous harbor town',population:250,
+        radius:95,blend:28,terrainMode:'conform',region:'center',kind:'city',pattern:'organic',density:.62,
+        waterfrontBias:.8,targetWaterBodyId:'sea',publicBuildings:[
+          {id:'fish-market',use:'waterfront fish market',width:15,depth:11,height:6,assetKey:'market',siting:'waterfront'},
+          {id:'port-warehouse',use:'port warehouse',width:14,depth:10,height:6,assetKey:'warehouse',siting:'waterfront'},
+          {id:'courtyard-school',use:'courtyard school',width:18,depth:19,height:8,assetKey:'school',siting:'central'}]}]}};
+    const intent=parseWorldIntentDraft(raw,input);
+    let message='';
+    try {createWorldSitingEvidence(intent);} catch(error) {message=error instanceof Error?error.message:String(error);}
+    expect(message).toContain('world_no_settlement_candidates:southwest-port:');
+    expect(message).toContain('southwest-port-site-6');
+    expect(message).toContain('world_settlement_no_landmark_site:port-warehouse:');
+    expect(message).toContain('southwest-port-site-7');
+    expect(message).toContain('world_settlement_no_waterfront_site:fish-market');
+  },15_000);
+
   it('keeps one shared candidate graph for a three-town chain at 500 metres', () => {
     const input:WorldGenerationRequest={prompt:'Three close grassland settlements linked in a chain',seed:91,size:500,generateAssets:false};
     const makeTown=(id:string,region:'west'|'center'|'east',publicBuildings:unknown[]=[])=>({id,name:id,prompt:id,
