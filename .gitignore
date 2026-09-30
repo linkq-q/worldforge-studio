@@ -8,6 +8,6 @@ coverage/
 .gstack/
 .workbuddy/
 
-# Local water regression captures and browser state
-/output/water-qa/
+# Local generation and visual-review captures
+/output/
 /.playwright-cli/
