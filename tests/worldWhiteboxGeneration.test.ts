@@ -162,6 +162,22 @@ describe('whitebox world generation', () => {
     expect(result.paidCallCount).toBe(2);
   });
 
+  it('honours a smaller complete-flow DeepSeek budget without a repair pass', async () => {
+    const plan = buildablePlan();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+      .mockResolvedValueOnce(JSON.stringify(constructionExpansion(2)));
+    mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    let id = 0;
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: `capped-${++id}` })) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: true, assetGenerationLimit: 2, repairAttempts: 0 }, store);
+
+    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.generateModel).toHaveBeenCalledTimes(2);
+    expect(result.paidCallCount).toBe(4);
+  });
+
   it('rejects a fourth complete-flow asset before any DeepSeek call', async () => {
     const plan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))

@@ -32,6 +32,7 @@ interface CompleteWorldGenerationRequest extends WorldGenerationRequest {
   mode: 'generate-complete';
   size: 500;
   repairAttempts: 0;
+  assetGenerationLimit: number;
 }
 export interface WorldAssetRequest {
   key: string;
@@ -988,13 +989,16 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
 }
 
 function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGenerationRequest {
-  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds'],
+  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds','assetGenerationLimit'],
     'invalid_complete_world_generation_request','world_unknown_complete_generation_request_field');
   const request=validateWorldGenerationRequest(raw);
-  if(raw.mode!=='generate-complete'||request.size!==500||request.repairAttempts!==0) {
+  if(raw.mode!=='generate-complete'||request.size!==500||request.repairAttempts!==0
+    ||(raw.assetGenerationLimit!==undefined&&(!Number.isInteger(raw.assetGenerationLimit)
+      ||(raw.assetGenerationLimit as number)<0||(raw.assetGenerationLimit as number)>3))) {
     throw new Error('invalid_complete_world_generation_request');
   }
-  return {...request,mode:'generate-complete',size:500,repairAttempts:0};
+  return {...request,mode:'generate-complete',size:500,repairAttempts:0,
+    assetGenerationLimit:raw.assetGenerationLimit===undefined?3:raw.assetGenerationLimit as number};
 }
 
 async function generateCompleteWorld(input: unknown, store: MapStore, signal?: AbortSignal) {
@@ -1002,7 +1006,7 @@ async function generateCompleteWorld(input: unknown, store: MapStore, signal?: A
   const whitebox=await generateWorldWhitebox({mode:'whitebox',prompt:request.prompt,seed:request.seed,size:500,
     generateAssets:false,repairAttempts:0},signal);
   const construction=await generateWorldFromWhitebox({mode:'construct-whitebox',whiteboxPlan:whitebox.finalPlan,
-    generateAssets:request.generateAssets!==false,assetGenerationLimit:3,repairAttempts:0,
+    generateAssets:request.generateAssets!==false,assetGenerationLimit:request.assetGenerationLimit,repairAttempts:0,
     ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})},store,signal);
   return {...construction,mode:'generate-complete' as const,
     originalPlan:whitebox.originalPlan,initialPlan:whitebox.initialPlan,observation:whitebox.observation,
