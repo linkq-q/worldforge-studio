@@ -2730,7 +2730,7 @@ class MapEditor {
       }>('/api/editor/worlds/generate', {
         method: 'POST', signal: this.mapAiAbortController.signal,
         body: JSON.stringify({prompt: this.mapAiPrompt, seed: map.seed, size: this.worldWidth,
-          generateAssets: this.worldGenerateAssets,
+          generateAssets: this.worldGenerateAssets, repairAttempts: 0,
           ...(this.mapAiReuseExistingAssets && library ? {reusableAssetIds: library.assetIds.slice(0, 64)} : {})})
       });
       const bindings = result.assetSources?.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role,

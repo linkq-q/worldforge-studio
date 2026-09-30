@@ -332,20 +332,6 @@ function cachedWorldSampler(sample:ReturnType<typeof createWorldSampler>):Return
   };
 }
 
-function validateSettlementExperience(town:WorldIntentTown,patch:ReturnType<typeof generateWorldSettlement>):void {
-  if((town.waterfrontBias??0)>=.5&&!patch.streets.some(street=>street.tags.includes('waterfront'))) {
-    throw new Error('world_settlement_waterfront_unreachable:'+town.id);
-  }
-  const publicIds=new Set(town.publicBuildings.map(building=>building.id));
-  if(!patch.buildings.some(building=>!publicIds.has(building.id))) throw new Error('world_settlement_no_housing:'+town.id);
-  const quality=auditWorldSettlementAcceptance(town,patch,{
-    kind:town.kind,density:town.density,waterfrontBias:town.waterfrontBias
-  });
-  if(quality.planningIssues.length) {
-    throw new Error('world_settlement_quality_rejected:'+town.id+':'+quality.planningIssues.join(','));
-  }
-}
-
 export function auditWorldSettlementAcceptance(town: Pick<WorldIntentTown,'id'|'radius'|'targetWaterBodyId'|'publicBuildings'>,
   patch: Pick<TownPatch,'buildings'|'streets'>,
   settings: Pick<WorldSettlementOptions,'kind'|'density'|'waterfrontBias'>): {
@@ -407,11 +393,6 @@ export function auditWorldCandidatePacking(
 
 export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSitingEvidence {
   const sample=cachedWorldSampler(createWorldSampler(intent.plan.recipe));
-  const boundary=auditWorldIslandBoundary(intent.plan.prompt,intent.plan.recipe,sample);
-  if(boundary&&boundary.dryRatio>.2) throw new Error('world_island_boundary_open:'+boundary.drySamples+'/'+boundary.samples);
-  const landmass=auditWorldIslandLandmass(intent.plan.prompt,intent.plan.recipe,intent.plan.towns,sample);
-  if(landmass&&!landmass.adequate) throw new Error('world_island_landmass_insufficient:'
-    +landmass.largestDryComponentSamples+'/'+landmass.requiredDrySamples+':'+landmass.minSpan+'/'+landmass.requiredSpan);
   const towns=intent.plan.towns.map(town=>({id:town.id,candidates:findWorldSiteCandidates(intent.plan.recipe,town)}));
   for(const town of towns) if(!town.candidates.length) throw new Error('world_no_site_candidates:'+town.id);
   const packing=auditWorldCandidatePacking(intent.plan.towns,intent.plan.roads,towns);
@@ -436,7 +417,6 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
           layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,
             candidateId:site.id,pattern:town.pattern,landmarks:result.landmarks});
         }
-        validateSettlementExperience(town,patch);
         viable.push(site);landmarkLayouts.push(...layouts);
         if(viable.length>=2) break;
       } catch(error) {lastFailure=error instanceof Error?error.message:String(error);}
@@ -499,7 +479,7 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
         .sort((a,b)=>a.publicBuildings.length-b.publicBuildings.length);
       for(const town of plannedTowns) {
         let patch=generateWorldSettlement(plan,town.id,planned,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
-        if(!town.publicBuildings.length) {validateSettlementExperience(town,patch);continue;}
+        if(!town.publicBuildings.length) continue;
         const site=selected.get(town.id)!,townPlan=plan.towns.find(item=>item.id===town.id)!;
         const key=`${town.id}:${site.id}:${town.pattern}:${townPlan.ports.map(port=>`${port.position[0]},${port.position[1]},${port.width}`).join('|')}`;
         let landmarks=landmarkCache.get(key);
@@ -515,7 +495,6 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
             waterfrontBias:town.waterfrontBias??0,landmarks});
         }
         if(!landmarks) throw new Error('world_no_landmark_layout:'+town.id);
-        validateSettlementExperience(town,patch);
         layouts.push({id:`${town.id}-${site.id}-${town.pattern}-landmarks`,townId:town.id,candidateId:site.id,
           pattern:town.pattern,landmarks});
       }
@@ -687,7 +666,6 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
     for(const town of intent.plan.towns) {
       const patch=compiled.bundle.patches.find(item=>item.townId===town.id);
       if(!patch) throw new Error('world_settlement_missing_patch:'+town.id);
-      validateSettlementExperience(town,patch);
     }
     return compiled;
   };
@@ -977,7 +955,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
       recordGenerationTrace('world.rejected',{stage:'layout',layout,error:reason});
       const assetRepair=/^world_missing_(?:asset_roles|ecology_assets):/.test(reason);
       const optionsRepair=/^world_layout_(?:unsupported_option|settlement_intent_mismatch):/.test(reason);
-      if(!assetRepair&&!optionsRepair||!layout) throw error;
+      if(request.repairAttempts===0||!assetRepair&&!optionsRepair||!layout) throw error;
       const first=record(layout,'invalid_world_layout');
       layoutMessages.push({role:'assistant',content},{role:'user',content:JSON.stringify({error:reason,
         instruction:assetRepair
@@ -1016,6 +994,11 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     const connectedPorts=town.ports.filter(port=>p.streets.some(street=>
       [street.points[0],street.points.at(-1)!].some(point=>Math.hypot(point[0]-port.position[0],point[1]-port.position[1])<1e-6))).length;
     const planningIssues:string[]=[];
+    const islandBoundary=auditWorldIslandBoundary(compiled.bundle.plan.prompt,compiled.bundle.plan.recipe,sample);
+    const islandLandmass=auditWorldIslandLandmass(compiled.bundle.plan.prompt,compiled.bundle.plan.recipe,
+      compiled.bundle.plan.towns,sample);
+    if(islandBoundary&&islandBoundary.dryRatio>.2) planningIssues.push('island_boundary_open');
+    if(islandLandmass&&!islandLandmass.adequate) planningIssues.push('island_landmass_insufficient');
     if(publicBuildings<recommendedPublicBuildings[0]) planningIssues.push('missing_public_function');
     if(publicBuildings>recommendedPublicBuildings[1]&&recommendedPublicBuildings[1]>0) planningIssues.push('public_program_overconcentrated');
     if(!town.ports.length) planningIssues.push('missing_external_connection');
@@ -1030,13 +1013,6 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
         populationHousingShortfall:Math.max(0,populationHousingTarget-ordinaryBuildings)}),planningIssues};
   });
   recordGenerationTrace('world.geometry.preview',{draft:compiled.draft,diagnostics});
-  const rejected=diagnostics.filter(item=>item.planningIssues.some(issue=>
-    ['underbuilt_settlement','clustered_settlement','missing_sea_landing','public_program_overconcentrated'].includes(issue)));
-  if(rejected.length) {
-    const error='world_geometry_quality_rejected:'+rejected.map(item=>item.townId+':'+item.planningIssues.join(',')).join(';');
-    recordGenerationTrace('world.rejected',{stage:'geometry',error,diagnostics});
-    throw new Error(error);
-  }
   const assetSources=request.generateAssets?await generateWorldAssets(compiled.draft.assets,store,signal):undefined;
   recordGenerationTrace('world.preview',{draft:compiled.draft,diagnostics,assets:assetSources?.map(a=>({id:a.id,assetId:a.assetId,provider:a.provider,strategy:a.strategy}))});
   return {bundle:compiled.bundle,draft:compiled.draft,diagnostics,assetSources,planningProvider:'gpt',assetProvider:'deepseek',preview:true};
