@@ -265,6 +265,7 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('Show the whole inhabited footprint of a requested town');
     expect(systemPrompt).toContain('Distinct districts should usually occupy distinct regions');
     expect(systemPrompt).toContain('Leave contiguous dry plots beside, rather than inside, road junctions');
+    expect(systemPrompt).toContain('Keep ordinary routes human-scale relative to nearby buildings');
     expect(systemPrompt).toContain('ecology, towns and roads must be empty arrays');
   });
 
