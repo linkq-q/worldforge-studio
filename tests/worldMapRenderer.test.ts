@@ -14,7 +14,11 @@ const bundle = validateWorldBundle(JSON.parse(readFileSync(
 const smallBundle = validateWorldBundle({
   plan: {
     version: 1, id: 'small-world', revision: 1, prompt: 'small grassland',
-    recipe: { version: 1, seed: 17, size: 500, constraints: [{ region: 'center', biome: 'grassland' }] },
+    recipe: { version: 1, seed: 17, size: 500, constraints: [
+      { region: 'center', biome: 'grassland' },
+      { region: 'north', biome: 'ocean' }, { region: 'east', biome: 'ocean' },
+      { region: 'south', biome: 'ocean' }, { region: 'west', biome: 'ocean' }
+    ] },
     ecology: [], towns: [], roads: []
   },
   patches: []
@@ -31,6 +35,22 @@ async function waitFor(predicate: () => boolean): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 10));
   }
   throw new Error('streaming_timeout');
+}
+
+function sampleOceanFloor(
+  binding: { texture: THREE.DataTexture; terrainSize: [number, number]; mapSize: [number, number]; center: [number, number] },
+  x: number,
+  z: number
+): number {
+  const [width, depth] = binding.terrainSize;
+  const heights = (binding.texture.image as unknown as { data: Float32Array }).data;
+  const gx = THREE.MathUtils.clamp((x - binding.center[0]) / binding.mapSize[0] * (width - 1) + (width - 1) / 2, 0, width - 1);
+  const gz = THREE.MathUtils.clamp((z - binding.center[1]) / binding.mapSize[1] * (depth - 1) + (depth - 1) / 2, 0, depth - 1);
+  const ix = Math.min(width - 2, Math.floor(gx)), iz = Math.min(depth - 2, Math.floor(gz));
+  const fx = gx - ix, fz = gz - iz;
+  const a = heights[iz * width + ix], b = heights[iz * width + ix + 1];
+  const c = heights[(iz + 1) * width + ix], d = heights[(iz + 1) * width + ix + 1];
+  return (a + (b - a) * fx) * (1 - fz) + (c + (d - c) * fx) * fz;
 }
 
 describe('main editor streamed world renderer', () => {
@@ -95,6 +115,7 @@ describe('main editor streamed world renderer', () => {
     const map = createEmptyMap();
     map.world = { bundle: smallBundle, assets: [] };
     map.box.size = [500, 4096, 500];
+    const originalSample = createPlannedWorldSampler(smallBundle.plan, smallBundle.patches);
     const rendered = await buildEditableMapGroup(map, { worldInitialView: { x: 0, z: 0, distance: 400 } });
     try {
       const terrains: THREE.Mesh[] = [];
@@ -121,6 +142,24 @@ describe('main editor streamed world renderer', () => {
       expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);
+      const oceanFloor = ocean.userData.waterOceanTerrain as Parameters<typeof sampleOceanFloor>[0];
+      let sunkVertices = 0;
+      for (const terrain of terrains) {
+        const positions = terrain.geometry.getAttribute('position');
+        for (let index = 0; index < positions.count; index += 1) {
+          const world = terrain.localToWorld(new THREE.Vector3(
+            positions.getX(index), positions.getY(index), positions.getZ(index)
+          ));
+          const authored = originalSample(world.x, world.z).height;
+          if (authored > 0) expect(world.y).toBeCloseTo(authored, 4);
+          else {
+            const expected = Math.min(authored, sampleOceanFloor(oceanFloor, world.x, world.z));
+            expect(world.y).toBeCloseTo(expected, 4);
+            if (expected < authored - 0.05) sunkVertices += 1;
+          }
+        }
+      }
+      expect(sunkVertices).toBeGreaterThan(0);
       const edges = new Map<string, { y: number; normal: THREE.Vector3 }>();
       let sharedVertices = 0;
       for (const terrain of terrains) {

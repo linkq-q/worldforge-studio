@@ -20,6 +20,7 @@ import type { Vec3 } from '../shared/protocol';
 import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapObject, type MapWaterBody } from '../shared/map';
 import type { MapGuide } from '../shared/mapGuide';
 import type { MapGrassLayer } from '../shared/mapGrass';
+import { buildOceanCoastField, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import type { PaletteCoverageReport } from './paletteMaterialRuntime';
 import {
   buildNormalizedEditableMapGroupCore,
@@ -220,9 +221,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     environment: null,
     waterEnvironment: null
   };
-  const compactOcean = bundle.plan.recipe.size <= CONTENT_DISTANCE_LIMIT
+  const compactOceanBuild = bundle.plan.recipe.size <= CONTENT_DISTANCE_LIMIT
     ? buildCompactWorldOcean()
     : null;
+  const compactOcean = compactOceanBuild?.group ?? null;
+  const compactOceanCoast = compactOceanBuild?.coast ?? null;
   if (compactOcean) modelsRoot.add(compactOcean);
 
   const initialRequest = normalizedReconcileRequest(
@@ -360,6 +363,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const centerZ = tile.z + tile.size / 2;
     const resolution = tile.size <= 256 ? FINE_TERRAIN_RESOLUTION : tile.size <= 2_048 ? 33 : 17;
     const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample, false);
+    if (compactOceanCoast) applyWorldOceanFloor(sampled.heights, tile, resolution, compactOceanCoast);
     const sampledAt = performance.now();
     const tileMap = makeTerrainTileMap(tile, sampled.heights, includeOcean);
     const textureSize = tile.size <= 256 ? 128 : tile.size <= 2_048 ? 64 : 32;
@@ -470,7 +474,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     };
   }
 
-  function buildCompactWorldOcean(): THREE.Group {
+  function buildCompactWorldOcean(): { group: THREE.Group; coast: OceanCoastField } {
     const size = bundle.plan.recipe.size;
     const tile: WorldTile = { x: -size / 2, z: -size / 2, size };
     const resolution = Math.min(129, Math.max(65, Math.ceil(size / 4) + 1));
@@ -491,7 +495,15 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       layout: createDefaultMapLayout([size, map.box.size[1], size]), guides: [],
       designSemantics: DEFAULT_MAP_DESIGN_SEMANTICS, assets: [], collisionBake: undefined
     };
-    return buildStructuredWaterGroup(oceanMap);
+    const coast = buildOceanCoastField(oceanMap, 0);
+    return { group: buildStructuredWaterGroup(oceanMap, coast), coast };
+  }
+
+  function worldTerrainHeight(x: number, z: number): number {
+    const height = sample(x, z).height;
+    return compactOceanCoast && height <= compactOceanCoast.level
+      ? Math.min(height, sampleCoastGrid(compactOceanCoast, x, z))
+      : height;
   }
 
   function applyWorldTerrainEdgeNormals(group: THREE.Object3D, tile: WorldTile, centerX: number, centerZ: number): void {
@@ -505,8 +517,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       const x = positions.getX(index), z = positions.getZ(index);
       if (Math.abs(Math.abs(x) - half) > 1e-5 && Math.abs(Math.abs(z) - half) > 1e-5) continue;
       const worldX = centerX + x, worldZ = centerZ + z;
-      const dx = sample(worldX + epsilon, worldZ).height - sample(worldX - epsilon, worldZ).height;
-      const dz = sample(worldX, worldZ + epsilon).height - sample(worldX, worldZ - epsilon).height;
+      const dx = worldTerrainHeight(worldX + epsilon, worldZ) - worldTerrainHeight(worldX - epsilon, worldZ);
+      const dz = worldTerrainHeight(worldX, worldZ + epsilon) - worldTerrainHeight(worldX, worldZ - epsilon);
       const length = Math.hypot(dx, epsilon * 2, dz);
       normals.setXYZ(index, -dx / length, epsilon * 2 / length, -dz / length);
     }
@@ -1377,6 +1389,20 @@ function sameReconcileRequest(left: ReconcileRequest | null, right: ReconcileReq
 
 export function worldOceanAnchor(size: number, focusX: number, focusZ: number): { x: number; z: number } {
   return size <= CONTENT_DISTANCE_LIMIT ? { x: 0, z: 0 } : { x: focusX, z: focusZ };
+}
+
+function applyWorldOceanFloor(
+  heights: Float32Array,
+  tile: WorldTile,
+  resolution: number,
+  coast: OceanCoastField
+): void {
+  for (let index = 0; index < heights.length; index += 1) {
+    if (heights[index] > coast.level) continue;
+    const x = tile.x + index % resolution / (resolution - 1) * tile.size;
+    const z = tile.z + Math.floor(index / resolution) / (resolution - 1) * tile.size;
+    heights[index] = Math.min(heights[index], sampleCoastGrid(coast, x, z));
+  }
 }
 
 export function worldGrassLayers(data: WorldTileData, tile: WorldTile): MapGrassLayer[] {
