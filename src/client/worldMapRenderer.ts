@@ -95,7 +95,17 @@ export function buildWorldWhiteboxOverlay(
     root.add(outline);
   }
   for (const path of plan.featureGraph.paths) {
-    const color = /river|water|canal/i.test(path.kind) ? 0x468ff2
+    const waterPath = /river|water|canal/i.test(path.kind);
+    const renderedRiver = waterPath && (plan.recipe.waterBodies ?? []).some(water => {
+      if (water.type !== 'river' || water.region.kind !== 'path' || water.region.points.length !== path.points.length) return false;
+      const riverPoints = water.region.points;
+      const matches = (reverse: boolean) => path.points.every((point, index) => {
+        const candidate = riverPoints[reverse ? path.points.length - 1 - index : index];
+        return Math.abs(point[0] - candidate[0]) < 1e-4 && Math.abs(point[1] - candidate[1]) < 1e-4;
+      });
+      return matches(false) || matches(true);
+    });
+    const color = waterPath ? 0x468ff2
       : /trail|foot|hike/i.test(path.kind) ? 0xf6b46c : 0x35d7ff;
     const points: THREE.Vector3[] = [];
     for (let index = 1; index < path.points.length; index++) {
@@ -103,14 +113,17 @@ export function buildWorldWhiteboxOverlay(
       const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / 6));
       for (let step = index === 1 ? 0 : 1; step <= steps; step++) {
         const t = step / steps, x = from[0] + (to[0] - from[0]) * t, z = from[1] + (to[1] - from[1]) * t;
-        points.push(new THREE.Vector3(x, visibleHeight(x, z), z));
+        const surface = sample(x, z);
+        const y = Math.max(surface.height, surface.waterLevel ?? surface.height) + (renderedRiver ? 0.05 : 0.8);
+        points.push(new THREE.Vector3(x, y, z));
       }
     }
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, depthTest: false }));
+    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, depthTest: renderedRiver }));
     line.name = `world-whitebox-path:${path.id}`;
     line.renderOrder = 20;
     root.add(line);
+    if (renderedRiver) continue;
     const ribbon: number[] = [];
     const halfWidth = Math.max(0.8, Math.min(4, path.width / 2));
     for (let index = 1; index < points.length; index++) {

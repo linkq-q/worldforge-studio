@@ -74,6 +74,32 @@ describe('main editor streamed world renderer', () => {
     expect((path.material as THREE.LineBasicMaterial).depthTest).toBe(false);
   });
 
+  it('does not cover a matching rendered river with a whitebox ribbon', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.recipe.waterBodies = [{
+      id: 'river-water', type: 'river',
+      region: { kind: 'path', points: [[-12, 0], [0, 3], [12, 0]], width: 18 },
+      levels: [2, 1, 0], depth: 3
+    }];
+    plan.featureGraph = {
+      regions: [],
+      paths: [
+        { id: 'river-feature', kind: 'watercourse', name: 'River', points: [[-12, 0], [0, 3], [12, 0]], width: 18 },
+        { id: 'trail', kind: 'trail', name: 'Trail', points: [[-10, 8], [10, 8]], width: 3 }
+      ],
+      anchors: [], relations: []
+    };
+
+    const overlay = buildWorldWhiteboxOverlay(plan, () => ({ height: -2, waterLevel: 1 }));
+    const riverLine = overlay.getObjectByName('world-whitebox-path:river-feature') as THREE.Line;
+    expect(riverLine).toBeInstanceOf(THREE.Line);
+    expect((riverLine.material as THREE.LineBasicMaterial).depthTest).toBe(true);
+    expect(riverLine.geometry.getAttribute('position').getY(0)).toBeCloseTo(1.05);
+    expect(overlay.getObjectByName('world-whitebox-path-surface:river-feature')).toBeUndefined();
+    expect(overlay.getObjectByName('world-whitebox-path-surface:trail')).toBeInstanceOf(THREE.Mesh);
+  });
+
   it('outlines only unique authored settlement and intentional-empty regions in whitebox mode', () => {
     const plan = structuredClone(smallBundle.plan);
     plan.whitebox = true;
