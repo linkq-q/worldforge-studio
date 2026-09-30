@@ -423,8 +423,56 @@ describe('world settlement growth', () => {
     const access = result.patch.streets.find(street => street.tags.includes('landmark-access'))!;
     expect(access).toBeDefined();
     expect(Math.hypot(access.points[1][0] - access.points[0][0], access.points[1][1] - access.points[0][1]))
-      .toBeLessThanOrEqual(12.0001);
+      .toBeLessThanOrEqual(5.0001);
     expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
+  });
+
+  it('samples a rotated landmark footprint in the same orientation used by placement', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    const rotation = Math.PI / 4;
+    const landmark: TownBuilding = {
+      id: 'market-hall', x: -35, z: 45, width: 28, depth: 10, height: 8,
+      use: 'market hall', rotation
+    };
+    const sample: WorldSettlementSampler = (x, z) => {
+      const original = base(x, z), lx = x - town.center[0], lz = z - town.center[1];
+      return {
+        ...original,
+        height: town.foundation + 0.13 * (lx * Math.sin(rotation) + lz * Math.cos(rotation)),
+        waterLevel: null,
+        waterBodyId: null
+      };
+    };
+
+    const patch = generateWorldSettlement(plan, town.id, sample, {
+      kind: 'city', pattern: 'organic', seed: 71, landmarks: [landmark]
+    });
+
+    expect(patch.buildings.find(building => building.id === landmark.id)).toEqual(landmark);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
+  it('uses the rotated landmark footprint when checking planned roads', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.ports = [];
+    const landmark: TownBuilding = {
+      id: 'market-hall', x: -35, z: 45, width: 28, depth: 10, height: 8,
+      use: 'market hall', rotation: Math.PI / 4
+    };
+    const worldBuilding = { ...landmark, x: landmark.x + town.center[0], z: landmark.z + town.center[1] };
+    const plannedRoad = road('market-lane', [[-2022, 56], [-2022, 60]], 2);
+    plan.roads = [plannedRoad];
+    const flat: WorldSettlementSampler = (x, z) => ({
+      ...base(x, z), height: town.foundation, waterLevel: null, waterBodyId: null
+    });
+
+    expect(segmentBuildingFootprint(plannedRoad.points[0], plannedRoad.points[1], worldBuilding, plannedRoad.width / 2)).toBe(false);
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'city', pattern: 'organic', seed: 71, landmarks: [landmark]
+    });
+
+    expect(patch.buildings.find(building => building.id === landmark.id)).toEqual(landmark);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
   });
 
   it('distributes public functions between the center, waterfront, gateway and high ground', () => {

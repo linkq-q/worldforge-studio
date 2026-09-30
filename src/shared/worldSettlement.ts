@@ -876,8 +876,8 @@ function placeBuildings(
         : segmentBuildingFootprint(road.a, road.b, landmark, road.width / 2 + 1))) {
       throw new Error(`world_settlement_invalid_landmark:${landmark.id}`);
     }
-    const worldBounds = { ...bounds, x: bounds.x + town.center[0], z: bounds.z + town.center[1] };
-    if (worldRoads.some(road => segmentBox(road.a, road.b, worldBounds, road.width / 2))) {
+    const worldBuilding = { ...landmark, x: landmark.x + town.center[0], z: landmark.z + town.center[1] };
+    if (worldRoads.some(road => segmentBuildingFootprint(road.a, road.b, worldBuilding, road.width / 2))) {
       throw new Error(`world_settlement_invalid_landmark:${landmark.id}`);
     }
   }
@@ -1039,8 +1039,8 @@ function sampleSlope(sample: WorldSettlementSampler, town: TownIntent, point: Po
 function buildingProbePoints(building: TownBuilding): Point[] {
   const rotation = building.rotation ?? 0, c = Math.cos(rotation), s = Math.sin(rotation);
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([x, z]): Point => [
-    building.x + c * x * building.width / 2 - s * z * building.depth / 2,
-    building.z + s * x * building.width / 2 + c * z * building.depth / 2
+    building.x + c * x * building.width / 2 + s * z * building.depth / 2,
+    building.z - s * x * building.width / 2 + c * z * building.depth / 2
   ]);
   return [[building.x, building.z], ...corners, ...corners.map((point, index) => mix(point, corners[(index + 1) % 4], 0.5))];
 }
@@ -1052,7 +1052,9 @@ function buildingEarthworkSafe(sample: WorldSettlementSampler, town: TownIntent,
 }
 
 function landmarkAccessLength(blockSize: number): number {
-  return Math.max(8, Math.min(12, blockSize / 4));
+  // A street-facing civic building needs a short entry walk, not an empty
+  // forecourt that consumes a quarter of a compact town's buildable radius.
+  return Math.max(2.5, Math.min(5, blockSize / 12));
 }
 
 function landmarkEntry(building: TownBuilding, roadWidth: number): Point {
