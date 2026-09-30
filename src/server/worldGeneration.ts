@@ -1002,7 +1002,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
   let intent:WorldIntentDraft|undefined;
   let evidence:WorldSitingEvidence|undefined;
   for(let attempt=0;attempt<=(request.repairAttempts??0);attempt++) {
-    const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,traceStage:attempt?'world.intent-repair':'world.intent',signal});
+    const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,maxAttempts:1,traceStage:attempt?'world.intent-repair':'world.intent',signal});
     let draft:unknown;
     let proposed:WorldIntentDraft|undefined;
     try {
@@ -1073,7 +1073,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     recordGenerationTrace('world.siting',{evidence});
     const layoutMessages:ChatMessage[]=[{role:'system',content:WORLD_LAYOUT_PROMPT},{role:'user',content:JSON.stringify({
       intent,evidence,...(reusableAssets.length?{reusableAssets}:{})})}];
-    const content=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,traceStage:'world.layout',signal});
+    const content=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,maxAttempts:1,traceStage:'world.layout',signal});
     let layout:unknown;
     try {layout=parseJson(content);recordGenerationTrace('world.layout.raw',{layout});compiled=materializeWorldIntent(intent,evidence,layout,request);}
     catch(error) {
@@ -1087,7 +1087,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
         instruction:assetRepair
           ? 'Repair only the assets array. Copy towns and settlements exactly from the previous response. Add the missing ordinary-building role family or ecology-rule binding requested by the error while keeping all existing valid landmark assets. Return one complete JSON object with only towns, settlements and assets. Do not change site choices, settlement options, intent, terrain, roads or geography.'
           : 'Repair only the settlements array. Copy towns and assets exactly from the previous response. Each options object must contain only kind, pattern, density and optional waterfrontBias, copied exactly from intent. Do not add slope, setback, seed or landmark overrides. Do not change site choices, assets, intent, terrain, roads or geography.'})});
-      const repairedContent=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,traceStage:'world.layout-repair',signal});
+      const repairedContent=await llmChat(layoutMessages,{provider:'gpt',maxTokens:16000,temperature:0.2,maxAttempts:1,traceStage:'world.layout-repair',signal});
       let repaired:unknown;
       try {
         repaired=parseJson(repairedContent);recordGenerationTrace('world.layout.repair.raw',{layout:repaired});

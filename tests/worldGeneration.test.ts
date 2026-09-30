@@ -349,6 +349,8 @@ describe('world generation compiler', () => {
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
     expect(mocks.llmChat.mock.calls.map(call=>(call[1] as {traceStage:string}).traceStage))
       .toEqual(['world.intent','world.layout']);
+    expect(mocks.llmChat.mock.calls.map(call=>(call[1] as {maxAttempts:number}).maxAttempts))
+      .toEqual([1,1]);
   });
 
   it('repairs an invalid GPT intent once and returns geometry audits', async () => {
