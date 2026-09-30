@@ -184,6 +184,16 @@ describe('world generation compiler', () => {
     expect(result.bundle.plan.towns).toHaveLength(1);
   });
 
+  it('offers the shared crater brush to direct world planning', async () => {
+    const { layout } = soloLayout();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent()))
+      .mockResolvedValueOnce(JSON.stringify(layout));
+    await generateWorld(request, {} as MapStore);
+    const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content as string;
+    expect(systemPrompt).toContain("mode:'crater',region:CIRCLE,depth,rimHeight");
+    expect(systemPrompt).toContain('depth lowers the central floor below the pre-brush sampled rim height');
+  });
+
   it('accepts one missing final brace only when the remaining JSON is complete', async () => {
     const { layout } = soloLayout();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent()).slice(0, -1))

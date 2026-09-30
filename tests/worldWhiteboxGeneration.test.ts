@@ -496,6 +496,23 @@ describe('whitebox world generation', () => {
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
+  it('does not pay for a requested landmark when its town has no realized building', async () => {
+    const expansion = constructionExpansion(1);
+    expansion.assets.push({ key: 'unused-cooperative', name: 'Fishing Cooperative', role: 'landmark',
+      prompt: 'A coastal cooperative for an unbuilt harbor', strategy: 'single' });
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: 'saved-house' })) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 2, repairAttempts: 0 }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(mocks.generateModel).toHaveBeenCalledTimes(1);
+    expect(result.paidCallCount).toBe(2);
+    expect(result.draft.assets.map(asset => asset.key)).toEqual(['asset-1', 'unused-cooperative']);
+    expect(result.assetSources?.map(asset => asset.id)).toEqual(['asset-1']);
+  });
+
   it('rejects assembly requests before any paid asset generation', async () => {
     const expansion = constructionExpansion(1);
     expansion.assets[0].strategy = 'assembly';
