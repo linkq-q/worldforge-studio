@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateWorld } from '../src/server/worldGeneration';
-import { applyWorldWhiteboxAdjustment, executeWorldWhitebox, generateWorldWhitebox,
+import { executeWorldWhitebox, generateWorldWhitebox,
   parseWorldWhiteboxInitialPlan, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
 import type { WorldPlan } from '../src/shared/worldPlanning';
@@ -64,60 +64,44 @@ describe('whitebox world generation', () => {
     expect(() => validateWorldWhiteboxRequest({ ...request, repairAttempts: 1 })).toThrow();
   });
 
-  it('executes the original plan, observes it, and asks the same task once before keeping it', async () => {
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }))
-      .mockResolvedValueOnce(JSON.stringify({ decision: 'keep' }));
+  it('uses one GPT call and preserves the raw first plan through observation and final output', async () => {
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }));
     const result = await generateWorld(request, {} as MapStore);
     if (!('mode' in result)) throw new Error('expected_whitebox_result');
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
     expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
-      .toEqual(['world.whitebox.initial-plan', 'world.whitebox.adjustment']);
+      .toEqual(['world.whitebox.initial-plan']);
     expect(mocks.llmChat.mock.calls.every(([, options]) => options.provider === 'gpt')).toBe(true);
-    const adjustmentInput = JSON.parse(mocks.llmChat.mock.calls[1][0][1].content);
-    expect(adjustmentInput).toHaveProperty('observation.pointsOfInterest.spacing');
-    expect(adjustmentInput).toHaveProperty('observation.paths.components');
-    expect(adjustmentInput.remainingAdjustmentBudget).toBe(1);
-    expect(JSON.stringify(adjustmentInput)).not.toMatch(/image_url|data:image/i);
     expect(result.mode).toBe('whitebox');
     expect(result.bundle.patches).toEqual([]);
     expect(result.assetSources).toEqual([]);
     expect(result.initialPlan).toEqual(result.finalPlan);
     expect(result.observation.scope).toBe('executed');
     expect(result.observation.pointsOfInterest.realizedCount).toBe(3);
-    expect(result.adjustment).toEqual({ decision: 'keep', applied: false });
+    expect(result.adjustment).toEqual({
+      decision: 'keep', applied: false, skipped: true, reason: 'raw_first_call_preserved'
+    });
   });
 
-  it('applies one finite creator patch and reports a technically invalid patch without altering the original', async () => {
-    const plan = originalPlan();
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
-      .mockResolvedValueOnce(JSON.stringify({ decision: 'patch', patch: {
-        concept: { ...plan.concept, experience: 'Cross the bay, visit the farms, then climb' }
-      } }));
-    const result = await generateWorldWhitebox(request);
-    expect(result.adjustment.applied).toBe(true);
-    expect(result.initialPlan.revision).toBe(1);
-    expect(result.finalPlan.revision).toBe(2);
-    expect(result.finalPlan.concept?.experience).toContain('farms');
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
-    const invalid = applyWorldWhiteboxAdjustment(result.initialPlan, { decision: 'patch', patch: {
-      recipe: { ...result.initialPlan.recipe, size: 1000 }
-    } });
-    expect(invalid.plan).toEqual(result.initialPlan);
-    expect(invalid.adjustment.error).toBe('world_whitebox_patch_changed_request');
-  });
-
-  it('keeps the visible first whitebox when the one adjustment call fails', async () => {
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }))
-      .mockRejectedValueOnce(new Error('adjustment_api_unavailable'));
-    const result = await generateWorldWhitebox(request);
-    expect(result.finalPlan).toEqual(result.initialPlan);
-    expect(result.adjustment).toEqual({ decision: 'keep', applied: false, error: 'adjustment_api_unavailable' });
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+  it('asks the first call to co-design playable 500m terrain, coast, anchors and routes with valid schema', async () => {
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: originalPlan() }));
+    await generateWorldWhitebox(request);
+    const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content;
+    expect(systemPrompt).toContain('terrain, coastline, buildable settlement anchors and routes together');
+    expect(systemPrompt).toContain('heightScale around 0.08..0.15');
+    expect(systemPrompt).toContain('strong ocean constraints may use about 0.02..0.04');
+    expect(systemPrompt).toContain('Ocean is terrain below 0');
+    expect(systemPrompt).toContain('north is negative Z');
+    expect(systemPrompt).toContain('do not fake a bay or harbour with a round lake');
+    expect(systemPrompt).toContain('every patch needs a unique id and a bounded shape');
+    expect(systemPrompt).toContain('every river must include its complete region, levels and depth');
+    expect(systemPrompt).toContain('never underwater');
+    expect(systemPrompt).toContain('without an intentionally authored crossing');
+    expect(systemPrompt).toContain('ecology, towns and roads must be empty arrays');
   });
 
   it('preserves a model prompt echo in the raw plan while using the request-owned prompt for loading', async () => {
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: { ...originalPlan(), prompt: 'shortened echo' } }))
-      .mockResolvedValueOnce(JSON.stringify({ decision: 'keep' }));
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: { ...originalPlan(), prompt: 'shortened echo' } }));
     const result = await generateWorldWhitebox(request);
     expect((result.originalPlan as {prompt: string}).prompt).toBe('shortened echo');
     expect(result.initialPlan.prompt).toBe(prompt);

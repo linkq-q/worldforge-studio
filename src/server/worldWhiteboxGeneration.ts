@@ -16,14 +16,9 @@ export interface WorldWhiteboxRequest {
   repairAttempts?: 0;
 }
 
-const INITIAL_PROMPT = `Design one playable 500 x 500 metre world from the user's description. Return a single JSON object {"plan":{...}} and nothing else. The plan is your original creative decision, not a scene template. Plan broad regions, paths, anchors and their relationships before any detail. Let terrain shape settlement, mobility and the exploration sequence; leave deliberate quiet areas. Keep unusual terrain if it makes the world interesting. Do not list individual trees or houses and do not request 3D assets.
-Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox:true,recipe,ecology:[],towns:[],roads:[],concept,featureGraph,settlementPlan,mobilityPlan,explorationPlan,intentionalEmptyAreas}. Copy prompt exactly from the request. recipe={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}], optional heightScale,landforms,terrainBrushes,waterBodies,biomePatches}. Copy seed exactly. Valid broad constraint regions: west/east/north/south/northwest/northeast/southwest/southeast/center; biomes: ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; sea level is 0. Terrain can be below sea. Shape the terrain with the existing recipe, not with a flat plate. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius},amount,feather?}; use only if useful. Fresh water bodies may be {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or type:'river' with a path region {kind:'path',points:[[x,z],...],width} and one level per point. Avoid authoring a complete city with individual buildings at this stage.
-concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius must be 1..250 metres; path width 0.1..256 metres; every path needs at least two distinct numeric points. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. settlementPlan={settlements:[{id,anchorId,role}]}; describe districts and their density transition in roles, with each linked to an anchor. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...]}]}; road types and walking trails may differ, and a bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
-
-const ADJUST_PROMPT = `You are the same creator looking at your first whitebox world. You can keep the plan or make one finite creative adjustment. Input contains only the original user prompt, your original plan, deterministic world facts, unrealized plan items, fatal technical issues and remaining budget. There are no screenshots. All low-density, road, terrain and visual findings are diagnostics, not mandatory fixes. Preserve intentional emptiness and unusual useful terrain. Do not optimize a score. Never request assets.
-Return exactly {"decision":"keep"} or {"decision":"patch","patch":{...}}. The patch may replace 1 to 4 complete fields from recipe, concept, featureGraph, settlementPlan, mobilityPlan, explorationPlan, intentionalEmptyAreas. It must not change prompt, id, seed, size, whitebox mode, towns, roads or ecology. Include dependent fields together when changing referenced ids. Do not include instructions, code, an entire plan, screenshots or a second round. The server will validate the new plan once and keep the original if the patch is technically invalid; it will not auto-repair aesthetics.`;
-
-const PATCH_FIELDS = new Set(['recipe', 'concept', 'featureGraph', 'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas']);
+const INITIAL_PROMPT = `Design one playable 500 x 500 metre world from the user's description. Return a single JSON object {"plan":{...}} and nothing else. The plan is your original creative decision, not a scene template. In this one response, plan terrain, coastline, buildable settlement anchors and routes together at the 500 metre scale. Let terrain shape settlement, mobility and the exploration sequence; leave deliberate quiet areas. Keep unusual terrain if it makes the world interesting, while avoiding accidental near-vertical cliffs that make intended routes or settlements unusable. Do not list individual trees or houses and do not request 3D assets.
+Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox:true,recipe,ecology:[],towns:[],roads:[],concept,featureGraph,settlementPlan,mobilityPlan,explorationPlan,intentionalEmptyAreas}. ecology, towns and roads must be empty arrays. Copy prompt exactly from the request. recipe={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}], optional heightScale,landforms,terrainBrushes,waterBodies,biomePatches}. Copy seed exactly. For this 500 metre world, usually keep global heightScale around 0.08..0.15 so coasts and buildable slopes remain traversable. A compact island with strong ocean constraints may use about 0.02..0.04. These are creative guidelines, not hard limits: use an intentional exception when the requested world needs it, and express exceptional volcano or mountain relief with local landforms instead of accidentally exaggerating the whole terrain. Valid broad constraint regions: west/east/north/south/northwest/northeast/southwest/southeast/center; biomes: ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; north is negative Z, south is positive Z, west is negative X; sea level is 0. Ocean is terrain below 0, not an independent circular lake; do not fake a bay or harbour with a round lake. Shape land and coastline with broad constraints and landforms, not with a flat plate. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius},amount,feather?}; use only if useful. biomePatches entries are {id,region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},biome,feather?}; every patch needs a unique id and a bounded shape, never a compass region string. Fresh water bodies may be {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or {id,type:'river',region:{kind:'path',points:[[x,z],...],width},levels:[one height per path point],depth,shorelineSmoothness?,shorelineIrregularity?}; every river must include its complete region, levels and depth. Avoid authoring a complete city with individual buildings at this stage.
+concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius must be 1..250 metres; path width 0.1..256 metres; every path needs at least two distinct numeric points. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. Place harbour and lookout anchors on appropriate dry or shoreline terrain, never underwater. Trace routes over plausible ground; do not let a road cross open or deep water without an intentionally authored crossing. settlementPlan={settlements:[{id,anchorId,role}]}; describe districts and their density transition in roles, with each linked to an anchor. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...]}]}; road types and walking trails may differ, and a bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
 
 function object(value: unknown, code: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(code);
@@ -155,32 +150,10 @@ export function executeWorldWhitebox(plan: WorldPlan): {
 }
 
 export interface WorldWhiteboxAdjustment {
-  decision: 'keep' | 'patch';
-  patch?: Partial<Pick<WorldPlan, 'recipe' | 'concept' | 'featureGraph' | 'settlementPlan' | 'mobilityPlan' | 'explorationPlan' | 'intentionalEmptyAreas'>>;
-  applied: boolean;
-  error?: string;
-}
-
-export function applyWorldWhiteboxAdjustment(plan: WorldPlan, input: unknown): { plan: WorldPlan; adjustment: WorldWhiteboxAdjustment } {
-  try {
-    const response = object(input, 'invalid_world_whitebox_adjustment');
-    if (response.decision === 'keep' && Object.keys(response).length === 1) {
-      return { plan, adjustment: { decision: 'keep', applied: false } };
-    }
-    const patch = object(response.patch, 'invalid_world_whitebox_patch');
-    const fields = Object.keys(patch);
-    if (response.decision !== 'patch' || Object.keys(response).length !== 2
-      || fields.length < 1 || fields.length > 4 || fields.some(key => !PATCH_FIELDS.has(key))
-      || JSON.stringify(patch).length > 32_000) throw new Error('invalid_world_whitebox_patch');
-    const next = validateWorldPlan({ ...plan, ...patch, revision: plan.revision + 1 });
-    if (next.recipe.seed !== plan.recipe.seed || next.recipe.size !== plan.recipe.size) {
-      throw new Error('world_whitebox_patch_changed_request');
-    }
-    return { plan: next, adjustment: { decision: 'patch', patch, applied: true } };
-  } catch (error) {
-    return { plan, adjustment: { decision: 'keep', applied: false,
-      error: error instanceof Error ? error.message : String(error) } };
-  }
+  decision: 'keep';
+  applied: false;
+  skipped: true;
+  reason: 'raw_first_call_preserved';
 }
 
 export async function generateWorldWhitebox(input: unknown, signal?: AbortSignal) {
@@ -199,27 +172,12 @@ export async function generateWorldWhitebox(input: unknown, signal?: AbortSignal
   const observation = observeWorldWhitebox(initialPlan, first.execution);
   const observed = { ...observation, surfaceFacts: first.surfaceFacts, technicalNormalizations };
   recordGenerationTrace('world.whitebox.observation', observed);
-  const adjustmentMessages: ChatMessage[] = [
-    { role: 'system', content: ADJUST_PROMPT },
-    { role: 'user', content: JSON.stringify({ originalPrompt: request.prompt, originalPlan: initialPlan,
-      observation: observed, unrealizedPlans: observation.pointsOfInterest.unrealizedIds,
-      fatalTechnicalIssues: [], remainingAdjustmentBudget: 1 }) }
-  ];
-  let adjustmentResult: ReturnType<typeof applyWorldWhiteboxAdjustment>;
-  try {
-    const adjustmentContent = await llmChat(adjustmentMessages, { provider: 'gpt', temperature: 0.3,
-      maxTokens: 4_000, traceStage: 'world.whitebox.adjustment', signal });
-    recordGenerationTrace('world.whitebox.adjustment-raw', { content: adjustmentContent });
-    adjustmentResult = applyWorldWhiteboxAdjustment(initialPlan, JSON.parse(adjustmentContent));
-  }
-  catch (error) { adjustmentResult = { plan: initialPlan,
-    adjustment: { decision: 'keep', applied: false, error: error instanceof Error ? error.message : String(error) } }; }
-  const { plan: finalPlan, adjustment } = adjustmentResult;
+  const adjustment: WorldWhiteboxAdjustment = {
+    decision: 'keep', applied: false, skipped: true, reason: 'raw_first_call_preserved'
+  };
   recordGenerationTrace('world.whitebox.adjustment', adjustment);
-  const finalExecution = adjustment.applied ? executeWorldWhitebox(finalPlan) : first;
-  const finalObservation = adjustment.applied
-    ? { ...observeWorldWhitebox(finalPlan, finalExecution.execution), surfaceFacts: finalExecution.surfaceFacts }
-    : observed;
+  const finalPlan = initialPlan;
+  const finalObservation = observed;
   const bundle = { plan: finalPlan, patches: [] };
   recordGenerationTrace('world.whitebox.final', { plan: finalPlan, observation: finalObservation });
   return { bundle, originalPlan: rawPlan, initialPlan, observation: observed, adjustment,
