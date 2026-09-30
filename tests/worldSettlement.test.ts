@@ -547,16 +547,21 @@ describe('world settlement growth', () => {
       {id:'net-workshop',use:'net workshop',width:10,depth:8,height:5,assetKey:'workshop',siting:'waterfront'}
     ]);
     expect(result.patch.buildings.length).toBeGreaterThanOrEqual(32);
-    const ordinary=result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length;
-    expect(ordinary).toBeGreaterThanOrEqual(50);
-    expect(ordinary).toBeLessThanOrEqual(60);
+    const ordinary=result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id));
+    const homes=result.patch.buildings.filter(building=>building.use==='home');
+    expect(homes.length).toBeGreaterThanOrEqual(50);
+    expect(homes.length).toBeLessThanOrEqual(60);
+    expect(ordinary.length).toBeGreaterThan(homes.length);
     expectStreetFacingBuildings(result.patch);
     delete town.population;
     const unscaled=generateWorldSettlement(plan,town.id,sample,{
       kind:'city',pattern:'organic',seed:59,density:.48,waterfrontBias:.95,waterSetback:5,landmarks:result.landmarks
     });
     expect(result.patch.streets.length).toBeGreaterThan(unscaled.streets.length);
-    expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.7);
+    const xs=homes.map(building=>building.x),zs=homes.map(building=>building.z);
+    expect(Math.max(...xs)-Math.min(...xs)).toBeGreaterThanOrEqual(town.radius*.85);
+    expect(Math.max(...zs)-Math.min(...zs)).toBeGreaterThanOrEqual(town.radius*.75);
+    expect(Math.max(...homes.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.7);
     const working=result.patch.streets.find(street=>street.tags.includes('working-waterfront'))!;
     expect(working.width).toBeGreaterThanOrEqual(6.4);
     expect(Math.min(...working.points.map(point=>point[0]+96))-working.width/2).toBeLessThanOrEqual(20);

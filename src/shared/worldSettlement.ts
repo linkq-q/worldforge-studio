@@ -773,6 +773,8 @@ function placeBuildings(
     ? Math.max(city ? 24 : villageFloor, Math.round(candidates.length * occupancy))
     : populationHomes;
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
+  const householdCount=()=>result.filter(building=>building.use==='home'||building.use==='farmhouse').length;
+  const filled=()=>town.population===undefined?result.length>=target:householdCount()>=populationHomes;
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);
     const probes = buildingProbePoints(landmark);
@@ -808,7 +810,7 @@ function placeBuildings(
     const worldBuilding = { ...building, x: building.x + town.center[0], z: building.z + town.center[1] };
     return !worldRoads.some(road => segmentBuildingFootprint(road.a, road.b, worldBuilding, road.width / 2));
   };
-  for (let index = 0; index < candidates.length && result.length < target; index++) {
+  for (let index = 0; index < candidates.length && !filled() && result.length<worldTownBuildingQuota(town); index++) {
     const parcel = candidates[index];
     const width = parcel.width - Math.min(city ? 0.25 : 1.2, parcel.width * 0.16);
     const depth = parcel.depth * (city ? 0.72 : 0.62);
@@ -837,13 +839,13 @@ function placeBuildings(
       result.push(building);
     }
   }
-  if(town.population!==undefined&&result.length<target) for(const road of localRoads) {
-    if(result.length>=target||road.road.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))) continue;
+  if(town.population!==undefined&&!filled()) for(const road of localRoads) {
+    if(filled()||result.length>=worldTownBuildingQuota(town)||road.road.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))) continue;
     const delta=sub(road.b,road.a),length=distance(road.a,road.b);
     if(length<EPS) continue;
     const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
     const width=city?4:5,depth=city?6:7,steps=Math.max(1,Math.floor(length/(width+settings.buildingGap)));
-    for(let index=0;index<=steps&&result.length<target;index++) for(const side of [-1,1]) {
+    for(let index=0;index<=steps&&!filled()&&result.length<worldTownBuildingQuota(town);index++) for(const side of [-1,1]) {
       const roadPoint=mix(road.a,road.b,(index+.5)/(steps+1)),outward=scale(normal,side);
       const center=add(roadPoint,scale(outward,road.width/2+depth/2+1));
       const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],width,depth,
