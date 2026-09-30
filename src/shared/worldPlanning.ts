@@ -39,12 +39,32 @@ export interface ExplorationPointOfInterest { id: string; anchorId: string; purp
 export interface ExplorationPlan { pointsOfInterest: ExplorationPointOfInterest[]; sequence: string[] }
 export interface IntentionalEmptyArea { id: string; regionId: string; purpose: string }
 export type IntentionalEmptyAreas = IntentionalEmptyArea[];
-export interface WorldExplorationObservation {
-  scope: 'planned';
-  pointsOfInterest: Array<{ id: string; anchorId: string; purpose: string; plannedPosition: Point }>;
+export type WorldPosition = [number, number, number];
+export interface WorldWhiteboxExecution {
+  pointsOfInterest?: Array<{ id: string; position: WorldPosition }>;
+  paths?: Array<{ id: string; points: Point[] }>;
+}
+export interface WorldWhiteboxObservation {
+  scope: 'planned' | 'executed';
+  pointsOfInterest: {
+    plannedCount: number;
+    realizedCount: number;
+    unrealizedIds: string[];
+    spacing: { median: number; p90: number };
+    items: Array<{ id: string; anchorId: string; purpose: string; plannedPosition: Point; realizedPosition?: WorldPosition }>;
+  };
   sequence: string[];
-  routes: Array<{ id: string; mode: string; connects: string[] }>;
-  intentionalEmptyAreas: Array<{ id: string; regionId: string; purpose: string }>;
+  routes: Array<{
+    id: string; mode: string; connects: string[]; length: number; regions: string[];
+    roadTypeChanges: number; branches: number; longestContentFreeStretch: number;
+  }>;
+  paths: {
+    totalLength: number; lengthByType: Record<string, number>; components: number;
+    intersections: number; deadEnds: number; unrealizedIds: string[];
+  };
+  emptyAreaDiagnostics: Array<{
+    id: string; regionId: string; kind: 'intentional-empty' | 'missing-content'; purpose?: string;
+  }>;
 }
 type SemanticPlanFields = Pick<WorldPlan,
   'concept' | 'featureGraph' | 'settlementPlan' | 'mobilityPlan' | 'explorationPlan' | 'intentionalEmptyAreas'>;
@@ -380,18 +400,150 @@ function keyOf(plan: WorldPlan): string {
 export function worldPlanKey(plan: WorldPlan): string {
   return keyOf(validateWorldPlan(plan));
 }
-/** Compact semantic projection for deterministic agent inspection; it does not score or repair the plan. */
-export function observeWorldWhitebox(plan: WorldPlan): WorldExplorationObservation {
-  const checked = validateWorldPlan(plan);
-  const anchors = new Map(checked.featureGraph?.anchors.map(anchor => [anchor.id, anchor.position]) ?? []);
+function polylineLength(points: Point[]): number {
+  return points.slice(1).reduce((total, p, index) => total + Math.hypot(p[0] - points[index][0], p[1] - points[index][1]), 0);
+}
+function percentile(values: number[], fraction: number): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.ceil(fraction * sorted.length) - 1];
+}
+function nearestSpacing(points: Point[]): { median: number; p90: number } {
+  const distances = points.map((point, index) => Math.min(...points
+    .filter((_, other) => other !== index)
+    .map(other => Math.hypot(point[0] - other[0], point[1] - other[1]))));
+  const finite = distances.filter(Number.isFinite);
+  return { median: percentile(finite, 0.5), p90: percentile(finite, 0.9) };
+}
+function pointKey(value: Point): string { return `${value[0].toFixed(6)},${value[1].toFixed(6)}`; }
+function segmentIntersection(a: Point, b: Point, c: Point, d: Point): Point | undefined {
+  const abx = b[0] - a[0], abz = b[1] - a[1], cdx = d[0] - c[0], cdz = d[1] - c[1];
+  const denominator = abx * cdz - abz * cdx;
+  if (Math.abs(denominator) <= TOLERANCE) {
+    return [a, b].find(p => samePoint(p, c) || samePoint(p, d))
+      ?? [c, d].find(p => samePoint(p, a) || samePoint(p, b));
+  }
+  const acx = c[0] - a[0], acz = c[1] - a[1];
+  const t = (acx * cdz - acz * cdx) / denominator, u = (acx * abz - acz * abx) / denominator;
+  return t >= -TOLERANCE && t <= 1 + TOLERANCE && u >= -TOLERANCE && u <= 1 + TOLERANCE
+    ? [a[0] + t * abx, a[1] + t * abz] : undefined;
+}
+function distanceAlong(points: Point[], target: Point): number {
+  let bestDistance = Infinity, bestAlong = 0, walked = 0;
+  for (let index = 1; index < points.length; index++) {
+    const a = points[index - 1], b = points[index], dx = b[0] - a[0], dz = b[1] - a[1];
+    const lengthSquared = dx * dx + dz * dz;
+    const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, ((target[0] - a[0]) * dx + (target[1] - a[1]) * dz) / lengthSquared));
+    const projected: Point = [a[0] + t * dx, a[1] + t * dz], distance = Math.hypot(target[0] - projected[0], target[1] - projected[1]);
+    if (distance < bestDistance) { bestDistance = distance; bestAlong = walked + Math.sqrt(lengthSquared) * t; }
+    walked += Math.sqrt(lengthSquared);
+  }
+  return bestAlong;
+}
+
+/** Deterministic geometry observations only; no metric is an aesthetic gate or repair instruction. */
+export function observeWorldWhitebox(plan: WorldPlan, execution?: WorldWhiteboxExecution): WorldWhiteboxObservation {
+  const checked = validateWorldPlan(plan), bound = checked.recipe.size / 2;
+  const graph = checked.featureGraph ?? { regions: [], paths: [], anchors: [], relations: [] };
+  const anchors = new Map(graph.anchors.map(anchor => [anchor.id, anchor]));
+  const plannedPois = checked.explorationPlan?.pointsOfInterest ?? [];
+  const realizedPoiEntries = (execution?.pointsOfInterest ?? []).map(item => {
+    if (!plannedPois.some(poi => poi.id === item.id)) fail('world_unknown_executed_poi');
+    if (!Array.isArray(item.position) || item.position.length !== 3) fail('world_invalid_executed_poi_position');
+    const position: WorldPosition = [number(item.position[0], -bound, bound, 'world_invalid_executed_poi_position'),
+      number(item.position[1], -1_000_000, 1_000_000, 'world_invalid_executed_poi_position'),
+      number(item.position[2], -bound, bound, 'world_invalid_executed_poi_position')];
+    return [item.id, position] as const;
+  });
+  unique(realizedPoiEntries.map(([id]) => id), 'world_duplicate_executed_poi');
+  const realizedPois = new Map(realizedPoiEntries);
+  const authoredPaths = new Map(graph.paths.map(path => [path.id, path]));
+  const executedPathEntries = (execution?.paths ?? []).map(item => {
+    const authored = authoredPaths.get(item.id);
+    if (!authored) fail('world_unknown_executed_path');
+    const points = list(item.points, 256, 'world_executed_path_point_quota').map(value => point(value, bound, 'world_executed_path_outside'));
+    if (points.length < 2) fail('world_executed_path_needs_points');
+    return [item.id, { ...authored, points }] as const;
+  });
+  unique(executedPathEntries.map(([id]) => id), 'world_duplicate_executed_path');
+  const executedPaths = new Map(executedPathEntries);
+  const observedPaths = execution?.paths === undefined ? graph.paths : [...executedPaths.values()].sort(byId);
+  const pathSegments = observedPaths.flatMap(path => path.points.slice(1).map((to, index) => ({ pathId: path.id, from: path.points[index], to })));
+  const intersections = new Map<string, Set<string>>();
+  const pathLinks = new Map(observedPaths.map(path => [path.id, new Set<string>()]));
+  for (let i = 0; i < pathSegments.length; i++) for (let j = i + 1; j < pathSegments.length; j++) {
+    if (pathSegments[i].pathId === pathSegments[j].pathId) continue;
+    const crossing = segmentIntersection(pathSegments[i].from, pathSegments[i].to, pathSegments[j].from, pathSegments[j].to);
+    if (!crossing) continue;
+    const key = pointKey(crossing), ids = intersections.get(key) ?? new Set<string>();
+    ids.add(pathSegments[i].pathId); ids.add(pathSegments[j].pathId); intersections.set(key, ids);
+    pathLinks.get(pathSegments[i].pathId)!.add(pathSegments[j].pathId);
+    pathLinks.get(pathSegments[j].pathId)!.add(pathSegments[i].pathId);
+  }
+  let components = 0;
+  const reached = new Set<string>();
+  for (const path of observedPaths) {
+    if (reached.has(path.id)) continue;
+    components++;
+    const queue = [path.id];
+    for (let i = 0; i < queue.length; i++) {
+      if (reached.has(queue[i])) continue;
+      reached.add(queue[i]);
+      for (const next of pathLinks.get(queue[i]) ?? []) queue.push(next);
+    }
+  }
+  const endpointDegree = new Map<string, number>();
+  for (const path of observedPaths) for (const endpoint of [path.points[0], path.points[path.points.length - 1]]) {
+    const key = pointKey(endpoint); endpointDegree.set(key, (endpointDegree.get(key) ?? 0) + 1);
+  }
+  const poiItems = plannedPois.map(({ id, anchorId, purpose }) => {
+    const item: WorldWhiteboxObservation['pointsOfInterest']['items'][number] = {
+      id, anchorId, purpose, plannedPosition: [...anchors.get(anchorId)!.position]
+    };
+    if (realizedPois.has(id)) item.realizedPosition = [...realizedPois.get(id)!];
+    return item;
+  });
+  const spacingPoints: Point[] = execution
+    ? [...realizedPois.values()].map(position => [position[0], position[2]])
+    : poiItems.map(item => item.plannedPosition);
+  const routes = (checked.mobilityPlan?.routes ?? []).map(route => {
+    const path = (execution?.paths === undefined ? authoredPaths : executedPaths).get(route.pathId);
+    const points = path?.points ?? [], length = points.length > 1 ? polylineLength(points) : 0;
+    const contentDistances = plannedPois.filter(poi => route.connects.includes(poi.anchorId))
+      .filter(poi => !execution || realizedPois.has(poi.id))
+      .map(poi => execution ? realizedPois.get(poi.id)! : anchors.get(poi.anchorId)!.position)
+      .map(position => distanceAlong(points, [position[0], position.length === 3 ? position[2] : position[1]]));
+    const stops = [0, ...contentDistances.sort((a, b) => a - b), length];
+    const regions = route.connects.map(id => anchors.get(id)!.regionId).filter((id, index, ids) => ids.indexOf(id) === index);
+    return { id: route.id, mode: route.mode, connects: [...route.connects], length, regions, roadTypeChanges: 0,
+      branches: [...intersections.values()].filter(pathIds => pathIds.has(route.pathId)).length,
+      longestContentFreeStretch: stops.slice(1).reduce((longest, stop, index) => Math.max(longest, stop - stops[index]), 0) };
+  });
+  const lengthByType: Record<string, number> = {};
+  for (const path of observedPaths) lengthByType[path.kind] = (lengthByType[path.kind] ?? 0) + polylineLength(path.points);
+  const contentRegionIds = new Set((execution ? plannedPois.filter(poi => realizedPois.has(poi.id)) : plannedPois)
+    .map(poi => anchors.get(poi.anchorId)!.regionId));
+  const intentionalByRegion = new Map((checked.intentionalEmptyAreas ?? []).map(area => [area.regionId, area]));
+  const emptyAreaDiagnostics: WorldWhiteboxObservation['emptyAreaDiagnostics'] = [
+    ...(checked.intentionalEmptyAreas ?? []).map(area => ({ ...area, kind: 'intentional-empty' as const })),
+    ...graph.regions.filter(region => !contentRegionIds.has(region.id) && !intentionalByRegion.has(region.id))
+      .map(region => ({ id: region.id, regionId: region.id, kind: 'missing-content' as const }))
+  ].sort(byId);
   return {
-    scope: 'planned',
-    pointsOfInterest: (checked.explorationPlan?.pointsOfInterest ?? []).map(({ id, anchorId, purpose }) => (
-      { id, anchorId, purpose, plannedPosition: [...anchors.get(anchorId)!] }
-    )),
-    sequence: [...(checked.explorationPlan?.sequence ?? [])],
-    routes: (checked.mobilityPlan?.routes ?? []).map(({ id, mode, connects }) => ({ id, mode, connects: [...connects] })),
-    intentionalEmptyAreas: (checked.intentionalEmptyAreas ?? []).map(({ id, regionId, purpose }) => ({ id, regionId, purpose }))
+    scope: execution ? 'executed' : 'planned',
+    pointsOfInterest: {
+      plannedCount: plannedPois.length, realizedCount: execution ? realizedPois.size : 0,
+      unrealizedIds: execution ? plannedPois.filter(poi => !realizedPois.has(poi.id)).map(poi => poi.id) : [],
+      spacing: nearestSpacing(spacingPoints), items: poiItems
+    },
+    sequence: [...(checked.explorationPlan?.sequence ?? [])], routes,
+    paths: {
+      totalLength: Object.values(lengthByType).reduce((sum, length) => sum + length, 0), lengthByType,
+      components, intersections: intersections.size,
+      deadEnds: [...endpointDegree.values()].filter(degree => degree === 1).length,
+      unrealizedIds: execution?.paths === undefined ? [] : graph.paths.filter(path => !executedPaths.has(path.id)).map(path => path.id)
+    },
+    emptyAreaDiagnostics
   };
 }
 export function createTownTasks(plan: WorldPlan): TownTask[] {

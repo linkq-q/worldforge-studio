@@ -68,21 +68,73 @@ describe('hierarchical world planning contracts', () => {
     expect(checked.concept?.themes).toEqual(['distance', 'renewal']);
     expect(checked.featureGraph?.anchors.map(item => item.id)).toEqual(['east-gate', 'west-ruin']);
     expect(checked.featureGraph?.paths[0].points).toEqual([[-2000, 0], [0, 250], [2000, 0]]);
-    expect(observeWorldWhitebox(plan)).toEqual({
-      scope: 'planned',
-      pointsOfInterest: [
-        { id: 'gate-supplies', anchorId: 'east-gate', purpose: 'prepare for the crossing', plannedPosition: [2000, 0] },
-        { id: 'ruin-clue', anchorId: 'west-ruin', purpose: 'reveal the old crossing', plannedPosition: [-2000, 0] }
-      ],
-      sequence: ['gate-supplies', 'ruin-clue'],
-      routes: [{ id: 'main-route', mode: 'walk', connects: ['west-ruin', 'east-gate'] }],
-      intentionalEmptyAreas: [{ id: 'western-breathing-room', regionId: 'quiet-west', purpose: 'preserve anticipation' }]
+    const observation = observeWorldWhitebox(plan);
+    expect(observation.scope).toBe('planned');
+    expect(observation.pointsOfInterest).toMatchObject({
+      plannedCount: 2, realizedCount: 0, unrealizedIds: [], spacing: { median: 4000, p90: 4000 }
     });
+    expect(observation.pointsOfInterest.items.map(item => item.id)).toEqual(['gate-supplies', 'ruin-clue']);
+    expect(observation.routes[0]).toMatchObject({ id: 'main-route', regions: ['quiet-west', 'inhabited-east'], roadTypeChanges: 0, branches: 0 });
+    expect(observation.paths).toMatchObject({ components: 1, intersections: 0, deadEnds: 2, unrealizedIds: [] });
+    expect(observation.emptyAreaDiagnostics).toEqual([
+      { id: 'western-breathing-room', regionId: 'quiet-west', purpose: 'preserve anticipation', kind: 'intentional-empty' }
+    ]);
     const reordered = structuredClone(plan);
     reordered.featureGraph!.anchors.reverse();
     reordered.explorationPlan!.pointsOfInterest.reverse();
     expect(observeWorldWhitebox(reordered)).toEqual(observeWorldWhitebox(plan));
     expect(worldPlanKey(reordered)).toBe(worldPlanKey(plan));
+  });
+
+  it('reports executed POIs and deterministic path-network metrics without turning them into gates', () => {
+    const plan = fixture();
+    plan.whitebox = true;
+    plan.towns = []; plan.roads = [];
+    plan.featureGraph = {
+      regions: [
+        { id: 'west', kind: 'wild', name: 'West', center: [-2000, 0], radius: 1000 },
+        { id: 'east', kind: 'settled', name: 'East', center: [2000, 0], radius: 1000 },
+        { id: 'north', kind: 'wild', name: 'North', center: [0, 2500], radius: 500 }
+      ],
+      paths: [
+        { id: 'main', kind: 'road', name: 'Main', points: [[-2000, 0], [2000, 0]], width: 10 },
+        { id: 'crossing', kind: 'trail', name: 'Crossing', points: [[0, -1000], [0, 1000]], width: 3 }
+      ],
+      anchors: [
+        { id: 'west-anchor', kind: 'landmark', position: [-2000, 0], regionId: 'west' },
+        { id: 'east-anchor', kind: 'settlement', position: [2000, 0], regionId: 'east' }
+      ], relations: []
+    };
+    plan.mobilityPlan = { routes: [{ id: 'main-route', pathId: 'main', mode: 'walk', connects: ['west-anchor', 'east-anchor'] }] };
+    plan.explorationPlan = { pointsOfInterest: [
+      { id: 'west-poi', anchorId: 'west-anchor', purpose: 'clue' },
+      { id: 'east-poi', anchorId: 'east-anchor', purpose: 'supplies' }
+    ], sequence: ['east-poi', 'west-poi'] };
+    plan.intentionalEmptyAreas = [{ id: 'west-silence', regionId: 'west', purpose: 'pacing' }];
+    const observation = observeWorldWhitebox(plan, {
+      pointsOfInterest: [{ id: 'east-poi', position: [1900, 12, 0] }],
+      paths: [
+        { id: 'main', points: [[-2000, 0], [2000, 0]] },
+        { id: 'crossing', points: [[0, -1000], [0, 1000]] }
+      ]
+    });
+    expect(observation.scope).toBe('executed');
+    expect(observation.pointsOfInterest).toMatchObject({
+      plannedCount: 2, realizedCount: 1, unrealizedIds: ['west-poi'], spacing: { median: 0, p90: 0 }
+    });
+    expect(observation.pointsOfInterest.items[0].realizedPosition).toEqual([1900, 12, 0]);
+    expect(observation.routes[0]).toEqual({
+      id: 'main-route', mode: 'walk', connects: ['west-anchor', 'east-anchor'], length: 4000,
+      regions: ['west', 'east'], roadTypeChanges: 0, branches: 1, longestContentFreeStretch: 3900
+    });
+    expect(observation.paths).toEqual({
+      totalLength: 6000, lengthByType: { road: 4000, trail: 2000 }, components: 1,
+      intersections: 1, deadEnds: 4, unrealizedIds: []
+    });
+    expect(observation.emptyAreaDiagnostics).toEqual([
+      { id: 'north', regionId: 'north', kind: 'missing-content' },
+      { id: 'west-silence', regionId: 'west', purpose: 'pacing', kind: 'intentional-empty' }
+    ]);
   });
 
   it('rejects semantic references that do not resolve inside the feature graph', () => {
