@@ -43,6 +43,7 @@ export type WorldLandmarkRequirement = Omit<TownBuilding, 'x' | 'z' | 'rotation'
 
 type Point = [number, number];
 type Edge = { a: Point; b: Point; kind: UrbanRoad['kind']; source: string };
+type SiteCandidate = { point: Point; roadAngle?: number; score: number };
 type Settings = Required<WorldSettlementOptions> & {
   roadWidth: number;
   arterialWidth: number;
@@ -85,33 +86,51 @@ export function generateWorldSettlement(
   const roadSafe = (a: Point, b: Point, width: number) => terrainRoadSafe(a, b, width)
     && settings.landmarks.every(building => !segmentBuildingFootprint(a, b, building, width / 2 + 1));
 
-  const site = selectSite(town, dry, slope);
-  if (!site) throw new Error('world_settlement_no_buildable_site');
-  const shore = settings.waterfrontBias > 0
-    ? findShore(town, sample, site, settings.waterSetback + settings.arterialWidth / 2, town.targetWaterBodyId)
-    : undefined;
-  const rotation = shore
-    ? Math.atan2(shore.tangent[1], shore.tangent[0])
-    : contourAngle(sample, town, site, random);
+  const sites = selectSites(plan, town, dry, slope);
+  if (!sites.length) throw new Error('world_settlement_no_buildable_site');
   const region = Array.from({ length: 16 }, (_, index): Point => {
     const angle = index / 16 * TAU;
     return [Math.cos(angle) * town.radius * 0.94, Math.sin(angle) * town.radius * 0.94];
   });
-  const layout = createUrbanLayout({
-    id: `${town.id}-fabric`, pattern: settings.pattern, center: site,
-    size: [town.radius * 1.82, town.radius * 1.82], region,
-    rotation: rotation * 180 / Math.PI, blockSize: settings.blockSize,
-    roadWidth: settings.roadWidth, arterialWidth: settings.arterialWidth,
-    parcelWidth: settings.parcelWidth, parcelDepth: settings.parcelDepth,
-    setback: 1, irregularity: settings.pattern === 'organic' ? 0.72 : 0.42, seed: settings.seed
-  }, { minX: -town.radius, maxX: town.radius, minZ: -town.radius, maxZ: town.radius });
-
-  const candidates = safeUrbanEdges(layout.roads, roadSafe);
-  const reserved = town.ports.length + (shore ? 2 : 0);
-  const selected = connectedEdges(candidates, shore?.point ?? site, Math.max(1, Math.min(
-    settings.roadBudget - reserved, 48 - reserved - settings.landmarks.length
-  )), random, layout);
-  if (!selected.length) throw new Error('world_settlement_no_buildable_network');
+  let site: Point | undefined, shore: Shore | undefined, layout: UrbanLayout | undefined, selected: Edge[] = [];
+  let best: { site: Point; shore?: Shore; layout: UrbanLayout; selected: Edge[]; parcels: number } | undefined;
+  const trySite = (candidate: SiteCandidate, index: number, blockSize: number) => {
+    const candidateShore = settings.waterfrontBias > 0
+      ? findShore(town, sample, candidate.point, settings.waterSetback + settings.arterialWidth / 2, town.targetWaterBodyId)
+      : undefined;
+    const rotation = candidateShore
+      ? Math.atan2(candidateShore.tangent[1], candidateShore.tangent[0])
+      : candidate.roadAngle ?? contourAngle(sample, town, candidate.point,
+        index === 0 ? random : seededRandom(settings.seed ^ index));
+    const candidateLayout = createUrbanLayout({
+      id: `${town.id}-fabric`, pattern: settings.pattern, center: candidate.point,
+      size: [town.radius * 1.82, town.radius * 1.82], region,
+      rotation: rotation * 180 / Math.PI, blockSize,
+      roadWidth: settings.roadWidth, arterialWidth: settings.arterialWidth,
+      parcelWidth: settings.parcelWidth, parcelDepth: settings.parcelDepth,
+      setback: 1, irregularity: settings.pattern === 'organic' ? 0.72 : 0.42, seed: settings.seed
+    }, { minX: -town.radius, maxX: town.radius, minZ: -town.radius, maxZ: town.radius });
+    const safeEdges = safeUrbanEdges(candidateLayout.roads, roadSafe);
+    const reserved = town.ports.length + (candidateShore ? 2 : 0);
+    const candidateSelected = connectedEdges(safeEdges, candidateShore?.point ?? candidate.point, Math.max(1, Math.min(
+      settings.roadBudget - reserved, 48 - reserved - settings.landmarks.length
+    )), index === 0 && blockSize === settings.blockSize ? random : seededRandom(settings.seed ^ index), candidateLayout);
+    const parcels = buildableParcelCount(candidateLayout, candidateSelected, town, sample, settings);
+    return { site: candidate.point, shore: candidateShore, layout: candidateLayout, selected: candidateSelected, parcels };
+  };
+  const primary = trySite(sites[0], 0, settings.blockSize);
+  if (primary.selected.length && (primary.parcels || plan.generationPolicy !== 'raw-first-call')) best = primary;
+  else if (plan.generationPolicy === 'raw-first-call') {
+    const compactBlockSize = Math.min(settings.blockSize, 16);
+    for (let index = 0; index < sites.length; index++) for (const blockSize of new Set([settings.blockSize, compactBlockSize])) {
+      const candidate = index === 0 && blockSize === settings.blockSize ? primary : trySite(sites[index], index, blockSize);
+      if (!candidate.selected.length) continue;
+      if (!best || candidate.parcels > best.parcels
+        || candidate.parcels === best.parcels && candidate.selected.length > best.selected.length) best = candidate;
+    }
+  }
+  if (!best) throw new Error('world_settlement_no_buildable_network');
+  ({ site, shore, layout, selected } = best);
 
   const streets: MapGuide[] = selected.map((edge, index) => guide(
     `${town.id}-street-${index + 1}`, [edge.a, edge.b],
@@ -458,20 +477,38 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
   };
 }
 
-function selectSite(
+function selectSites(
+  plan: WorldPlan,
   town: TownIntent,
   dry: (point: Point, clearance?: number) => boolean,
   slope: (point: Point) => number
-): Point | undefined {
-  let best: { point: Point; score: number } | undefined;
+): SiteCandidate[] {
+  const grid: SiteCandidate[] = [], candidates: SiteCandidate[] = [];
+  const add = (target: SiteCandidate[], point: Point, roadAngle?: number) => {
+    if (!inside(town, point, 3) || !dry(point, 3)) return;
+    target.push({ point, roadAngle, score: slope(point) * town.radius * 5 + Math.hypot(...point) });
+  };
   for (let z = -4; z <= 4; z++) for (let x = -4; x <= 4; x++) {
     const point: Point = [x * town.radius * 0.1, z * town.radius * 0.1];
-    if (!dry(point, 3)) continue;
-    const grade = slope(point);
-    const score = grade * town.radius * 5 + Math.hypot(...point);
-    if (!best || score < best.score) best = { point, score };
+    add(grid, point);
   }
-  return best?.point;
+  for (const road of plan.roads) for (let index = 1; index < road.points.length; index++) {
+    const worldA = road.points[index - 1], worldB = road.points[index];
+    const a: Point = [worldA[0] - town.center[0], worldA[1] - town.center[1]];
+    const b: Point = [worldB[0] - town.center[0], worldB[1] - town.center[1]];
+    const length = distance(a, b), steps = Math.max(1, Math.ceil(length / 8));
+    const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    for (let step = 0; step <= steps; step++) add(candidates, mix(a, b, step / steps), angle);
+  }
+  const primary = grid.reduce((best, candidate) => !best || candidate.score < best.score ? candidate : best, undefined as SiteCandidate | undefined);
+  const unique = new Map<string, SiteCandidate>();
+  for (const candidate of [...candidates.sort((a, b) => a.score - b.score).slice(0, 4),
+    ...grid.sort((a, b) => a.score - b.score)]) {
+    const key = pointKey(candidate.point);
+    if (!unique.has(key)) unique.set(key, candidate);
+  }
+  if (primary) unique.delete(pointKey(primary.point));
+  return [...(primary ? [primary] : []), ...unique.values()].slice(0, 12);
 }
 
 function findShore(
@@ -568,6 +605,33 @@ function safeUrbanEdges(
     result.push({ a: [...a], b: [...b], kind: road.kind, source: road.id });
   }
   return result;
+}
+
+function buildableParcelCount(
+  layout: UrbanLayout,
+  selected: Edge[],
+  town: TownIntent,
+  sample: WorldSettlementSampler,
+  settings: Settings
+): number {
+  const city = settings.kind === 'city', selectedByRoad = new Map<string, Edge[]>();
+  for (const edge of selected) selectedByRoad.set(edge.source, [...(selectedByRoad.get(edge.source) ?? []), edge]);
+  return layout.parcels.filter(parcel => selectedByRoad.get(parcel.roadId)?.some(edge =>
+    pointSegmentDistance(parcel.front, edge.a, edge.b) < 1e-4)).filter(parcel => {
+    const width = parcel.width - Math.min(city ? 0.25 : 1.2, parcel.width * 0.16);
+    const depth = parcel.depth * (city ? 0.72 : 0.62);
+    if (width < 3.5 || depth < 3.8) return false;
+    const forward: Point = [Math.sin(parcel.rotationY), Math.cos(parcel.rotationY)];
+    const center = add(parcel.center, scale(forward, (parcel.depth - depth) / 2));
+    const building: TownBuilding = { id: 'probe', x: center[0], z: center[1], width, depth, height: 1,
+      use: 'probe', rotation: parcel.rotationY };
+    const bounds = townBuildingBounds(building), probes = buildingProbePoints(building);
+    return Math.abs(bounds.x) + bounds.width / 2 <= town.radius
+      && Math.abs(bounds.z) + bounds.depth / 2 <= town.radius
+      && buildingEarthworkSafe(sample, town, building)
+      && probes.every(point => dryPoint(sample, town, point, settings.waterSetback)
+        && sampleSlope(sample, town, point) <= settings.maxSiteSlope + EPS);
+  }).length;
 }
 
 function connectedEdges(edges: Edge[], anchor: Point, budget: number, random: () => number, layout: UrbanLayout): Edge[] {
@@ -863,7 +927,7 @@ function placeBuildings(
       result.push(building);
     }
   }
-  if(town.population!==undefined&&!filled()) for(const road of localRoads) {
+  if(!filled()&&(town.population!==undefined||plan.generationPolicy==='raw-first-call')) for(const road of localRoads) {
     if(filled()||result.length>=worldTownBuildingQuota(town)||road.road.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))) continue;
     const delta=sub(road.b,road.a),length=distance(road.a,road.b);
     if(length<EPS) continue;
@@ -875,6 +939,23 @@ function placeBuildings(
       const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],width,depth,
         height:city?7+random()*4:4.5+random()*3,use:'home',rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))};
       if(canPlace(building)) result.push(building);
+    }
+  }
+  if(plan.generationPolicy==='raw-first-call'&&!filled()) for(const road of plan.roads) {
+    for(let segment=1;segment<road.points.length&&!filled();segment++) {
+      const a:Point=[road.points[segment-1][0]-town.center[0],road.points[segment-1][1]-town.center[1]];
+      const b:Point=[road.points[segment][0]-town.center[0],road.points[segment][1]-town.center[1]];
+      const delta=sub(b,a),length=distance(a,b);
+      if(length<EPS) continue;
+      const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
+      const width=city?4:5,depth=city?6:7,steps=Math.max(1,Math.floor(length/(width+settings.buildingGap)));
+      for(let index=0;index<=steps&&!filled();index++) for(const side of [-1,1]) {
+        const roadPoint=mix(a,b,(index+.5)/(steps+1)),outward=scale(normal,side);
+        const center=add(roadPoint,scale(outward,road.width/2+depth/2+1));
+        const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],width,depth,
+          height:city?7+random()*4:4.5+random()*3,use:'home',rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))};
+        if(canPlace(building)) result.push(building);
+      }
     }
   }
   return result;

@@ -599,6 +599,27 @@ describe('world settlement growth', () => {
     expectStreetFacingBuildings(patch);
   });
 
+  it('grows a compact settlement along a planned road after the nearest shoulder cannot carry a street network', () => {
+    const plan=fixture(),town=plan.towns[0];
+    plan.recipe.size=500;town.center=[0,0];town.radius=50;town.blend=20;town.ports=[];
+    plan.generationPolicy='raw-first-call';
+    plan.roads=[road('shelf-road',[[-42,24],[42,24]],3)];
+    const sample:WorldSettlementSampler=(x,z)=>{
+      const water=z<5||z>45||Math.abs(x)>47;
+      return {height:water?-3:12+x*.015,waterLevel:water?0:null,waterBodyId:water?'bay':null,
+        moisture:water?1:.3,temperature:.55,continentalness:water?0:.7,
+        weights:{ocean:water?1:0,grassland:water?0:1,forest:0,desert:0,mountains:0,snow:0}};
+    };
+    const patch=generateWorldSettlement(plan,town.id,sample,{
+      kind:'city',pattern:'organic',seed:29,density:.6,waterfrontBias:0
+    });
+    expect(patch.streets.length).toBeGreaterThan(1);
+    expect(patch.buildings.length).toBeGreaterThanOrEqual(4);
+    expect(patch.buildings.some(building=>Math.abs(building.z-24)<12)).toBe(true);
+    expect(patch.buildings.every(building=>sample(building.x,building.z).waterLevel===null)).toBe(true);
+    expect(validateTownPatch(plan,patch)).toEqual(patch);
+  });
+
   it('bounds public-footprint retries and still fails explicitly when no site can fit', () => {
     const plan = fixture(), sample = sampler(plan);
     expect(() => createWorldSettlementLandmarkLayout(plan, 'town', sample, {
