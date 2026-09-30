@@ -65,827 +65,105 @@
       "minimal": "map-838e6fc8-2f01-44ee",
       "minNewAssets": 0,
       "maxNewAssets": 16,
-      "status": "saved",
-      "attempt": 2,
+      "status": "failed",
+      "attempt": 15,
       "failures": [
         {
           "attempt": 1,
           "mapId": "map-f8f6831c-6dce-4416",
           "error": "map_code_execution_failed:Invalid or unexpected token at worldforge-map-plan.js:60"
+        },
+        {
+          "attempt": 4,
+          "mapId": "map-05bf3d27-0fd9-4cd3",
+          "error": "comparison_plan_too_sparse:24<80"
+        },
+        {
+          "attempt": 5,
+          "mapId": "map-15286924-9df7-471e",
+          "error": "comparison_plan_too_sparse:15<80"
+        },
+        {
+          "attempt": 6,
+          "mapId": "map-809d4c54-3b5e-485e",
+          "error": "map_code_execution_failed:invalid_map_code_environment_region at at sample (worldforge-map-plan.js:71:29) at source: const sample = (p) => api.environmentSample(p, { region: { minX: -48, maxX: 48, minZ: -48, maxZ: 48 } });"
+        },
+        {
+          "attempt": 7,
+          "mapId": "map-875cf618-1fb8-4397",
+          "error": "comparison_plan_too_sparse:41<80"
+        },
+        {
+          "attempt": 8,
+          "mapId": "map-d4760821-f85f-4366",
+          "error": "comparison_plan_too_sparse:73<80"
+        },
+        {
+          "attempt": 10,
+          "mapId": "map-b7cb03b5-23c1-4c72",
+          "error": "map_code_execution_failed:invalid_map_code_asset_key at at plan (worldforge-map-plan.js:129:18) at source: assetId: api.asset(lodge.key, 0),"
+        },
+        {
+          "attempt": 11,
+          "mapId": "map-42ea6665-9c90-4321",
+          "error": "comparison_plan_too_sparse:20<80"
+        },
+        {
+          "attempt": 12,
+          "mapId": "map-ebca98c1-eec2-4394",
+          "error": "map_code_execution_failed:TypeError: Cannot read properties of undefined (reading '0')"
+        },
+        {
+          "attempt": 13,
+          "mapId": "map-1eeea5fa-803d-4040",
+          "error": "comparison_plan_too_sparse:38<80"
+        },
+        {
+          "attempt": 14,
+          "mapId": "map-73f8782e-0bde-4475",
+          "error": "comparison_plan_too_sparse:50<80"
+        },
+        {
+          "attempt": 15,
+          "mapId": "map-2fb1132d-4e85-449c",
+          "error": "comparison_plan_too_sparse:44<80"
         }
       ],
-      "mapId": "map-ec46213e-27a2-4c34",
-      "code": "function plan(api) {\n  api.terrain('hills', { amplitude: 5, roughness: 0.32, seed: 2876401359 });\n  api.modifyTerrain({\n    modifier: 'ridge',\n    region: { kind: 'path', points: [[-38, -36], [0, -32], [39, -39]], width: 32 },\n    amplitude: 10,\n    softness: 0.85\n  });\n  api.modifyTerrain({\n    modifier: 'terrace',\n    region: { kind: 'circle', center: [0, 24], radius: 24 },\n    amplitude: 1.5,\n    softness: 0.8\n  });\n\n  function sample(p) { return api.environmentSample(p); }\n  function height(p) { return sample(p).height; }\n  function distance(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }\n  function yaw(a, b) { return Math.atan2(b[0] - a[0], b[1] - a[1]); }\n  function declare(key, name, dimensions, prompt, role) {\n    api.requireAsset({ key: key, name: name, dimensions: dimensions, prompt: prompt, role: role || 'structure' });\n  }\n  function place(key, p, dimensions, rotation) {\n    return api.place({ assetId: api.asset(key), position: p, dimensions: dimensions, rotationY: rotation || 0 });\n  }\n\n  const alternatives = [[-5, 23], [5, 25], [-8, 29]].map(function(p) {\n    const observations = [p, [p[0] - 10, p[1]], [p[0] + 10, p[1]], [p[0], p[1] - 8]].map(sample);\n    const hs = observations.map(function(s) { return s.height; });\n    return { p: p, spread: Math.max.apply(null, hs) - Math.min.apply(null, hs), slope: observations[0].slope };\n  });\n  alternatives.sort(function(a, b) { return a.spread - b.spread; });\n  const center = alternatives[0].p;\n  const cx = center[0], cz = center[1];\n  const base = height(center);\n  api.sculptTerrain({ mode: 'flatten', point: center, radius: 13, targetHeight: base, strength: 0.95 });\n  const courtHeight = height(center);\n\n  api.surface({\n    id: 'alpine-ground',\n    surface: 'rock',\n    region: { kind: 'polygon', points: [[-48, -48], [48, -48], [48, 48], [-48, 48]] },\n    intensity: 0.85\n  });\n\n  declare('snow', '积雪地表', [16, 1.2, 16],\n    'A broad continuous opaque ivory-white alpine snow blanket, irregular feathered perimeter, gently undulating upper surface and deep downward skirts burying underlying ground. No rocks, plants or objects. Fine blue shaded wind ripples, mostly smooth white packed snow. Y up, Z front.', 'environment');\n  declare('hotel', '木屋酒店', [12, 11, 10],\n    'Complete three-storey alpine timber chalet hotel, Y up Z+ entrance. Heavy stone ground floor, honey brown log upper floors, steep dark timber gable roof carrying thick white snow, projecting eaves and icicles. Fixed warm amber windows, carved continuous balconies, central front door at ground level with sheltered porch. Chimneys and red shutters. Entire building including roof and all fixed details.');\n  declare('lodge', '主会馆', [18, 13, 12],\n    'Complete large simple rectangular alpine lodge, Y up Z+ front. Stone ground storey and three timber storeys under one steep snow-covered gabled roof. Tall central glazed front entrance at ground level, sheltered terrace within footprint, warm windows, integral wood balconies, stout stone chimney and small central clock under the gable. Rich dark timber and cream stone.');\n  declare('rental', '滑雪服务屋', [10, 5, 7],\n    'Complete single-storey ski rental chalet, Y up Z+ entrance. Snow-covered pitched timber roof, wide glazed front doors at ground level, warm shop windows, attached racks of colorful skis beneath front eaves, timber walls on a stone plinth.');\n  declare('station', '缆车站', [8, 7, 10],\n    'Alpine gondola terminal, Y up Z+ uphill cable direction. Snow-covered timber and steel shelter, open axial gondola passage along local Z, boarding platform at ground level accessible from both X sides, overhead return wheel centered 5.5 meters above base. Front and rear axial openings, dark machinery, red gondola docked inside, stone base.');\n  declare('tower', '缆车支架', [4.8, 9, 2.5],\n    'Ski gondola support pylon, Y up Z+ cable travel. Galvanized tapered steel mast on concrete foot, transverse X crossarm with sheave rollers at X=-1.5 and X=1.5, roller contact height 8.5m above bottom, maintenance ladder and safety cage.');\n  declare('cable', '架空钢索', [0.08, 1, 10],\n    'One straight taut dark steel gondola cable rising along local Z. Y up. Rear endpoint at local Z=-5 Y=0, front endpoint at Z=5 Y=1; local X centered. Thin consistent round cable, no posts. Requested dimensions scale the endpoint rise and longitudinal span.', 'environment');\n  declare('cab', '红色吊厢', [2.2, 3.8, 2.3],\n    'Single red enclosed alpine gondola cabin with panoramic smoked glass windows, visible seats, curved red lower body and black suspension hanger extending above roof. Y up Z+ travel. Bottom of cabin is object base; hanger attachment is at top, 3.8m above base.', 'environment');\n  declare('pine', '雪松', [5, 10, 5],\n    'One tall alpine spruce, Y up Z front, dark evergreen layered branches heavily laden with crisp white snow, narrow pointed crown and exposed brown trunk. Natural asymmetric silhouette.', 'environment');\n  declare('marker', '雪道标杆', [0.35, 2.3, 0.35],\n    'One slender red alpine ski piste marker pole with a blue circular trail marker near its top, snow embedded foot, Y up Z front.', 'environment');\n  declare('sign', '导览牌', [3.2, 2.7, 0.6],\n    'Timber ski resort wayfinding board on two wooden posts, Y up Z+ readable front, small snowy pitched cap, stylized blue and red ski trail diagram and clear directional arrows, no ground slab.', 'environment');\n  declare('bench', '休憩长椅', [3, 1.3, 1],\n    'Alpine outdoor timber bench with thick carved backrest, dark iron legs and light snow on the upper back. Clear usable wooden seat. Y up Z+ seating front.', 'environment');\n\n  const snowPoints = api.sampleProbabilityField({\n    bounds: { minX: -42, maxX: 42, minZ: -42, maxZ: 42 },\n    candidates: 1500, maxPoints: 110, minDistance: 7.7, seed: 2876401360\n  }, function() { return 1; });\n  snowPoints.forEach(function(p, i) {\n    place('snow', [p[0], height(p) - 0.65, p[1]], [17, 1.2, 17], (i % 4) * 0.72);\n  });\n\n  const plaza = { kind: 'circle', center: center, radius: 10 };\n  api.surface({ id: 'arrival-court', surface: 'paving', material: 'garden-stone', region: plaza });\n  const arrival = [[cx + 5, 46], [cx + 6, 39], [cx + 3, cz + 9], center];\n  api.route({ id: 'arrival-road', points: arrival, width: 5, curve: 'catmull-rom', surface: 'paving', material: 'cobblestone' });\n  api.spawn([cx + 5, 42], 180);\n\n  const occupied = [];\n  function building(key, p, dims, access) {\n    const original = sample(p);\n    api.sculptTerrain({ mode: 'flatten', point: p, radius: Math.max(dims[0], dims[2]) * 0.59, targetHeight: original.height, strength: 0.95 });\n    const h = height(p);\n    const angle = yaw(p, access);\n    const obj = place(key, [p[0], h, p[1]], dims, angle);\n    api.foundation({ under: [obj], top: 'level', maxThickness: 4, material: 'stone' });\n    const door = [p[0] + Math.sin(angle) * dims[2] / 2, p[1] + Math.cos(angle) * dims[2] / 2];\n    api.rampTerrain({ start: access, end: door, width: 3, startHeight: height(access), endHeight: h, softness: 0.8, strength: 1 });\n    api.route({ id: 'door-' + occupied.length, points: [access, door], width: 2.8, surface: 'paving', material: 'garden-stone' });\n    occupied.push({ p: p, radius: Math.hypot(dims[0], dims[2]) / 2 + 1 });\n  }\n\n  building('lodge', [cx, cz - 15], [18, 13, 12], [cx, cz - 6]);\n  building('hotel', [cx - 19, cz - 4], [12, 11, 10], [cx - 8, cz - 2]);\n  building('hotel', [cx + 19, cz - 3], [12, 11, 10], [cx + 8, cz]);\n  building('hotel', [cx - 18, cz + 13], [12, 10, 10], [cx - 7, cz + 7]);\n  building('hotel', [cx + 19, cz + 13], [12, 12, 10], [cx + 7, cz + 8]);\n  building('rental', [cx - 16, cz - 18], [10, 5, 7], [cx - 13, cz - 10]);\n\n  const loop = [[cx - 8, cz + 8], [cx - 10, cz], [cx - 12, cz - 10], [cx - 13, cz - 23],\n    [cx + 12, cz - 23], [cx + 12, cz - 10], [cx + 10, cz], [cx + 8, cz + 8], [cx, cz + 9], [cx - 8, cz + 8]];\n  api.route({ id: 'hotel-promenade', points: loop, width: 3, curve: 'catmull-rom', surface: 'paving', material: 'compacted-earth' });\n  place('sign', [cx - 3, courtHeight, cz + 3], [3.2, 2.7, 0.6], 0);\n  [[-6, 4], [6, 4], [-5, -5], [5, -5]].forEach(function(d) {\n    place('bench', [cx + d[0], cz + d[1]], [3, 1.3, 1], d[1] < 0 ? 0 : Math.PI);\n  });\n\n  const upperCandidates = [[-25, -37], [-18, -38], [-10, -37]].map(function(p) {\n    return { p: p, s: sample(p) };\n  });\n  upperCandidates.sort(function(a, b) { return b.s.height - a.s.height; });\n  const top = upperCandidates[0].p;\n  const bottom = [cx - 27, cz - 16];\n  [bottom, top].forEach(function(p) {\n    const h = height(p);\n    api.sculptTerrain({ mode: 'flatten', point: p, radius: 6.5, targetHeight: h, strength: 1 });\n    sample(p);\n  });\n  const liftAngle = yaw(bottom, top);\n  const lowH = height(bottom), highH = height(top);\n  [bottom, top].forEach(function(p) {\n    const obj = place('station', [p[0], height(p), p[1]], [8, 7, 10], liftAngle);\n    api.foundation({ under: [obj], top: 'level', maxThickness: 4, material: 'stone' });\n    occupied.push({ p: p, radius: 7 });\n  });\n  api.route({ id: 'lift-access', points: [[cx - 13, cz - 10], [cx - 22, cz - 10], bottom], width: 4, surface: 'paving', material: 'compacted-earth' });\n\n  const nodes = [{ p: bottom, h: lowH + 5.5 }];\n  for (let i = 1; i <= 3; i++) {\n    const t = i / 4;\n    const p = [bottom[0] + (top[0] - bottom[0]) * t, bottom[1] + (top[1] - bottom[1]) * t];\n    const ground = height(p);\n    const obj = place('tower', [p[0], ground, p[1]], [4.8, 9, 2.5], liftAngle);\n    api.foundation({ under: [obj], top: 'level', maxThickness: 2, material: 'concrete' });\n    nodes.push({ p: p, h: ground + 8.5 });\n  }\n  nodes.push({ p: top, h: highH + 5.5 });\n  const perpendicular = [Math.cos(liftAngle), -Math.sin(liftAngle)];\n  for (let i = 0; i < nodes.length - 1; i++) {\n    const a = nodes[i], b = nodes[i + 1];\n    [-1.5, 1.5].forEach(function(offset) {\n      const pa = [a.p[0] + perpendicular[0] * offset, a.p[1] + perpendicular[1] * offset];\n      const pb = [b.p[0] + perpendicular[0] * offset, b.p[1] + perpendicular[1] * offset];\n      const lower = a.h <= b.h ? pa : pb;\n      const upper = a.h <= b.h ? pb : pa;\n      place('cable', [(pa[0] + pb[0]) / 2, Math.min(a.h, b.h), (pa[1] + pb[1]) / 2],\n        [0.08, Math.max(0.02, Math.abs(b.h - a.h)), distance(pa, pb)], yaw(lower, upper));\n      const t = offset < 0 ? 0.38 : 0.68;\n      place('cab', [pa[0] + (pb[0] - pa[0]) * t, a.h + (b.h - a.h) * t - 3.8, pa[1] + (pb[1] - pa[1]) * t],\n        [2.2, 3.8, 2.3], liftAngle);\n    });\n  }\n\n  const pistes = [\n    [top, [-4, -31], [14, -25], [28, -14], [30, -2], [cx + 12, cz - 23]],\n    [top, [-11, -23], [0, -14], [cx, cz - 24], [cx + 12, cz - 23]]\n  ];\n  pistes.forEach(function(points, index) {\n    const width = index === 0 ? 8 : 6;\n    for (let j = 0; j < points.length - 1; j++) {\n      const a = points[j], b = points[j + 1];\n      const ah = height(a), bh = height(b);\n      api.rampTerrain({ start: a, end: b, width: width, startHeight: ah, endHeight: bh, softness: 0.95, strength: 0.85 });\n      const length = distance(a, b), angle = yaw(a, b);\n      const count = Math.ceil(length / 5);\n      for (let k = 0; k < count; k++) {\n        const t = (k + 0.5) / count;\n        const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];\n        place('snow', [p[0], height(p) - 0.2, p[1]], [width + 1, 0.45, length / count + 2], angle);\n        if (k % 2 === 0) {\n          [-1, 1].forEach(function(side) {\n            const q = [p[0] + Math.cos(angle) * (width / 2 + 0.5) * side,\n              p[1] - Math.sin(angle) * (width / 2 + 0.5) * side];\n            place('marker', q, [0.35, 2.3, 0.35], angle);\n          });\n        }\n      }\n    }\n    api.route({ id: 'ski-piste-' + index, points: points, width: width, curve: 'catmull-rom', surface: 'none' });\n  });\n\n  function segmentDistance(p, a, b) {\n    const dx = b[0] - a[0], dz = b[1] - a[1];\n    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / Math.max(0.001, dx * dx + dz * dz)));\n    return distance(p, [a[0] + dx * t, a[1] + dz * t]);\n  }\n  const trees = api.sampleProbabilityField({\n    bounds: { minX: -43, maxX: 43, minZ: -43, maxZ: 43 },\n    candidates: 1600, maxPoints: 95, minDistance: 4.6,\n    cluster: { strength: 0.6, scale: 15, seed: 2876401361 }\n  }, function(p) {\n    const s = sample(p);\n    if (distance(p, center) < 31 || occupied.some(function(o) { return distance(p, o.p) < o.radius + 3; })) return 0;\n    if (segmentDistance(p, bottom, top) < 5) return 0;\n    for (let i = 0; i < pistes.length; i++) {\n      for (let j = 0; j < pistes[i].length - 1; j++) {\n        if (segmentDistance(p, pistes[i][j], pistes[i][j + 1]) < 7) return 0;\n      }\n    }\n    return s.slope > 0.85 ? 0.15 : 0.85;\n  });\n  trees.forEach(function(p) {\n    const scale = 0.7 + Math.random() * 0.55;\n    place('pine', p, [5 * scale, 10 * scale, 5 * scale], Math.random() * Math.PI * 2);\n  });\n}",
-      "transactionId": "tx-9ce739ab-1a6f-41fc",
-      "objectCount": 234,
-      "assetCount": 12,
-      "diagnostics": [
+      "discardedResults": [
         {
-          "code": "terrain.bounds-limited",
-          "severity": "warning",
-          "message": "ridge 请求振幅 10.00m，实际使用 4.57m；区域宽度不足，按 mountain 生成。",
-          "repaired": false
+          "attempt": 2,
+          "mapId": "map-ec46213e-27a2-4c34",
+          "reason": "雪地 Surface 方案验证：旧图以雪块资产铺地，保留作对照"
         },
         {
-          "code": "terrain.surface-material-repaired",
-          "severity": "warning",
-          "message": "铺装材质 compacted-earth 与 surface 不兼容，已按材质改用 soil。",
-          "repaired": true
+          "attempt": 3,
+          "mapId": "map-1ed8682b-42bf-494a",
+          "reason": "用户判定本次模型质量异常，要求独立重生成"
         },
         {
-          "code": "terrain.surface-material-repaired",
-          "severity": "warning",
-          "message": "铺装材质 compacted-earth 与 surface 不兼容，已按材质改用 soil。",
-          "repaired": true
+          "attempt": 6,
+          "mapId": "map-809d4c54-3b5e-485e",
+          "reason": "用户判定本次模型质量异常，要求独立重生成"
         },
         {
-          "code": "code.declaration-normalized",
-          "severity": "warning",
-          "message": "程序未声明 sceneIntent，已根据内容推断为 authored。",
-          "repaired": true
-        },
-        {
-          "code": "foundation.max-thickness",
-          "severity": "warning",
-          "message": "地基 需要 4.14m 厚度，超过 4.00m 上限，已跳过。",
-          "repaired": false
-        },
-        {
-          "code": "foundation.max-thickness",
-          "severity": "warning",
-          "message": "地基 需要 2.05m 厚度，超过 2.00m 上限，已跳过。",
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-2699e7f1-aa14-4e0a"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-1b4f56f6-79dc-470b"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-fba54eee-dccb-4750"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-eae02d9b-4a67-4077"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-f7551753-68e3-4219"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-db683f8d-e02e-4550"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-3f2c6752-e3aa-47d2"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-0fc5fa19-730c-4bee"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-a35f6bbe-9459-4478"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-c0e5a8f8-2b07-4ea8"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-2a2665bc-a5f0-4566"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-222d4970-d40d-491e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-5c6c692b-4e5c-4dee"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-90220d73-a3f6-43d1"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-8c02bfcc-9119-4059"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-93525923-efa8-428b"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-83ab58f5-e3c2-4947"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-c756f6af-4ab2-4494"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-1fa696c1-cee3-491e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-590d16cd-38b2-4243"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-3bea199e-42fa-4888"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-a5e082ef-cad4-472a"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.out-of-bounds",
-          "severity": "warning",
-          "message": "物体已移回地图边界内。",
-          "objectIds": [
-            "obj-code-a275e2e9-ccdf-4b73"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-82d99e53-f717-4053"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-e4e99abb-7d2f-4845"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-bdfaefdc-bb2b-48f9"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-d718ba87-0f6d-4426"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-f28ba0d4-59ea-4820"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-f28ba0d4-59ea-4820"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-c965e46f-f17a-4b36"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-c965e46f-f17a-4b36"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-f0894483-7d23-4f56"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-f0894483-7d23-4f56"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-285c2b93-1749-492e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-285c2b93-1749-492e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-9154111b-3c4b-45ac"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-9154111b-3c4b-45ac"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-8aac3f62-635d-46a1"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-8aac3f62-635d-46a1"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-865b409d-b5e1-4624"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-865b409d-b5e1-4624"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.off-ground",
-          "severity": "warning",
-          "message": "物体已重新贴合地形。",
-          "objectIds": [
-            "obj-code-de119ec5-5ba6-49b3"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-de119ec5-5ba6-49b3"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-ae009463-627f-426e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-7b1e1e77-7591-49bf"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-b2f42cd4-beae-4377"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-4601932b-a84d-4ae8"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-48ad6f2e-bcda-4f19"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-c519e326-8862-4bd2"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-cad9ead0-260f-43da"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-d53b308f-8378-476d"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-1926c859-5cf6-4e3e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-83563d1a-718b-4ec7"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-77fde555-7cdb-4d30"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-a2040fcc-98db-41d5"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-eee9959e-5a95-4593"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-e030f1b2-e95a-434a"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-f443d664-2e8e-478d"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-58d9fdef-52e0-4f22"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-c5b8bf50-45da-4b72"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-1815a1e7-1c65-42cb"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-749ec804-881a-45ee"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-324bcc68-b993-41d0"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-7df0780b-a8d7-4c80"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-6a742413-129f-4d97"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-b8b5d2fc-b6e6-4be0"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-606c9c8b-aa74-46be"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-0419b6b4-3da4-4728"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-65cbadd8-d32a-4623"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-348edb31-9b2e-4d8e"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-52b4555c-4ff6-48c1"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-a2b05978-1fa3-4614"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-904bbc05-d4f8-4342"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-67ef0c2b-7fad-4907"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-1517f46e-2604-42a3"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-e1f5c2e9-2017-4858"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-6ee85e17-524e-49e8"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-ffb9e8cc-e167-46a7"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-1ba9b44f-761d-460f"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-1147c68a-f420-4d92"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.too-small",
-          "severity": "warning",
-          "message": "物体相对角色过小，已按语义尺度等比放大并重新贴地。",
-          "objectIds": [
-            "obj-code-132d62c7-c114-436d"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.overlap",
-          "severity": "warning",
-          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
-          "objectIds": [
-            "obj-code-b874f905-bb8f-4326",
-            "obj-code-a3cc3022-1a7f-4c7f"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.overlap",
-          "severity": "warning",
-          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
-          "objectIds": [
-            "obj-code-ed732131-977d-49a5",
-            "obj-code-d868f72c-6679-4fba"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.overlap",
-          "severity": "warning",
-          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
-          "objectIds": [
-            "obj-code-580253d3-4572-44d4",
-            "obj-code-c86d3642-93ea-4184"
-          ],
-          "repaired": false
-        },
-        {
-          "code": "object.overlap",
-          "severity": "warning",
-          "message": "检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。",
-          "objectIds": [
-            "obj-code-82130054-8174-4990",
-            "obj-code-6a34bdbc-1702-4966"
-          ],
-          "repaired": false
+          "attempt": 9,
+          "mapId": "map-4e3cc648-d3b4-4365",
+          "reason": "用户判定本次模型质量异常，要求独立重生成"
         }
-      ]
+      ],
+      "previewResults": [
+        {
+          "attempt": 14,
+          "mapId": "map-73f8782e-0bde-4475",
+          "objectCount": 50,
+          "assetCount": 12,
+          "note": "应用户要求重放第 14 次原始 GPT 代码并生成 DeepSeek 资产，仅作预览；实际地形高差 14.8m，最长雪道高差 7.8m，未通过平缓高山验收。"
+        }
+      ],
+      "generationPrompt": "宽阔高山坡面上的大型滑雪度假区。山顶雪脊明显高于山脚，但两者之间是连续、平缓且足够长的雪坡，几条雪道沿坡面弯曲下降，不出现断崖或阶梯式落差。地图内主要雪道跨越约 60 到 80 米的水平距离，起终点有约 12 到 18 米高差；缆车由山脚服务区通向坡上。山脚聚集木屋酒店、餐饮小屋与滑雪租赁站，针叶林自然地分布在雪道两侧和缓坡。积雪使用地表，不用模型方块铺地。",
+      "boxHeight": 32,
+      "error": "comparison_plan_too_sparse:44<80",
+      "mapId": "map-2fb1132d-4e85-449c"
     },
     {
       "name": "热带雨林神庙遗迹",
