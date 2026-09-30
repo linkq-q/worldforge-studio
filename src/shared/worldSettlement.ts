@@ -451,7 +451,8 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     parcelWidth: city?5.8:town.radius>=90?(town.targetWaterBodyId==='sea'?5:7.2):9,
     parcelDepth: city ? 8.5 : town.radius>=90?9:10,
     buildingGap: city ? 1.2 : 7,
-    roadBudget: city ? Math.round(26+density*10+Math.max(0,town.radius-100)/20)
+    roadBudget: city ? Math.max(Math.round(26+density*10+Math.max(0,town.radius-100)/20),
+      town.population===undefined?0:Math.ceil(town.population/6))
       : Math.max(7,Math.round(6+density*8+villageGrowth/16),
         town.population===undefined?0:Math.ceil(town.population/10))
   };
@@ -768,7 +769,9 @@ function placeBuildings(
   const occupancy=!city&&town.targetWaterBodyId==='sea'
     ? Math.min(1,settings.density+settings.waterfrontBias*.4):settings.density;
   const populationHomes=town.population===undefined?0:Math.ceil(town.population/5);
-  const ordinaryTarget = Math.max(city ? 24 : villageFloor, populationHomes, Math.round(candidates.length * occupancy));
+  const ordinaryTarget = town.population===undefined
+    ? Math.max(city ? 24 : villageFloor, Math.round(candidates.length * occupancy))
+    : populationHomes;
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
   for (const landmark of result) {
     const bounds = townBuildingBounds(landmark);
