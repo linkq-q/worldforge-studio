@@ -70,6 +70,9 @@ describe('WaterSurface shader', () => {
     );
 
     expect(surface.material.fragmentShader).toContain(': (uUseShoreDistance ? shoreDist : 0.0);');
+    expect(surface.material.fragmentShader).toContain(
+      'float terrainOpacity = mix(shoreOpacity, 1.0, 1.0 - transmission);'
+    );
 
     surface.dispose();
   });

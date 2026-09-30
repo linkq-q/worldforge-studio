@@ -34,6 +34,7 @@ describe('structured water geometry', () => {
       id: 'sloped-river', name: 'Sloped river', type: 'river', level: 1, depth: 1.2, width: 3,
       points: [[-10, -5], [0, 4], [10, 0]],
       levels: [3, 2, 1],
+      widths: [4, 12, 7],
       shorelineSmoothness: 0.85,
       shorelineIrregularity: 0,
       seed: 9
@@ -42,7 +43,10 @@ describe('structured water geometry', () => {
     const samples = riverPathSamples(river);
     expect(samples.length).toBeGreaterThan(river.points.length);
     expect(samples[0]).toMatchObject({ point: river.points[0], level: 3 });
-    expect(samples.at(-1)).toMatchObject({ point: river.points.at(-1), level: 1 });
+    expect(samples[0].width).toBe(4);
+    expect(samples.at(-1)).toMatchObject({ point: river.points.at(-1), level: 1, width: 7 });
+    expect(samples.some(sample => sample.width > 10)).toBe(true);
+    expect(samples.every((sample, index) => index === 0 || Math.abs(sample.width - samples[index - 1].width) < 4)).toBe(true);
   });
 
   it('applies deterministic river irregularity without moving either endpoint', () => {

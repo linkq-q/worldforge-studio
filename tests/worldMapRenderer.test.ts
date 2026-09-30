@@ -2,9 +2,12 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
-import { buildWorldWhiteboxOverlay, worldCoastalSandWeight, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
-import { createEmptyMap } from '../src/shared/map';
+import { buildMapGrassField } from '../src/client/mapGrassRenderer';
+import { getCollisionMeshBvhBuildStats, resetCollisionMeshBvhBuildStats } from '../src/client/mapMeshCollision';
+import { buildWorldWhiteboxOverlay, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
+import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
 import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
 
 const bundle = validateWorldBundle(JSON.parse(readFileSync(
@@ -74,13 +77,13 @@ describe('main editor streamed world renderer', () => {
     expect((path.material as THREE.LineBasicMaterial).depthTest).toBe(false);
   });
 
-  it('does not cover a matching rendered river with a whitebox ribbon', () => {
+  it('does not extend a semantic river line past the rendered river mouth', () => {
     const plan = structuredClone(smallBundle.plan);
     plan.whitebox = true;
     plan.recipe.waterBodies = [{
       id: 'river-water', type: 'river',
-      region: { kind: 'path', points: [[-12, 0], [0, 3], [12, 0]], width: 18 },
-      levels: [2, 1, 0], depth: 3
+      region: { kind: 'path', points: [[-12, 0], [0, 3], [6, 1.5], [12, 0]], width: 18 },
+      levels: [2, 1, 0.5, 0], depth: 3
     }];
     plan.featureGraph = {
       regions: [],
@@ -92,10 +95,7 @@ describe('main editor streamed world renderer', () => {
     };
 
     const overlay = buildWorldWhiteboxOverlay(plan, () => ({ height: -2, waterLevel: 1 }));
-    const riverLine = overlay.getObjectByName('world-whitebox-path:river-feature') as THREE.Line;
-    expect(riverLine).toBeInstanceOf(THREE.Line);
-    expect((riverLine.material as THREE.LineBasicMaterial).depthTest).toBe(true);
-    expect(riverLine.geometry.getAttribute('position').getY(0)).toBeCloseTo(1.05);
+    expect(overlay.getObjectByName('world-whitebox-path:river-feature')).toBeUndefined();
     expect(overlay.getObjectByName('world-whitebox-path-surface:river-feature')).toBeUndefined();
     expect(overlay.getObjectByName('world-whitebox-path-surface:trail')).toBeInstanceOf(THREE.Mesh);
   });
@@ -179,6 +179,7 @@ describe('main editor streamed world renderer', () => {
         normals: new Float32Array(),
         weights,
         waterLevels: new Float32Array([0, 0, 0, 0]),
+        freshWaterWeights: new Float32Array(4),
         resolution: 2
       };
     };
@@ -189,6 +190,42 @@ describe('main editor streamed world renderer', () => {
     expect(worldGrassLayers(tileData(0), tile)[0].densities.every(density => density > 0.7)).toBe(true);
     expect(worldCoastalSandWeight(16, 0.4)).toBe(0);
     expect(worldCoastalSandWeight(4, 0.4)).toBeGreaterThan(0.6);
+
+    const inlandWater = tileData(0);
+    inlandWater.freshWaterWeights.fill(1);
+    expect(worldTileSurfaceWeight(inlandWater, tile, 8, 8, ['water'])).toBe(1);
+    expect(worldTileSurfaceWeight(inlandWater, tile, 8, 8, ['sand'])).toBe(0);
+    expect(worldTileSurfaceWeight(inlandWater, tile, 8, 8, ['grass'])).toBe(0);
+
+    const freshWaterBank = tileData(0);
+    freshWaterBank.freshWaterWeights.fill(0.7);
+    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['sand'])).toBeGreaterThan(0.3);
+    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['grass'])).toBeLessThan(0.8);
+    expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['water'])).toBeCloseTo(0.7);
+
+  });
+
+  it('gives compact grassland chunks dense ground cover within the resident streaming budget', () => {
+    const tile = { x: -128, z: -128, size: 256 };
+    const weights = new Float32Array(4 * WORLD_BIOMES.length);
+    for (let index = 0; index < 4; index += 1) {
+      weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('grassland')] = 1;
+    }
+    const tileData: WorldTileData = {
+      heights: new Float32Array(4), normals: new Float32Array(), weights,
+      waterLevels: new Float32Array(4), freshWaterWeights: new Float32Array(4), resolution: 2
+    };
+    const grassMap = createEmptyMap('streamed grass budget', 'streamed-grass-budget', [tile.size, 32, tile.size]);
+    grassMap.terrain = { resolutionX: 2, resolutionZ: 2, heights: [0, 0, 0, 0] };
+    grassMap.grassLayers = worldGrassLayers(tileData, tile);
+    const grass = buildMapGrassField(grassMap, {
+      ...DEFAULT_RUNTIME_GRASS_STYLE,
+      maxInstances: worldGrassChunkBudget(4)
+    })!;
+    expect(grass.getStats().bladeCount).toBeGreaterThan(3_500);
+    expect(grass.getStats().bladeCount).toBeLessThanOrEqual(15_000);
+    expect(worldGrassChunkBudget(25) * 25).toBeLessThanOrEqual(120_000);
+    grass.dispose();
   });
 
   it('keeps compact-world ocean ownership fixed while large worlds follow the streamed focus', () => {
@@ -204,7 +241,7 @@ describe('main editor streamed world renderer', () => {
     }
     const data = (heights: number[]): WorldTileData => ({
       heights: new Float32Array(heights), normals: new Float32Array(), weights,
-      waterLevels: new Float32Array(9), resolution: 3
+      waterLevels: new Float32Array(9), freshWaterWeights: new Float32Array(9), resolution: 3
     });
 
     expect(worldTileSurfaceWeight(data([0, 0, 0, 0, 0, 0, 0, 0, 0]), tile, 10, 10, ['rocky'])).toBe(0);
@@ -230,6 +267,9 @@ describe('main editor streamed world renderer', () => {
         if (object.name === 'terrain' && object.visible) terrains.push(object as THREE.Mesh);
       });
       expect(terrains).toHaveLength(16);
+      expect(terrains.every(terrain => (
+        (terrain.material as THREE.MeshStandardMaterial).map?.image as HTMLCanvasElement
+      ).width === 256)).toBe(true);
       const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
       expect(ocean.userData.waterOceanTerrain.mapSize[0]).toBeGreaterThanOrEqual(500);
@@ -238,7 +278,7 @@ describe('main editor streamed world renderer', () => {
       rendered.group.traverse(object => { if (object.name === 'water:world-ocean') oceanCount += 1; });
       expect(oceanCount).toBe(1);
       expect(rendered.getDebugStats().grassBlades).toBeGreaterThan(0);
-      expect(rendered.getDebugStats().grassBlades).toBeLessThanOrEqual(3_500);
+      expect(rendered.getDebugStats().grassBlades).toBeLessThanOrEqual(15_000);
       const camera = new THREE.PerspectiveCamera();
       camera.position.set(160, 100, 0);
       camera.lookAt(160, 0, 0);
@@ -309,9 +349,13 @@ describe('main editor streamed world renderer', () => {
       heightMode: 'fixed', visible: true, locked: false, behavior: { kind: 'static', locomotion: 'static' }
     }];
 
+    resetCollisionMeshBvhBuildStats();
     const rendered = await buildEditableMapGroup(map);
     try {
       const stats = rendered.getDebugStats().streaming!;
+      const bvhBuilds = getCollisionMeshBvhBuildStats();
+      expect(bvhBuilds.count).toBe(stats.collisionMeshes);
+      expect(bvhBuilds.totalMs).toBeGreaterThan(0);
       expect(stats.terrainTiles).toBeGreaterThan(1);
       expect(stats.terrainTiles).toBeLessThanOrEqual(128);
       expect(stats.contentChunks).toBe(1);
@@ -325,6 +369,10 @@ describe('main editor streamed world renderer', () => {
       const position = rendered.objectGroups.get('manual-root')!.getWorldPosition(new THREE.Vector3());
       expect(position.x).toBeCloseTo(town.center[0] + 4);
       expect(position.z).toBeCloseTo(town.center[1]);
+      expect(rendered.pickables.some(object => object.userData.mapObjectId === 'manual-root')).toBe(true);
+      expect(rendered.getCollisionWorld?.()?.raycastFirst(
+        [position.x, position.y + 10, position.z], [0, -1, 0], 20, new Set(['scene'])
+      )?.meshId).toContain('manual-root');
       await waitFor(() => {
         const settled = rendered.getDebugStats().streaming;
         return Boolean(settled && settled.pendingTiles === 0 && settled.contentChunks > 1);
@@ -359,6 +407,29 @@ describe('main editor streamed world renderer', () => {
       expect(rendered.objectGroups.get('manual-root')).toBe(manualGroup);
       expect(rendered.getCollisionWorld?.()?.instances.find(instance => instance.id.includes('manual-root'))).toBe(manualCollision);
       unsubscribe?.();
+    } finally {
+      rendered.dispose();
+    }
+  }, 30_000);
+
+  it('keeps ordinary raw construction visible as primitives beside a partial asset pack', async () => {
+    const map = createEmptyMap();
+    const town = bundle.plan.towns[0];
+    const sample = createPlannedWorldSampler(bundle.plan, bundle.patches);
+    const landmarkAsset: MapAsset = {
+      id: 'asset-landmark', name: 'Landmark', prompt: 'Landmark', modelJson: {},
+      colliderPlan: {version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: true},
+      mode: 'voxel', createdAt: 1, updatedAt: 1
+    };
+    map.assets = [landmarkAsset];
+    map.world = {bundle, assets: [{key: 'landmarks', role: 'landmark', assetId: landmarkAsset.id}]};
+    map.box.size = [bundle.plan.recipe.size, 4096, bundle.plan.recipe.size];
+    map.spawnPoints = [[town.center[0], sample(...town.center).height, town.center[1]]];
+
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      await waitFor(() => rendered.objectGroups.has('world-building:forest-south-home-center'));
+      expect(rendered.objectGroups.get('world-building:forest-south-home-center')).toBeInstanceOf(THREE.Group);
     } finally {
       rendered.dispose();
     }

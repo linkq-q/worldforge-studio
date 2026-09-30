@@ -548,6 +548,7 @@ export class RenderRuntimeAdapter {
     for (const mesh of meshes) {
       const style = styles.find((candidate) => matchesScope(mesh, candidate.scope));
       const recipe = waterRecipe(style?.recipe ?? defaultWaterStyle(mesh).recipe);
+      const shoreTransition = structuredWaterShoreTransition(mesh.userData.waterBodyType);
       const waterColor = new THREE.Color(style?.color ?? recipe.color);
       const shallowColor = style?.shallowColor
         ? new THREE.Color(style.shallowColor)
@@ -596,8 +597,8 @@ export class RenderRuntimeAdapter {
           waterMode: recipe.mode,
           uFlowEnabled: riverFlow,
           uFlowSpeed: mesh.userData.isSpillway ? 1.8 : 0.6,
-          uShoreTransparency: mesh.userData.waterBodyType === 'ocean' ? 0 : 0.9,
-          uShoreEdgeAlpha: 0.08,
+          uShoreTransparency: shoreTransition.transparency,
+          uShoreEdgeAlpha: shoreTransition.edgeAlpha,
           uWaterColor: `#${waterColor.getHexString()}`,
           uShallowColor: `#${shallowColor.getHexString()}`,
           uDepthColor: `#${depthColor.getHexString()}`,
@@ -1043,6 +1044,16 @@ export class RenderRuntimeAdapter {
 export function shouldBindRenderPlanWaterSurface(mesh: THREE.Mesh): boolean {
   return mesh.userData.isModelWater !== true
     && mesh.userData.isWaterRefractionBody !== true;
+}
+
+export function structuredWaterShoreTransition(waterBodyType: unknown): {
+  transparency: number;
+  edgeAlpha: number;
+} {
+  if (waterBodyType === 'ocean') return { transparency: 0, edgeAlpha: 0.28 };
+  return waterBodyType === 'river'
+    ? { transparency: 0.42, edgeAlpha: 0.58 }
+    : { transparency: 0.62, edgeAlpha: 0.38 };
 }
 
 function scopedTargets(root: THREE.Object3D, scope: { target: string; tag?: string }): THREE.Object3D[] {

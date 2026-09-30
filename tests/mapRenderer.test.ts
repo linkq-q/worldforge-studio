@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEditableMapGroup,
   buildStructuredWaterGroup,
+  riverBankTransitionSamples,
   terrainDetailPixelSpan,
   terrainNormalPixelsFromHeight,
   quantizeCanvasToPalette
@@ -261,6 +262,22 @@ describe('procedural foundation rendering', () => {
 });
 
 describe('structured map water rendering', () => {
+  it('keeps straight river banks subtle and concentrates erosion/deposition on opposite bend sides', () => {
+    const transition = riverBankTransitionSamples({
+      id: 'bending-river', name: 'bending river', type: 'river', level: 0, depth: 2, width: 8,
+      points: [[-20, 0], [0, 0], [0, 20]], shorelineSmoothness: 0
+    });
+    const leftErosion = Math.max(...transition.left.map((sample) => sample.erosion));
+    const rightErosion = Math.max(...transition.right.map((sample) => sample.erosion));
+    const leftDeposition = Math.max(...transition.left.map((sample) => sample.deposition));
+    const rightDeposition = Math.max(...transition.right.map((sample) => sample.deposition));
+
+    expect(rightErosion).toBeGreaterThan(leftErosion);
+    expect(leftDeposition).toBeGreaterThan(rightDeposition);
+    expect(transition.left).toHaveLength(transition.right.length);
+    expect(transition.left.length + transition.right.length).toBeLessThanOrEqual(512);
+  });
+
   it('does not paint the streamed ocean-owner tile as an authored wet shoreline', async () => {
     let strokes = 0;
     vi.stubGlobal('document', {

@@ -799,12 +799,12 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
       || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
     if (isBrick) textures ??= createBrickRoadOverlayTextures(style);
     const points = zone.region.points;
-    const samples = pathSamplesWithDistance(points, Math.max(0.85, zone.region.width * 0.24));
+    const samples = roadOverlaySamples(points, Math.max(0.85, zone.region.width * 0.24));
     if (samples.length < 2) continue;
     const connected = roadConnectedEnds(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
     const capRadius = zone.region.width * 0.5;
     const capSegments = 4;
-    const overlaySamples: Array<RoadPathSample & { widthScale: number }> = [];
+    const overlaySamples: RoadOverlaySample[] = [];
     const start = samples[0];
     const end = samples[samples.length - 1];
     if (!connected[0]) {
@@ -819,7 +819,7 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
         });
       }
     }
-    overlaySamples.push(...samples.map((sample) => ({ ...sample, widthScale: 1 })));
+    overlaySamples.push(...samples);
     if (!connected[1]) {
       for (let step = 1; step <= capSegments; step += 1) {
         const offset = capRadius * step / capSegments;
@@ -3368,6 +3368,8 @@ type RoadPathSample = {
   total: number;
 };
 
+type RoadOverlaySample = RoadPathSample & { widthScale: number };
+
 function drawMudDetailStrip(
   ctx: CanvasRenderingContext2D,
   map: EditableMap,
@@ -3727,6 +3729,47 @@ function pathSamplesWithDistance(points: readonly [number, number][], spacing: n
   return samples;
 }
 
+function roadOverlaySamples(points: readonly [number, number][], spacing: number): RoadOverlaySample[] {
+  const sampled = pathSamplesWithDistance(points, spacing).map((sample) => ({ ...sample, widthScale: 1 }));
+  if (sampled.length < 2 || points.length < 3) return sampled;
+  const total = sampled[0].total;
+  const candidates: Array<RoadOverlaySample & { corner?: true }> = [...sampled];
+  let distance = 0;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1];
+    const point = points[index];
+    const next = points[index + 1];
+    const incomingLength = Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+    distance += incomingLength;
+    const outgoingLength = Math.hypot(next[0] - point[0], next[1] - point[1]);
+    if (incomingLength < 0.0001 || outgoingLength < 0.0001) continue;
+    const incomingX = (point[0] - previous[0]) / incomingLength;
+    const incomingZ = (point[1] - previous[1]) / incomingLength;
+    const outgoingX = (next[0] - point[0]) / outgoingLength;
+    const outgoingZ = (next[1] - point[1]) / outgoingLength;
+    const tangentLength = Math.hypot(incomingX + outgoingX, incomingZ + outgoingZ);
+    const tangentX = tangentLength > 0.001 ? (incomingX + outgoingX) / tangentLength : outgoingX;
+    const tangentZ = tangentLength > 0.001 ? (incomingZ + outgoingZ) / tangentLength : outgoingZ;
+    const miterProjection = Math.abs(tangentX * incomingX + tangentZ * incomingZ);
+    candidates.push({
+      x: point[0], z: point[1], tangentX, tangentZ, distance, total,
+      widthScale: Math.min(1.8, 1 / Math.max(0.56, miterProjection)),
+      corner: true
+    });
+  }
+  candidates.sort((a, b) => a.distance - b.distance);
+  const merged: Array<RoadOverlaySample & { corner?: true }> = [];
+  for (const sample of candidates) {
+    const previous = merged[merged.length - 1];
+    if (previous && Math.abs(previous.distance - sample.distance) < 0.0001) {
+      if (sample.corner) merged[merged.length - 1] = sample;
+    } else {
+      merged.push(sample);
+    }
+  }
+  return merged.map(({ corner: _corner, ...sample }) => sample);
+}
+
 function stringSeed(value: string): number {
   let seed = 0x811c9dc5;
   for (let index = 0; index < value.length; index += 1) {
@@ -4081,6 +4124,33 @@ function drawSemanticPolygon(
   ctx.restore();
 }
 
+export interface RiverBankTransitionSample {
+  point: [number, number];
+  erosion: number;
+  deposition: number;
+}
+
+export function riverBankTransitionSamples(water: MapWaterBody): {
+  left: RiverBankTransitionSample[];
+  right: RiverBankTransitionSample[];
+} {
+  if (water.type !== 'river') return { left: [], right: [] };
+  const edges = riverEdgePairs(water);
+  const transition = (side: 'left' | 'right'): RiverBankTransitionSample[] => edges.map((edge, index) => {
+    const previous = edges[Math.max(0, index - 1)].direction;
+    const next = edges[Math.min(edges.length - 1, index + 1)].direction;
+    const turn = previous[0] * next[1] - previous[1] * next[0];
+    const bend = THREE.MathUtils.smoothstep(Math.abs(turn), 0.02, 0.5);
+    const outer = side === 'right' ? turn > 0 : turn < 0;
+    return {
+      point: [...edge[side]],
+      erosion: outer ? bend : 0,
+      deposition: outer ? 0 : bend
+    };
+  });
+  return { left: transition('left'), right: transition('right') };
+}
+
 function drawWetShore(
   ctx: CanvasRenderingContext2D,
   map: EditableMap,
@@ -4088,6 +4158,10 @@ function drawWetShore(
   width: number,
   height: number
 ): void {
+  if (water.type === 'river') {
+    drawRiverBankTransition(ctx, map, water, width, height);
+    return;
+  }
   const points = water.points.map((point) => surfaceCanvasPoint(map, point, width, height));
   if (points.length < 2) return;
   ctx.save();
@@ -4096,15 +4170,56 @@ function drawWetShore(
   ctx.beginPath();
   ctx.moveTo(points[0][0], points[0][1]);
   points.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
-  if (water.type !== 'river') ctx.closePath();
+  ctx.closePath();
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
-  ctx.strokeStyle = 'rgba(88, 91, 70, 0.16)';
-  ctx.lineWidth = Math.max(3, (water.type === 'river' ? water.width + 1.8 : 2.4) * pixelsPerMetre);
+  ctx.strokeStyle = 'rgba(88, 91, 70, 0.08)';
+  ctx.lineWidth = Math.max(2, 3.2 * pixelsPerMetre);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(164, 151, 109, 0.14)';
-  ctx.lineWidth = Math.max(2, (water.type === 'river' ? water.width + 0.7 : 1.1) * pixelsPerMetre);
+  ctx.strokeStyle = 'rgba(164, 151, 109, 0.1)';
+  ctx.lineWidth = Math.max(1, 1.4 * pixelsPerMetre);
   ctx.stroke();
   ctx.restore();
+}
+
+function drawRiverBankTransition(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  water: MapWaterBody,
+  width: number,
+  height: number
+): void {
+  const transition = riverBankTransitionSamples(water);
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const samples of [transition.left, transition.right]) {
+    drawRiverBankSegments(ctx, map, samples, 'erosion', width, height);
+    ctx.strokeStyle = 'rgba(77, 82, 67, 0.105)';
+    ctx.lineWidth = Math.max(0.8, 1.25 * pixelsPerMetre);
+    ctx.stroke();
+    drawRiverBankSegments(ctx, map, samples, 'deposition', width, height);
+    ctx.strokeStyle = 'rgba(188, 164, 111, 0.12)';
+    ctx.lineWidth = Math.max(0.8, 1.7 * pixelsPerMetre);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawRiverBankSegments(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  samples: readonly RiverBankTransitionSample[],
+  kind: 'erosion' | 'deposition',
+  width: number,
+  height: number
+): void {
+  ctx.beginPath();
+  for (let index = 1; index < samples.length; index += 1) {
+    if (Math.max(samples[index - 1][kind], samples[index][kind]) < 0.08) continue;
+    ctx.moveTo(...surfaceCanvasPoint(map, samples[index - 1].point, width, height));
+    ctx.lineTo(...surfaceCanvasPoint(map, samples[index].point, width, height));
+  }
 }
 
 function surfaceCanvasPoint(

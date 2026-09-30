@@ -13,7 +13,7 @@ import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag 
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
 import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
-import { selectWorldEcologyAsset, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
+import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
@@ -33,7 +33,6 @@ import {
 } from './mapRenderer';
 import {
   buildMapMeshCollisionWorld,
-  createCollisionMeshInstance,
   MeshCollisionWorld,
   type CollisionMeshKind
 } from './mapMeshCollision';
@@ -42,8 +41,10 @@ const MAX_TERRAIN_TILE_BUDGET = 128;
 const UNIFORM_TERRAIN_TILE_BUDGET = 64;
 const FINE_TERRAIN_RESOLUTION = 65;
 const TARGET_FINE_TERRAIN_SPACING = 1.5;
+const FINE_TERRAIN_TEXTURE_SIZE = 256;
 const CONTENT_DISTANCE_LIMIT = 3_000;
-const WORLD_GRASS_INSTANCE_BUDGET = 3_500;
+const WORLD_GRASS_CHUNK_INSTANCE_BUDGET = 15_000;
+const WORLD_GRASS_RESIDENT_INSTANCE_BUDGET = 120_000;
 const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   strictMaterials: 0,
@@ -97,14 +98,17 @@ export function buildWorldWhiteboxOverlay(
   for (const path of plan.featureGraph.paths) {
     const waterPath = /river|water|canal/i.test(path.kind);
     const renderedRiver = waterPath && (plan.recipe.waterBodies ?? []).some(water => {
-      if (water.type !== 'river' || water.region.kind !== 'path' || water.region.points.length !== path.points.length) return false;
+      if (water.type !== 'river' || water.region.kind !== 'path') return false;
+      // The authored water may contain extra control points that the semantic route omits.
+      // Shared points identify the same river without depending on identical sampling.
       const riverPoints = water.region.points;
-      const matches = (reverse: boolean) => path.points.every((point, index) => {
-        const candidate = riverPoints[reverse ? path.points.length - 1 - index : index];
-        return Math.abs(point[0] - candidate[0]) < 1e-4 && Math.abs(point[1] - candidate[1]) < 1e-4;
-      });
-      return matches(false) || matches(true);
+      const overlap = path.points.filter(point => riverPoints.some(candidate =>
+        Math.abs(point[0] - candidate[0]) < 1e-4 && Math.abs(point[1] - candidate[1]) < 1e-4)).length;
+      return overlap >= Math.max(2, Math.ceil(path.points.length * 0.6));
     });
+    // The structured water already shows this route. A semantic line would
+    // continue across the ocean after the derived river mouth is clipped.
+    if (renderedRiver) continue;
     const color = waterPath ? 0x468ff2
       : /trail|foot|hike/i.test(path.kind) ? 0xf6b46c : 0x35d7ff;
     const points: THREE.Vector3[] = [];
@@ -114,16 +118,15 @@ export function buildWorldWhiteboxOverlay(
       for (let step = index === 1 ? 0 : 1; step <= steps; step++) {
         const t = step / steps, x = from[0] + (to[0] - from[0]) * t, z = from[1] + (to[1] - from[1]) * t;
         const surface = sample(x, z);
-        const y = Math.max(surface.height, surface.waterLevel ?? surface.height) + (renderedRiver ? 0.05 : 0.8);
+        const y = Math.max(surface.height, surface.waterLevel ?? surface.height) + 0.8;
         points.push(new THREE.Vector3(x, y, z));
       }
     }
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, depthTest: renderedRiver }));
+    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, depthTest: false }));
     line.name = `world-whitebox-path:${path.id}`;
     line.renderOrder = 20;
     root.add(line);
-    if (renderedRiver) continue;
     const ribbon: number[] = [];
     const halfWidth = Math.max(0.8, Math.min(4, path.width / 2));
     for (let index = 1; index < points.length; index++) {
@@ -197,6 +200,7 @@ interface ContentEntry {
   buildings: number;
   ecology: number;
   texturePixels: number;
+  grassChunkBudget: number;
 }
 
 function groupManualObjectTrees(map: EditableMap): ManualObjectTree[] {
@@ -403,7 +407,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const terrainBatchSize = 1;
     for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
       const batch = missingContent.slice(index, index + contentBatchSize);
-      const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [key, await buildContentEntry(chunk)] as const));
+      const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [
+        key, await buildContentEntry(chunk, desiredContent.size)
+      ] as const));
       for (const result of results) if (result.status === 'fulfilled') builtContent.set(result.value[0], result.value[1]);
       pendingTiles -= results.length;
       const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
@@ -482,7 +488,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     if (compactOceanCoast) applyWorldOceanFloor(sampled.heights, tile, resolution, compactOceanCoast);
     const sampledAt = performance.now();
     const tileMap = makeTerrainTileMap(tile, sampled.heights, includeOcean);
-    const textureSize = tile.size <= 256 ? 128 : tile.size <= 2_048 ? 64 : 32;
+    const textureSize = tile.size <= 256 ? FINE_TERRAIN_TEXTURE_SIZE : tile.size <= 2_048 ? 64 : 32;
     const rendered = await buildNormalizedEditableMapGroupCore(tileMap, {
       ...options,
       editorHelpers: false,
@@ -520,7 +526,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     };
   }
 
-  async function buildContentEntry(chunk: EcologyChunk): Promise<ContentEntry> {
+  async function buildContentEntry(chunk: EcologyChunk, residentContentCount: number): Promise<ContentEntry> {
     const tile: WorldTile = { x: chunk.x * ECOLOGY_CHUNK_SIZE, z: chunk.z * ECOLOGY_CHUNK_SIZE, size: ECOLOGY_CHUNK_SIZE };
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
@@ -535,7 +541,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       oceanCoast: false
     });
     applyStyle(rendered, contentMap, tile);
-    rendered.setGrassStyle(worldGrassStyle(style.grass));
+    const grassChunkBudget = worldGrassChunkBudget(residentContentCount);
+    rendered.setGrassStyle(worldGrassStyle(style.grass, grassChunkBudget));
     const mount = new THREE.Group();
     mount.name = `world-content:${ecologyKey(chunk)}`;
     mount.position.set(centerX, 0, centerZ);
@@ -548,7 +555,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       collision: buildGlobalCollision(contentMap, centerX, centerZ, new Set(['scene'])),
       buildings: contentMap.objects.filter(object => object.id.startsWith('world-building:')).length,
       ecology: contentMap.objects.filter(object => object.id.startsWith('world-ecology:')).length,
-      texturePixels: 32 * 32 * 4
+      texturePixels: 32 * 32 * 4,
+      grassChunkBudget
     };
   }
 
@@ -689,13 +697,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     centerZ: number,
     kinds: ReadonlySet<CollisionMeshKind>
   ): MeshCollisionWorld {
-    const local = buildMapMeshCollisionWorld(localMap, kinds);
     const transform = new THREE.Matrix4().makeTranslation(centerX, 0, centerZ);
-    const instances = local.instances
-      .filter(instance => kinds.has(instance.kind))
-      .map(instance => createCollisionMeshInstance(`${localMap.id}:${instance.id}`, instance.kind, instance.geometry, transform));
-    local.dispose();
-    return new MeshCollisionWorld(instances);
+    return buildMapMeshCollisionWorld(localMap, kinds, { transform, idPrefix: localMap.id });
   }
 
   function ecologyForChunk(chunk: EcologyChunk): EcologyInstance[] {
@@ -762,11 +765,15 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     let binding: WorldAssetBinding | undefined;
     if (building.assetKey) binding = bindingsByKey.get(building.assetKey);
     else {
-      const role = buildingRole(building);
+      const role = worldBuildingRole(building);
       const candidates = bindingsByRole.get(role) ?? [];
       binding = candidates[stableIndex(building.id, candidates.length)];
     }
-    if (!binding) throw new Error(`world_missing_asset_binding:${building.assetKey ?? buildingRole(building)}`);
+    if (!binding) {
+      const role = worldBuildingRole(building);
+      if (building.assetKey || role === 'landmark') throw new Error(`world_missing_asset_binding:${building.assetKey ?? role}`);
+      return null;
+    }
     const asset = assetsById.get(binding.assetId);
     if (!asset) throw new Error(`world_missing_asset:${binding.assetId}`);
     return asset;
@@ -1057,7 +1064,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       if (sameValue(style.grass, value)) return;
       style.grass = value;
       entries.forEach(entry => entry.rendered.setGrassStyle(value));
-      contentEntries.forEach(entry => entry.rendered.setGrassStyle(worldGrassStyle(value)));
+      contentEntries.forEach(entry => entry.rendered.setGrassStyle(worldGrassStyle(value, entry.grassChunkBudget)));
     },
     setSceneArt: (plan, palette) => {
       if (sameValue(style.sceneArt, plan) && sameValue(style.sceneArtPalette, palette)) return;
@@ -1154,7 +1161,8 @@ function validateWorldAssets(
   for (const binding of world.assets) if (!assetsById.has(binding.assetId)) throw new Error(`world_missing_asset:${binding.assetId}`);
   for (const patch of world.bundle.patches) for (const building of patch.buildings) {
     if (building.assetKey && !bindingsByKey.has(building.assetKey)) throw new Error(`world_missing_asset_binding:${building.assetKey}`);
-    if (!building.assetKey && !(bindingsByRole.get(buildingRole(building))?.length)) throw new Error(`world_missing_asset_binding:${buildingRole(building)}`);
+    const role = worldBuildingRole(building);
+    if (role === 'landmark' && !building.assetKey && !(bindingsByRole.get(role)?.length)) throw new Error(`world_missing_asset_binding:${role}`);
   }
 }
 
@@ -1194,13 +1202,6 @@ function globalRoads(bundle: NonNullable<EditableMap['world']>['bundle']): MapGu
       }));
     })
   ];
-}
-
-function buildingRole(building: TownBuilding): WorldAssetBinding['role'] {
-  if (/landmark|castle|cathedral|palace|hall|驿|堡|宫|教堂|地标/i.test(building.use)) return 'landmark';
-  if (/工|仓|农具|workshop|factory/i.test(building.use)) return 'workshop';
-  if (/商|店|客|shop|market|inn/i.test(building.use)) return 'shop';
-  return 'house';
 }
 
 function fitAssetScale(asset: MapAsset, width: number, depth: number): number {
@@ -1275,6 +1276,10 @@ export function worldTileSurfaceWeight(
   const x1 = Math.min(data.resolution - 1, x0 + 1), z1 = Math.min(data.resolution - 1, z0 + 1);
   const tx = gridX - x0, tz = gridZ - z0;
   const ocean = interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.ocean);
+  const freshWater = interpolateTileScalar(data.freshWaterWeights, data.resolution, x0, z0, x1, z1, tx, tz);
+  const freshWaterCover = THREE.MathUtils.smoothstep(freshWater, 0.9, 1);
+  const freshWaterBank = THREE.MathUtils.smoothstep(freshWater, 0.4, 0.72)
+    * (1 - THREE.MathUtils.smoothstep(freshWater, 0.84, 1));
   const height = interpolateTileScalar(data.heights, data.resolution, x0, z0, x1, z1, tx, tz);
   const metresPerCell = tile.size / Math.max(1, data.resolution - 1);
   const slopeX0 = Math.min(x0, data.resolution - 2), slopeX1 = slopeX0 + 1;
@@ -1291,39 +1296,46 @@ export function worldTileSurfaceWeight(
   let weight = 0;
   for (const tag of tags) {
     if (tag === 'dry') {
-      weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert));
+      weight = Math.max(weight,
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert)
+          * (1 - Math.max(freshWaterCover, freshWaterBank * 0.42)));
     } else if (tag === 'sand') {
       weight = Math.max(
         weight,
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert),
-        beach
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.desert) * (1 - freshWaterCover),
+        beach,
+        freshWaterBank * 0.38
       );
     } else if (tag === 'rocky') {
       weight = Math.max(
         weight,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.mountains),
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow) * 0.35,
-        steepRock
+        steepRock * (1 - Math.max(freshWaterCover, freshWaterBank * 0.42))
       );
     } else if (tag === 'snow') {
       weight = Math.max(weight, interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.snow));
     } else if (tag === 'grass') {
       weight = Math.max(
         weight,
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland) * (1 - steepRock * 0.72),
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest) * (1 - steepRock * 0.72)
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland)
+          * (1 - steepRock * 0.72) * (1 - Math.max(freshWaterCover, freshWaterBank * 0.32)),
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest)
+          * (1 - steepRock * 0.72) * (1 - Math.max(freshWaterCover, freshWaterBank * 0.32))
       );
     } else if (tag === 'forest') {
       weight = Math.max(
         weight,
-        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest) * (1 - steepRock * 0.72)
+        interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest)
+          * (1 - steepRock * 0.72) * (1 - Math.max(freshWaterCover, freshWaterBank * 0.32))
       );
     } else if (tag === 'water') {
-      weight = Math.max(weight, ocean);
+      weight = Math.max(weight, ocean, freshWater);
     } else if (tag === 'lowland') {
       weight = Math.max(
         weight,
         ocean,
+        freshWater,
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.grassland)
       );
     }
@@ -1555,8 +1567,15 @@ export function worldGrassLayers(data: WorldTileData, tile: WorldTile): MapGrass
   }];
 }
 
-function worldGrassStyle(style: RuntimeGrassStyle): RuntimeGrassStyle {
-  return { ...style, maxInstances: Math.min(style.maxInstances, WORLD_GRASS_INSTANCE_BUDGET) };
+export function worldGrassChunkBudget(residentChunks: number): number {
+  return Math.min(
+    WORLD_GRASS_CHUNK_INSTANCE_BUDGET,
+    Math.max(1, Math.floor(WORLD_GRASS_RESIDENT_INSTANCE_BUDGET / Math.max(1, residentChunks)))
+  );
+}
+
+function worldGrassStyle(style: RuntimeGrassStyle, chunkBudget: number): RuntimeGrassStyle {
+  return { ...style, maxInstances: Math.min(style.maxInstances, chunkBudget) };
 }
 
 function reconcileRequestKey(request: ReconcileRequest): string {

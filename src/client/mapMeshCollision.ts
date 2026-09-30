@@ -23,6 +23,11 @@ export interface CollisionMeshInstance {
   triangleCount: number;
 }
 
+export interface BuildMapMeshCollisionOptions {
+  transform?: THREE.Matrix4;
+  idPrefix?: string;
+}
+
 export interface CapsuleContact {
   meshId: string;
   kind: CollisionMeshKind;
@@ -70,6 +75,8 @@ const IDENTITY_MATRIX = new THREE.Matrix4();
 const MODEL_GEOMETRY_CACHE = new WeakMap<object, THREE.BufferGeometry>();
 const MAP_WORLD_CACHE_LIMIT = 4;
 const MAP_WORLD_CACHE = new Map<string, MeshCollisionWorld>();
+let collisionMeshBvhBuildCount = 0;
+let collisionMeshBvhBuildMs = 0;
 const CAPSULE_EJECTION_DIRECTIONS = [
   ...Array.from({ length: 16 }, (_, index) => {
     const angle = index / 16 * Math.PI * 2;
@@ -335,24 +342,27 @@ function mapCollisionCacheKey(map: EditableMap): string {
 
 export function buildMapMeshCollisionWorld(
   map: EditableMap,
-  kinds: ReadonlySet<CollisionMeshKind> = new Set(['terrain', 'boundary', 'scene', 'dynamic'])
+  kinds: ReadonlySet<CollisionMeshKind> = new Set(['terrain', 'boundary', 'scene', 'dynamic']),
+  options: BuildMapMeshCollisionOptions = {}
 ): MeshCollisionWorld {
   const instances: CollisionMeshInstance[] = [];
+  const transform = options.transform ?? IDENTITY_MATRIX;
+  const instanceId = (id: string) => options.idPrefix ? `${options.idPrefix}:${id}` : id;
 
   if (kinds.has('terrain')) {
     const terrain = buildTerrainCollisionGeometry(map);
-    instances.push(createCollisionMeshInstance('__terrain__', 'terrain', terrain));
+    instances.push(createCollisionMeshInstance(instanceId('__terrain__'), 'terrain', terrain, transform));
     terrain.dispose();
   }
 
   if (kinds.has('boundary')) {
     const boundary = buildBoundaryCollisionGeometry(map);
-    instances.push(createCollisionMeshInstance('__map_boundary__', 'boundary', boundary));
+    instances.push(createCollisionMeshInstance(instanceId('__map_boundary__'), 'boundary', boundary, transform));
     boundary.dispose();
 
     const shell = collisionGeometryFromBoxes(getRoomShellAabbs(map));
     if (shell) {
-      instances.push(createCollisionMeshInstance('__map_shell__', 'boundary', shell));
+      instances.push(createCollisionMeshInstance(instanceId('__map_shell__'), 'boundary', shell, transform));
       shell.dispose();
     }
   }
@@ -373,12 +383,13 @@ export function buildMapMeshCollisionWorld(
     if (!matrix) continue;
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
     if (!object.foundation && asset?.modelJson) {
-      instances.push(createModelCollisionInstance(`map:${object.id}`, 'scene', asset.modelJson, matrix));
+      instances.push(createModelCollisionInstance(instanceId(`map:${object.id}`), 'scene', asset.modelJson,
+        transform.equals(IDENTITY_MATRIX) ? matrix : transform.clone().multiply(matrix)));
       continue;
     }
     const geometry = collisionGeometryFromBoxes(proxyBoxes.get(object.id) ?? []);
     if (!geometry) continue;
-    instances.push(createCollisionMeshInstance(`map:${object.id}`, 'scene', geometry));
+    instances.push(createCollisionMeshInstance(instanceId(`map:${object.id}`), 'scene', geometry, transform));
     geometry.dispose();
   }
 
@@ -395,7 +406,10 @@ export function createCollisionMeshInstance(
   if (!transform.equals(IDENTITY_MATRIX)) geometry.applyMatrix4(transform);
   geometry.computeBoundingBox();
   const bounds = geometry.boundingBox?.clone() ?? new THREE.Box3();
+  const bvhStartedAt = performance.now();
   const bvh = new MeshBVH(geometry, { targetLeafSize: 12, setBoundingBox: true });
+  collisionMeshBvhBuildCount += 1;
+  collisionMeshBvhBuildMs += performance.now() - bvhStartedAt;
   return {
     id,
     kind,
@@ -404,6 +418,15 @@ export function createCollisionMeshInstance(
     bounds,
     triangleCount: geometry.index ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3
   };
+}
+
+export function getCollisionMeshBvhBuildStats(): { count: number; totalMs: number } {
+  return { count: collisionMeshBvhBuildCount, totalMs: collisionMeshBvhBuildMs };
+}
+
+export function resetCollisionMeshBvhBuildStats(): void {
+  collisionMeshBvhBuildCount = 0;
+  collisionMeshBvhBuildMs = 0;
 }
 
 export function createModelCollisionInstance(

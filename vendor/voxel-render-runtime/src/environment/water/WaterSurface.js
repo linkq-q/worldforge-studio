@@ -1522,7 +1522,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float alpha = shoreOpacity + foam * 0.08;
     if (hasTerrainDepth) {
       float transmission = exp(-terrainWaterDepth * (0.18 + uOpacity * 0.35));
-      float terrainOpacity = mix(0.08, 1.0, 1.0 - transmission);
+      float terrainOpacity = mix(shoreOpacity, 1.0, 1.0 - transmission);
       alpha = mix(terrainOpacity, 1.0, foam * 0.65);
     }
     if (uUseOceanTerrain) {

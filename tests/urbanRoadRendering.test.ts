@@ -171,6 +171,38 @@ it('keeps brick world dimensions independent of road width and scales terrain co
   }
 });
 
+it('keeps a full-width cross-section at road bends instead of bridging past the corner', async () => {
+  const map = applyMapOperations(createEmptyMap('road bend join'), [{
+    type: 'terrain.surface', surface: 'paving', material: 'brick-paver', intensity: 1,
+    region: { kind: 'path', points: [[-10, 0], [0, 0], [0, 10]], width: 4 }, zoneId: 'bent-road'
+  }]);
+  const rendered = await buildEditableMapGroup(map);
+  try {
+    const mesh = rendered.group.getObjectByName('brick-road-surface:bent-road') as THREE.Mesh;
+    const positions = mesh.geometry.getAttribute('position');
+    const crossSectionSize = 5;
+    const cornerRow = Array.from({ length: positions.count / crossSectionSize }, (_, row) => row * crossSectionSize)
+      .find((row) => {
+        let centerX = 0, centerZ = 0;
+        for (let index = 0; index < crossSectionSize; index += 1) {
+          centerX += positions.getX(row + index) / crossSectionSize;
+          centerZ += positions.getZ(row + index) / crossSectionSize;
+        }
+        return Math.hypot(centerX, centerZ) < 0.001;
+      });
+
+    expect(cornerRow).toBeDefined();
+    const cornerXs = Array.from({ length: crossSectionSize }, (_, index) => positions.getX(cornerRow! + index));
+    const cornerZs = Array.from({ length: crossSectionSize }, (_, index) => positions.getZ(cornerRow! + index));
+    expect(Math.min(...cornerXs)).toBeCloseTo(-2, 3);
+    expect(Math.max(...cornerXs)).toBeCloseTo(2, 3);
+    expect(Math.min(...cornerZs)).toBeCloseTo(-2, 3);
+    expect(Math.max(...cornerZs)).toBeCloseTo(2, 3);
+  } finally {
+    rendered.dispose();
+  }
+});
+
 it('renders cobblestones as shallow paving stones within their intended footprint', async () => {
   const map = applyMapOperations(createEmptyMap('cobblestone dimensions'), [{
     type: 'terrain.surface', surface: 'paving', material: 'cobblestone', intensity: 1,
