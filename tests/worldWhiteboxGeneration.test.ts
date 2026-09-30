@@ -251,6 +251,9 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('heightScale around 0.08..0.15');
     expect(systemPrompt).toContain('strong ocean constraints may use about 0.02..0.04');
     expect(systemPrompt).toContain('Ocean is terrain below 0');
+    expect(systemPrompt).toContain("mode:'crater'");
+    expect(systemPrompt).toContain('Use crater, not a circular lower brush, for a volcanic crater on a mound');
+    expect(systemPrompt).toContain('depth lowers central floor below pre-brush sampled rim');
     expect(systemPrompt).toContain('north is negative Z');
     expect(systemPrompt).toContain('do not fake a bay or harbour with a round lake');
     expect(systemPrompt).toContain('every patch needs a unique id and a bounded shape');
@@ -264,7 +267,10 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('never underwater');
     expect(systemPrompt).toContain('without an intentionally authored crossing');
     expect(systemPrompt).toContain('Show the whole inhabited footprint of a requested town');
-    expect(systemPrompt).toContain('Distinct districts should usually occupy distinct regions');
+    expect(systemPrompt).toContain('A settlement is one distinct inhabited destination, never one district');
+    expect(systemPrompt).toContain('if the user asks for one town, return exactly one settlement');
+    expect(systemPrompt).toContain('Reserve extra settlements for genuinely separate destinations');
+    expect(systemPrompt).toContain('do not promote them to separate settlementPlan entries');
     expect(systemPrompt).toContain('Leave contiguous dry plots beside, rather than inside, road junctions');
     expect(systemPrompt).toContain('Keep ordinary routes human-scale relative to nearby buildings');
     expect(systemPrompt).toContain('ecology, towns and roads must be empty arrays');
