@@ -17,7 +17,7 @@ export interface WorldWhiteboxRequest {
 
 const INITIAL_PROMPT = `Design one playable 500 x 500 metre world from the user's description. Return a single JSON object {"plan":{...}} and nothing else. The plan is your original creative decision, not a scene template. Plan broad regions, paths, anchors and their relationships before any detail. Let terrain shape settlement, mobility and the exploration sequence; leave deliberate quiet areas. Keep unusual terrain if it makes the world interesting. Do not list individual trees or houses and do not request 3D assets.
 Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox:true,recipe,ecology:[],towns:[],roads:[],concept,featureGraph,settlementPlan,mobilityPlan,explorationPlan,intentionalEmptyAreas}. Copy prompt exactly from the request. recipe={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}], optional heightScale,landforms,terrainBrushes,waterBodies,biomePatches}. Copy seed exactly. Valid broad constraint regions: west/east/north/south/northwest/northeast/southwest/southeast/center; biomes: ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; sea level is 0. Terrain can be below sea. Shape the terrain with the existing recipe, not with a flat plate. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius},amount,feather?}; use only if useful. Fresh water bodies may be {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or type:'river' with a path region {kind:'path',points:[[x,z],...],width} and one level per point. Avoid authoring a complete city with individual buildings at this stage.
-concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. settlementPlan={settlements:[{id,anchorId,role}]}; describe districts and their density transition in roles, with each linked to an anchor. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...]}]}; road types and walking trails may differ, and a bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
+concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius must be 1..250 metres; path width 0.1..256 metres; every path needs at least two distinct numeric points. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. settlementPlan={settlements:[{id,anchorId,role}]}; describe districts and their density transition in roles, with each linked to an anchor. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...]}]}; road types and walking trails may differ, and a bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
 
 const ADJUST_PROMPT = `You are the same creator looking at your first whitebox world. You can keep the plan or make one finite creative adjustment. Input contains only the original user prompt, your original plan, deterministic world facts, unrealized plan items, fatal technical issues and remaining budget. There are no screenshots. All low-density, road, terrain and visual findings are diagnostics, not mandatory fixes. Preserve intentional emptiness and unusual useful terrain. Do not optimize a score. Never request assets.
 Return exactly {"decision":"keep"} or {"decision":"patch","patch":{...}}. The patch may replace 1 to 4 complete fields from recipe, concept, featureGraph, settlementPlan, mobilityPlan, explorationPlan, intentionalEmptyAreas. It must not change prompt, id, seed, size, whitebox mode, towns, roads or ecology. Include dependent fields together when changing referenced ids. Do not include instructions, code, an entire plan, screenshots or a second round. The server will validate the new plan once and keep the original if the patch is technically invalid; it will not auto-repair aesthetics.`;
@@ -42,18 +42,24 @@ export function validateWorldWhiteboxRequest(input: unknown): WorldWhiteboxReque
     generateAssets: false, repairAttempts: 0 };
 }
 
-function parseInitialPlan(content: string, request: WorldWhiteboxRequest): { rawPlan: unknown; plan: WorldPlan } {
+function parseInitialPlan(content: string, request: WorldWhiteboxRequest): {
+  rawPlan: unknown; plan: WorldPlan; technicalNormalizations: string[]
+} {
   const response = object(JSON.parse(content), 'invalid_world_whitebox_response');
   if (Object.keys(response).length !== 1 || !('plan' in response)) throw new Error('invalid_world_whitebox_response');
   const raw = object(response.plan, 'invalid_world_whitebox_plan');
-  if (raw.whitebox !== true || raw.prompt !== request.prompt || raw.revision !== 1) throw new Error('invalid_world_whitebox_plan');
+  if (raw.whitebox !== true || raw.revision !== 1) throw new Error('invalid_world_whitebox_plan');
   const recipe = object(raw.recipe, 'invalid_world_whitebox_recipe');
   if (recipe.seed !== request.seed || recipe.size !== request.size) throw new Error('world_whitebox_request_mismatch');
-  const plan = validateWorldPlan(raw);
+  const technicalNormalizations = raw.prompt === request.prompt ? [] : ['request_prompt_echo'];
+  if (technicalNormalizations.length) recordGenerationTrace('world.whitebox.request-echo-normalized', {
+    received: raw.prompt, expected: request.prompt
+  });
+  const plan = validateWorldPlan({ ...raw, prompt: request.prompt });
   if (!plan.featureGraph || !plan.concept || !plan.settlementPlan || !plan.mobilityPlan
     || !plan.explorationPlan || !plan.intentionalEmptyAreas) throw new Error('world_whitebox_missing_semantic_plan');
   if (plan.towns.length || plan.roads.length || plan.ecology.length) throw new Error('world_whitebox_requires_semantic_graph');
-  return { rawPlan: response.plan, plan };
+  return { rawPlan: response.plan, plan, technicalNormalizations };
 }
 
 function samplePoint(sample: WorldSampler, point: Point): [number, number, number] {
@@ -142,11 +148,11 @@ export async function generateWorldWhitebox(input: unknown, signal?: AbortSignal
   const initialContent = await llmChat(initialMessages, { provider: 'gpt', temperature: 0.55,
     maxTokens: 12_000, traceStage: 'world.whitebox.initial-plan', signal });
   recordGenerationTrace('world.whitebox.initial-raw', { content: initialContent });
-  const { rawPlan, plan: initialPlan } = parseInitialPlan(initialContent, request);
+  const { rawPlan, plan: initialPlan, technicalNormalizations } = parseInitialPlan(initialContent, request);
   recordGenerationTrace('world.whitebox.initial-plan', initialPlan);
   const first = executeWorldWhitebox(initialPlan);
   const observation = observeWorldWhitebox(initialPlan, first.execution);
-  const observed = { ...observation, surfaceFacts: first.surfaceFacts };
+  const observed = { ...observation, surfaceFacts: first.surfaceFacts, technicalNormalizations };
   recordGenerationTrace('world.whitebox.observation', observed);
   const adjustmentMessages: ChatMessage[] = [
     { role: 'system', content: ADJUST_PROMPT },

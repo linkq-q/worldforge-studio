@@ -115,6 +115,17 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
   });
 
+  it('preserves a model prompt echo in the raw plan while using the request-owned prompt for loading', async () => {
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan: { ...originalPlan(), prompt: 'shortened echo' } }))
+      .mockResolvedValueOnce(JSON.stringify({ decision: 'keep' }));
+    const result = await generateWorldWhitebox(request);
+    expect((result.originalPlan as {prompt: string}).prompt).toBe('shortened echo');
+    expect(result.initialPlan.prompt).toBe(prompt);
+    expect(result.observation.technicalNormalizations).toEqual(['request_prompt_echo']);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.whitebox.request-echo-normalized',
+      { received: 'shortened echo', expected: prompt });
+  });
+
   it('samples creative terrain without applying density or realism gates', () => {
     const plan = originalPlan();
     plan.explorationPlan!.pointsOfInterest = [];
