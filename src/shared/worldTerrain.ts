@@ -493,7 +493,9 @@ function freshWaterMaterialBankWidth(
     ? Math.max(3, water.depth)
     : water.shorelineProfile === 'gentle'
       ? Math.max(7, water.depth * 3.5)
-      : Math.max(6, water.depth * 3.5);
+      : water.type === 'river'
+        ? Math.max(7, water.depth * 2.5)
+        : Math.max(6, water.depth * 3.5);
   let side = 0, bendFactor = 1;
   if (river) {
     const offsetX = x - river.point[0], offsetZ = z - river.point[1];
@@ -745,11 +747,13 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       const reach = prepared.source.region.kind === 'circle'
         ? prepared.source.region.radius
         : (river?.width ?? water.width) / 2;
-      const innerShoreWidth = water.shorelineProfile === 'steep'
-        ? Math.max(1, water.depth * 0.6)
-        : water.shorelineProfile === 'gentle'
-          ? Math.max(4, water.depth * 4)
-          : Math.max(1, water.depth * 2);
+      const innerShoreWidth = river && !water.shorelineProfile
+        ? reach
+        : water.shorelineProfile === 'steep'
+          ? Math.max(1, water.depth * 0.6)
+          : water.shorelineProfile === 'gentle'
+            ? Math.max(4, water.depth * 4)
+            : Math.max(1, water.depth * 2);
       height = Math.min(height, waterShoreProfile(level, level - water.depth,
         boundaryDistance, Math.min(reach, innerShoreWidth)));
       if (height <= level + 0.000001 && (waterLevel === null || level > waterLevel)) {

@@ -281,6 +281,33 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('gives default rivers a continuous bed profile and compact material bank', () => {
+    const level = 3, depth = 2.5;
+    const context = createWorldTerrainContext({
+      version: 1, seed: 4080, size: 500, reliefProfile: 'compact', heightScale: 0.02,
+      constraints: [{ region: 'center', biome: 'grassland' }],
+      terrainBrushes: [{
+        id: 'flat-floodplain', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 180 },
+        height: 8, feather: 0
+      }],
+      waterBodies: [{
+        id: 'profile-river', type: 'river',
+        region: { kind: 'path', points: [[-140, 0], [140, 0]], width: 20 },
+        levels: [level, level], depth, shorelineSmoothness: 0, shorelineIrregularity: 0
+      }]
+    });
+    const center = context.sample(0, 0), innerBed = context.sample(0, 4);
+    const insideEdge = context.sample(0, 9.99), outsideEdge = context.sample(0, 10.01);
+    const materialBank = context.sample(0, 14);
+
+    expect(center.height).toBeCloseTo(level - depth, 8);
+    expect(innerBed.height).toBeGreaterThan(level - depth + 0.5);
+    expect(center).toMatchObject({ waterLevel: level, waterBodyId: 'profile-river' });
+    expect(insideEdge.waterBodyId).toBe('profile-river');
+    expect(outsideEdge.waterBodyId).toBeNull();
+    expect(materialBank.freshWaterWeight ?? 0).toBeLessThan(0.2);
+  });
+
   it('keeps finite-water shore weight separate from the ocean biome', () => {
     const base = createWorldSampler(original), level = base(0, 0).height + 2;
     const sample = createWorldSampler({ ...original, reliefProfile: 'compact', waterBodies: [{
