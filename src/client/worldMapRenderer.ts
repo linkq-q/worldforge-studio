@@ -1307,7 +1307,10 @@ export function worldTileSurfaceWeight(
   const slopeX = THREE.MathUtils.lerp(height10 - height00, height11 - height01, slopeTz) / metresPerCell;
   const slopeZ = THREE.MathUtils.lerp(height01 - height00, height11 - height10, slopeTx) / metresPerCell;
   const steepRock = THREE.MathUtils.smoothstep(Math.hypot(slopeX, slopeZ), 0.28, 0.72) * (1 - ocean);
-  const beach = worldCoastalSandWeight(height, ocean);
+  // Low inland riverbanks can share the ocean height band; keep that coastal
+  // sand from outlining every freshwater channel as a continuous pale stripe.
+  const beach = worldCoastalSandWeight(height, ocean)
+    * (1 - Math.max(freshWaterCover, freshWaterBank));
   let weight = 0;
   for (const tag of tags) {
     if (tag === 'dry') {

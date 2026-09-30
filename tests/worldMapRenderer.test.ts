@@ -204,6 +204,10 @@ describe('main editor streamed world renderer', () => {
     expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['grass'])).toBeLessThan(0.8);
     expect(worldTileSurfaceWeight(freshWaterBank, tile, 8, 8, ['water'])).toBeCloseTo(0.7);
 
+    const lowRiverbank = tileData(0.4);
+    lowRiverbank.freshWaterWeights.fill(0.7);
+    expect(worldTileSurfaceWeight(lowRiverbank, tile, 8, 8, ['sand'])).toBeLessThanOrEqual(0.08);
+
   });
 
   it('gives compact grassland chunks dense ground cover within the resident streaming budget', () => {
