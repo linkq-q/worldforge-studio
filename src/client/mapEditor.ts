@@ -1862,7 +1862,7 @@ class MapEditor {
           ${map.world?.bundle.plan.whitebox ? `<button id="construct-world-whitebox" ${this.state.busy || this.state.dirty || Boolean(suggestion) ? 'disabled' : ''}>沿当前已保存白盒施工</button>` : ''}
           <p class="empty inspector-note">白盒用于核对地形、聚落区位与路线，不生成建筑或植物。保存白盒后可沿原规划施工，每次最多生成 3 个资产且不做自动修复。新资产会保存到资产库；放弃地图预览不会删除它们。</p>
           ${map.world ? renderSavedWorldWhiteboxDetails(map.world) : ''}
-          ${map.world ? `<label class="field compact"><span>前往聚落</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}</option>`).join('')}</select></label>` : ''}
+          ${map.world ? `<label class="field compact"><span>前往聚落／规划点</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}${map.world!.bundle.patches.some(patch => patch.townId === town.id) ? '' : '（仅规划）'}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
         <details class="map-ai-advanced" ${advancedOpen ? 'open' : ''}>
           <summary>高级设置</summary>
