@@ -70,6 +70,30 @@ export function buildWorldWhiteboxOverlay(
     const surface = sample(x, z);
     return Math.max(surface.height, surface.waterLevel ?? surface.height) + 0.8;
   };
+  const settlementRegionIds = new Set((plan.settlementPlan?.settlements ?? []).flatMap(settlement => {
+    const anchor = plan.featureGraph!.anchors.find(item => item.id === settlement.anchorId);
+    return anchor ? [anchor.regionId] : [];
+  }));
+  const emptyRegionIds = new Set((plan.intentionalEmptyAreas ?? []).map(area => area.regionId)
+    .filter(id => !settlementRegionIds.has(id)));
+  for (const region of plan.featureGraph.regions) {
+    const role = settlementRegionIds.has(region.id) ? 'settlement' : emptyRegionIds.has(region.id) ? 'empty' : null;
+    if (!role) continue;
+    const points: THREE.Vector3[] = [];
+    const segments = 48;
+    for (let index = 0; index < segments; index++) {
+      const angle = index / segments * Math.PI * 2;
+      const x = region.center[0] + Math.cos(angle) * region.radius;
+      const z = region.center[1] + Math.sin(angle) * region.radius;
+      points.push(new THREE.Vector3(x, visibleHeight(x, z), z));
+    }
+    const outline = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points),
+      new THREE.LineBasicMaterial({ color: role === 'settlement' ? 0xffa552 : 0x8aa6b8,
+        depthTest: false, transparent: true, opacity: role === 'settlement' ? 0.9 : 0.55 }));
+    outline.name = `world-whitebox-region:${role}:${region.id}`;
+    outline.renderOrder = 18;
+    root.add(outline);
+  }
   for (const path of plan.featureGraph.paths) {
     const color = /river|water|canal/i.test(path.kind) ? 0x468ff2
       : /trail|foot|hike/i.test(path.kind) ? 0xf6b46c : 0x35d7ff;

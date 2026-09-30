@@ -74,6 +74,43 @@ describe('main editor streamed world renderer', () => {
     expect((path.material as THREE.LineBasicMaterial).depthTest).toBe(false);
   });
 
+  it('outlines only unique authored settlement and intentional-empty regions in whitebox mode', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.featureGraph = {
+      regions: [
+        { id: 'town-region', kind: 'district', name: 'Town', center: [10, 20], radius: 40 },
+        { id: 'quiet-region', kind: 'wilds', name: 'Quiet', center: [-60, 0], radius: 25 },
+        { id: 'other-region', kind: 'ridge', name: 'Other', center: [0, -80], radius: 30 }
+      ],
+      paths: [],
+      anchors: [
+        { id: 'town-a', kind: 'settlement', position: [10, 20], regionId: 'town-region' },
+        { id: 'town-b', kind: 'settlement', position: [15, 20], regionId: 'town-region' }
+      ],
+      relations: []
+    };
+    plan.settlementPlan = { settlements: [
+      { id: 'a', anchorId: 'town-a', role: 'core' }, { id: 'b', anchorId: 'town-b', role: 'edge' }
+    ] };
+    plan.intentionalEmptyAreas = [
+      { id: 'quiet-a', regionId: 'quiet-region', purpose: 'pause' },
+      { id: 'quiet-b', regionId: 'quiet-region', purpose: 'silence' }
+    ];
+
+    const overlay = buildWorldWhiteboxOverlay(plan, () => ({ height: 2 }));
+    const outlines = overlay.children.filter(child => child.name.startsWith('world-whitebox-region:')) as THREE.LineLoop[];
+    expect(outlines.map(outline => outline.name).sort()).toEqual([
+      'world-whitebox-region:empty:quiet-region', 'world-whitebox-region:settlement:town-region'
+    ]);
+    expect(outlines.every(outline => outline.geometry.getAttribute('position').count === 48)).toBe(true);
+    expect(outlines.every(outline => (outline.material as THREE.LineBasicMaterial).depthTest === false)).toBe(true);
+    expect(overlay.getObjectByName('world-whitebox-region:settlement:other-region')).toBeUndefined();
+
+    delete plan.whitebox;
+    expect(buildWorldWhiteboxOverlay(plan, () => ({ height: 2 })).children).toHaveLength(0);
+  });
+
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');
