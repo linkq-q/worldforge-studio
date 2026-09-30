@@ -156,6 +156,27 @@ function nearestRouteBoundaryPoints(points: Point[], center: Point, radius: numb
   });
 }
 
+const MARITIME_HARBOR_TERM = /\b(?:harbou?r|maritime|port|quays?|docks?)\b|海港|渔港|港口|码头/i;
+const RIVER_PORT_TERM = /\b(?:river|inland|fluvial)\b|河港|内河/i;
+
+function hasAccessibleOceanShore(sample: WorldSampler, center: Point, radius: number): boolean {
+  const origin = sample(center[0], center[1]);
+  if (origin.waterLevel !== null && origin.waterLevel > origin.height + 0.05) return false;
+  const reach = radius * 0.98;
+  const steps = Math.ceil(reach / Math.max(4, Math.min(10, reach / 12)));
+  for (let direction = 0; direction < 16; direction += 1) {
+    const angle = direction / 16 * Math.PI * 2;
+    for (let index = 1; index <= steps; index += 1) {
+      const distance = reach * index / steps;
+      const surface = sample(center[0] + Math.cos(angle) * distance, center[1] + Math.sin(angle) * distance);
+      if (surface.waterLevel === null || surface.waterLevel <= surface.height + 0.05) continue;
+      if (surface.waterBodyId === null) return true;
+      break;
+    }
+  }
+  return false;
+}
+
 export function validateWorldWhiteboxRequest(input: unknown): WorldWhiteboxRequest {
   const value = object(input, 'invalid_world_whitebox_request');
   if (Object.keys(value).some(key => !['mode', 'prompt', 'seed', 'size', 'generateAssets', 'repairAttempts'].includes(key))
@@ -347,6 +368,12 @@ export function materializeWorldWhiteboxConstruction(
     if (radius !== region.radius) issue(settlement.id, 'settlement_radius_bounded_for_schema');
     const terrain = sample(anchor.position[0], anchor.position[1]);
     if (terrain.waterLevel !== null && terrain.waterLevel > terrain.height + 0.05) issue(settlement.id, 'settlement_anchor_on_water');
+    const harborDescription = `${anchor.kind} ${settlement.role}`;
+    const maritimeHarbor = MARITIME_HARBOR_TERM.test(harborDescription);
+    const targetWaterBodyId = maritimeHarbor && hasAccessibleOceanShore(sample, anchor.position, radius) ? 'sea' : undefined;
+    if (maritimeHarbor && !targetWaterBodyId && !RIVER_PORT_TERM.test(harborDescription)) {
+      issue(settlement.id, 'maritime_settlement_no_accessible_ocean_shore');
+    }
     const ports: WorldPlan['towns'][number]['ports'] = [];
     for (const [routeIndex, route] of source.mobilityPlan!.routes.entries()) {
       if (!route.connects.includes(settlement.anchorId)) continue;
@@ -383,7 +410,7 @@ export function materializeWorldWhiteboxConstruction(
     }
     return [{ id: settlement.id, name: authored.name, prompt: settlement.role,
       center: [...anchor.position] as Point, radius, blend: minimumBlend, foundation: Math.max(2, terrain.height),
-      terrainMode: 'conform' as const, ports }];
+      terrainMode: 'conform' as const, ports, ...(targetWaterBodyId ? { targetWaterBodyId } : {}) }];
   });
   const roads = [...source.mobilityPlan!.routes.map(route => {
     const path = paths.get(route.pathId)!;

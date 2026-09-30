@@ -77,6 +77,21 @@ function buildablePlan(): WorldPlan {
   };
 }
 
+function harborPlan(): WorldPlan {
+  const plan = buildablePlan();
+  plan.id = 'coastal-harbor';
+  plan.prompt = 'A compact harbor town built out from the coast';
+  plan.recipe = { version: 1, seed: 74, size: 500, reliefProfile: 'compact', heightScale: 0.02,
+    constraints: [{ region: 'center', biome: 'grassland' }, { region: 'west', biome: 'ocean' }] };
+  plan.featureGraph!.regions[0] = { id: 'harbor-region', kind: 'coast', name: 'Harbor coast', center: [-70, 60], radius: 80 };
+  plan.featureGraph!.paths[0] = { id: 'harbor-road', kind: 'road', name: 'Harbor road', points: [[-70, 60], [100, 60]], width: 5 };
+  plan.featureGraph!.anchors[0] = { id: 'dock-anchor', kind: 'harbor', position: [-70, 60], regionId: 'harbor-region' };
+  plan.settlementPlan!.settlements[0] = { id: 'port-town', anchorId: 'dock-anchor', role: 'port-quays and uphill homes' };
+  plan.mobilityPlan!.routes[0] = { id: 'harbor-route', pathId: 'harbor-road', mode: 'cart road', connects: ['dock-anchor'] };
+  plan.explorationPlan = { pointsOfInterest: [{ id: 'port', anchorId: 'dock-anchor', purpose: 'trade' }], sequence: ['port'] };
+  return plan;
+}
+
 function constructionExpansion(assetCount = 0) {
   const assets: WorldAssetRequest[] = Array.from({ length: assetCount }, (_, index) => ({
     key: `asset-${index + 1}`, name: `Asset ${index + 1}`, role: index === 1 ? 'tree' : 'house',
@@ -173,6 +188,7 @@ describe('whitebox world generation', () => {
     const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
       size: 500, generateAssets: true, assetGenerationLimit: 2, repairAttempts: 0 }, store);
 
+    if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
     expect(mocks.generateModel).toHaveBeenCalledTimes(2);
     expect(result.paidCallCount).toBe(4);
@@ -338,6 +354,47 @@ describe('whitebox world generation', () => {
     ]);
     expect(dryOnly.diagnostics.flatMap(item => item.planningIssues))
       .toContain('route_settlement_port_on_water:arrival-route:market-village');
+  });
+
+  it('targets the sea when a planned harbor can reach sampled ocean shoreline', () => {
+    const whiteboxPlan = validateWorldPlan(harborPlan());
+    const expansion = constructionExpansion();
+    expansion.towns[0].id = 'port-town';
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan, generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.towns[0].targetWaterBodyId).toBe('sea');
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .not.toContain('maritime_settlement_no_accessible_ocean_shore');
+  });
+
+  it('keeps an inland river port from pretending it has a sea landing', () => {
+    const inland = buildablePlan();
+    inland.featureGraph!.anchors[0].kind = 'harbor';
+    inland.settlementPlan!.settlements[0].role = 'river port-quays and market homes';
+    inland.recipe.waterBodies = [{ id: 'market-river', type: 'river',
+      region: { kind: 'path', points: [[-160, 30], [160, 30]], width: 12 },
+      levels: [5, 5], depth: 3 }];
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(inland), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.towns[0].targetWaterBodyId).toBeUndefined();
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .not.toContain('maritime_settlement_no_accessible_ocean_shore');
+  });
+
+  it('diagnoses a planned maritime harbor when no ocean shore is reachable', () => {
+    const inland = buildablePlan();
+    inland.featureGraph!.anchors[0].kind = '海港';
+    inland.settlementPlan!.settlements[0].role = '码头、集市与居民区';
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(inland), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.towns[0].targetWaterBodyId).toBeUndefined();
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('maritime_settlement_no_accessible_ocean_shore');
   });
 
   it('constructs the saved whitebox with one non-retrying GPT call and preserves every semantic coordinate', async () => {
