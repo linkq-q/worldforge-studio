@@ -251,17 +251,32 @@ describe('main editor streamed world renderer', () => {
     expect(worldTileSurfaceWeight(steep, tile, 10, 10, ['grass'])).toBeCloseTo(0.28);
   });
 
-  it('does not add terrain skirts between equal-LOD tiles', async () => {
+  it('streams equal-LOD terrain and content progressively without skirts', async () => {
     let paintYields = 0;
+    let streamed: Awaited<ReturnType<typeof buildEditableMapGroup>> | undefined;
+    let sawProgressiveTerrain = false;
+    let sawProgressiveContent = false;
     vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
-      setTimeout(() => { paintYields += 1; callback(performance.now()); }, 0);
+      setTimeout(() => {
+        paintYields += 1;
+        if (streamed) {
+          const stats = streamed.getDebugStats().streaming!;
+          const mounted = streamed.group.children.map(child => child.name);
+          if (stats.pendingTiles > 0) {
+            sawProgressiveTerrain ||= mounted.filter(name => name.startsWith('world-tile:')).length > stats.terrainTiles;
+            sawProgressiveContent ||= mounted.filter(name => name.startsWith('world-content:')).length > stats.contentChunks;
+          }
+        }
+        callback(performance.now());
+      }, 0);
       return paintYields + 1;
     }));
     const map = createEmptyMap();
     map.world = { bundle: smallBundle, assets: [] };
     map.box.size = [500, 4096, 500];
     const originalSample = createPlannedWorldSampler(smallBundle.plan, smallBundle.patches);
-    const rendered = await buildEditableMapGroup(map, { worldInitialView: { x: 0, z: 0, distance: 400 } });
+    streamed = await buildEditableMapGroup(map, { worldInitialView: { x: 0, z: 0, distance: 400 } });
+    const rendered = streamed;
     try {
       const terrains: THREE.Mesh[] = [];
       rendered.group.traverse(object => {
@@ -288,6 +303,8 @@ describe('main editor streamed world renderer', () => {
       await waitFor(() => rendered.getDebugStats().streaming?.pendingTiles === 0);
       expect(rendered.group.getObjectByName('water:world-ocean')).toBe(ocean);
       expect(paintYields).toBeGreaterThanOrEqual(16);
+      expect(sawProgressiveTerrain).toBe(true);
+      expect(sawProgressiveContent).toBe(true);
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);
       const oceanFloor = ocean.userData.waterOceanTerrain as Parameters<typeof sampleOceanFloor>[0];

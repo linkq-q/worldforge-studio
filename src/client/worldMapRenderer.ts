@@ -397,8 +397,14 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const builtTerrain = new Map<string, TileEntry>();
     const builtContent = new Map<string, ContentEntry>();
     const discardBuilt = (): void => {
-      builtTerrain.forEach(disposeEntry);
-      builtContent.forEach(disposeContentEntry);
+      builtTerrain.forEach(entry => {
+        if (entry.terrainMount.parent) unmountEntry(entry);
+        disposeEntry(entry);
+      });
+      builtContent.forEach(entry => {
+        if (entry.mount.parent) unmountContentEntry(entry);
+        disposeContentEntry(entry);
+      });
     };
     const contentBatchSize = limits ? 3 : 1;
     // sampleWorldTile is synchronous until buildTerrainEntry reaches its first
@@ -418,6 +424,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         pendingTiles = 0;
         throw failure.reason;
       }
+      if (disposed || revision !== requestRevision) { discardBuilt(); return false; }
+      results.forEach(result => {
+        if (result.status === 'fulfilled') mountContentEntry(result.value[1]);
+      });
       await yieldWorldBuild();
       if (revision !== requestRevision) { discardBuilt(); return false; }
     }
@@ -434,6 +444,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         pendingTiles = 0;
         throw failure.reason;
       }
+      if (disposed || revision !== requestRevision) { discardBuilt(); return false; }
+      results.forEach(result => {
+        if (result.status === 'fulfilled') mountEntry(result.value[1]);
+      });
       await yieldWorldBuild();
       if (revision !== requestRevision) { discardBuilt(); return false; }
     }
@@ -453,7 +467,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     for (const [key, entry] of builtTerrain) {
       if (!desiredTerrain.has(key)) { disposeEntry(entry); continue; }
       entries.set(key, entry);
-      mountEntry(entry);
+      if (!entry.terrainMount.parent) mountEntry(entry);
     }
     for (const [key, entry] of contentEntries) {
       if (desiredContent.has(key)) continue;
@@ -465,7 +479,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     for (const [key, entry] of builtContent) {
       if (!desiredContent.has(key)) { disposeContentEntry(entry); continue; }
       contentEntries.set(key, entry);
-      mountContentEntry(entry);
+      if (!entry.mount.parent) mountContentEntry(entry);
     }
     rebuildPublicIndexes();
     rebuildCollision();
