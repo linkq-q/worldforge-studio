@@ -97,6 +97,8 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('every river must include its complete region, levels and depth');
     expect(systemPrompt).toContain('never underwater');
     expect(systemPrompt).toContain('without an intentionally authored crossing');
+    expect(systemPrompt).toContain('Show the whole inhabited footprint of a requested town');
+    expect(systemPrompt).toContain('Distinct districts should usually occupy distinct regions');
     expect(systemPrompt).toContain('ecology, towns and roads must be empty arrays');
   });
 
