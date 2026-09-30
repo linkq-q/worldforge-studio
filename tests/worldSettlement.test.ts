@@ -533,27 +533,35 @@ describe('world settlement growth', () => {
   it('grows a populated shore-working village beyond its civic buildings', () => {
     const plan=fixture(),town=plan.towns[0],base=sampler(plan);
     town.radius=105;town.ports[0].position=[105,0];town.targetWaterBodyId='sea';
+    town.population=250;
     plan.roads[0].points=[[town.center[0]+105,0],[1800,0]];
     const sample:WorldSettlementSampler=(x,z) => {
       const original=base(x,z),water=x-town.center[0] < -96;
       return {...original,height:water?-3:12,waterLevel:water?0:null,waterBodyId:null};
     };
     const result=createWorldSettlementLandmarkLayout(plan,town.id,sample,{
-      kind:'village',pattern:'organic',seed:59,density:.48,waterfrontBias:.95,waterSetback:5
+      kind:'city',pattern:'organic',seed:59,density:.48,waterfrontBias:.95,waterSetback:5
     },[
       {id:'fish-market',use:'fish market',width:13,depth:10,height:5,assetKey:'market',siting:'waterfront'},
       {id:'school',use:'school',width:11,depth:9,height:5,assetKey:'school',siting:'central'},
       {id:'net-workshop',use:'net workshop',width:10,depth:8,height:5,assetKey:'workshop',siting:'waterfront'}
     ]);
     expect(result.patch.buildings.length).toBeGreaterThanOrEqual(32);
-    expect(result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length).toBeGreaterThanOrEqual(29);
+    const ordinary=result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length;
+    expect(ordinary).toBeGreaterThanOrEqual(50);
+    expect(ordinary).toBeLessThanOrEqual(60);
+    delete town.population;
+    const unscaled=generateWorldSettlement(plan,town.id,sample,{
+      kind:'city',pattern:'organic',seed:59,density:.48,waterfrontBias:.95,waterSetback:5,landmarks:result.landmarks
+    });
+    expect(result.patch.streets.length).toBeGreaterThan(unscaled.streets.length);
     expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.7);
     const working=result.patch.streets.find(street=>street.tags.includes('working-waterfront'))!;
-    expect(working.width).toBe(4.6);
+    expect(working.width).toBeGreaterThanOrEqual(6.4);
     expect(Math.min(...working.points.map(point=>point[0]+96))-working.width/2).toBeLessThanOrEqual(20);
     const landing=result.patch.streets.find(street=>street.tags.includes('sea-landing'))!;
     expect(landing.tags).toContain('harbor-quay');
-    expect(landing.width).toBe(4.6);
+    expect(landing.width).toBeGreaterThanOrEqual(6.4);
     expect(landing.points.at(-1)![0]+96).toBeLessThan(landing.points[0][0]+96);
     expect(landing.points.at(-1)![0]+96).toBeLessThanOrEqual(20);
   });
