@@ -2,7 +2,7 @@ import type { MapCatalog } from '../shared/experiments';
 import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
 import type { WorldBundle, WorldPlan, WorldWhiteboxObservation } from '../shared/worldPlanning';
-import type { WorldAssetBinding } from '../shared/worldMapState';
+import { worldMapSampler, type WorldAssetBinding } from '../shared/worldMapState';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import {
@@ -1783,9 +1783,9 @@ class MapEditor {
           <p id="world-size-hint" class="empty inspector-note">面积约 ${Math.round((this.worldWidth / MAP_SIZE_PRESETS[1].size[0]) ** 2)} 张中地图（${MAP_SIZE_PRESETS[1].size[0]} × ${MAP_SIZE_PRESETS[1].size[2]} 米）</p>
           <label class="field compact map-ai-toggle"><span>生成建筑资产 · DeepSeek</span><input id="world-assets" type="checkbox" ${this.worldGenerateAssets ? 'checked' : ''} /></label>
           <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>规划连续世界</button>
-          <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划</button>
-          <p class="empty inspector-note">先规划地形、聚落功能与交通，再生成街区和群落。大建筑沿用部件装配；地形和内容按附近区块加载。</p>
-          ${map.world ? renderSavedWorldWhiteboxDetails(map.world.bundle.plan) : ''}
+          <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划（无建筑）</button>
+          <p class="empty inspector-note">白盒用于核对地形、聚落区位与路线，不生成建筑或植物。完整世界模式目前会从描述重新规划，尚不能沿已保存的白盒继续施工。</p>
+          ${map.world ? renderSavedWorldWhiteboxDetails(map.world) : ''}
           ${map.world ? `<label class="field compact"><span>前往聚落</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
         <details class="map-ai-advanced" ${advancedOpen ? 'open' : ''}>
@@ -8430,7 +8430,8 @@ function renderWorldWhiteboxDetails(details: WorldWhiteboxPreviewDetails): strin
   </details>`;
 }
 
-function renderSavedWorldWhiteboxDetails(plan: WorldPlan): string {
+function renderSavedWorldWhiteboxDetails(world: NonNullable<EditableMap['world']>): string {
+  const plan = world.bundle.plan;
   if (!plan.whitebox) return '';
   const text = (value: string) => escapeHtml(value);
   const regions = new Map(plan.featureGraph?.regions.map((region) => [region.id, region]));
@@ -8447,9 +8448,17 @@ function renderSavedWorldWhiteboxDetails(plan: WorldPlan): string {
   const settlements = plan.settlementPlan?.settlements ?? [];
   const routes = plan.mobilityPlan?.routes ?? [];
   const exploration = plan.explorationPlan;
+  const sample = worldMapSampler(world);
+  const wetAnchors = (plan.featureGraph?.anchors ?? []).flatMap((anchor) => {
+    const surface = sample(...anchor.position);
+    return surface.waterLevel != null && surface.waterLevel > surface.height + 0.05
+      ? [`${text(anchor.id)} (${(surface.waterLevel - surface.height).toFixed(1)} m)`] : [];
+  });
   return `<details class="inspector-disclosure compact map-ai-composition-details">
     <summary><span><b>已保存的白盒语义</b><small>${settlements.length} 个聚落角色 · ${routes.length} 条移动路线 · ${exploration?.pointsOfInterest.length ?? 0} 个兴趣点</small></span></summary>
     <div class="inspector-body asset-library-details">
+      <p class="empty">红色锚点表示该处地形采样被水覆盖；这里只显示问题，不修改首稿。</p>
+      <div><b>被水覆盖的锚点</b>${list(wetAnchors)}</div>
       <div><b>创作概念</b>${concept
         ? `<p>${text(concept.premise)}</p><p>${text(concept.experience)}</p>${list(concept.themes.map(text))}`
         : '<p class="empty">无</p>'}</div>

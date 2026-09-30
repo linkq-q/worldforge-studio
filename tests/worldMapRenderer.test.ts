@@ -111,6 +111,30 @@ describe('main editor streamed world renderer', () => {
     expect(buildWorldWhiteboxOverlay(plan, () => ({ height: 2 })).children).toHaveLength(0);
   });
 
+  it('marks submerged whitebox anchors visibly without relocating the authored point', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.featureGraph = {
+      regions: [{ id: 'shore', kind: 'coast', name: 'Shore', center: [0, 0], radius: 40 }],
+      paths: [],
+      anchors: [
+        { id: 'wet', kind: 'harbor', position: [2, 3], regionId: 'shore' },
+        { id: 'dry', kind: 'market', position: [12, 3], regionId: 'shore' }
+      ],
+      relations: []
+    };
+    const overlay = buildWorldWhiteboxOverlay(plan, (x) => x < 10
+      ? { height: -1, waterLevel: 0 } : { height: 2, waterLevel: null });
+    const wet = overlay.getObjectByName('world-whitebox-anchor:wet') as THREE.Mesh;
+    const dry = overlay.getObjectByName('world-whitebox-anchor:dry') as THREE.Mesh;
+    expect((wet.material as THREE.MeshBasicMaterial).color.getHex()).toBe(0xff5252);
+    expect((dry.material as THREE.MeshBasicMaterial).color.getHex()).toBe(0xffb547);
+    expect(wet.position.toArray()).toEqual([2, 3.3, 3]);
+    expect(dry.position.toArray()).toEqual([12, 5.3, 3]);
+    expect(overlay.getObjectByName('world-whitebox-anchor-wet:wet')).toBeInstanceOf(THREE.LineLoop);
+    expect(overlay.getObjectByName('world-whitebox-anchor-wet:dry')).toBeUndefined();
+  });
+
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');

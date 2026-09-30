@@ -132,12 +132,30 @@ export function buildWorldWhiteboxOverlay(
   }
   const anchorGeometry = new THREE.ConeGeometry(1.8, 5, 8);
   const anchorMaterial = new THREE.MeshBasicMaterial({ color: 0xffb547, depthTest: false });
+  const wetAnchorMaterial = new THREE.MeshBasicMaterial({ color: 0xff5252, depthTest: false });
   for (const anchor of plan.featureGraph.anchors) {
-    const marker = new THREE.Mesh(anchorGeometry, anchorMaterial);
+    const terrain = sample(...anchor.position);
+    const flooded = terrain.waterLevel != null && terrain.waterLevel > terrain.height + 0.05;
+    const marker = new THREE.Mesh(anchorGeometry, flooded ? wetAnchorMaterial : anchorMaterial);
     marker.name = `world-whitebox-anchor:${anchor.id}`;
-    marker.position.set(anchor.position[0], visibleHeight(...anchor.position) + 2.5, anchor.position[1]);
+    if (flooded) marker.scale.setScalar(2);
+    marker.position.set(anchor.position[0], Math.max(terrain.height, terrain.waterLevel ?? terrain.height) + 3.3,
+      anchor.position[1]);
     marker.renderOrder = 21;
     root.add(marker);
+    if (flooded) {
+      const points = Array.from({ length: 32 }, (_, index) => {
+        const angle = index / 32 * Math.PI * 2;
+        const x = anchor.position[0] + Math.cos(angle) * 12;
+        const z = anchor.position[1] + Math.sin(angle) * 12;
+        return new THREE.Vector3(x, visibleHeight(x, z), z);
+      });
+      const ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineBasicMaterial({ color: 0xff5252, depthTest: false }));
+      ring.name = `world-whitebox-anchor-wet:${anchor.id}`;
+      ring.renderOrder = 21;
+      root.add(ring);
+    }
   }
   return root;
 }
