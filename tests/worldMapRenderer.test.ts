@@ -104,6 +104,11 @@ describe('main editor streamed world renderer', () => {
       expect(terrains).toHaveLength(16);
       const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
+      expect(ocean.userData.waterOceanTerrain.mapSize[0]).toBeGreaterThanOrEqual(500);
+      expect(ocean.userData.waterOceanTerrain.mapSize[1]).toBeGreaterThanOrEqual(500);
+      let oceanCount = 0;
+      rendered.group.traverse(object => { if (object.name === 'water:world-ocean') oceanCount += 1; });
+      expect(oceanCount).toBe(1);
       expect(rendered.getDebugStats().grassBlades).toBeGreaterThan(0);
       expect(rendered.getDebugStats().grassBlades).toBeLessThanOrEqual(3_500);
       const camera = new THREE.PerspectiveCamera();
