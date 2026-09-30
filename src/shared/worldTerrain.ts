@@ -37,6 +37,8 @@ export interface WorldWaterBody {
   type: 'lake' | 'river';
   region: WorldTerrainRegion;
   levels: number[];
+  /** Optional river width at each control point; omitted keeps region.width throughout. */
+  widths?: number[];
   depth: number;
   shorelineSmoothness?: number;
   shorelineIrregularity?: number;
@@ -67,6 +69,8 @@ export interface WorldSample {
   moisture: number;
   continentalness: number;
   weights: Record<WorldBiome, number>;
+  /** Fresh-water footprint and bank influence, kept separate from the salt-ocean biome. */
+  freshWaterWeight?: number;
   waterLevel: number | null;
   waterBodyId: string | null;
 }
@@ -76,6 +80,7 @@ export interface WorldTileData {
   heights: Float32Array;
   normals: Float32Array;
   weights: Float32Array;
+  freshWaterWeights: Float32Array;
   waterLevels: Float32Array;
   resolution: number;
 }
@@ -229,6 +234,8 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
       const levelCount = shape.kind === 'circle' ? 1 : shape.points.length;
       if ((raw.type !== 'lake' && raw.type !== 'river') || !Array.isArray(raw.levels) || raw.levels.length !== levelCount
         || !raw.levels.every(n => Number.isFinite(n) && n >= -1000 && n <= 5000)
+        || raw.widths !== undefined && (raw.type !== 'river' || !Array.isArray(raw.widths)
+          || raw.widths.length !== levelCount || !raw.widths.every(n => Number.isFinite(n) && n >= 1 && n <= 1000))
         || !Number.isFinite(raw.depth) || raw.depth < 0.1 || raw.depth > 500
         || raw.type === 'lake' && shape.kind !== 'circle' || raw.type === 'river' && shape.kind !== 'path'
         || raw.shorelineSmoothness !== undefined && (!Number.isFinite(raw.shorelineSmoothness) || raw.shorelineSmoothness < 0 || raw.shorelineSmoothness > 1)
@@ -237,7 +244,8 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
         || raw.seed !== undefined && (!Number.isInteger(raw.seed) || raw.seed < 0 || raw.seed > 0xffffffff)) throw new Error('invalid_world_water_body');
       const id = safeId(raw.id);
       return {
-        id, type: raw.type, region: shape, levels: [...raw.levels], depth: raw.depth,
+        id, type: raw.type, region: shape, levels: [...raw.levels],
+        ...(raw.widths ? { widths: [...raw.widths] } : {}), depth: raw.depth,
         shorelineSmoothness: raw.shorelineSmoothness ?? 0.82,
         shorelineIrregularity: raw.shorelineIrregularity ?? (raw.type === 'lake' ? 0.16 : 0),
         ...(raw.shorelineProfile ? { shorelineProfile: raw.shorelineProfile } : {}),
@@ -293,11 +301,53 @@ export function worldRegionWeight(region: WorldTerrainRegion, x: number, z: numb
 
 /** Precomputes the original editor shoreline workflow once in global coordinates. */
 export function prepareWorldWaterBodies(input: WorldRecipe): PreparedWorldWaterBody[] {
-  const recipe = validateWorldRecipe(input);
-  return prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], recipe.seed);
+  return createWorldTerrainContext(input).waterBodies;
 }
 
-function prepareValidatedWorldWaterBodies(waters: WorldWaterBody[], worldSeed: number): PreparedWorldWaterBody[] {
+function clipRiverAtImplicitOcean(water: MapWaterBody, terrainHeightAt: (x: number, z: number) => number): MapWaterBody {
+  if (water.type !== 'river') return water;
+  const authoredSamples = riverPathSamples(water);
+  if (authoredSamples.length < 2) return water;
+  const first = authoredSamples[0], last = authoredSamples.at(-1)!;
+  const reversed = first.level < last.level
+    || first.level === last.level && terrainHeightAt(...first.point) < terrainHeightAt(...last.point);
+  const samples = reversed ? [...authoredSamples].reverse() : authoredSamples;
+  if (terrainHeightAt(...samples[0].point) <= 0 || terrainHeightAt(...samples.at(-1)!.point) > 0) return water;
+  let oceanIndex = samples.length - 1;
+  while (oceanIndex > 0 && terrainHeightAt(...samples[oceanIndex - 1].point) <= 0) oceanIndex -= 1;
+  if (oceanIndex === 0) return water;
+  const from = samples[oceanIndex - 1], to = samples[oceanIndex];
+  let land = 0, ocean = 1;
+  for (let step = 0; step < 18; step += 1) {
+    const t = (land + ocean) / 2;
+    const x = mix(from.point[0], to.point[0], t), z = mix(from.point[1], to.point[1], t);
+    if (terrainHeightAt(x, z) > 0) land = t;
+    else ocean = t;
+  }
+  const mouth = {
+    point: [mix(from.point[0], to.point[0], ocean), mix(from.point[1], to.point[1], ocean)] as [number, number],
+    level: 0,
+    width: mix(from.width, to.width, ocean)
+  };
+  let clipped = [...samples.slice(0, oceanIndex), mouth];
+  if (reversed) clipped = clipped.reverse();
+  return {
+    ...water,
+    level: clipped.reduce((sum, sample) => sum + sample.level, 0) / clipped.length,
+    points: clipped.map(sample => [...sample.point] as [number, number]),
+    levels: clipped.map(sample => sample.level),
+    widths: clipped.map(sample => sample.width),
+    // The derived samples already contain the authored curve and irregularity.
+    shorelineSmoothness: 0,
+    shorelineIrregularity: 0
+  };
+}
+
+function prepareValidatedWorldWaterBodies(
+  waters: WorldWaterBody[],
+  worldSeed: number,
+  terrainHeightAt?: (x: number, z: number) => number
+): PreparedWorldWaterBody[] {
   return waters.map((source) => {
     const region = source.region;
     const seed = source.seed ?? waterSeed(worldSeed, source.id);
@@ -317,7 +367,7 @@ function prepareValidatedWorldWaterBodies(waters: WorldWaterBody[], worldSeed: n
       type: source.type,
       level: source.levels.reduce((sum, value) => sum + value, 0) / source.levels.length,
       levels: [...source.levels],
-      ...(region.kind === 'path' ? { widths: region.points.map(() => region.width) } : {}),
+      ...(region.kind === 'path' ? { widths: source.widths ? [...source.widths] : region.points.map(() => region.width) } : {}),
       depth: source.depth,
       width,
       points,
@@ -326,7 +376,7 @@ function prepareValidatedWorldWaterBodies(waters: WorldWaterBody[], worldSeed: n
       shorelineProfile: source.shorelineProfile,
       seed
     };
-    const mapWater: MapWaterBody = authored.type === 'river'
+    let mapWater: MapWaterBody = authored.type === 'river'
       ? authored
       : {
           ...authored,
@@ -334,6 +384,7 @@ function prepareValidatedWorldWaterBodies(waters: WorldWaterBody[], worldSeed: n
           shorelineSmoothness: 0,
           shorelineIrregularity: 0
         };
+    if (terrainHeightAt && mapWater.type === 'river') mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt);
     const riverSamples = mapWater.type === 'river' ? riverPathSamples(mapWater) : [];
     const boundary = waterBoundaryPoints(mapWater);
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
@@ -405,6 +456,60 @@ function fbm(x: number, z: number, seed: number, octaves = 4): number {
   }
   return value / total;
 }
+
+function riverBendAt(samples: readonly RiverPathSample[], point: [number, number]): number {
+  if (samples.length < 3) return 0;
+  let closest = 0, distance = Infinity;
+  for (let index = 0; index < samples.length; index += 1) {
+    const dx = samples[index].point[0] - point[0], dz = samples[index].point[1] - point[1];
+    const nextDistance = dx * dx + dz * dz;
+    if (nextDistance < distance) { closest = index; distance = nextDistance; }
+  }
+  const span = Math.min(3, closest, samples.length - 1 - closest);
+  if (span < 1) return 0;
+  const before = samples[closest - span].point, center = samples[closest].point;
+  const after = samples[closest + span].point;
+  const incoming: [number, number] = [center[0] - before[0], center[1] - before[1]];
+  const outgoing: [number, number] = [after[0] - center[0], after[1] - center[1]];
+  const incomingLength = Math.hypot(...incoming), outgoingLength = Math.hypot(...outgoing);
+  if (incomingLength <= 0.000001 || outgoingLength <= 0.000001) return 0;
+  const cross = incoming[0] * outgoing[1] - incoming[1] * outgoing[0];
+  const dot = incoming[0] * outgoing[0] + incoming[1] * outgoing[1];
+  return clamp(Math.atan2(cross, dot) / (Math.PI / 2), -1, 1);
+}
+
+function freshWaterMaterialBankWidth(
+  prepared: PreparedWorldWaterBody,
+  river: ReturnType<typeof sampleRiverProfile> | null,
+  x: number,
+  z: number,
+  height: number,
+  level: number,
+  boundaryDistance: number,
+  moisture: number
+): number {
+  const water = prepared.mapWater;
+  const baseWidth = water.shorelineProfile === 'steep'
+    ? Math.max(3, water.depth)
+    : water.shorelineProfile === 'gentle'
+      ? Math.max(7, water.depth * 3.5)
+      : Math.max(6, water.depth * 3.5);
+  let side = 0, bendFactor = 1;
+  if (river) {
+    const offsetX = x - river.point[0], offsetZ = z - river.point[1];
+    side = Math.sign(river.direction[0] * offsetZ - river.direction[1] * offsetX);
+    // A point-bar side reads wider than the outside cut bank without changing the water polygon.
+    bendFactor += clamp(riverBendAt(prepared.riverSamples, river.point) * side * 1.15, -0.38, 0.38);
+  }
+  const bankSlope = Math.max(0, height - level) / Math.max(3, boundaryDistance);
+  const slopeFactor = mix(1.18, 0.72, smooth(0.08, 0.55, bankSlope));
+  const moistureFactor = mix(0.9, 1.14, smooth(0.25, 0.75, moisture));
+  const anchor = river?.point ?? [x, z];
+  const macroScale = Math.max(96, (river?.width ?? water.width) * 6);
+  const bankVariation = fbm(anchor[0] / macroScale + side * 13,
+    anchor[1] / macroScale - side * 7, (water.seed ?? 0) + 2089, 2);
+  return clamp(baseWidth * bendFactor * slopeFactor * moistureFactor * (1 + bankVariation * 0.18), 3, 24);
+}
 const targets: Record<WorldBiome, readonly [number, number, number, number]> = {
   ocean: [-0.95, 0.6, 0.8, 0.05],
   desert: [0.65, 0.95, 0.06, 0.04],
@@ -432,7 +537,22 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
   const boundedIslandMass = compactRelief && cardinalOceanRing
     && (constraints.some(constraint => constraint.region === 'center' && constraint.biome !== 'ocean')
       || authoredIslandCore);
-  const waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed);
+  const compactDetailScale = 1 + (Math.sqrt(size / WORLD_MIN_SIZE) - 1) * 0.75;
+  const landforms = (recipe.landforms ?? []).map(form => {
+    const minRadius = Math.min(...form.radius);
+    const worldScaleIslandCore = compactRelief && form.height > 0
+      && Math.hypot(...form.center) <= size * 0.12 && minRadius >= size * 0.32
+      && form.height / minRadius >= 0.12;
+    return {
+      form,
+      minRadius,
+      formPhase: worldScaleIslandCore
+        ? hash(Math.round(form.center[0]), Math.round(form.center[1]), seed + 1741) * Math.PI
+        : null
+    };
+  });
+  const shapedIslandCore = landforms.some(({ formPhase }) => formPhase !== null);
+  let waterBodies: PreparedWorldWaterBody[] = [];
   const sample = (x: number, z: number): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
     const warpX = fbm(x / (13000 * terrainScale) + 17, z / (13000 * terrainScale), seed + 41, 2);
@@ -458,16 +578,16 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     continentalness = continentalness / total + broad * 0.14;
     if (boundedIslandMass) {
       // A complete ocean ring explicitly describes an island. Keep its mass inside the ring;
-      // the warped coordinates and coast folds retain an irregular, rolling shoreline.
+      // the domain warp and authored core keep its shoreline rolling without leaking to the edge.
       const islandFloor = 0.14 - smooth(0.3, 0.98, Math.hypot(ux, uz)) * 0.24;
       const floorBlend = clamp(0.5 + (continentalness - islandFloor) / 0.12);
       continentalness = mix(islandFloor, continentalness, floorBlend) + 0.06 * floorBlend * (1 - floorBlend);
     }
     if (compactRelief) {
-      // Global-coordinate folds stop a 500m coast from tracing one region-anchor line.
+      // Keep smaller headlands visible without letting local noise dominate a bounded island outline.
       const coastBand = 1 - smooth(0.04, 0.28, Math.abs(continentalness));
-      continentalness += fbm(x / (1000 * terrainScale), z / (1000 * terrainScale), seed + 1667, 2)
-        * 0.06 * coastBand;
+      const localCoast = fbm(x / (1000 * terrainScale), z / (1000 * terrainScale), seed + 1667, 2);
+      continentalness += localCoast * (boundedIslandMass && shapedIslandCore ? 0.04 : 0.06) * coastBand;
     }
     moisture = clamp(moisture / total
       + fbm(x / (4500 * terrainScale) + 13, z / (4500 * terrainScale), seed + 809, 2) * 0.08);
@@ -497,8 +617,17 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       + rolling * (1 - climateDry * 0.8));
     let height = macroHeight * (recipe.heightScale ?? 1) + land * climateDry * dunes;
     let authoredDetailAmplitude = 0, authoredDrainageDetail = 0;
-    for (const form of recipe.landforms ?? []) {
-      const d2 = ((x - form.center[0]) / form.radius[0]) ** 2 + ((z - form.center[1]) / form.radius[1]) ** 2;
+    for (const { form, minRadius, formPhase } of landforms) {
+      const formX = (x - form.center[0]) / form.radius[0];
+      const formZ = (z - form.center[1]) / form.radius[1];
+      let d2 = formX ** 2 + formZ ** 2;
+      if (formPhase !== null) {
+        const formAngle = Math.atan2(formZ, formX);
+        const formShape = Math.sin(formAngle * 3 + formPhase) * 0.7
+          + Math.sin(formAngle * 5 - formPhase * 0.61) * 0.3;
+        const formShapeScale = 1 + formShape * 0.1;
+        d2 = (formX * formShapeScale) ** 2 + (formZ * formShapeScale) ** 2;
+      }
       // Compact support with zero first and second derivatives at the boundary.
       if (d2 < 1) {
         const influence = (1 - d2) ** 3;
@@ -507,9 +636,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
           const slopeBand = 64 * d2 ** 3 * (1 - d2) ** 3;
           const smallHillBoost = Math.sqrt(form.height) * 1.3 * (1 - smooth(20, 40, form.height));
           authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
-            slopeBand * Math.min(14, form.height * 0.16 + smallHillBoost));
-          const minRadius = Math.min(...form.radius);
-          if (compactRelief && form.height >= 18 && minRadius >= 18) {
+            slopeBand * Math.min(14 * Math.sqrt(compactDetailScale), form.height * 0.16 + smallHillBoost));
+          const formSlope = form.height / minRadius;
+          if (compactRelief && form.height >= 18 && minRadius >= 18 && formSlope >= 0.18) {
             // Authored compact relief needs coherent downslope structure, not isotropic noise alone.
             // Ellipse angle follows the local fall line; a slow phase warp bends channels without
             // breaking them into dots, while the slope band protects both summit and foothill.
@@ -518,27 +647,42 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
               (x - form.center[0]) / form.radius[0]);
             const channelCount = clamp(Math.round((form.radius[0] + form.radius[1]) / 34), 5, 6);
             const formScale = Math.max(...form.radius);
+            // Carry broad gullies uphill only on relief tall enough to read as a mountain at this world scale.
+            const strongDrainage = form.height >= Math.max(30, size * 0.06);
             const phase = noise(form.center[0] / formScale, form.center[1] / formScale,
               seed + 1877) * Math.PI;
             const twist = noise(form.center[0] / formScale + 11, form.center[1] / formScale - 7,
               seed + 1907) * 0.9;
-            const channelWarp = fbm(x / (formScale * 1.25), z / (formScale * 1.25), seed + 1931, 2) * 1.2;
+            const channelWarp = fbm(x / (formScale * 1.25), z / (formScale * 1.25), seed + 1931, 2)
+              * (strongDrainage ? 0.72 : 1.2);
             const branchWarp = fbm(x / (formScale * 1.6) + 13, z / (formScale * 1.6) - 9,
-              seed + 1973, 2);
+              seed + 1973, 2) * (strongDrainage ? 0.72 : 1);
             const drainageWave = Math.cos(channelCount * aspect + phase
               + twist * (radius - 0.55) + channelWarp) * 0.72
               + Math.cos((channelCount + 2) * aspect - phase * 0.45
                 - twist * (radius - 0.55) * 0.7 + branchWarp) * 0.28;
-            const channel = smooth(0.25, 0.82, drainageWave);
-            const rib = smooth(0.15, 0.86, -drainageWave);
+            const channel = strongDrainage
+              ? smooth(0.05, 0.76, drainageWave)
+              : smooth(0.25, 0.82, drainageWave);
+            const rib = strongDrainage
+              ? smooth(0.08, 0.8, -drainageWave)
+              : smooth(0.15, 0.86, -drainageWave);
+            const macroFold = Math.cos(2 * aspect + phase * 0.37 + twist * (radius - 0.5));
             // Multi-metre cuts remain legible in a 500m overview; the C2 slope band still
             // takes them to zero before the summit and footprint boundary.
-            const drainageAmplitude = Math.min(12, form.height * 0.21)
+            const drainageAmplitude = Math.min(12 * (strongDrainage ? compactDetailScale : Math.sqrt(compactDetailScale)),
+              form.height * 0.21)
               * smooth(18, 30, form.height) * smooth(18, 30, minRadius)
-              * mix(0.55, 1, smooth(0.25, 0.5, form.height / minRadius));
+              * mix(strongDrainage ? 0.2 : 0.55, 1, smooth(0.25, 0.5, formSlope));
+            const ridgeAmplitude = Math.min(size * 0.006, form.height * 0.06)
+              * smooth(0.18, 0.34, formSlope);
             // Do not turn a mountain-backed beach into a drainage cliff.
-            const drainageMask = slopeBand * smooth(3, 12, height);
-            authoredDrainageDetail += drainageMask * drainageAmplitude * (rib * 0.32 - channel * 0.82);
+            const downslopeBand = smooth(0.08, 0.24, d2) * (1 - smooth(0.68, 0.98, d2));
+            const drainageMask = (strongDrainage ? Math.max(slopeBand, downslopeBand * 0.6) : slopeBand)
+              * smooth(3, 12, height);
+            authoredDrainageDetail += drainageMask * (drainageAmplitude
+              * (rib * (strongDrainage ? 0.38 : 0.32) - channel * (strongDrainage ? 0.96 : 0.82))
+              + ridgeAmplitude * macroFold * 0.55);
           }
         }
       }
@@ -567,8 +711,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       const target = brush.mode === 'flatten' ? brush.height : interpolatePath(brush.heights, area.t);
       height = mix(height, target, influence * (brush.strength ?? 1));
     }
+    const terrainHeightBeforeWater = height;
     let waterLevel: number | null = null, waterBodyId: string | null = null, freshWaterDistance = Infinity;
-    let finiteWaterWeight = 0;
+    let freshWaterWeight = 0;
     for (const prepared of waterBodies) {
       const water = prepared.mapWater;
       const river = water.type === 'river' ? sampleRiverProfile(x, z, prepared.riverSamples) : null;
@@ -582,9 +727,13 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       const inside = waterBoundaryContainsPoint(prepared.boundary, x, z);
       const boundaryDistance = waterBoundaryDistance(prepared.boundary, x, z);
       freshWaterDistance = Math.min(freshWaterDistance, inside ? 0 : boundaryDistance);
-      const materialBankWidth = Math.min(24, Math.max(8, outerBankWidth));
-      finiteWaterWeight = Math.max(finiteWaterWeight,
-        inside ? 1 : 1 - smooth(0, materialBankWidth, boundaryDistance));
+      if (inside) freshWaterWeight = 1;
+      else if (boundaryDistance < 24) {
+        const materialBankWidth = freshWaterMaterialBankWidth(prepared, river, x, z,
+          height, level, boundaryDistance, moisture);
+        freshWaterWeight = Math.max(freshWaterWeight,
+          1 - smooth(0, materialBankWidth, boundaryDistance));
+      }
       if (!inside) {
         // Reuse the editor's outer bank profile. Carving only the inside of a
         // water polygon creates a vertical wall exactly at its boundary.
@@ -608,7 +757,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         waterBodyId = prepared.source.id;
       }
     }
-    if (height < 0 && (waterLevel === null || waterLevel < 0)) {
+    if (terrainHeightBeforeWater < 0 && (waterLevel === null || waterLevel < 0)) {
       waterLevel = 0;
       waterBodyId = null;
     }
@@ -616,7 +765,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     moisture = clamp(moisture + (1 - moisture) * freshWaterInfluence * 0.75);
     const localTemp = clamp(temperature - Math.max(0, height - 300) * 0.00012);
     const dry = smooth(0.53, 0.82, temperature) * (1 - smooth(0.14, 0.44, moisture));
-    let ocean = 1 - smooth(-12, 8, height);
+    let ocean = 1 - smooth(-12, 8, terrainHeightBeforeWater);
     let snow = smooth(0.28, 0.1, localTemp) * (1 - ocean);
     let rock = smooth(0.24, 0.65, mountain) * (1 - ocean) * (1 - snow);
     const remainder = Math.max(0, 1 - ocean - snow - rock);
@@ -630,16 +779,12 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       for (const biome of WORLD_BIOMES) weights[biome] *= 1 - influence;
       weights[patch.biome] += influence;
     }
-    if (compactRelief && finiteWaterWeight > weights.ocean) {
-      const scale = (1 - finiteWaterWeight) / Math.max(0.000001, 1 - weights.ocean);
-      for (const biome of WORLD_BIOMES) if (biome !== 'ocean') weights[biome] *= scale;
-      weights.ocean = finiteWaterWeight;
-    }
     return {
       height, continentalness, temperature: localTemp, moisture,
-      weights, waterLevel, waterBodyId
+      weights, freshWaterWeight, waterLevel, waterBodyId
     };
   };
+  waterBodies = prepareValidatedWorldWaterBodies(recipe.waterBodies ?? [], seed, (x, z) => sample(x, z).height);
   return {
     sample,
     waterBodies,
@@ -673,6 +818,7 @@ export function sampleWorldTile(
   const heights = new Float32Array(resolution * resolution);
   const normals = new Float32Array(includeNormals ? resolution * resolution * 3 : 0);
   const weights = new Float32Array(resolution * resolution * WORLD_BIOMES.length);
+  const freshWaterWeights = new Float32Array(resolution * resolution);
   const waterLevels = new Float32Array(resolution * resolution).fill(NaN);
   // A fixed world-space stencil gives identical normals at every LOD's shared vertices.
   const epsilon = 4;
@@ -682,6 +828,7 @@ export function sampleWorldTile(
     const z = tile.z + iz * tile.size / (resolution - 1);
     const point = sample(x, z);
     heights[i] = point.height;
+    freshWaterWeights[i] = point.freshWaterWeight ?? 0;
     if (point.waterLevel !== null) waterLevels[i] = point.waterLevel;
     if (includeNormals) {
       const dx = sample(x + epsilon, z).height - sample(x - epsilon, z).height;
@@ -691,7 +838,7 @@ export function sampleWorldTile(
     }
     for (let j = 0; j < WORLD_BIOMES.length; j++) weights[i * WORLD_BIOMES.length + j] = point.weights[WORLD_BIOMES[j]];
   }
-  return { heights, normals, weights, waterLevels, resolution };
+  return { heights, normals, weights, freshWaterWeights, waterLevels, resolution };
 }
 
 /** Bounded quadtree covering the whole world; detail follows the camera and its orbit target. */

@@ -74,6 +74,7 @@ describe('continuous biome world experiment', () => {
       expect(a.heights[ai]).toBe(b.heights[bi]);
       expect([...a.normals.slice(ai * 3, ai * 3 + 3)]).toEqual([...b.normals.slice(bi * 3, bi * 3 + 3)]);
       expect([...a.weights.slice(ai * 6, ai * 6 + 6)]).toEqual([...b.weights.slice(bi * 6, bi * 6 + 6)]);
+      expect(a.freshWaterWeights[ai]).toBe(b.freshWaterWeights[bi]);
     }
   });
 
@@ -90,6 +91,7 @@ describe('continuous biome world experiment', () => {
     expect(tile.normals).toHaveLength(0);
     expect(tile.heights).toHaveLength(11 * 11);
     expect(tile.weights).toHaveLength(11 * 11 * WORLD_BIOMES.length);
+    expect(tile.freshWaterWeights).toHaveLength(11 * 11);
   });
 
   it('spends a tight LOD budget near the requested viewpoint rather than traversal order', () => {
@@ -217,19 +219,42 @@ describe('composable world terrain operations', () => {
   it('shares one irregular river path across its prepared boundary and terrain sampling', () => {
     const recipe = validateWorldRecipe({ ...original, waterBodies: [{ id: 'natural-river', type: 'river',
       region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 20 },
-      levels: [8, 5, 2], depth: 3, shorelineSmoothness: 0.8, shorelineIrregularity: 0.35, seed: 27 }] });
+      levels: [8, 5, 2], widths: [8, 20, 32], depth: 3,
+      shorelineSmoothness: 0.8, shorelineIrregularity: 0.35, seed: 27 }] });
     const context = createWorldTerrainContext(recipe), prepared = context.waterBodies[0];
     const centerline = riverPathSamples(prepared.mapWater);
 
     expect(prepared.mapWater.shorelineIrregularity).toBe(0.35);
+    expect(prepared.mapWater.widths).toEqual([8, 20, 32]);
     expect(prepared.boundary).toEqual(waterBoundaryPoints(prepared.mapWater));
-    expect(centerline[0].point).toEqual([-100, 0]);
-    expect(centerline.at(-1)!.point).toEqual([100, 0]);
+    expect(centerline[0]).toMatchObject({ point: [-100, 0], width: 8 });
+    expect(centerline.at(-1)).toMatchObject({ point: [100, 0], width: 32 });
     expect(Math.max(...centerline.map(sample => Math.abs(sample.point[1])))).toBeGreaterThan(0.4);
     for (const point of centerline.slice(1, -1).filter((_, index) => index % 3 === 0)) {
       expect(context.sample(...point.point).waterBodyId).toBe('natural-river');
       expect(context.sample(...point.point).waterLevel).toBeCloseTo(point.level, 8);
     }
+  });
+
+  it('ends derived river geometry at the implicit ocean with one shared surface level', () => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [10, -10], feather: 0
+    }, {
+      id: 'land-after-dip', mode: 'flatten', region: { kind: 'circle', center: [20, 0], radius: 10 },
+      height: 5, feather: 0
+    }], waterBodies: [{
+      id: 'river-mouth', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
+      levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0.8, shorelineIrregularity: 0
+    }] });
+    const context = createWorldTerrainContext(recipe), prepared = context.waterBodies[0];
+    const mouth = prepared.mapWater.points.at(-1)!;
+
+    expect(mouth[0]).toBeGreaterThan(25);
+    expect(prepared.mapWater.levels?.at(-1)).toBe(0);
+    expect(prepared.mapWater.widths?.at(-1)).toBeGreaterThan(8);
+    expect(mouth).not.toEqual((recipe.waterBodies![0].region as { points: Array<[number, number]> }).points.at(-1));
+    expect(context.sample(50, 0)).toMatchObject({ waterLevel: 0, waterBodyId: null, freshWaterWeight: 0 });
   });
 
   it('joins lake and river banks continuously to the surrounding terrain', () => {
@@ -253,15 +278,87 @@ describe('composable world terrain operations', () => {
     }
   });
 
-  it('blends finite water material through the carved lake bank', () => {
+  it('keeps finite-water shore weight separate from the ocean biome', () => {
     const base = createWorldSampler(original), level = base(0, 0).height + 2;
     const sample = createWorldSampler({ ...original, reliefProfile: 'compact', waterBodies: [{
       id: 'lake-bank', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },
       levels: [level], depth: 6, shorelineSmoothness: 0, shorelineIrregularity: 0
     }] });
-    expect(sample(0, 0).weights.ocean).toBe(1);
-    expect(sample(41, 0).weights.ocean).toBeGreaterThan(sample(55, 0).weights.ocean);
-    expect(sample(55, 0).weights.ocean).toBeGreaterThan(sample(70, 0).weights.ocean);
+    expect(sample(0, 0).freshWaterWeight).toBe(1);
+    expect(sample(0, 0).weights.ocean).toBeCloseTo(base(0, 0).weights.ocean, 10);
+    expect(sample(41, 0).freshWaterWeight ?? 0).toBeGreaterThan(sample(55, 0).freshWaterWeight ?? 0);
+    expect(sample(55, 0).freshWaterWeight ?? 0).toBeGreaterThan(sample(70, 0).freshWaterWeight ?? 0);
+  });
+
+  it('does not reinterpret an inland below-sea-level river bed as ocean', () => {
+    const dry = createWorldSampler(original);
+    const point: [number, number] = [0, 0];
+    expect(dry(...point).height).toBeGreaterThan(0);
+    const sample = createWorldSampler({ ...original, reliefProfile: 'compact', waterBodies: [{
+      id: 'sunken-river', type: 'river', region: { kind: 'path', points: [[-30, 0], [30, 0]], width: 8 },
+      levels: [-1, -1], widths: [5, 11], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    expect(sample(...point)).toMatchObject({ waterLevel: -1, waterBodyId: 'sunken-river', freshWaterWeight: 1 });
+    expect(sample(...point).weights.ocean).toBeCloseTo(dry(...point).weights.ocean, 10);
+  });
+
+  it('widens freshwater material on an inner river bend without moving the water surface', () => {
+    const context = createWorldTerrainContext({
+      version: 1, seed: 4081, size: 500, reliefProfile: 'compact', heightScale: 0.02,
+      constraints: [{ region: 'center', biome: 'grassland' }],
+      terrainBrushes: [{
+        id: 'flat-floodplain', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 210 },
+        height: 8, feather: 0
+      }],
+      waterBodies: [{
+        id: 'bending-river', type: 'river',
+        region: { kind: 'path', points: [[-140,60],[-60,20],[0,0],[40,-60],[120,-70]], width: 12 },
+        levels: [3,3,3,3,3], depth: 2, shorelineSmoothness: 0.8, shorelineIrregularity: 0
+      }]
+    });
+    const prepared = context.waterBodies[0], samples = prepared.riverSamples;
+    let bendIndex = 3, strongestBend = 0;
+    for (let index = 3; index < samples.length - 3; index += 1) {
+      const before = samples[index - 3].point, center = samples[index].point, after = samples[index + 3].point;
+      const incoming = [center[0] - before[0], center[1] - before[1]];
+      const outgoing = [after[0] - center[0], after[1] - center[1]];
+      const bend = incoming[0] * outgoing[1] - incoming[1] * outgoing[0];
+      if (Math.abs(bend) > Math.abs(strongestBend)) { strongestBend = bend; bendIndex = index; }
+    }
+    const before = samples[bendIndex - 3].point, after = samples[bendIndex + 3].point;
+    const length = Math.hypot(after[0] - before[0], after[1] - before[1]);
+    const left: [number, number] = [-(after[1] - before[1]) / length, (after[0] - before[0]) / length];
+    const inner = strongestBend > 0 ? left : [-left[0], -left[1]] as [number, number];
+    const center = samples[bendIndex].point;
+    const bankPoint = (normal: [number, number]) => {
+      let distance = 0;
+      while (distance < 30 && waterBoundaryContainsPoint(prepared.boundary,
+        center[0] + normal[0] * distance, center[1] + normal[1] * distance)) distance += 0.5;
+      return [center[0] + normal[0] * (distance + 4), center[1] + normal[1] * (distance + 4)] as [number, number];
+    };
+    const innerBank = context.sample(...bankPoint(inner));
+    const outerBank = context.sample(...bankPoint([-inner[0], -inner[1]]));
+
+    expect(innerBank.freshWaterWeight ?? 0).toBeGreaterThan((outerBank.freshWaterWeight ?? 0) + 0.08);
+    expect(context.sample(...center)).toMatchObject({ waterLevel: 3, waterBodyId: 'bending-river' });
+  });
+
+  it('narrows freshwater material on a steep bank while keeping the river level stable', () => {
+    const sample = createWorldSampler({
+      version: 1, seed: 4082, size: 500, reliefProfile: 'compact', heightScale: 0.02,
+      constraints: [{ region: 'center', biome: 'grassland' }],
+      terrainBrushes: [
+        { id: 'high-bank', mode: 'flatten', region: { kind: 'circle', center: [0,24], radius: 14 }, height: 18, feather: 0 },
+        { id: 'low-bank', mode: 'flatten', region: { kind: 'circle', center: [0,-24], radius: 14 }, height: 4, feather: 0 }
+      ],
+      waterBodies: [{
+        id: 'level-river', type: 'river', region: { kind: 'path', points: [[-100,0],[100,0]], width: 12 },
+        levels: [3,3], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+      }]
+    });
+    const highBank = sample(0, 12), lowBank = sample(0, -12);
+    expect(lowBank.freshWaterWeight ?? 0).toBeGreaterThan((highBank.freshWaterWeight ?? 0) + 0.2);
+    expect(sample(0, 0)).toMatchObject({ waterLevel: 3, waterBodyId: 'level-river' });
   });
 
   it('rejects malformed or colliding operation identities', () => {
@@ -845,6 +942,104 @@ describe('composable world terrain operations', () => {
       expect(percentile(shoreSlopes, 0.95)).toBeLessThan(0.9);
     }
     expect(mean(drainageResiduals.map(Math.abs))).toBeGreaterThan(0.35);
+  });
+
+  it('keeps authored compact mountain detail proportional beyond 500 metres', () => {
+    const normalizedDetails: number[] = [];
+    for (const size of [500, 1200, 2400]) {
+      const center: [number, number] = [-size * 0.08, -size * 0.2];
+      const radius: [number, number] = [size * 0.22, size * 0.18];
+      const height = size * 0.12;
+      const sample = createWorldSampler({
+        version: 1, seed: 2309, size, reliefProfile: 'compact', heightScale: 0.04,
+        constraints: [
+          { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' },
+          { region: 'south', biome: 'ocean' }
+        ],
+        landforms: [{ center, radius, height }]
+      });
+      const count = 144;
+      const profiles = [0.48, 0.62, 0.76].map(distance => Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2;
+        return sample(center[0] + Math.cos(angle) * radius[0] * distance,
+          center[1] + Math.sin(angle) * radius[1] * distance).height;
+      }));
+      const residuals = profiles.flatMap(profile => profile.map((value, index) => value
+        - [-5,-4,-3,3,4,5].reduce((sum, offset) => sum + profile[(index + offset + count) % count], 0) / 6));
+      residuals.sort((a, b) => Math.abs(a) - Math.abs(b));
+      normalizedDetails.push(Math.abs(residuals[Math.floor(residuals.length / 2)]) / height);
+    }
+    expect(Math.min(...normalizedDetails) / Math.max(...normalizedDetails)).toBeGreaterThan(0.42);
+  });
+
+  it('carries coherent volcanic gullies from the upper slope into the apron', () => {
+    const upperTroughs: number[] = [], upperDetails: number[] = [];
+    for (const seed of [6103402, 99173]) {
+      const recipe: WorldRecipe = {
+        version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.035,
+        constraints: [
+          { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' },
+          { region: 'south', biome: 'ocean' }
+        ],
+        landforms: [
+          { center: [0,-90], radius: [110,120], height: 54 },
+          { center: [0,-90], radius: [34,30], height: -15 }
+        ]
+      };
+      const sample = createWorldSampler(recipe), count = 144, radius = 0.44;
+      const profile = Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2;
+        return sample(Math.cos(angle) * 110 * radius, -90 + Math.sin(angle) * 120 * radius).height;
+      });
+      const residuals = profile.map((height, index) => height
+        - [-6,-5,-4,4,5,6].reduce((sum, offset) => sum + profile[(index + offset + count) % count], 0) / 6);
+      const ordered = [...residuals].sort((a, b) => a - b);
+      const absolute = [...residuals].sort((a, b) => Math.abs(a) - Math.abs(b));
+      upperTroughs.push(-ordered[Math.floor(count * 0.1)]);
+      upperDetails.push(Math.abs(absolute[Math.floor(count * 0.5)]));
+
+      const leveled = createWorldSampler({ ...recipe, terrainBrushes: [{
+        id: 'mountain-road-pad', mode: 'flatten', region: { kind: 'circle', center: [66,-90], radius: 10 },
+        height: 18, feather: 0
+      }] });
+      expect(leveled(66, -90).height).toBe(18);
+    }
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    expect(mean(upperTroughs)).toBeGreaterThan(3.2);
+    expect(mean(upperDetails)).toBeGreaterThan(1.4);
+  });
+
+  it('adds broad seeded bays to compact island coasts at multiple world sizes', () => {
+    for (const size of [500, 1200, 2400]) {
+      const sample = createWorldSampler({
+        version: 1, seed: 42, size, reliefProfile: 'compact', heightScale: 0.05,
+        constraints: [
+          { region: 'west', biome: 'ocean' }, { region: 'east', biome: 'ocean' },
+          { region: 'north', biome: 'ocean' }, { region: 'south', biome: 'ocean' },
+          { region: 'center', biome: 'grassland' }
+        ],
+        landforms: [{ center: [0, 0], radius: [size * 0.4, size * 0.4], height: size * 0.05 }]
+      });
+      const count = 144, coastRadii: number[] = [];
+      for (let index = 0; index < count; index += 1) {
+        const angle = index / count * Math.PI * 2;
+        let coastRadius = 0;
+        for (let distance = 0; distance <= size / 2; distance += size / 250) {
+          if (sample(Math.cos(angle) * distance, Math.sin(angle) * distance).height > 0) coastRadius = distance;
+        }
+        coastRadii.push(coastRadius);
+      }
+      const broadRadii = coastRadii.map((_, index) => {
+        let total = 0;
+        for (let offset = -8; offset <= 8; offset += 1) total += coastRadii[(index + offset + count) % count];
+        return total / 17;
+      });
+      expect((Math.max(...broadRadii) - Math.min(...broadRadii)) / size).toBeGreaterThan(0.04);
+      for (const [x, z] of [[-size / 2, 0], [size / 2, 0], [0, -size / 2], [0, size / 2]]) {
+        expect(sample(x, z)).toMatchObject({ waterLevel: 0, waterBodyId: null });
+        expect(sample(x, z).height).toBeLessThan(0);
+      }
+    }
   });
 
   it('keeps missing and explicit legacy relief profiles sample-identical', () => {
