@@ -16,6 +16,7 @@ import { generateMapCodeSuggestion } from './mapCodePlanner';
 import { createMapAssetGenerator } from './mapAssetGenerator';
 import { recordGenerationTrace } from './generationTrace';
 import { buildWorldArchitecturePrompt, WORLD_ARCHITECTURE_PROMPT_MAX_CHARS } from './worldArchitecturePrompt';
+import { generateWorldWhitebox } from './worldWhiteboxGeneration';
 import type { MapStore } from './mapStore';
 
 export interface WorldGenerationRequest {
@@ -875,6 +876,8 @@ export async function generateWorldAssets(requests: WorldAssetRequest[], store: 
 }
 
 export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSignal) {
+  if (input && typeof input === 'object' && !Array.isArray(input)
+    && (input as Record<string, unknown>).mode === 'whitebox') return generateWorldWhitebox(input, signal);
   const request=validateWorldGenerationRequest(input);
   const reusableAssets=await Promise.all((request.reusableAssetIds??[]).map(async id=>{
     const asset=await store.loadAsset(id).catch(()=>null);
