@@ -342,7 +342,8 @@ describe('world settlement growth', () => {
     expect(coastDistance(landing.points.at(-1)!)).toBeLessThanOrEqual(20);
     expect(landing.tags).toContain('harbor-quay');
     expect(landing.width).toBeGreaterThanOrEqual(6.4);
-    expect(landing.points.slice(1).reduce((length,point,index)=>length+Math.hypot(point[0]-landing.points[index][0],point[1]-landing.points[index][1]),0)).toBeGreaterThanOrEqual(5);
+    expect(landing.points.slice(1).reduce((length,point,index)=>length+Math.hypot(point[0]-landing.points[index][0],point[1]-landing.points[index][1]),0))
+      .toBeGreaterThanOrEqual(Math.max(12,landing.width*2));
     expect(validateTownPatch(plan,patch)).toEqual(patch);
   });
 

@@ -523,6 +523,7 @@ function shoreLanding(
   safe:(a:Point,b:Point,width:number)=>boolean
 ):Point[]|undefined {
   const width=Math.max(6.4,settings.arterialWidth),clearance=settings.waterSetback+width/2+1;
+  const usableLength=Math.max(12,width*2);
   const candidates=shore.map(point=>({point,water:nearestWater(sample,town,point,Math.min(180,town.radius*.58),'sea')}))
     .filter((item):item is {point:Point;water:{direction:Point;distance:number}}=>Boolean(item.water))
     .sort((a,b)=>a.water.distance-b.water.distance||distance(a.point,[0,0])-distance(b.point,[0,0]));
@@ -532,7 +533,8 @@ function shoreLanding(
       const length=(low+high)/2,end=add(point,scale(water.direction,length));
       if(safe(point,end,width)) low=length; else high=length;
     }
-    if(low<=EPS) continue;
+    // Keep enough dry approach for small-scale loading and turning, scaled to wider quays.
+    if(low+EPS<usableLength) continue;
     const end=add(point,scale(water.direction,low));
     const remaining=nearestWater(sample,town,end,Math.min(24,town.radius*.58),'sea')?.distance;
     if(safe(point,end,width)&&remaining!==undefined&&remaining<water.distance-EPS&&remaining<=20) return [point,end];

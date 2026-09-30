@@ -292,6 +292,11 @@ function validateStreetGraph(town: TownIntent, streets: MapGuide[]): void {
     if (!touching.length) fail('world_street_port_missing');
     if (!touching.some(street => Math.abs(street.width - port.width) <= TOLERANCE)) fail('world_street_port_width_mismatch');
   }
+  for (const street of streets) {
+    if (!street.tags.some(tag => tag === 'sea-landing' || tag === 'harbor-quay')) continue;
+    const length = segments(street).reduce((total, [a, b]) => total + Math.hypot(b[0] - a[0], b[1] - a[1]), 0);
+    if (length + TOLERANCE < Math.max(12, street.width * 2)) fail('world_harbor_quay_too_short');
+  }
   if (!graph.size) return;
   const reached = new Set<string>(), queue = [graph.keys().next().value!];
   for (let i = 0; i < queue.length; i++) {
