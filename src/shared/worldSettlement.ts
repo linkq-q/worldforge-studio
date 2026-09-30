@@ -833,7 +833,23 @@ function placeBuildings(
       id: `${town.id}-building-${result.length + 1}`,
       x: center[0], z: center[1], width, depth, height, use, rotation: parcel.rotationY
     };
-    if (canPlace(building)) result.push(building);
+    if (canPlace(building)) {
+      result.push(building);
+    }
+  }
+  if(town.population!==undefined&&result.length<target) for(const road of localRoads) {
+    if(result.length>=target||road.road.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))) continue;
+    const delta=sub(road.b,road.a),length=distance(road.a,road.b);
+    if(length<EPS) continue;
+    const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
+    const width=city?4:5,depth=city?6:7,steps=Math.max(1,Math.floor(length/(width+settings.buildingGap)));
+    for(let index=0;index<=steps&&result.length<target;index++) for(const side of [-1,1]) {
+      const roadPoint=mix(road.a,road.b,(index+.5)/(steps+1)),outward=scale(normal,side);
+      const center=add(roadPoint,scale(outward,road.width/2+depth/2+1));
+      const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],width,depth,
+        height:city?7+random()*4:4.5+random()*3,use:'home',rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))};
+      if(canPlace(building)) result.push(building);
+    }
   }
   return result;
 }
