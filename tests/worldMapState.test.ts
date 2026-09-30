@@ -46,6 +46,28 @@ it('preserves ecology asset intent while accepting legacy untyped tree bindings'
     .toThrow('invalid_world_asset_binding');
 });
 
+it('allows ordinary construction to keep primitive fallbacks while requiring landmark assets', () => {
+  const state = world();
+  const foundation = createWorldSampler(state.bundle.plan.recipe)(0, 0).height;
+  state.bundle.plan.towns = [{
+    id: 'town', name: 'Town', prompt: 'A built town', center: [0, 0], radius: 100, blend: 64,
+    foundation, terrainMode: 'conform', ports: []
+  }];
+  state.bundle.patches = [{
+    townId: 'town', worldKey: worldPlanKey(state.bundle.plan), summary: 'Raw construction', streets: [],
+    buildings: [{
+    id: 'home', x: 0, z: 0, width: 8, depth: 8, height: 6, use: 'home'
+    }]
+  }];
+  state.assets = [{key: 'generated-shop', role: 'shop', assetId: 'asset-shop'}];
+  expect(validateWorldMapState(state).bundle.patches[0].buildings[0].use).toBe('home');
+
+  state.bundle.patches[0].buildings.push({
+    id: 'hall', x: 20, z: 0, width: 12, depth: 12, height: 10, use: 'school', assetKey: 'town-hall'
+  });
+  expect(() => validateWorldMapState(state)).toThrow('world_missing_asset_binding:town-hall');
+});
+
 it('loads a legacy world whose tagged harbor quay is shorter than current generation quality', () => {
   const state = world(), sample = createWorldSampler(state.bundle.plan.recipe);
   state.bundle.plan.towns = [{

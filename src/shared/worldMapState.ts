@@ -1,4 +1,4 @@
-import { createPlannedWorldTerrainContext, validateWorldBundle, type WorldBundle } from './worldPlanning';
+import { createPlannedWorldTerrainContext, validateWorldBundle, type TownBuilding, type WorldBundle } from './worldPlanning';
 import type { WorldSampler, WorldTerrainContext } from './worldTerrain';
 import type { EcologyInstance, EcologyKind } from './worldEcology';
 
@@ -11,6 +11,13 @@ export interface WorldAssetBinding {
 }
 /** Persist intent and reusable assets; render/collision chunks are derived, never saved. */
 export interface WorldMapState { bundle: WorldBundle; assets: WorldAssetBinding[] }
+
+export function worldBuildingRole(building: Pick<TownBuilding, 'use'>): WorldAssetBinding['role'] {
+  if (/landmark|castle|cathedral|palace|hall|驿|堡|宫|教堂|地标/i.test(building.use)) return 'landmark';
+  if (/工|仓|农具|workshop|factory/i.test(building.use)) return 'workshop';
+  if (/商|店|客|shop|market|inn/i.test(building.use)) return 'shop';
+  return 'house';
+}
 
 export function validateWorldMapState(input: unknown): WorldMapState {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('invalid_world_map');
@@ -40,10 +47,12 @@ export function validateWorldMapState(input: unknown): WorldMapState {
     const rule = bundle.plan.ecology.find(candidate => candidate.id === binding.ecologyRuleId);
     if (!rule || binding.ecologyKind && binding.ecologyKind !== rule.kind) throw new Error('invalid_world_asset_binding');
   }
-  // An empty pack is an explicit greybox preview; a partial pack must not
-  // silently lose named architecture.
+  // An empty pack is an explicit greybox preview; a partial pack may fall back
+  // only for ordinary buildings without an explicitly authored asset key.
   if (assets.length) for (const patch of bundle.patches) for (const building of patch.buildings) {
-    if (building.assetKey && !keys.has(building.assetKey)) throw new Error('world_missing_asset_binding:' + building.assetKey);
+    if (building.assetKey && !keys.has(building.assetKey)) {
+      throw new Error('world_missing_asset_binding:' + building.assetKey);
+    }
   }
   return {bundle, assets};
 }
