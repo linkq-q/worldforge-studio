@@ -779,6 +779,56 @@ describe('composable world terrain operations', () => {
     expect(mean(ridgeShares)).toBeGreaterThan(0.3);
   });
 
+  it('keeps compact ridge drainage visible and authored gullies narrow across seeds', () => {
+    const base: WorldRecipe = {
+      version: 1, seed: 1, size: 500, reliefProfile: 'compact', heightScale: 0.1,
+      constraints: [
+        { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' },
+        { region: 'south', biome: 'grassland' }, { region: 'west', biome: 'ocean' }
+      ],
+      landforms: [{ center: [0, -145], radius: [88, 30], height: 27 }]
+    };
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const percentile = (values: number[], fraction: number) => values.sort((a, b) => a - b)
+      [Math.floor((values.length - 1) * fraction)];
+    const drainageResiduals: number[] = [];
+    for (const seed of [1, 42, 2309, 99173]) {
+      const plain = createWorldSampler({ ...base, seed });
+      const carved = createWorldSampler({ ...base, seed, terrainBrushes: [{
+        id: 'ridge-gully', mode: 'lower', amount: 6, feather: 7,
+        region: { kind: 'path', points: [[0, -160], [0, -130]], width: 10 }
+      }] });
+      const count = 96;
+      const profile = Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2, radius = 0.62;
+        return plain(Math.cos(angle) * 88 * radius, -145 + Math.sin(angle) * 30 * radius).height;
+      });
+      drainageResiduals.push(...profile.map((height, index) => height
+        - (profile[(index + 5) % count] + profile[(index + count - 5) % count]) / 2));
+
+      // A requested 7m feather reaches zero 12m from the 10m-wide path centre.
+      const outsideCut = plain(12, -145).height - carved(12, -145).height;
+      expect(outsideCut).toBeLessThan(0.05);
+      expect(sampleWorldSlope(carved, 0, -145)).toBeLessThan(0.75);
+
+      const civicSlopes: number[] = [], shoreSlopes: number[] = [];
+      for (let z = 10; z <= 150; z += 10) for (let x = -60; x <= 100; x += 10) {
+        if (carved(x, z).height > 1) civicSlopes.push(sampleWorldSlope(carved, x, z));
+      }
+      for (let z = -220; z <= 220; z += 20) {
+        let previous = carved(-250, z).height;
+        for (let x = -248; x <= 80; x += 2) {
+          const current = carved(x, z).height;
+          if (previous <= 0 && current > 0) shoreSlopes.push(sampleWorldSlope(carved, x, z));
+          previous = current;
+        }
+      }
+      expect(percentile(civicSlopes, 0.95)).toBeLessThan(0.32);
+      expect(percentile(shoreSlopes, 0.95)).toBeLessThan(0.9);
+    }
+    expect(mean(drainageResiduals.map(Math.abs))).toBeGreaterThan(0.35);
+  });
+
   it('keeps missing and explicit legacy relief profiles sample-identical', () => {
     const recipe: WorldRecipe = { version: 1, seed: 147, size: 500, constraints: [
       { region: 'center', biome: 'grassland' }, { region: 'north', biome: 'mountains' }
