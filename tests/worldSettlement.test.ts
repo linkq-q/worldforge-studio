@@ -530,7 +530,7 @@ describe('world settlement growth', () => {
     expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.72);
   });
 
-  it('grows a populated shore-working village beyond its civic buildings', () => {
+  it('fills a populated compact harbor along its safe connected frontage', () => {
     const plan=fixture(),town=plan.towns[0],base=sampler(plan);
     town.radius=105;town.ports[0].position=[105,0];town.targetWaterBodyId='sea';
     town.population=250;
@@ -550,6 +550,7 @@ describe('world settlement growth', () => {
     const ordinary=result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length;
     expect(ordinary).toBeGreaterThanOrEqual(50);
     expect(ordinary).toBeLessThanOrEqual(60);
+    expectStreetFacingBuildings(result.patch);
     delete town.population;
     const unscaled=generateWorldSettlement(plan,town.id,sample,{
       kind:'city',pattern:'organic',seed:59,density:.48,waterfrontBias:.95,waterSetback:5,landmarks:result.landmarks
