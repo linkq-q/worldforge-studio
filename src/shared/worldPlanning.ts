@@ -12,7 +12,42 @@ export interface WorldPlan {
   ecology: EcologyRule[];
   towns: TownIntent[];
   roads: MapGuide[];
+  whitebox?: true;
+  concept?: WorldConcept;
+  featureGraph?: FeatureGraph;
+  settlementPlan?: SettlementPlan;
+  mobilityPlan?: MobilityPlan;
+  explorationPlan?: ExplorationPlan;
+  intentionalEmptyAreas?: IntentionalEmptyAreas;
 }
+export interface WorldConcept { premise: string; themes: string[]; experience: string }
+export interface FeatureRegion { id: string; kind: string; name: string; center: Point; radius: number }
+export interface FeaturePath { id: string; kind: string; name: string; points: Point[]; width: number }
+export interface FeatureAnchor { id: string; kind: string; position: Point; regionId: string }
+export interface FeatureRelation { fromId: string; toId: string; kind: string }
+export interface FeatureGraph {
+  regions: FeatureRegion[];
+  paths: FeaturePath[];
+  anchors: FeatureAnchor[];
+  relations: FeatureRelation[];
+}
+export interface SettlementPlanEntry { id: string; anchorId: string; role: string }
+export interface SettlementPlan { settlements: SettlementPlanEntry[] }
+export interface MobilityRoute { id: string; pathId: string; mode: string; connects: string[] }
+export interface MobilityPlan { routes: MobilityRoute[] }
+export interface ExplorationPointOfInterest { id: string; anchorId: string; purpose: string }
+export interface ExplorationPlan { pointsOfInterest: ExplorationPointOfInterest[]; sequence: string[] }
+export interface IntentionalEmptyArea { id: string; regionId: string; purpose: string }
+export type IntentionalEmptyAreas = IntentionalEmptyArea[];
+export interface WorldExplorationObservation {
+  scope: 'planned';
+  pointsOfInterest: Array<{ id: string; anchorId: string; purpose: string; plannedPosition: Point }>;
+  sequence: string[];
+  routes: Array<{ id: string; mode: string; connects: string[] }>;
+  intentionalEmptyAreas: Array<{ id: string; regionId: string; purpose: string }>;
+}
+type SemanticPlanFields = Pick<WorldPlan,
+  'concept' | 'featureGraph' | 'settlementPlan' | 'mobilityPlan' | 'explorationPlan' | 'intentionalEmptyAreas'>;
 export interface TownIntent {
   id: string;
   name: string;
@@ -40,7 +75,7 @@ export const WORLD_ROAD_SAMPLE_SPACING = 24;
 export const WORLD_ROAD_VERTEX_BUDGET = 32768;
 export const worldRoadSampleSpacing = (size: number) => Math.min(WORLD_ROAD_SAMPLE_SPACING, size / 250);
 
-type Point = [number, number];
+export type Point = [number, number];
 const TOLERANCE = 1e-6;
 const MAX_TOWN_SLOPE = 0.65;
 const MAX_ROAD_SLOPE = 0.5;
@@ -116,10 +151,136 @@ function guide(input: unknown, bound: number): MapGuide {
   return result;
 }
 
+function semanticText(input: unknown, code: string): string {
+  return text(input, code, 240);
+}
+function parseSemanticPlan(raw: Record<string, unknown>, bound: number): SemanticPlanFields {
+  const result: SemanticPlanFields = {};
+  if (raw.concept !== undefined) {
+    const value = record(raw.concept, 'world_invalid_concept');
+    keys(value, ['premise', 'themes', 'experience'], 'world_unknown_concept_field');
+    result.concept = {
+      premise: text(value.premise, 'world_invalid_concept_premise', 2000),
+      themes: list(value.themes, 16, 'world_concept_theme_quota')
+        .map(theme => semanticText(theme, 'world_invalid_concept_theme')).sort(),
+      experience: text(value.experience, 'world_invalid_concept_experience', 2000)
+    };
+    unique(result.concept.themes, 'world_duplicate_concept_theme');
+  }
+  if (raw.featureGraph !== undefined) {
+    const value = record(raw.featureGraph, 'world_invalid_feature_graph');
+    keys(value, ['regions', 'paths', 'anchors', 'relations'], 'world_unknown_feature_graph_field');
+    const regions = list(value.regions, 64, 'world_feature_region_quota').map(item => {
+      const region = record(item, 'world_invalid_feature_region');
+      keys(region, ['id', 'kind', 'name', 'center', 'radius'], 'world_unknown_feature_region_field');
+      return { id: safeId(region.id, 'world_invalid_feature_id'), kind: semanticText(region.kind, 'world_invalid_feature_kind'),
+        name: semanticText(region.name, 'world_invalid_feature_name'), center: point(region.center, bound, 'world_feature_outside'),
+        radius: number(region.radius, 1, bound, 'world_invalid_feature_radius') };
+    }).sort(byId);
+    const paths = list(value.paths, 64, 'world_feature_path_quota').map(item => {
+      const path = record(item, 'world_invalid_feature_path');
+      keys(path, ['id', 'kind', 'name', 'points', 'width'], 'world_unknown_feature_path_field');
+      const points = list(path.points, 256, 'world_feature_path_point_quota')
+        .map(item => point(item, bound, 'world_feature_outside'));
+      if (points.length < 2) fail('world_feature_path_needs_points');
+      return { id: safeId(path.id, 'world_invalid_feature_id'), kind: semanticText(path.kind, 'world_invalid_feature_kind'),
+        name: semanticText(path.name, 'world_invalid_feature_name'), points,
+        width: number(path.width, 0.1, 256, 'world_invalid_feature_path_width') };
+    }).sort(byId);
+    const anchors = list(value.anchors, 128, 'world_feature_anchor_quota').map(item => {
+      const anchor = record(item, 'world_invalid_feature_anchor');
+      keys(anchor, ['id', 'kind', 'position', 'regionId'], 'world_unknown_feature_anchor_field');
+      return { id: safeId(anchor.id, 'world_invalid_feature_id'), kind: semanticText(anchor.kind, 'world_invalid_feature_kind'),
+        position: point(anchor.position, bound, 'world_feature_outside'),
+        regionId: safeId(anchor.regionId, 'world_invalid_feature_anchor_region') };
+    }).sort(byId);
+    const regionIds = new Set(regions.map(region => region.id));
+    if (anchors.some(anchor => !regionIds.has(anchor.regionId))) fail('world_unknown_feature_anchor_region');
+    const featureIds = [...regions, ...paths, ...anchors].map(feature => feature.id);
+    unique(featureIds, 'world_duplicate_feature_id');
+    const relations = list(value.relations, 256, 'world_feature_relation_quota').map(item => {
+      const relation = record(item, 'world_invalid_feature_relation');
+      keys(relation, ['fromId', 'toId', 'kind'], 'world_unknown_feature_relation_field');
+      const parsed = { fromId: safeId(relation.fromId, 'world_invalid_feature_relation'),
+        toId: safeId(relation.toId, 'world_invalid_feature_relation'), kind: semanticText(relation.kind, 'world_invalid_feature_relation') };
+      if (!featureIds.includes(parsed.fromId) || !featureIds.includes(parsed.toId)) fail('world_unknown_feature_relation_target');
+      return parsed;
+    }).sort((a, b) => `${a.fromId}\0${a.toId}\0${a.kind}`.localeCompare(`${b.fromId}\0${b.toId}\0${b.kind}`));
+    result.featureGraph = { regions, paths, anchors, relations };
+  }
+  const anchors = new Set(result.featureGraph?.anchors.map(item => item.id) ?? []);
+  const paths = new Set(result.featureGraph?.paths.map(item => item.id) ?? []);
+  const regions = new Set(result.featureGraph?.regions.map(item => item.id) ?? []);
+  if (raw.settlementPlan !== undefined) {
+    const value = record(raw.settlementPlan, 'world_invalid_settlement_plan');
+    keys(value, ['settlements'], 'world_unknown_settlement_plan_field');
+    const settlements = list(value.settlements, 64, 'world_settlement_plan_quota').map(item => {
+      const settlement = record(item, 'world_invalid_settlement_plan');
+      keys(settlement, ['id', 'anchorId', 'role'], 'world_unknown_settlement_plan_field');
+      const parsed = { id: safeId(settlement.id, 'world_invalid_settlement_id'),
+        anchorId: safeId(settlement.anchorId, 'world_invalid_settlement_anchor'),
+        role: semanticText(settlement.role, 'world_invalid_settlement_role') };
+      if (!anchors.has(parsed.anchorId)) fail('world_unknown_settlement_anchor');
+      return parsed;
+    }).sort(byId);
+    unique(settlements.map(item => item.id), 'world_duplicate_settlement_id');
+    result.settlementPlan = { settlements };
+  }
+  if (raw.mobilityPlan !== undefined) {
+    const value = record(raw.mobilityPlan, 'world_invalid_mobility_plan');
+    keys(value, ['routes'], 'world_unknown_mobility_plan_field');
+    const routes = list(value.routes, 64, 'world_mobility_route_quota').map(item => {
+      const route = record(item, 'world_invalid_mobility_route');
+      keys(route, ['id', 'pathId', 'mode', 'connects'], 'world_unknown_mobility_route_field');
+      const parsed = { id: safeId(route.id, 'world_invalid_mobility_route'), pathId: safeId(route.pathId, 'world_invalid_mobility_path'),
+        mode: semanticText(route.mode, 'world_invalid_mobility_mode'),
+        connects: list(route.connects, 32, 'world_mobility_connection_quota')
+          .map(id => safeId(id, 'world_invalid_mobility_connection')) };
+      if (!paths.has(parsed.pathId) || parsed.connects.some(id => !anchors.has(id))) fail('world_unknown_mobility_feature');
+      unique(parsed.connects, 'world_duplicate_mobility_connection');
+      return parsed;
+    }).sort(byId);
+    unique(routes.map(item => item.id), 'world_duplicate_mobility_route');
+    result.mobilityPlan = { routes };
+  }
+  if (raw.explorationPlan !== undefined) {
+    const value = record(raw.explorationPlan, 'world_invalid_exploration_plan');
+    keys(value, ['pointsOfInterest', 'sequence'], 'world_unknown_exploration_plan_field');
+    const pointsOfInterest = list(value.pointsOfInterest, 128, 'world_poi_quota').map(item => {
+      const poi = record(item, 'world_invalid_poi');
+      keys(poi, ['id', 'anchorId', 'purpose'], 'world_unknown_poi_field');
+      const parsed = { id: safeId(poi.id, 'world_invalid_poi_id'), anchorId: safeId(poi.anchorId, 'world_invalid_poi_anchor'),
+        purpose: semanticText(poi.purpose, 'world_invalid_poi_purpose') };
+      if (!anchors.has(parsed.anchorId)) fail('world_unknown_poi_anchor');
+      return parsed;
+    }).sort(byId);
+    unique(pointsOfInterest.map(item => item.id), 'world_duplicate_poi_id');
+    const poiIds = new Set(pointsOfInterest.map(item => item.id));
+    const sequence = list(value.sequence, 128, 'world_exploration_sequence_quota')
+      .map(id => safeId(id, 'world_invalid_exploration_sequence'));
+    if (sequence.some(id => !poiIds.has(id))) fail('world_unknown_exploration_poi');
+    unique(sequence, 'world_duplicate_exploration_poi');
+    result.explorationPlan = { pointsOfInterest, sequence };
+  }
+  if (raw.intentionalEmptyAreas !== undefined) {
+    result.intentionalEmptyAreas = list(raw.intentionalEmptyAreas, 64, 'world_empty_area_quota').map(item => {
+      const area = record(item, 'world_invalid_empty_area');
+      keys(area, ['id', 'regionId', 'purpose'], 'world_unknown_empty_area_field');
+      const parsed = { id: safeId(area.id, 'world_invalid_empty_area_id'), regionId: safeId(area.regionId, 'world_invalid_empty_region'),
+        purpose: semanticText(area.purpose, 'world_invalid_empty_purpose') };
+      if (!regions.has(parsed.regionId)) fail('world_unknown_empty_region');
+      return parsed;
+    }).sort(byId);
+    unique(result.intentionalEmptyAreas.map(item => item.id), 'world_duplicate_empty_area_id');
+  }
+  return result;
+}
+
 /** Reject invalid contracts instead of silently relocating an agent's work. */
 export function validateWorldPlan(input: unknown): WorldPlan {
   const raw = record(input, 'world_invalid_plan');
-  keys(raw, ['version', 'id', 'revision', 'prompt', 'recipe', 'ecology', 'towns', 'roads'], 'world_unknown_plan_field');
+  keys(raw, ['version', 'id', 'revision', 'prompt', 'recipe', 'ecology', 'towns', 'roads', 'whitebox', 'concept', 'featureGraph',
+    'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas'], 'world_unknown_plan_field');
   if (raw.version !== 1) fail('world_invalid_plan_version');
   const revision = number(raw.revision, 1, Number.MAX_SAFE_INTEGER, 'world_invalid_revision');
   if (!Number.isInteger(revision)) fail('world_invalid_revision');
@@ -172,8 +333,13 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   const ecology = validateEcologyRules(raw.ecology);
   const plan: WorldPlan = {
     version: 1, id: safeId(raw.id, 'world_invalid_plan_id'), revision,
-    prompt: text(raw.prompt, 'world_invalid_prompt', 8000, true), recipe, ecology, towns, roads
+    prompt: text(raw.prompt, 'world_invalid_prompt', 8000, true), recipe, ecology, towns, roads,
+    ...parseSemanticPlan(raw, bound)
   };
+  if (raw.whitebox !== undefined) {
+    if (raw.whitebox !== true) fail('world_invalid_whitebox_marker');
+    plan.whitebox = true;
+  }
   unique([plan.id, ...ecology.map(rule => rule.id), ...roads.map(road => road.id),
     ...towns.flatMap(town => [town.id, ...town.ports.map(port => port.id)])]);
   for (let i = 0; i < towns.length; i++) {
@@ -195,7 +361,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
     }
   }
   validateRoadGeometry(plan.roads, recipe.size);
-  validateTerrain(plan);
+  if (!plan.whitebox) validateTerrain(plan);
   return plan;
 }
 
@@ -213,6 +379,20 @@ function keyOf(plan: WorldPlan): string {
 }
 export function worldPlanKey(plan: WorldPlan): string {
   return keyOf(validateWorldPlan(plan));
+}
+/** Compact semantic projection for deterministic agent inspection; it does not score or repair the plan. */
+export function observeWorldWhitebox(plan: WorldPlan): WorldExplorationObservation {
+  const checked = validateWorldPlan(plan);
+  const anchors = new Map(checked.featureGraph?.anchors.map(anchor => [anchor.id, anchor.position]) ?? []);
+  return {
+    scope: 'planned',
+    pointsOfInterest: (checked.explorationPlan?.pointsOfInterest ?? []).map(({ id, anchorId, purpose }) => (
+      { id, anchorId, purpose, plannedPosition: [...anchors.get(anchorId)!] }
+    )),
+    sequence: [...(checked.explorationPlan?.sequence ?? [])],
+    routes: (checked.mobilityPlan?.routes ?? []).map(({ id, mode, connects }) => ({ id, mode, connects: [...connects] })),
+    intentionalEmptyAreas: (checked.intentionalEmptyAreas ?? []).map(({ id, regionId, purpose }) => ({ id, regionId, purpose }))
+  };
 }
 export function createTownTasks(plan: WorldPlan): TownTask[] {
   const checked = validateWorldPlan(plan), worldKey = keyOf(checked);

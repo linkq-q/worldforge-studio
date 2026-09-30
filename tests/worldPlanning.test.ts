@@ -3,7 +3,7 @@ import type { MapGuide } from '../src/shared/mapGuide';
 import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
 import {
   buildingsOverlap, createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
-  validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldTownBuildingQuota,
+  observeWorldWhitebox, validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldTownBuildingQuota,
   type TownPatch, type WorldBundle, type WorldPlan
 } from '../src/shared/worldPlanning';
 
@@ -37,6 +37,73 @@ function patch(plan: WorldPlan, index: number): TownPatch {
 }
 
 describe('hierarchical world planning contracts', () => {
+  it('canonicalizes semantic intent and exposes a compact deterministic exploration observation', () => {
+    const plan = fixture();
+    Object.assign(plan, {
+      concept: { premise: 'A divided valley reconnects', themes: ['renewal', 'distance'], experience: 'Navigate by landmarks' },
+      featureGraph: {
+        regions: [
+          { id: 'quiet-west', kind: 'wilderness', name: 'Quiet West', center: [-3500, 0], radius: 900 },
+          { id: 'inhabited-east', kind: 'settled', name: 'Inhabited East', center: [3500, 0], radius: 900 }
+        ],
+        paths: [{ id: 'valley-road', kind: 'road', name: 'Valley Road', points: [[-2000, 0], [0, 250], [2000, 0]], width: 12 }],
+        anchors: [
+          { id: 'east-gate', kind: 'settlement', position: [2000, 0], regionId: 'inhabited-east' },
+          { id: 'west-ruin', kind: 'landmark', position: [-2000, 0], regionId: 'quiet-west' }
+        ],
+        relations: [{ fromId: 'valley-road', toId: 'west-ruin', kind: 'reaches' }]
+      },
+      settlementPlan: { settlements: [{ id: 'east-hamlet', anchorId: 'east-gate', role: 'safe hub' }] },
+      mobilityPlan: { routes: [{ id: 'main-route', pathId: 'valley-road', mode: 'walk', connects: ['west-ruin', 'east-gate'] }] },
+      explorationPlan: {
+        pointsOfInterest: [
+          { id: 'ruin-clue', anchorId: 'west-ruin', purpose: 'reveal the old crossing' },
+          { id: 'gate-supplies', anchorId: 'east-gate', purpose: 'prepare for the crossing' }
+        ],
+        sequence: ['gate-supplies', 'ruin-clue']
+      },
+      intentionalEmptyAreas: [{ id: 'western-breathing-room', regionId: 'quiet-west', purpose: 'preserve anticipation' }]
+    });
+    const checked = validateWorldPlan(plan);
+    expect(checked.concept?.themes).toEqual(['distance', 'renewal']);
+    expect(checked.featureGraph?.anchors.map(item => item.id)).toEqual(['east-gate', 'west-ruin']);
+    expect(checked.featureGraph?.paths[0].points).toEqual([[-2000, 0], [0, 250], [2000, 0]]);
+    expect(observeWorldWhitebox(plan)).toEqual({
+      scope: 'planned',
+      pointsOfInterest: [
+        { id: 'gate-supplies', anchorId: 'east-gate', purpose: 'prepare for the crossing', plannedPosition: [2000, 0] },
+        { id: 'ruin-clue', anchorId: 'west-ruin', purpose: 'reveal the old crossing', plannedPosition: [-2000, 0] }
+      ],
+      sequence: ['gate-supplies', 'ruin-clue'],
+      routes: [{ id: 'main-route', mode: 'walk', connects: ['west-ruin', 'east-gate'] }],
+      intentionalEmptyAreas: [{ id: 'western-breathing-room', regionId: 'quiet-west', purpose: 'preserve anticipation' }]
+    });
+    const reordered = structuredClone(plan);
+    reordered.featureGraph!.anchors.reverse();
+    reordered.explorationPlan!.pointsOfInterest.reverse();
+    expect(observeWorldWhitebox(reordered)).toEqual(observeWorldWhitebox(plan));
+    expect(worldPlanKey(reordered)).toBe(worldPlanKey(plan));
+  });
+
+  it('rejects semantic references that do not resolve inside the feature graph', () => {
+    const plan = fixture();
+    plan.featureGraph = { regions: [], paths: [], anchors: [], relations: [] };
+    plan.explorationPlan = { pointsOfInterest: [{ id: 'lost', anchorId: 'missing', purpose: 'unreachable' }], sequence: ['lost'] };
+    expect(() => validateWorldPlan(plan)).toThrow('world_unknown_poi_anchor');
+  });
+
+  it('keeps whitebox plans opt-in and free of terrain realization gates', () => {
+    const plan = fixture();
+    plan.whitebox = true;
+    plan.towns = [];
+    plan.recipe = { version: 1, seed: 42, size: 16000, constraints: [{ region: 'west', biome: 'ocean' }] };
+    plan.roads = [road('concept-route', [[-6000, 0], [-5000, 0]])];
+    expect(validateWorldPlan(plan).whitebox).toBe(true);
+    const invalid = structuredClone(plan) as unknown as Record<string, unknown>;
+    invalid.whitebox = false;
+    expect(() => validateWorldPlan(invalid)).toThrow('world_invalid_whitebox_marker');
+  });
+
   it('canonicalizes complete plans, while preserving ordered geometry and including every semantic field', () => {
     const original = fixture(), reordered = structuredClone(original);
     reordered.towns.reverse(); reordered.ecology.reverse();
