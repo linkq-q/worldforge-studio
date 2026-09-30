@@ -23,6 +23,8 @@ import type { MapGrassLayer } from '../shared/mapGrass';
 import type { PaletteCoverageReport } from './paletteMaterialRuntime';
 import {
   buildNormalizedEditableMapGroupCore,
+  buildStructuredWaterGroup,
+  disposeStructuredWaterGroup,
   type MapRenderOptions,
   type RenderedMap,
   type RenderedMapDebugStats,
@@ -218,6 +220,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     environment: null,
     waterEnvironment: null
   };
+  const compactOcean = bundle.plan.recipe.size <= CONTENT_DISTANCE_LIMIT
+    ? buildCompactWorldOcean()
+    : null;
+  if (compactOcean) modelsRoot.add(compactOcean);
 
   const initialRequest = normalizedReconcileRequest(
     options.worldInitialView?.x ?? map.spawnPoints[0]?.[0] ?? 0,
@@ -245,7 +251,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       distance > CONTENT_DISTANCE_LIMIT ? distance : 0
     );
     const oceanAnchor = worldOceanAnchor(bundle.plan.recipe.size, focusX, focusZ);
-    const oceanOwner = tiles.find(tile => tileContains(tile, oceanAnchor.x, oceanAnchor.z))
+    const oceanOwner = compactOcean ? undefined : tiles.find(tile => tileContains(tile, oceanAnchor.x, oceanAnchor.z))
       ?? tiles.find(tile => tileContains(tile, focusX, focusZ));
     const desiredTerrain = new Map(tiles.map(tile => {
       const logicalKey = tileKey(tile);
@@ -462,6 +468,30 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       assets: [],
       collisionBake: undefined
     };
+  }
+
+  function buildCompactWorldOcean(): THREE.Group {
+    const size = bundle.plan.recipe.size;
+    const tile: WorldTile = { x: -size / 2, z: -size / 2, size };
+    const resolution = Math.min(129, Math.max(65, Math.ceil(size / 4) + 1));
+    const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample, false);
+    const oceanMap: EditableMap = {
+      ...map,
+      id: `${map.id}:world-ocean`,
+      world: undefined,
+      box: { ...map.box, size: [size, map.box.size[1], size] },
+      sceneMode: 'outdoor', room: null, interiorArtDirection: null,
+      terrain: { resolutionX: resolution, resolutionZ: resolution, heights: Array.from(sampled.heights) },
+      grassLayers: [], paintStrokes: [], objects: [], spawnPoints: [[0, sample(0, 0).height, 0]],
+      waterBodies: [{
+        id: 'world-ocean', name: '海面', type: 'ocean', level: 0, depth: 12, width: size,
+        points: [[-size / 2, -size / 2], [size / 2, -size / 2], [size / 2, size / 2], [-size / 2, size / 2]]
+      }],
+      visualSemantics: { version: 1, zones: [], wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind } },
+      layout: createDefaultMapLayout([size, map.box.size[1], size]), guides: [],
+      designSemantics: DEFAULT_MAP_DESIGN_SEMANTICS, assets: [], collisionBake: undefined
+    };
+    return buildStructuredWaterGroup(oceanMap);
   }
 
   function applyWorldTerrainEdgeNormals(group: THREE.Object3D, tile: WorldTile, centerX: number, centerZ: number): void {
@@ -964,6 +994,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       entries.clear();
       contentEntries.forEach(entry => { unmountContentEntry(entry); disposeContentEntry(entry); });
       contentEntries.clear();
+      if (compactOcean) disposeStructuredWaterGroup(compactOcean);
       root.clear();
     }
   };

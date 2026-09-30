@@ -1309,6 +1309,10 @@ export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoas
   return group;
 }
 
+export function disposeStructuredWaterGroup(group: THREE.Group): void {
+  disposeObject(group);
+}
+
 interface WaterShoreBinding {
   texture: THREE.DataTexture;
   depthTexture?: THREE.DataTexture;
