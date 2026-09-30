@@ -220,6 +220,10 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat).toHaveBeenCalledTimes(1);
     expect(mocks.llmChat.mock.calls[0][1]).toMatchObject({ provider: 'gpt', maxAttempts: 1,
       traceStage: 'world.whitebox.construction' });
+    const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content as string;
+    expect(systemPrompt).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
+    expect(systemPrompt).toContain("role:'house'|'shop'|'workshop'|'tree'|'landmark'");
+    expect(systemPrompt).toContain('Do not put width, depth, height or use directly on an asset object.');
     expect(mocks.generateModel).not.toHaveBeenCalled();
     expect(result.paidCallCount).toBe(1);
     expect(result.originalPlan).toEqual(whiteboxPlan);
