@@ -147,19 +147,6 @@ describe('hierarchical world planning contracts', () => {
     expect(validateTownPatch(plan, connected).streets).toHaveLength(2);
   });
 
-  it('rejects a tagged road nub as a harbor quay while accepting a usable dry shore approach', () => {
-    const plan = fixture(), short = patch(plan, 0);
-    short.streets.push({
-      ...road('harbor-quay', [[0, 0], [-3.03, 0]], 6.4),
-      tags: ['settlement', 'waterfront', 'sea-landing', 'harbor-quay']
-    });
-    expect(() => validateTownPatch(plan, short)).toThrow('world_harbor_quay_too_short');
-
-    short.streets.at(-1)!.points[1] = [-12.8, 0];
-    expect(validateTownPatch(plan, short).streets.find(street => street.id === 'harbor-quay')?.points)
-      .toEqual([[0, 0], [-12.8, 0]]);
-  });
-
   it('rejects buildings outside their core, overlaps and exact segment collisions without sparse sampling', () => {
     const plan = fixture();
     const outside = patch(plan, 0); outside.buildings[0].x = -190;

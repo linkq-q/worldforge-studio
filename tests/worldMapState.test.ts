@@ -4,6 +4,7 @@ import path from 'node:path';
 import { expect, it } from 'vitest';
 import { createEmptyMap, normalizeMap, sampleTerrainHeight } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
+import { worldPlanKey } from '../src/shared/worldPlanning';
 import { validateWorldMapState, worldMapSampler, worldMapTerrainContext, type WorldMapState } from '../src/shared/worldMapState';
 import { createWorldSampler } from '../src/shared/worldTerrain';
 import { MapStore } from '../src/server/mapStore';
@@ -43,6 +44,21 @@ it('preserves ecology asset intent while accepting legacy untyped tree bindings'
   expect(validateWorldMapState(state).assets).toEqual(state.assets);
   expect(() => validateWorldMapState({...state, assets: [{...state.assets[1], ecologyKind: 'pine'}]}))
     .toThrow('invalid_world_asset_binding');
+});
+
+it('loads a legacy world whose tagged harbor quay is shorter than current generation quality', () => {
+  const state = world(), sample = createWorldSampler(state.bundle.plan.recipe);
+  state.bundle.plan.towns = [{
+    id: 'harbor', name: 'Harbor', prompt: 'Legacy fishing town', center: [0, 0], radius: 100, blend: 100,
+    foundation: sample(0, 0).height, terrainMode: 'conform', targetWaterBodyId: 'sea', ports: []
+  }];
+  state.bundle.patches = [{
+    townId: 'harbor', worldKey: '', summary: 'Legacy generated harbor', buildings: [],
+    streets: [{id: 'harbor-sea-landing', name: 'harbor-sea-landing', points: [[0, 0], [3.03, 0]],
+      curve: 'polyline', closed: false, width: 6.4, tags: ['settlement', 'waterfront', 'sea-landing', 'harbor-quay']}]
+  }];
+  state.bundle.patches[0].worldKey = worldPlanKey(state.bundle.plan);
+  expect(validateWorldMapState(state).bundle.patches[0].streets[0].points).toEqual([[0, 0], [3.03, 0]]);
 });
 
 it('saves a world as one undoable transaction and carries its bound assets through export/import', async () => {

@@ -367,7 +367,11 @@ export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'tar
   if(town.radius>=50&&ordinaryBuildings<ordinaryFloor) planningIssues.push('underbuilt_settlement');
   if(town.radius>=50&&builtExtent<extentFloor) planningIssues.push('clustered_settlement');
   if(town.targetWaterBodyId==='sea'&&(settings.waterfrontBias??0)>=.5
-    &&!patch.streets.some(street=>street.tags.includes('sea-landing'))) planningIssues.push('missing_sea_landing');
+    &&!patch.streets.some(street=>street.tags.includes('sea-landing')
+      &&street.points.slice(1).reduce((length,point,index)=>length+Math.hypot(
+        point[0]-street.points[index][0],point[1]-street.points[index][1]),0)>=Math.max(12,street.width*2))) {
+    planningIssues.push('missing_sea_landing');
+  }
   return {builtExtent,planningIssues};
 }
 

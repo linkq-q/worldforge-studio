@@ -442,6 +442,9 @@ describe('world generation compiler', () => {
     const settings={kind:'village' as const,density:.48,waterfrontBias:.85};
     expect(auditWorldSettlementCoverage(town,small,settings,8).planningIssues).toEqual([
       'underbuilt_settlement','clustered_settlement','missing_sea_landing']);
+    const taggedStub={...small,streets:[{...small.streets[0],width:6.4,points:[[0,0],[3.03,0]] as [number,number][],
+      tags:['waterfront','sea-landing','harbor-quay']}]};
+    expect(auditWorldSettlementCoverage(town,taggedStub,settings,32).planningIssues).toContain('missing_sea_landing');
     const grown={buildings:[building('west',-75,-40),building('east',75,40)],
       streets:[{...small.streets[0],tags:['waterfront','sea-landing']}]};
     expect(auditWorldSettlementCoverage(town,grown,settings,32)).toMatchObject({
