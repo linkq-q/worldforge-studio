@@ -546,6 +546,14 @@ describe('world generation compiler', () => {
     expect(WORLD_GENERATION_PROMPT).toContain('Do not copy one civic checklist into every settlement');
   });
 
+  it('preserves an explicit resident count as deterministic settlement capacity', () => {
+    const raw=rawSoloIntent() as any;
+    raw.plan.towns[0].population=250;
+    expect(parseWorldIntentDraft(raw,request).plan.towns[0].population).toBe(250);
+    raw.plan.towns[0].population=250.5;
+    expect(()=>parseWorldIntentDraft(raw,request)).toThrow('invalid_world_intent_town');
+  });
+
   it('shows GPT only the requested reusable catalog without model payloads', async () => {
     const {layout}=soloLayout();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(rawSoloIntent())).mockResolvedValueOnce(JSON.stringify(layout));
@@ -566,6 +574,7 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain("reliefProfile:'compact'");
     expect(messages[0].content).toContain('for size 500 these minima are 50m and 20m');
     expect(messages[0].content).toContain('one useful public or landmark building per 10..20 ordinary buildings');
+    expect(messages[0].content).toContain('add population as an integer approximate resident count');
     expect(messages[0].content).toContain('about eight ordinary houses gets at most one public landmark');
     expect(messages[0].content).toContain('Size and distribute inhabited districts against the usable land');
     expect(messages[0].content).toContain('one ordinary dwelling per four to six residents');

@@ -24,6 +24,8 @@ export interface TownIntent {
   ports: TownPort[];
   terrainMode?: 'platform' | 'conform';
   targetWaterBodyId?: string;
+  /** Approximate permanent residents; used to keep generated housing proportional to authored intent. */
+  population?: number;
 }
 export interface TownPort { id: string; guideId: string; position: [number, number]; width: number }
 export interface TownTask { worldKey: string; town: TownIntent; seed: number }
@@ -127,7 +129,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   const roads = list(raw.roads, 32, 'world_road_quota').map(value => guide(value, bound)).sort(byId);
   const towns = list(raw.towns, 12, 'world_town_quota').map(value => {
     const item = record(value, 'world_invalid_town');
-    keys(item, ['id', 'name', 'prompt', 'center', 'radius', 'blend', 'foundation', 'ports', 'terrainMode', 'targetWaterBodyId'], 'world_unknown_town_field');
+    keys(item, ['id', 'name', 'prompt', 'center', 'radius', 'blend', 'foundation', 'ports', 'terrainMode', 'targetWaterBodyId', 'population'], 'world_unknown_town_field');
     const radius = number(item.radius, Math.min(100, recipe.size / 10), 1000, 'world_invalid_town_radius');
     const town: TownIntent = {
       id: safeId(item.id, 'world_invalid_town_id'),
@@ -159,6 +161,10 @@ export function validateWorldPlan(input: unknown): WorldPlan {
       const target = safeId(item.targetWaterBodyId, 'world_invalid_town_water_target');
       if (target !== 'sea' && !recipe.waterBodies?.some(body => body.id === target)) fail('world_unknown_town_water_target');
       town.targetWaterBodyId = target;
+    }
+    if (item.population !== undefined) {
+      town.population = number(item.population, 1, 1_000_000, 'world_invalid_town_population');
+      if (!Number.isInteger(town.population)) fail('world_invalid_town_population');
     }
     if (town.center.some(value => Math.abs(value) + radius + town.blend > bound)) fail('world_town_outside');
     return town;

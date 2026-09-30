@@ -69,6 +69,7 @@ interface WorldIntentTown extends WorldSiteIntent {
   pattern: 'organic' | 'grid';
   density: number;
   publicBuildings: WorldLandmarkRequirement[];
+  population?: number;
 }
 interface WorldIntentRoad {
   id: string;
@@ -96,7 +97,7 @@ interface WorldLayoutChoice {
   assets: WorldAssetRequest[];
 }
 
-const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. Return complete JSON only, with exactly this nesting: {"plan":{"version":1,"id":"world-id","revision":1,"prompt":"exact request.prompt","recipe":{},"ecology":[],"towns":[],"roads":[]}}. The root has only plan; recipe, ecology, towns and roads are children of plan. Request fields such as size, seed, generateAssets and repairAttempts are not fields of plan (seed and size belong inside plan.recipe). Do not pretty-print or repeat descriptions across fields. Copy request.prompt byte-for-byte into plan.prompt; elaborate only in each town.prompt.
+const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. Return complete JSON only, with exactly this nesting: {"plan":{"version":1,"id":"world-id","revision":1,"prompt":"exact request.prompt","recipe":{},"ecology":[],"towns":[],"roads":[]}}. The root has only plan; recipe, ecology, towns and roads are children of plan. Request fields such as size, seed, generateAssets and repairAttempts are not fields of plan (seed and size belong inside plan.recipe). Do not pretty-print or repeat descriptions across fields. Copy request.prompt byte-for-byte into plan.prompt; elaborate only in each town.prompt. When the request states or clearly implies a population, add population as an integer approximate resident count to that town.
 This is terrain intent, not final geometry. World coordinates are centered on (0,0), north is negative Z (for example a northern mountain is near [0,-150]) and west is negative X: every authored landform center, path point, water region and biome patch must lie inside [-size/2,+size/2] on both X and Z (for size 500: -250..250), never 0..size. Keep each feature radius and feather inside that same world extent. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
 recipe={version:1,seed,size,reliefProfile:'compact',heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Regions: west/east/north/south/northwest/northeast/southwest/southeast/center. Biomes: ocean/grassland/forest/desert/mountains/snow. Assign at most one biome constraint to each broad region; put interior forest and mountain detail in bounded biome patches and landforms instead of duplicating a region. For an inhabited island, every map edge must sample as ocean, but do not blanket all eight outer regions with ocean when four side constraints already keep the sampled boundary wet: excessive corner anchors can drown the interior. Do not assign non-ocean corner constraints on a sea island; they can override the cardinal ocean anchors and reopen the boundary. Put mountain, forest and other corner detail in bounded interior landforms and biome patches. Leave a broad connected dry interior for its stated population, streets and routes: its continuous dry footprint must exceed the combined 2*radius by 2*radius cores of all named towns, and its narrow dimension must exceed the largest town diameter. Build that footprint with a broad low central landform plus overlapping low interior landforms sized for the named cores before sculpting ridges, inlets and beaches; a small decorative mound is not an inhabited island. Strongly ocean-constrained compact islands may use heightScale around 0.02..0.04 and create local mountain relief with authored landforms; otherwise for playable 500..2000m worlds prefer heightScale around 0.08..0.15. A landform alone does not make a sea; a harbor without sampled below-zero sea is invalid. Place steep ridges away from the needed buildable coastal terrace; keep cuts local instead of making a continuous cliff beside the town. Landform center and radius are numeric two-element arrays, never strings; height is a metre value (for example 35 for a substantial hill, 1 for a low mound).
 Brush region is {kind:'circle',center:[x,z],radius} or {kind:'path',points:[[x,z],...],width}. Every path region requires numeric width 1..1000, including grade brushes, rivers, biome patches and ecology regions. terrainBrushes are {id,mode:'raise'|'lower',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:PATH,heights:[one per path point],strength?,feather?}. Use bounded local refinement only. For a harbor, preserve a naturally sloped dry terrace reaching the sea; do not carve a whole bay with one circular lower brush or a long straight trench, which creates a cliff and can disconnect the working street. Do not guess road or settlement grade heights: the server samples and grades their access after choosing sites. waterBodies=[{id,type:'lake'|'river',region,levels:[one for circle or one per path point],depth,shorelineSmoothness?:0..1,shorelineIrregularity?:0..0.4,shorelineProfile?:'steep'|'gentle',seed?:uint32}]. Lakes require circle regions and usually use smoothness 0.7..0.95 and irregularity 0.08..0.28; rivers require path regions, smoothness 0.65..0.9 and irregularity 0. shorelineProfile controls bank width and slope. Sea is terrain below zero. biomePatches=[{id,region,biome,feather?}] use only a valid biome from the list above. Omit biomePatches for broad north/south/east/west forest, mountain or coast areas; constraints already express those. A local patch and its feather must remain entirely inside the world bounds. Rocky terrain uses mountains, not a 'rock' biome.
@@ -183,6 +184,11 @@ function finite(input: unknown, min: number, max: number, code: string): number 
   if (typeof input !== 'number' || !Number.isFinite(input) || input < min || input > max) throw new Error(code);
   return input;
 }
+function finiteInteger(input: unknown, min: number, max: number, code: string): number {
+  const value=finite(input,min,max,code);
+  if(!Number.isInteger(value)) throw new Error(code);
+  return value;
+}
 
 function worldIntentError(error: unknown, input: unknown): Error {
   if (!(error instanceof Error) || error.message !== 'invalid_world_terrain_region') return error as Error;
@@ -232,7 +238,7 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
   }
   const townIds = new Set<string>();
   const towns = raw.towns.map(value => {
-    const item = exactRecord(value, ['id','name','prompt','radius','blend','terrainMode','region','kind','pattern','density','waterfrontBias','targetWaterBodyId','publicBuildings'],
+    const item = exactRecord(value, ['id','name','prompt','radius','blend','terrainMode','region','kind','pattern','density','population','waterfrontBias','targetWaterBodyId','publicBuildings'],
       'invalid_world_intent_town','world_unknown_intent_town_field');
     const id = generationId(item.id, 'invalid_world_intent_town');
     if (townIds.has(id) || typeof item.name !== 'string' || !item.name.trim() || typeof item.prompt !== 'string'
@@ -272,6 +278,7 @@ export function parseWorldIntentDraft(input: unknown, request: WorldGenerationRe
       pattern:pattern as 'organic'|'grid',
       density:finite(item.density??(kind==='city'?.82:.38),.05,1,'invalid_world_intent_town'),publicBuildings,
       region:item.region as WorldRegion,
+      ...(item.population===undefined?{}:{population:finiteInteger(item.population,1,1_000_000,'invalid_world_intent_town')}),
       ...(item.waterfrontBias===undefined?{}:{waterfrontBias:finite(item.waterfrontBias,0,1,'invalid_world_intent_town')}),
       ...(targetWaterBodyId===undefined?{}:{targetWaterBodyId})};
   });
@@ -418,7 +425,7 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
       const plan:WorldPlan={version:1,id:intent.plan.id,revision:intent.plan.revision,prompt:intent.plan.prompt,
         recipe:intent.plan.recipe,ecology:intent.plan.ecology,roads:[],towns:[{id:town.id,name:town.name,prompt:town.prompt,
           center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[],
-          ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})}]};
+          ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{}),...(town.population?{population:town.population}:{})}]};
       try {
         let patch=generateWorldSettlement(plan,town.id,sample,{kind:town.kind,pattern:town.pattern,density:town.density,waterfrontBias:town.waterfrontBias??0});
         const layouts:WorldSitingEvidence['landmarkLayouts']=[];
@@ -485,7 +492,7 @@ export function createWorldSitingEvidence(intent: WorldIntentDraft): WorldSiting
       ecology:intent.plan.ecology,roads,towns:intent.plan.towns.filter(town=>connectedTownIds.has(town.id)).map(town=>{
         const site=selected.get(town.id)!;return {id:town.id,name:town.name,prompt:town.prompt,center:site.center,
           radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:ports.get(town.id)??[],
-          ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})};})};
+          ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{}),...(town.population?{population:town.population}:{})};})};
     const layouts:WorldSitingEvidence['landmarkLayouts']=[];
     try {
       const plannedTowns=intent.plan.towns.filter(item=>connectedTownIds.has(item.id))
@@ -651,7 +658,7 @@ export function materializeWorldIntent(intent: WorldIntentDraft, evidence: World
   });
   const towns=intent.plan.towns.map(town=>{const site=chosen.get(town.id)!;return {id:town.id,name:town.name,prompt:town.prompt,
     center:site.center,radius:town.radius,blend:town.blend,foundation:site.foundation,terrainMode:'conform' as const,ports:ports.get(town.id)??[],
-    ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})};});
+    ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{}),...(town.population?{population:town.population}:{})};});
   const recipe={...intent.plan.recipe,terrainBrushes:[...(intent.plan.recipe.terrainBrushes??[]),...construction]};
   const planned=cachedWorldSampler(createWorldSampler(recipe)),spacing=worldRoadSampleSpacing(recipe.size);
   const roads=roadParts.map(({road,fromPort,toPort})=>{
@@ -912,7 +919,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
             prompt:proposed!.plan.prompt,recipe:proposed!.plan.recipe,ecology:proposed!.plan.ecology,roads:[],
             towns:[{id:town.id,name:town.name,prompt:town.prompt,center:site.center,radius:town.radius,
               blend:town.blend,foundation:site.foundation,terrainMode:'conform',ports:[],
-              ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{})}]};
+              ...(town.targetWaterBodyId?{targetWaterBodyId:town.targetWaterBodyId}:{}),...(town.population?{population:town.population}:{})}]};
           try {
             let patch=generateWorldSettlement(previewPlan,town.id,sample,{kind:town.kind,pattern:town.pattern,
               density:town.density,waterfrontBias:town.waterfrontBias??0});
@@ -1015,8 +1022,12 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     else if(connectedPorts<town.ports.length) planningIssues.push('missing_port_connection');
     const coverage=auditWorldSettlementCoverage(town,p,settings,ordinaryBuildings);
     planningIssues.push(...coverage.planningIssues);
+    const populationHousingTarget=town.population===undefined?undefined:Math.ceil(town.population/5);
+    if(populationHousingTarget!==undefined&&ordinaryBuildings<populationHousingTarget) planningIssues.push('population_underbuilt');
     return {townId:p.townId,...auditWorldSettlement(p,town,sample),publicBuildings,ordinaryBuildings,
-      recommendedPublicBuildings,connectedPorts,portCount:town.ports.length,builtExtent:coverage.builtExtent,planningIssues};
+      recommendedPublicBuildings,connectedPorts,portCount:town.ports.length,builtExtent:coverage.builtExtent,
+      ...(populationHousingTarget===undefined?{}:{population:town.population,populationHousingTarget,
+        populationHousingShortfall:Math.max(0,populationHousingTarget-ordinaryBuildings)}),planningIssues};
   });
   recordGenerationTrace('world.geometry.preview',{draft:compiled.draft,diagnostics});
   const rejected=diagnostics.filter(item=>item.planningIssues.some(issue=>

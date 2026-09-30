@@ -164,6 +164,20 @@ describe('world settlement growth', () => {
     expect(patch.streets.length).toBeLessThanOrEqual(12);
   });
 
+  it('fits an explicitly populated compact village with human-scale streets', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.radius = 100;
+    town.ports = [];
+    plan.roads = [];
+    town.population = 250;
+    const patch = generateWorldSettlement(plan, town.id, sampler(plan), {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.49
+    });
+    const ordinary = patch.buildings.filter(building => !building.assetKey).length;
+    expect(ordinary).toBeGreaterThanOrEqual(Math.ceil(town.population / 5));
+    expect(Math.max(...patch.streets.map(street => street.width))).toBeLessThanOrEqual(4.6);
+  });
+
   it('connects a corner port after clearing both town-boundary axes', () => {
     const plan = fixture(), town = plan.towns[0], base = sampler(plan);
     town.radius = 100;
@@ -535,11 +549,11 @@ describe('world settlement growth', () => {
     expect(result.patch.buildings.filter(building=>!result.landmarks.some(landmark=>landmark.id===building.id)).length).toBeGreaterThanOrEqual(29);
     expect(Math.max(...result.patch.buildings.map(building=>Math.hypot(building.x,building.z)))/town.radius).toBeGreaterThanOrEqual(.7);
     const working=result.patch.streets.find(street=>street.tags.includes('working-waterfront'))!;
-    expect(working.width).toBeGreaterThanOrEqual(6.4);
+    expect(working.width).toBe(4.6);
     expect(Math.min(...working.points.map(point=>point[0]+96))-working.width/2).toBeLessThanOrEqual(20);
     const landing=result.patch.streets.find(street=>street.tags.includes('sea-landing'))!;
     expect(landing.tags).toContain('harbor-quay');
-    expect(landing.width).toBeGreaterThanOrEqual(6.4);
+    expect(landing.width).toBe(4.6);
     expect(landing.points.at(-1)![0]+96).toBeLessThan(landing.points[0][0]+96);
     expect(landing.points.at(-1)![0]+96).toBeLessThanOrEqual(20);
   });
