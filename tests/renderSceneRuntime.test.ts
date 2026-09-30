@@ -94,6 +94,16 @@ describe('applyRenderScheme', () => {
     expect(updateLighting).toHaveBeenCalled();
   });
 
+  it('keeps unschemed outdoor maps readable against a neutral daylight background', () => {
+    const { targets } = createTargets();
+    targets.map = createEmptyMap('outdoor', 'outdoor', [500, 80, 500], 'voxel', 'outdoor', [500, 80, 500]);
+    applyRenderScheme(targets, null);
+    expect((targets.scene.background as THREE.Color).getHex()).toBe(0x94afb6);
+    targets.map = createEmptyMap('indoor', 'indoor', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    applyRenderScheme(targets, null);
+    expect((targets.scene.background as THREE.Color).getHex()).toBe(0x111719);
+  });
+
   it('uses an indoor night profile instead of the outdoor daylight path', () => {
     const { targets, rendered } = createTargets();
     targets.map = createEmptyMap('night room', 'night-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);

@@ -47,6 +47,7 @@ import {
 
 /** Background used when no render scheme is applied. */
 const NEUTRAL_BACKGROUND = 0x111719;
+const NEUTRAL_OUTDOOR_BACKGROUND = 0x94afb6;
 
 /**
  * The slice of a `RenderSceneRuntime` that `applyRenderScheme` touches. Stated
@@ -457,7 +458,8 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     styleManager.applyStyle({ renderMode: 'pbr' });
     adapter.applyOutline({ mode: 'none', params: {} });
     adapter.applyPresentation({ mode: 'none', sketch: {}, paper: {}, comic: {} });
-    scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
+    scene.background = new THREE.Color(targets.map?.sceneMode === 'outdoor'
+      ? NEUTRAL_OUTDOOR_BACKGROUND : NEUTRAL_BACKGROUND);
     scene.fog = null;
     hemisphereLight.color.set(0xeaf6ff);
     hemisphereLight.groundColor.set(0x30382f);
