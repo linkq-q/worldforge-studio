@@ -581,7 +581,11 @@ describe('world generation compiler', () => {
     expect(messages[0].content).toContain('one ordinary dwelling per four to six residents');
     expect(messages[0].content).toContain('Roads connect two different town IDs only');
     expect(messages[0].content).toContain("Rocky terrain uses mountains, not a 'rock' biome");
-    expect(messages[0].content).toContain('reserve only one or two waterfront work buildings');
+    expect(messages[0].content).toContain('budget the whole public-building program simultaneously');
+    expect(messages[0].content).toContain('combined waterfront footprints plus gaps and access');
+    expect(messages[0].content).toContain('reserve a separate inland civic block for schools and services');
+    expect(messages[0].content).toContain('keep ridges, gullies and bay cuts away from both reserves');
+    expect(messages[0].content).toContain('use only one or two waterfront work buildings');
     expect(messages[0].content).toContain('Use 3..5m for rural walking/cart roads');
     expect(messages[0].content).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     const planningInput = JSON.parse(messages[1].content);
