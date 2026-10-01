@@ -360,6 +360,7 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('gentle downstream slope');
     expect(systemPrompt).toContain('meeting terrain and outlet compatible');
     expect(systemPrompt).toContain('Stop a river centerline at its first shoreline crossing');
+    expect(systemPrompt).toContain('A natural river needs a dry inland source and dry banks before its first ocean contact');
     expect(systemPrompt).toContain('never underwater');
     expect(systemPrompt).toContain('a connected, gently sloped shore-working terrace');
     expect(systemPrompt).toContain('without an intentionally authored crossing');
