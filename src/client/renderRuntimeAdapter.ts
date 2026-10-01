@@ -691,6 +691,8 @@ export class RenderRuntimeAdapter {
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
+          // The large ocean surface stretches this highlight into screen-wide diagonal stripes.
+          surface.importState({ uHighlightIntensity: 0 });
           const splash = syncWaterSurfaceOcean(surface, ocean);
           if (splash) mesh.add(splash);
           surface.material.transparent = true;
