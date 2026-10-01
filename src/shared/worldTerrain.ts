@@ -325,7 +325,110 @@ export function prepareWorldWaterBodies(input: WorldRecipe): PreparedWorldWaterB
   return createWorldTerrainContext(input).waterBodies;
 }
 
-function clipRiverAtImplicitOcean(water: MapWaterBody, terrainHeightAt: (x: number, z: number) => number): MapWaterBody {
+function worldWaterEndpointConnected(
+  waters: readonly WorldWaterBody[],
+  waterIndex: number,
+  point: readonly [number, number]
+): boolean {
+  return waters.some((water, index) => index !== waterIndex
+    && regionSample(water.region, point[0], point[1]).inside);
+}
+
+function mixRiverPathSample(start: RiverPathSample, end: RiverPathSample, t: number): RiverPathSample {
+  return {
+    point: [mix(start.point[0], end.point[0], t), mix(start.point[1], end.point[1], t)],
+    level: mix(start.level, end.level, t),
+    width: mix(start.width, end.width, t)
+  };
+}
+
+function taperIsolatedRiverSource(samples: RiverPathSample[]): RiverPathSample[] {
+  if (samples.length < 2) return samples;
+  const taperLength = samples[0].width * 1.25;
+  const distances = [0];
+  const expanded = [samples[0]];
+  let distance = 0, inserted = false;
+  for (let index = 1; index < samples.length; index += 1) {
+    const start = samples[index - 1], end = samples[index];
+    const segmentLength = Math.hypot(end.point[0] - start.point[0], end.point[1] - start.point[1]);
+    if (!inserted && distance < taperLength && distance + segmentLength > taperLength) {
+      expanded.push(mixRiverPathSample(start, end, (taperLength - distance) / segmentLength));
+      distances.push(taperLength);
+      inserted = true;
+    }
+    distance += segmentLength;
+    expanded.push(end);
+    distances.push(distance);
+  }
+  return expanded.map((sample, index) => ({
+    ...sample,
+    point: [...sample.point],
+    width: sample.width * mix(0.075, 1, smooth(0, taperLength, distances[index]))
+  }));
+}
+
+function flareRiverIntoCoast(samples: RiverPathSample[], shoreWidth: number): RiverPathSample[] {
+  const reach = shoreWidth * 2.5;
+  const flared = samples.map(sample => ({ ...sample, point: [...sample.point] as [number, number] }));
+  let distance = 0;
+  for (let index = flared.length - 1; index >= 0 && distance < reach; index -= 1) {
+    flared[index].width *= mix(1.35, 1, smooth(0, reach, distance));
+    if (index > 0) distance += Math.hypot(
+      flared[index].point[0] - flared[index - 1].point[0],
+      flared[index].point[1] - flared[index - 1].point[1]
+    );
+  }
+  return flared;
+}
+
+function submergedRiverMouth(
+  samples: readonly RiverPathSample[],
+  oceanIndex: number,
+  shore: RiverPathSample,
+  terrainHeightAt: (x: number, z: number) => number
+): RiverPathSample {
+  const targetTerrainHeight = -0.15;
+  const maximumExtension = Math.max(4, shore.width * 1.5);
+  let start = shore, travelled = 0;
+  const candidates = samples.slice(oceanIndex).map(sample => ({ ...sample, point: [...sample.point] as [number, number] }));
+  const tail = samples.at(-1)!, beforeTail = samples.at(-2)!;
+  const tailDx = tail.point[0] - beforeTail.point[0], tailDz = tail.point[1] - beforeTail.point[1];
+  const tailLength = Math.hypot(tailDx, tailDz) || 1;
+  candidates.push({
+    point: [tail.point[0] + tailDx / tailLength * maximumExtension,
+      tail.point[1] + tailDz / tailLength * maximumExtension],
+    level: -0.03,
+    width: shore.width * 1.5
+  });
+  for (const candidate of candidates) {
+    const segmentLength = Math.hypot(candidate.point[0] - start.point[0], candidate.point[1] - start.point[1]);
+    if (segmentLength <= 0.000001) continue;
+    const allowed = Math.min(segmentLength, maximumExtension - travelled);
+    const end = allowed < segmentLength
+      ? mixRiverPathSample(start, candidate, allowed / segmentLength)
+      : candidate;
+    if (terrainHeightAt(...end.point) <= targetTerrainHeight) {
+      let shallow = 0, deep = 1;
+      for (let step = 0; step < 18; step += 1) {
+        const t = (shallow + deep) / 2;
+        if (terrainHeightAt(...mixRiverPathSample(start, end, t).point) > targetTerrainHeight) shallow = t;
+        else deep = t;
+      }
+      const mouth = mixRiverPathSample(start, end, deep);
+      return { ...mouth, level: -0.03, width: shore.width * 1.5 };
+    }
+    travelled += allowed;
+    start = end;
+    if (travelled >= maximumExtension - 0.000001) break;
+  }
+  return { ...start, level: -0.03, width: shore.width * 1.5 };
+}
+
+function clipRiverAtImplicitOcean(
+  water: MapWaterBody,
+  terrainHeightAt: (x: number, z: number) => number,
+  endpointConnected: readonly [boolean, boolean]
+): MapWaterBody {
   if (water.type !== 'river') return water;
   const authoredSamples = riverPathSamples(water);
   if (authoredSamples.length < 2) return water;
@@ -333,7 +436,10 @@ function clipRiverAtImplicitOcean(water: MapWaterBody, terrainHeightAt: (x: numb
   const reversed = first.level < last.level
     || first.level === last.level && terrainHeightAt(...first.point) < terrainHeightAt(...last.point);
   const samples = reversed ? [...authoredSamples].reverse() : authoredSamples;
-  if (terrainHeightAt(...samples[0].point) <= 0 || terrainHeightAt(...samples.at(-1)!.point) > 0) return water;
+  const sourceConnected = endpointConnected[reversed ? 1 : 0];
+  const downstreamConnected = endpointConnected[reversed ? 0 : 1];
+  if (downstreamConnected || terrainHeightAt(...samples[0].point) <= 0
+    || terrainHeightAt(...samples.at(-1)!.point) > 0) return water;
   let oceanIndex = samples.length - 1;
   while (oceanIndex > 0 && terrainHeightAt(...samples[oceanIndex - 1].point) <= 0) oceanIndex -= 1;
   if (oceanIndex === 0) return water;
@@ -345,12 +451,14 @@ function clipRiverAtImplicitOcean(water: MapWaterBody, terrainHeightAt: (x: numb
     if (terrainHeightAt(x, z) > 0) land = t;
     else ocean = t;
   }
-  const mouth = {
+  const shore = {
     point: [mix(from.point[0], to.point[0], ocean), mix(from.point[1], to.point[1], ocean)] as [number, number],
     level: 0,
     width: mix(from.width, to.width, ocean)
   };
-  let clipped = [...samples.slice(0, oceanIndex), mouth];
+  const mouth = submergedRiverMouth(samples, oceanIndex, shore, terrainHeightAt);
+  let clipped = [...flareRiverIntoCoast([...samples.slice(0, oceanIndex), shore], shore.width), mouth];
+  if (!sourceConnected) clipped = taperIsolatedRiverSource(clipped);
   if (reversed) clipped = clipped.reverse();
   return {
     ...water,
@@ -369,7 +477,7 @@ function prepareValidatedWorldWaterBodies(
   worldSeed: number,
   terrainHeightAt?: (x: number, z: number) => number
 ): PreparedWorldWaterBody[] {
-  return waters.map((source) => {
+  return waters.map((source, waterIndex) => {
     const region = source.region;
     const seed = source.seed ?? waterSeed(worldSeed, source.id);
     const points = region.kind === 'circle'
@@ -405,7 +513,12 @@ function prepareValidatedWorldWaterBodies(
           shorelineSmoothness: 0,
           shorelineIrregularity: 0
         };
-    if (terrainHeightAt && mapWater.type === 'river') mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt);
+    if (terrainHeightAt && mapWater.type === 'river' && region.kind === 'path') {
+      mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt, [
+        worldWaterEndpointConnected(waters, waterIndex, region.points[0]),
+        worldWaterEndpointConnected(waters, waterIndex, region.points.at(-1)!)
+      ]);
+    }
     const riverSamples = mapWater.type === 'river' ? riverPathSamples(mapWater) : [];
     const boundary = waterBoundaryPoints(mapWater);
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
@@ -755,6 +868,11 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       const water = prepared.mapWater;
       const river = water.type === 'river' ? sampleRiverProfile(x, z, prepared.riverSamples) : null;
       const level = river?.level ?? water.level;
+      const implicitOceanRiver = river !== null
+        && ((prepared.riverSamples[0]?.level ?? 0) < 0 || (prepared.riverSamples.at(-1)?.level ?? 0) < 0);
+      // Fade the derived freshwater bed and bank before the centerline reaches
+      // the coast, then let the higher ocean surface hide the submerged cap.
+      const mouthBlend = implicitOceanRiver ? smooth(-0.15, 0.75, terrainHeightBeforeWater) : 1;
       const outerBankWidth = water.shorelineProfile === 'steep'
         ? Math.max(2, water.depth * 0.6)
         : water.shorelineProfile === 'gentle'
@@ -764,12 +882,12 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       const inside = waterBoundaryContainsPoint(prepared.boundary, x, z);
       const boundaryDistance = waterBoundaryDistance(prepared.boundary, x, z);
       freshWaterDistance = Math.min(freshWaterDistance, inside ? 0 : boundaryDistance);
-      if (inside) freshWaterWeight = 1;
+      if (inside) freshWaterWeight = Math.max(freshWaterWeight, mouthBlend);
       else if (boundaryDistance < 24) {
         const materialBankWidth = freshWaterMaterialBankWidth(prepared, river, x, z,
           height, level, boundaryDistance, moisture);
         freshWaterWeight = Math.max(freshWaterWeight,
-          1 - smooth(0, materialBankWidth, boundaryDistance));
+          (1 - smooth(0, materialBankWidth, boundaryDistance)) * mouthBlend);
       }
       if (!inside) {
         // Reuse the editor's outer bank profile. Carving only the inside of a
@@ -789,16 +907,17 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
           : water.shorelineProfile === 'gentle'
             ? Math.max(4, water.depth * 4)
             : Math.max(1, water.depth * 2);
-      height = Math.min(height, waterShoreProfile(level, level - water.depth,
+      height = Math.min(height, waterShoreProfile(level, level - water.depth * mouthBlend,
         boundaryDistance, Math.min(reach, innerShoreWidth)));
       if (height <= level + 0.000001 && (waterLevel === null || level > waterLevel)) {
         waterLevel = level;
         waterBodyId = prepared.source.id;
       }
     }
-    if (terrainHeightBeforeWater < 0 && (waterLevel === null || waterLevel < 0)) {
+    if (terrainHeightBeforeWater < 0 && (waterLevel === null || waterLevel <= 0)) {
       waterLevel = 0;
       waterBodyId = null;
+      freshWaterWeight = 0;
     }
     const freshWaterInfluence = 1 - smooth(20, 160, freshWaterDistance);
     moisture = clamp(moisture + (1 - moisture) * freshWaterInfluence * 0.75);

@@ -307,16 +307,84 @@ describe('composable world terrain operations', () => {
       levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0.8, shorelineIrregularity: 0.35, seed: 27
     }] });
     const context = createWorldTerrainContext(recipe), prepared = context.waterBodies[0];
+    const dry = createWorldSampler({ ...recipe, waterBodies: [] });
     const mouth = prepared.mapWater.points.at(-1)!;
+    const samples = prepared.riverSamples;
 
     expect(mouth[0]).toBeGreaterThan(25);
+    expect(dry(...mouth).height).toBeLessThanOrEqual(-0.1);
     expect(prepared.mapWater.shorelineIrregularity).toBe(0);
-    expect(prepared.mapWater.levels?.at(-1)).toBe(0);
-    expect(prepared.mapWater.widths?.at(-1)).toBeGreaterThan(8);
+    expect(prepared.mapWater.levels?.at(-1)).toBeLessThan(0);
+    expect(samples.at(-1)!.width / samples.at(-2)!.width).toBeCloseTo(1.5 / 1.35, 5);
+    expect(samples.at(-2)!.width).toBeGreaterThan(samples.at(-3)!.width);
+    expect(samples[0].width).toBeLessThan(samples[1].width * 0.2);
     expect(new Set(prepared.mapWater.widths?.map(width => width.toFixed(3))).size).toBeGreaterThan(3);
     expect(prepared.boundary).toEqual(waterBoundaryPoints(prepared.mapWater));
     expect(mouth).not.toEqual((recipe.waterBodies![0].region as { points: Array<[number, number]> }).points.at(-1));
-    expect(context.sample(50, 0)).toMatchObject({ waterLevel: 0, waterBodyId: null, freshWaterWeight: 0 });
+    expect(context.sample(-25, 0)).toMatchObject({ waterBodyId: 'river-mouth', freshWaterWeight: 1 });
+    expect(context.sample(-5, 0).freshWaterWeight).toBeLessThan(1);
+    expect(context.sample(-5, 0).freshWaterWeight).toBeGreaterThan(0);
+    expect(context.sample(...mouth)).toMatchObject({ waterLevel: 0, waterBodyId: null, freshWaterWeight: 0 });
+    expect(context.sample(...mouth).height).toBeCloseTo(dry(...mouth).height, 5);
+  });
+
+  it('derives the same tapered source and submerged mouth when a river is authored downstream-first', () => {
+    const base = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [10, -10], feather: 0
+    }], waterBodies: [{
+      id: 'reversible-mouth', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
+      levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    const reversed = validateWorldRecipe({ ...base, waterBodies: [{ ...base.waterBodies![0],
+      region: { kind: 'path', points: [[100, 0], [-100, 0]], width: 12 },
+      levels: [0, 2], widths: [20, 8]
+    }] });
+    const forwardWater = createWorldTerrainContext(base).waterBodies[0];
+    const reversedWater = createWorldTerrainContext(reversed).waterBodies[0];
+
+    expect(reversedWater.mapWater.points).toEqual([...forwardWater.mapWater.points].reverse());
+    expect(reversedWater.mapWater.levels).toEqual([...forwardWater.mapWater.levels!].reverse());
+    expect(reversedWater.mapWater.widths).toEqual([...forwardWater.mapWater.widths!].reverse());
+    expect(forwardWater.riverSamples[0].width).toBeLessThan(1);
+    expect(reversedWater.riverSamples.at(-1)!.width).toBeLessThan(1);
+  });
+
+  it('keeps a lake-connected river source open instead of tapering the junction', () => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [10, -10], feather: 0
+    }], waterBodies: [{
+      id: 'source-lake', type: 'lake', region: { kind: 'circle', center: [-100, 0], radius: 14 },
+      levels: [2], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }, {
+      id: 'connected-river', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
+      levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    const river = createWorldTerrainContext(recipe).waterBodies[1];
+
+    expect(river.riverSamples[0].width).toBe(8);
+    expect(river.riverSamples.at(-1)!.width).toBeGreaterThan(20);
+  });
+
+  it('bounds a submerged mouth extension when a shallow ocean never reaches its target depth', () => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'shallow-coast', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [1, -0.05], feather: 0
+    }], waterBodies: [{
+      id: 'shallow-mouth', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
+      levels: [1, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    const context = createWorldTerrainContext(recipe), samples = context.waterBodies[0].riverSamples;
+    const dry = createWorldSampler({ ...recipe, waterBodies: [] });
+    const shore = samples.at(-2)!, mouth = samples.at(-1)!;
+    const extension = Math.hypot(mouth.point[0] - shore.point[0], mouth.point[1] - shore.point[1]);
+
+    expect(dry(...mouth.point).height).toBeGreaterThan(-0.15);
+    expect(dry(...mouth.point).height).toBeLessThan(0);
+    expect(extension).toBeCloseTo(shore.width / 1.35 * 1.5, 3);
+    expect(mouth.level).toBeLessThan(0);
+    expect(context.sample(...mouth.point)).toMatchObject({ waterLevel: 0, waterBodyId: null, freshWaterWeight: 0 });
   });
 
   it('joins lake and river banks continuously to the surrounding terrain', () => {
