@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { createGenerationPreviewOverlay } from '../src/client/generationPreviewOverlay';
+import { createGenerationPreviewOverlay, createStaticWhiteboxBoxes } from '../src/client/generationPreviewOverlay';
 import type { MapAsset } from '../src/shared/map';
 import type { CodePlanPreviewPayload } from '../src/shared/mapOperations';
 
@@ -14,6 +14,24 @@ const asset: MapAsset = {
 };
 
 describe('generation preview overlay scale', () => {
+  it('uses one tinted face batch and one edge batch for persisted building sizes', () => {
+    const group = createStaticWhiteboxBoxes([
+      { position: [2, 3, 4], size: [6, 8, 10], rotationY: 0, color: 0x55c47a },
+      { position: [20, 1, 0], size: [4, 5, 6], rotationY: Math.PI / 2, color: 0x86a8c8 }
+    ]);
+    expect(group.children).toHaveLength(2);
+    const faces = group.children[0] as THREE.InstancedMesh;
+    const edges = group.children[1] as THREE.LineSegments;
+    expect(faces.count).toBe(2);
+    const matrix = new THREE.Matrix4();
+    faces.getMatrixAt(0, matrix);
+    const position = new THREE.Vector3(), scale = new THREE.Vector3();
+    matrix.decompose(position, new THREE.Quaternion(), scale);
+    expect(position.toArray()).toEqual([2, 7, 4]);
+    expect(scale.toArray()).toEqual([6, 8, 10]);
+    expect((edges.geometry.getAttribute('position') as THREE.BufferAttribute).count).toBe(48);
+  });
+
   it('uses the final object transform for both ghost size and streamed model scale', async () => {
     const overlay = createGenerationPreviewOverlay(new THREE.Scene());
     const plan: CodePlanPreviewPayload = {

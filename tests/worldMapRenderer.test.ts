@@ -619,7 +619,7 @@ describe('main editor streamed world renderer', () => {
     }
   }, 30_000);
 
-  it('keeps ordinary buildings and an unbound public building visible beside a partial asset pack', async () => {
+  it('shows unbound public and ordinary buildings as distinct planning frames beside a partial asset pack', async () => {
     const map = createEmptyMap();
     const town = bundle.plan.towns[0];
     const sample = createPlannedWorldSampler(bundle.plan, bundle.patches);
@@ -649,10 +649,22 @@ describe('main editor streamed world renderer', () => {
       await waitFor(() => rendered.objectGroups.has('world-building:forest-south-home-center'));
       const schoolGroup = rendered.objectGroups.get('world-building:forest-south-home-center');
       expect(schoolGroup).toBeInstanceOf(THREE.Group);
-      expect(schoolGroup?.getObjectByProperty('type', 'Mesh')).toBeInstanceOf(THREE.Mesh);
+      expect(schoolGroup?.children.every(child => !child.visible)).toBe(true);
       await waitFor(() => rendered.objectGroups.has(`world-building:${hall.id}`));
-      expect(rendered.objectGroups.get(`world-building:${hall.id}`)?.getObjectByProperty('type', 'Mesh'))
-        .toBeInstanceOf(THREE.Mesh);
+      const frames: THREE.InstancedMesh[] = [];
+      rendered.modelsRoot.traverse(child => {
+        if (child instanceof THREE.InstancedMesh && child.parent?.name.startsWith('world-building-whitebox:')) {
+          frames.push(child);
+        }
+      });
+      expect(frames.length).toBeGreaterThan(0);
+      const colors = frames.flatMap(frame => Array.from({ length: frame.count }, (_, index) => {
+        const color = new THREE.Color();
+        frame.getColorAt(index, color);
+        return color.getHex();
+      }));
+      expect(colors).toContain(0xe8a54b);
+      expect(colors).toContain(0x55c47a);
     } finally {
       rendered.dispose();
     }

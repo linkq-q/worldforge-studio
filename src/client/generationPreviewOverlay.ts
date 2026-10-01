@@ -28,6 +28,58 @@ const EDGE_VERTEX_COUNT = UNIT_BOX_EDGE_POSITIONS.length / 3;
 const UP = new THREE.Vector3(0, 1, 0);
 const ZERO_MATRIX = new THREE.Matrix4().makeScale(0, 0, 0);
 
+export interface StaticWhiteboxPlacement {
+  position: [number, number, number];
+  size: [number, number, number];
+  rotationY: number;
+  color: number;
+}
+
+/** Reuse the generation ghost style for persisted, chunk-loaded building plans. */
+export function createStaticWhiteboxBoxes(placements: readonly StaticWhiteboxPlacement[]): THREE.Group {
+  const group = new THREE.Group();
+  if (!placements.length) return group;
+  const faces = new THREE.InstancedMesh(UNIT_BOX.clone(), new THREE.MeshBasicMaterial({
+    color: 0xffffff, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide
+  }), placements.length);
+  const positions = new Float32Array(placements.length * UNIT_BOX_EDGE_POSITIONS.length);
+  const colors = new Float32Array(positions.length);
+  const matrix = new THREE.Matrix4(), quaternion = new THREE.Quaternion();
+  const center = new THREE.Vector3(), size = new THREE.Vector3(), vertex = new THREE.Vector3();
+  placements.forEach((placement, index) => {
+    const color = new THREE.Color(placement.color);
+    center.set(placement.position[0], placement.position[1] + placement.size[1] / 2, placement.position[2]);
+    size.set(...placement.size);
+    quaternion.setFromAxisAngle(UP, placement.rotationY);
+    matrix.compose(center, quaternion, size);
+    faces.setMatrixAt(index, matrix);
+    faces.setColorAt(index, color);
+    for (let offset = 0; offset < UNIT_BOX_EDGE_POSITIONS.length; offset += 3) {
+      vertex.set(UNIT_BOX_EDGE_POSITIONS[offset], UNIT_BOX_EDGE_POSITIONS[offset + 1],
+        UNIT_BOX_EDGE_POSITIONS[offset + 2]).applyMatrix4(matrix);
+      const target = index * UNIT_BOX_EDGE_POSITIONS.length + offset;
+      positions.set(vertex.toArray(), target);
+      colors.set(color.toArray(), target);
+    }
+  });
+  faces.instanceMatrix.needsUpdate = true;
+  faces.instanceColor!.needsUpdate = true;
+  faces.frustumCulled = false;
+  faces.renderOrder = 18;
+  faces.raycast = () => {};
+  const edgeGeometry = new THREE.BufferGeometry();
+  edgeGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  edgeGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false
+  }));
+  edges.frustumCulled = false;
+  edges.renderOrder = 19;
+  edges.raycast = () => {};
+  group.add(faces, edges);
+  return group;
+}
+
 interface PlacementEntry {
   key: string;
   instanceIndex: number;

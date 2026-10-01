@@ -15,6 +15,7 @@ import { createWorldEcologyDensity, createWorldExclusion, worldFeaturePathPolyli
   type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
+import { createStaticWhiteboxBoxes, type StaticWhiteboxPlacement } from './generationPreviewOverlay';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
@@ -588,6 +589,24 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       terrainVisible: false,
       oceanCoast: false
     });
+    const publicBuildingIds = new Set(world.review?.plannedBuildings.filter(building => building.placed)
+      .map(building => building.id) ?? []);
+    const whiteboxes: StaticWhiteboxPlacement[] = [];
+    for (const building of buildings.filter(item => pointEcologyKey(item.x, item.z) === ecologyKey(chunk)
+      && !resolveBuildingAsset(item))) {
+      const group = rendered.objectGroups.get(`world-building:${building.id}`);
+      if (!group) continue;
+      group.children.forEach(child => { child.visible = false; });
+      whiteboxes.push({
+        position: [building.x - centerX, sample(building.x, building.z).height, building.z - centerZ],
+        size: [building.width, building.height, building.depth], rotationY: building.rotation ?? 0,
+        color: publicBuildingIds.has(building.id) || building.assetKey || worldBuildingRole(building) === 'landmark'
+          ? 0xe8a54b : 0x55c47a
+      });
+    }
+    const whiteboxGroup = createStaticWhiteboxBoxes(whiteboxes);
+    whiteboxGroup.name = `world-building-whitebox:${ecologyKey(chunk)}`;
+    rendered.modelsRoot.add(whiteboxGroup);
     applyStyle(rendered, contentMap, tile);
     const grassChunkBudget = worldGrassChunkBudget(residentContentCount);
     rendered.setGrassStyle(worldGrassStyle(style.grass, grassChunkBudget));
