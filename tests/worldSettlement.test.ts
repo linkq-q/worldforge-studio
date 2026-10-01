@@ -586,6 +586,27 @@ describe('world settlement growth', () => {
     }, requirements)).toThrow('world_settlement_no_waterfront_site:dry-quay');
   });
 
+  it('does not call an inland street across unusable ground waterfront frontage', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.radius = 100;
+    town.ports = [];
+    town.targetWaterBodyId = 'sea';
+    plan.roads = [];
+    const sample: WorldSettlementSampler = (x, z) => {
+      const original = base(x, z), localX = x - town.center[0], water = localX < -70;
+      return { ...original, height: water ? -3 : localX < 0 ? 12 - localX * 0.5 : 12,
+        waterLevel: water ? 0 : null, waterBodyId: null };
+    };
+    const patch = generateWorldSettlement(plan, town.id, sample, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.45, waterfrontBias: 0.88
+    });
+    expect(patch.streets.some(street => street.tags.includes('working-waterfront'))).toBe(false);
+    expect(() => createWorldSettlementLandmarkLayout(plan, town.id, sample, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.45, waterfrontBias: 0.88
+    }, [{ id: 'fish-market', use: 'fish market', width: 12, depth: 7, height: 5,
+      assetKey: 'market', siting: 'waterfront' }])).toThrow('world_settlement_no_waterfront_site:fish-market');
+  });
+
   it('finds real waterfront frontage across the full core of a compact sea town', () => {
     const plan=fixture(),town=plan.towns[0],base=sampler(plan);
     town.radius=100;town.ports[0].position=[100,0];town.targetWaterBodyId='sea';
@@ -602,6 +623,8 @@ describe('world settlement growth', () => {
     const landing=result.patch.streets.find(street=>street.tags.includes('sea-landing'))!;
     expect(Math.min(...waterfront.points.map(point=>point[0]+92))).toBeLessThanOrEqual(24);
     expect(waterfront.tags).toContain('working-waterfront');
+    const access=result.patch.streets.find(street=>street.id===`${town.id}-landmark-fish-market`)!;
+    expect(waterfront.points).toContainEqual(access.points.at(-1));
     expect(landing.points.at(-1)![0]+92).toBeLessThan(landing.points[0][0]+92);
     expect(landing.points.at(-1)![0]+92).toBeLessThanOrEqual(20);
     expect(landing.tags).toContain('harbor-quay');

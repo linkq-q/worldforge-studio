@@ -294,7 +294,8 @@ function frontageLandmarkSites(
   sample:WorldSettlementSampler,settings:Settings,siting?:WorldLandmarkSiting
 ):TownBuilding[] {
   const points:TownBuilding[]=[],roadWidth=settings.roadWidth,blockSize=settings.blockSize;
-  const frontage=streets.filter(street=>!street.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag)));
+  const frontage=streets.filter(street=>!street.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))
+    &&(siting!=='waterfront'||street.tags.includes('working-waterfront')));
   for(const street of frontage) for(let segment=1;segment<street.points.length;segment++) {
     const a=street.points[segment-1],b=street.points[segment],delta=sub(b,a),length=distance(a,b);
     if(length<EPS) continue;
