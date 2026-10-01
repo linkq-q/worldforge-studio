@@ -47,6 +47,7 @@ const CONTENT_DISTANCE_LIMIT = 3_000;
 const WORLD_GRASS_CHUNK_INSTANCE_BUDGET = 15_000;
 const WORLD_GRASS_RESIDENT_INSTANCE_BUDGET = 120_000;
 const WORLD_STREAM_BUILD_FRAME_BUDGET_MS = 8;
+const WORLD_STREAM_BUILD_WAIT_LIMIT_MS = 100;
 const WORLD_STREAM_MIN_BACKGROUND_PAINTS = 3;
 // Chunk build time includes its own cooperative rAF waits, so it cannot justify an unbounded second wait here.
 const WORLD_STREAM_MAX_RECOVERY_PAINTS = 15;
@@ -1678,17 +1679,30 @@ export function worldBuildPaintIntervals(
   );
 }
 
-function yieldWorldBuild(
+export function yieldWorldBuild(
   buildMs: number,
   minimumPaints: number,
   maximumPaints = WORLD_STREAM_MAX_RECOVERY_PAINTS
 ): Promise<void> {
   return new Promise(resolve => {
     if (typeof requestAnimationFrame !== 'function') { setTimeout(resolve, 0); return; }
+    let settled = false;
+    let frameId: number | null = null;
     let painted = 0;
     let firstPaintAt = 0;
     let targetPaints = minimumPaints;
+    const finish = (afterPaint = false): void => {
+      if (settled) return;
+      settled = true;
+      if (frameId !== null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameId);
+      clearTimeout(timeoutId);
+      if (afterPaint) setTimeout(resolve, 0);
+      else resolve();
+    };
+    const timeoutId = setTimeout(finish, WORLD_STREAM_BUILD_WAIT_LIMIT_MS);
     const afterPaint = (paintAt: number): void => {
+      frameId = null;
+      if (settled) return;
       painted += 1;
       if (painted === 1) firstPaintAt = paintAt;
       // The first rendered frame pays the mounted geometry and texture uploads,
@@ -1696,9 +1710,9 @@ function yieldWorldBuild(
       if (painted === 2) {
         targetPaints = worldBuildPaintIntervals(buildMs, minimumPaints, paintAt - firstPaintAt, maximumPaints);
       }
-      if (painted < targetPaints) requestAnimationFrame(afterPaint);
-      else setTimeout(resolve, 0);
+      if (painted < targetPaints) frameId = requestAnimationFrame(afterPaint);
+      else finish(true);
     };
-    requestAnimationFrame(afterPaint);
+    frameId = requestAnimationFrame(afterPaint);
   });
 }

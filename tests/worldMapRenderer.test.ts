@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
 import { buildMapGrassField } from '../src/client/mapGrassRenderer';
 import { getCollisionMeshBvhBuildStats, resetCollisionMeshBvhBuildStats } from '../src/client/mapMeshCollision';
-import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldRoadSurfaceStyle, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldRoadSurfaceStyle, worldTileSurfaceWeight, yieldWorldBuild } from '../src/client/worldMapRenderer';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
@@ -30,7 +30,10 @@ const smallBundle = validateWorldBundle({
 beforeEach(() => vi.stubGlobal('document', {
   createElement: () => ({ width: 0, height: 0, getContext: () => null })
 }));
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 async function waitFor(predicate: () => boolean, attempts = 600): Promise<void> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -345,6 +348,53 @@ describe('main editor streamed world renderer', () => {
     expect(worldBuildPaintIntervals(4, 3, 113)).toBe(15);
     expect(worldBuildPaintIntervals(12_000, 3)).toBe(15);
     expect(worldBuildPaintIntervals(12_000, 3, 0, 4)).toBe(4);
+  });
+
+  it('keeps three paint intervals when requestAnimationFrame runs normally', async () => {
+    vi.useFakeTimers();
+    let nextFrameId = 0;
+    const frames = new Map<number, FrameRequestCallback>();
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      const id = ++nextFrameId;
+      frames.set(id, callback);
+      return id;
+    }));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn((id: number) => { frames.delete(id); }));
+
+    const wait = yieldWorldBuild(4, 3);
+    for (const paintAt of [16, 32, 48]) {
+      const [id, callback] = frames.entries().next().value!;
+      frames.delete(id);
+      callback(paintAt);
+    }
+    await vi.advanceTimersByTimeAsync(0);
+    await wait;
+
+    expect(requestAnimationFrame).toHaveBeenCalledTimes(3);
+  });
+
+  it('caps a throttled requestAnimationFrame wait and cancels its pending callback', async () => {
+    vi.useFakeTimers();
+    let nextFrameId = 0;
+    const frames = new Map<number, FrameRequestCallback>();
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      const id = ++nextFrameId;
+      frames.set(id, callback);
+      return id;
+    }));
+    const cancelAnimationFrame = vi.fn((id: number) => { frames.delete(id); });
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+
+    let completed = false;
+    const wait = yieldWorldBuild(4, 3).then(() => { completed = true; });
+    await vi.advanceTimersByTimeAsync(99);
+    expect(completed).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await wait;
+
+    expect(completed).toBe(true);
+    expect(cancelAnimationFrame).toHaveBeenCalledTimes(1);
+    expect(frames.size).toBe(0);
   });
 
   it('keeps compact-world ocean ownership fixed while large worlds follow the streamed focus', () => {
