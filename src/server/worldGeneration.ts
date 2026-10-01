@@ -9,7 +9,8 @@ import { WORLD_REGIONS, type WorldRecipe, type WorldRegion, type WorldTerrainBru
 import { validateEcologyRules, type EcologyKind, type EcologyRule } from '../shared/worldEcology';
 import { findWorldRoute, findWorldSiteCandidates,
   type WorldSiteCandidate, type WorldSiteIntent } from '../shared/worldSiting';
-import { validateWorldPlan, validateWorldBundle, worldRoadSampleSpacing, type TownBuilding, type TownIntent, type TownPatch, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
+import { createPlannedWorldTerrainContext, deriveWorldRouteConstruction, validateWorldPlan, validateWorldBundle, worldRoadSampleSpacing,
+  type TownBuilding, type TownIntent, type TownPatch, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
 import { auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, resolveWorldSettlementLandmarks,
   type WorldLandmarkRequirement, type WorldSettlementKind, type WorldSettlementOptions } from '../shared/worldSettlement';
 import { generateModel, llmChat, type ChatMessage } from './modelApi';
@@ -966,7 +967,7 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   const materialized=materializeWorldWhiteboxConstruction(content,request);
   const diagnostics=new Map(materialized.diagnostics.map(item=>[item.townId,[...item.planningIssues]]));
   const issue=(townId:string,value:string)=>diagnostics.set(townId,[...diagnostics.get(townId)??[],value]);
-  const terrain=createWorldTerrainContext(materialized.plan.recipe),sample=terrain.sample,patches:TownPatch[]=[];
+  const terrain=createPlannedWorldTerrainContext(materialized.plan),sample=terrain.sample,patches:TownPatch[]=[];
   for(const town of materialized.towns) {
     if(!materialized.plan.towns.some(item=>item.id===town.id)) continue;
     const options:Omit<WorldSettlementOptions,'landmarks'>={kind:town.kind,pattern:town.pattern,density:town.density,
@@ -1014,10 +1015,16 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     materialized.settlements,visiblePatches)) {
     for(const planningIssue of diagnostic.planningIssues) issue(diagnostic.townId,planningIssue);
   }
+  for(const diagnostic of terrain.diagnostics) {
+    issue('world',`${diagnostic.code}:${diagnostic.waterBodyId}:${diagnostic.reason}:${diagnostic.fallback}`);
+  }
+  for(const diagnostic of deriveWorldRouteConstruction(materialized.plan).diagnostics) {
+    issue('world',`${diagnostic.code}:${diagnostic.routeId}:${diagnostic.reason}`);
+  }
   const bundle=validateWorldBundle({plan:materialized.plan,patches:visiblePatches});
   const resultDiagnostics:WorldConstructionDiagnostic[]=[...diagnostics]
     .map(([townId,planningIssues])=>({townId,planningIssues}));
-  resultDiagnostics.push(...diagnoseWorldRiverSurfaceAboveBank(terrain));
+  resultDiagnostics.push(...diagnoseWorldRiverSurfaceAboveBank(createPlannedWorldTerrainContext(bundle.plan,bundle.patches)));
   const draft:WorldDraft={plan:materialized.plan,settlements:materialized.settlements,assets:assetRequests};
   recordGenerationTrace('world.whitebox.construction.preview',{draft,diagnostics:resultDiagnostics,
     paidCallCount,assets:assetSources.map(asset=>({id:asset.id,assetId:asset.assetId,provider:asset.provider}))});

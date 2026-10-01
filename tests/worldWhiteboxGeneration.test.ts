@@ -345,7 +345,12 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('do not fake a bay or harbour with a round lake');
     expect(systemPrompt).toContain('every patch needs a unique id and a bounded shape');
     expect(systemPrompt).toContain('Biome-patch feather is a transition distance in world metres, not a 0..1 softness ratio');
-    expect(systemPrompt).toContain('every river must include its complete region, levels and depth');
+    expect(systemPrompt).toContain("surfaceMode:'terrain-fit'");
+    expect(systemPrompt).toContain('Terrain-fit rivers have no levels');
+    expect(systemPrompt).toContain("mode:'raise'|'lower',region:{kind:'circle'");
+    expect(systemPrompt).toContain("{kind:'path',points:[[x,z],...],width}");
+    expect(systemPrompt).toContain("districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]");
+    expect(systemPrompt).toContain("construction?:{terrain:'follow'|'grade'");
     expect(systemPrompt).toContain('Trace river centerlines through plausible low ground');
     expect(systemPrompt).toContain('long straight chord across hills reads like a canal');
     expect(systemPrompt).toContain('lateral swings of roughly several channel widths');
@@ -654,7 +659,8 @@ describe('whitebox world generation', () => {
     const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content as string;
     expect(systemPrompt).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     expect(systemPrompt).toContain('population?:integer');
-    expect(systemPrompt).toContain('Record one integer population');
+    expect(systemPrompt).toContain('Always record one integer population');
+    expect(systemPrompt).toContain('Choose public-building assets by their actual measured silhouette');
     expect(systemPrompt).toContain("role:'house'|'shop'|'workshop'|'tree'|'landmark'");
     expect(systemPrompt).toContain('Do not put width, depth, height or use directly on an asset object.');
     expect(mocks.generateModel).not.toHaveBeenCalled();
@@ -682,6 +688,20 @@ describe('whitebox world generation', () => {
       .toHaveLength(30);
     expect(result.diagnostics.flatMap(item => 'planningIssues' in item ? item.planningIssues ?? [] : []))
       .not.toContain('population_underbuilt');
+  });
+
+  it('reports an infeasible authored road grade without rejecting or repairing the first-call plan', async () => {
+    const plan = buildablePlan();
+    plan.mobilityPlan!.routes[0].construction = { terrain: 'grade', maxGrade: 0.02 };
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: plan, generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    expect(result.originalPlan).toEqual(plan);
+    expect(result.diagnostics.flatMap(item => 'planningIssues' in item ? item.planningIssues ?? [] : []))
+      .toEqual(expect.arrayContaining([expect.stringMatching(/^world_route_grade_infeasible:arrival-route:/)]));
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
   });
 
   it('diagnoses overlapping town districts and a missing construction patch without repairing either', async () => {
