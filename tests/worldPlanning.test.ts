@@ -420,6 +420,11 @@ describe('hierarchical world planning contracts', () => {
     expect(() => validateWorldBundle({ plan, patches: [first, first] })).toThrow('world_duplicate_town_patch');
   });
 
+  it('leaves room for a populated town’s homes and public buildings within the bounded quota', () => {
+    expect(worldTownBuildingQuota({ radius: 100, population: 720 })).toBeGreaterThanOrEqual(144 + 12);
+    expect(worldTownBuildingQuota({ radius: 100 })).toBe(128);
+  });
+
   it('merges atomically, independently of completion order, and replaces only the intended town', () => {
     const plan = fixture(), empty: WorldBundle = { plan, patches: [] };
     const a = patch(plan, 0), b = patch(plan, 1), before = JSON.stringify({ empty, a, b });

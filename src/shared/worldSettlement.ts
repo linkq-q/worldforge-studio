@@ -729,7 +729,7 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     landmarks: options.landmarks?.map(building => ({ ...building })) ?? [],
     waterfrontBias: number(options.waterfrontBias, city ? 0.8 : 0.55, 0, 1, 'world_settlement_invalid_waterfront_bias'),
     maxRoadSlope: number(options.maxRoadSlope, city ? 0.18 : 0.24, 0.01, 0.5, 'world_settlement_invalid_road_slope'),
-    maxSiteSlope: number(options.maxSiteSlope, city ? 0.14 : 0.2, 0.01, 0.5, 'world_settlement_invalid_site_slope'),
+    maxSiteSlope: number(options.maxSiteSlope, city ? 0.25 : 0.2, 0.01, 0.5, 'world_settlement_invalid_site_slope'),
     waterSetback: number(options.waterSetback, city ? 7 : 5, 0, town.radius / 2, 'world_settlement_invalid_water_setback'),
     roadWidth: city ? 4.2 : 3,
     arterialWidth: city ? 6.4 : 4.6,

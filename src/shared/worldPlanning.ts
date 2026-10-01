@@ -879,8 +879,9 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
   return result;
 }
 
-export function worldTownBuildingQuota(town: Pick<TownIntent, 'radius'>): number {
-  return Math.min(512, Math.max(128, Math.ceil((town.radius * 2) ** 2 / 900)));
+export function worldTownBuildingQuota(town: Pick<TownIntent, 'radius'> & Partial<Pick<TownIntent, 'population'>>): number {
+  return Math.min(512, Math.max(128, Math.ceil((town.radius * 2) ** 2 / 900),
+    Math.ceil((town.population ?? 0) / 5) + 12));
 }
 
 /** A crossing counts as a junction only when both street graphs explicitly share a vertex. */
