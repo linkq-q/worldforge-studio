@@ -307,6 +307,9 @@ describe('whitebox world generation', () => {
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
     expect(spatialInput.terrainEvidence.buildingSiteScores).toHaveLength(21);
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
+    expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Reserve connected dry, gently sloped land');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Do not downgrade a named town');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coordinate values must be JSON numbers');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
