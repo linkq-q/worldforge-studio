@@ -923,7 +923,40 @@ function placeBuildings(
   };
   candidates.sort((a, b) => score(a) - score(b) || a.blockId.localeCompare(b.blockId)
     || a.roadId.localeCompare(b.roadId) || a.id.localeCompare(b.id));
-  if(town.population!==undefined) {
+  const parcelDistricts = new Map<string, NonNullable<TownIntent['districts']>[number]>();
+  const districtIntent = town.districts?.length ? town.districts.filter(district => district.density > 0) : [];
+  const districtUseCounts = new Map<string, number>();
+  const districtUse = (district: NonNullable<TownIntent['districts']>[number]) => {
+    const index = districtUseCounts.get(district.anchorId) ?? 0;
+    return district.kind === 'civic' ? index % 3 === 0 ? 'shop' : 'home'
+      : district.kind === 'working' ? index % 2 === 0 ? 'workshop' : 'home'
+        : district.kind === 'edge' ? 'farmhouse' : 'home';
+  };
+  if (districtIntent.length) {
+    const order = new Map(candidates.map((parcel, index) => [parcel.id, index]));
+    const groups = districtIntent.map(district => ({ district, used: 0, parcels: [] as UrbanParcel[] }));
+    for (const parcel of candidates) {
+      const group = groups.filter(candidate => distance(parcel.center, candidate.district.offset) <= candidate.district.radius * 1.5)
+        .sort((a, b) => distance(parcel.center, a.district.offset) / a.district.radius
+          - distance(parcel.center, b.district.offset) / b.district.radius
+          || a.district.anchorId.localeCompare(b.district.anchorId))[0];
+      if (!group) continue;
+      group.parcels.push(parcel);
+      parcelDistricts.set(parcel.id, group.district);
+    }
+    for (const group of groups) group.parcels.sort((a, b) =>
+      distance(a.center, group.district.offset) - distance(b.center, group.district.offset)
+      || order.get(a.id)! - order.get(b.id)!);
+    const distributed: UrbanParcel[] = [];
+    while (groups.some(group => group.parcels.length)) {
+      const group = groups.filter(candidate => candidate.parcels.length)
+        .sort((a, b) => (a.used + 1) / a.district.density - (b.used + 1) / b.district.density
+          || a.district.anchorId.localeCompare(b.district.anchorId))[0];
+      distributed.push(group.parcels.shift()!);
+      group.used++;
+    }
+    candidates.splice(0, candidates.length, ...distributed);
+  } else if(town.population!==undefined) {
     const districts:UrbanParcel[][]=[[],[],[]];
     for(const parcel of candidates) {
       const radius=distance(parcel.center,[0,0])/town.radius;
@@ -959,6 +992,7 @@ function placeBuildings(
     : 0;
   const ordinaryTarget = Math.max(ordinaryBuildingTarget(candidates.length, town, settings), frontageTarget);
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
+  const districtLimit = Math.min(worldTownBuildingQuota(town), result.length + Math.max(ordinaryTarget, populationHomes * 2));
   const householdCount=()=>result.filter(building=>building.use==='home'||building.use==='farmhouse').length;
   const filled=()=>town.population===undefined?result.length>=target:householdCount()>=populationHomes;
   for (const landmark of result) {
@@ -997,6 +1031,37 @@ function placeBuildings(
     return !worldRoads.some(road => segmentBuildingFootprint(road.a, road.b, worldBuilding, road.width / 2));
   };
   const placeRoadside = (roads: readonly { a:Point; b:Point; width:number }[], limit=target) => {
+    if (districtIntent.length) {
+      const groups = districtIntent.map(district => ({ district, used: 0,
+        sites: [] as Array<{ center: Point; rotation: number }> }));
+      for (const road of roads) {
+        const delta=sub(road.b,road.a),length=distance(road.a,road.b);
+        if(length<EPS) continue;
+        const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
+        const steps=Math.max(1,Math.floor(length/(fallbackWidth+settings.buildingGap*(1-settings.density))));
+        for(let index=0;index<=steps;index++) for(const side of [-1,1]) {
+          const roadPoint=mix(road.a,road.b,(index+.5)/(steps+1)),outward=scale(normal,side);
+          const center=add(roadPoint,scale(outward,road.width/2+fallbackDepth/2+1));
+          const group=groups.filter(candidate=>distance(center,candidate.district.offset)<=candidate.district.radius*1.5)
+            .sort((a,b)=>distance(center,a.district.offset)/a.district.radius-distance(center,b.district.offset)/b.district.radius
+              ||a.district.anchorId.localeCompare(b.district.anchorId))[0];
+          if(group) group.sites.push({center,rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))});
+        }
+      }
+      while(groups.some(group=>group.sites.length)&&!filled()&&result.length<limit&&result.length<worldTownBuildingQuota(town)) {
+        const group=groups.filter(candidate=>candidate.sites.length)
+          .sort((a,b)=>(a.used+1)/a.district.density-(b.used+1)/b.district.density
+            ||a.district.anchorId.localeCompare(b.district.anchorId))[0];
+        const site=group.sites.shift()!,use=districtUse(group.district);
+        const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:site.center[0],z:site.center[1],
+          width:fallbackWidth,depth:fallbackDepth,height:city?7+random()*4:4.5+random()*3,use,rotation:site.rotation};
+        if(canPlace(building)) {
+          result.push(building);group.used++;
+          districtUseCounts.set(group.district.anchorId,(districtUseCounts.get(group.district.anchorId)??0)+1);
+        }
+      }
+      return;
+    }
     for(const road of roads) {
       if(filled()||result.length>=limit||result.length>=worldTownBuildingQuota(town)) break;
       const delta=sub(road.b,road.a),length=distance(road.a,road.b);
@@ -1016,10 +1081,12 @@ function placeBuildings(
       }
     }
   };
-  if(plan.generationPolicy==='raw-first-call'&&town.population===undefined) {
+  if(plan.generationPolicy==='raw-first-call'&&town.population===undefined&&!districtIntent.length) {
     placeRoadside(worldFrontageRoads,Math.min(target,result.length+worldFrontageTarget));
   }
-  for (let index = 0; index < candidates.length && !filled() && result.length<worldTownBuildingQuota(town); index++) {
+  if(districtIntent.length) placeRoadside(worldFrontageRoads,districtLimit);
+  for (let index = 0; index < candidates.length && !filled() && result.length<worldTownBuildingQuota(town)
+    && (!districtIntent.length || result.length < districtLimit); index++) {
     const parcel = candidates[index];
     const width = parcel.width - Math.min(city ? 0.25 : 1.2, parcel.width * 0.16);
     const depth = parcel.depth * (city ? 0.72 : 0.62);
@@ -1029,8 +1096,9 @@ function placeBuildings(
     const civicDistance = nearest(parcel.center, civicAnchors);
     const shoreDistance = waterfrontDistance(parcel.center);
     const outer = distance(parcel.center, [0, 0]) / town.radius;
-    const use = city
-      ? civicDistance < settings.blockSize * 1.1 && index % 3 !== 0 ? 'shop'
+    const district = parcelDistricts.get(parcel.id);
+    const use = district ? districtUse(district)
+      : city ? civicDistance < settings.blockSize * 1.1 && index % 3 !== 0 ? 'shop'
         : shoreDistance < settings.blockSize * 0.65 && index % 3 === 0 ? 'workshop'
           : outer > 0.68 && index % 4 === 0 ? 'workshop' : 'home'
       : civicDistance < settings.blockSize && index % 4 === 0 ? 'shop'
@@ -1046,10 +1114,12 @@ function placeBuildings(
     };
     if (canPlace(building)) {
       result.push(building);
+      if (district) districtUseCounts.set(district.anchorId, (districtUseCounts.get(district.anchorId) ?? 0) + 1);
     }
   }
-  if(!filled()&&(town.population!==undefined||plan.generationPolicy==='raw-first-call')) placeRoadside(localFrontageRoads);
-  if(plan.generationPolicy==='raw-first-call'&&town.population!==undefined&&!filled()) placeRoadside(worldFrontageRoads);
+  if(!filled()&&(town.population!==undefined||plan.generationPolicy==='raw-first-call')) placeRoadside(localFrontageRoads,
+    districtIntent.length ? districtLimit : target);
+  if(!districtIntent.length&&plan.generationPolicy==='raw-first-call'&&town.population!==undefined&&!filled()) placeRoadside(worldFrontageRoads);
   return result;
 }
 

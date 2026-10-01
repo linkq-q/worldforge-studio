@@ -205,6 +205,144 @@ describe('world settlement growth', () => {
     expect(Math.max(...patch.streets.map(street => street.width))).toBeLessThanOrEqual(4.6);
   });
 
+  it('weights reachable frontage across explicit civic, residential, working and edge districts', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.population = 150;
+    town.districts = [
+      { anchorId: 'civic', kind: 'civic', density: 0.2, offset: [0, 0], radius: 44 },
+      { anchorId: 'homes', kind: 'residential', density: 1, offset: [-76, -42], radius: 68 },
+      { anchorId: 'works', kind: 'working', density: 0.65, offset: [72, -38], radius: 68 },
+      { anchorId: 'edge', kind: 'edge', density: 0.35, offset: [0, 116], radius: 64 }
+    ];
+    plan.featureGraph = {
+      regions: [{ id: 'town-region', kind: 'settlement', name: 'Town', center: town.center, radius: town.radius }],
+      paths: [], relations: [], anchors: town.districts.map(district => ({
+        id: district.anchorId, kind: district.kind,
+        position: [town.center[0] + district.offset[0], town.center[1] + district.offset[1]], regionId: 'town-region'
+      }))
+    };
+    const flat: WorldSettlementSampler = (x, z) => ({
+      ...base(x, z), height: 12, waterLevel: null, waterBodyId: null
+    });
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'city', pattern: 'organic', seed: 59, density: 0.82, waterfrontBias: 0
+    });
+    const districtFor = (building: TownBuilding) => town.districts!
+      .filter(district => Math.hypot(building.x - district.offset[0], building.z - district.offset[1]) <= district.radius)
+      .sort((a, b) => Math.hypot(building.x - a.offset[0], building.z - a.offset[1]) / a.radius
+        - Math.hypot(building.x - b.offset[0], building.z - b.offset[1]) / b.radius)[0];
+    const counts = Object.fromEntries(town.districts.map(district => [district.kind, 0])) as Record<string, number>;
+    const uses = Object.fromEntries(town.districts.map(district => [district.kind, [] as string[]])) as Record<string, string[]>;
+    for (const building of patch.buildings) {
+      const district = districtFor(building);
+      expect(district, building.id).toBeDefined();
+      counts[district!.kind]++;
+      uses[district!.kind].push(building.use);
+    }
+    expect(counts.residential).toBeGreaterThan(counts.working);
+    expect(counts.working).toBeGreaterThan(counts.edge);
+    expect(counts.edge).toBeGreaterThan(counts.civic);
+    expect(counts.civic).toBeGreaterThan(0);
+    expect(uses.civic).toContain('shop');
+    expect(uses.working).toContain('workshop');
+    expect(new Set(uses.residential)).toEqual(new Set(['home']));
+    expect(new Set(uses.edge)).toEqual(new Set(['farmhouse']));
+    expectStreetFacingBuildings(patch);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
+  it('does not move an unbuildable district across water just to satisfy population', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.population = 25;
+    town.districts = [{ anchorId: 'island-homes', kind: 'residential', density: 1, offset: [150, 0], radius: 20 }];
+    plan.featureGraph = {
+      regions: [{ id: 'town-region', kind: 'settlement', name: 'Town', center: town.center, radius: town.radius }],
+      paths: [], relations: [], anchors: [{ id: 'island-homes', kind: 'residential',
+        position: [town.center[0] + 150, town.center[1]], regionId: 'town-region' }]
+    };
+    const floodedDistrict: WorldSettlementSampler = (x, z) => {
+      const original = base(x, z), flooded = Math.hypot(x - town.center[0] - 150, z - town.center[1]) <= 24;
+      return { ...original, height: flooded ? -3 : 12,
+        waterLevel: flooded ? 0 : null, waterBodyId: flooded ? 'marsh' : null };
+    };
+
+    expect(() => generateWorldSettlement(plan, town.id, floodedDistrict, {
+      kind: 'city', pattern: 'organic', seed: 59, density: 0.82, waterfrontBias: 0
+    })).toThrow('world_settlement_no_buildings');
+  });
+
+  it('keeps the legacy populated layout when every explicit district has zero density', () => {
+    const legacy = fixture();
+    legacy.towns[0].population = 150;
+    legacy.generationPolicy = 'raw-first-call';
+    const options = { kind: 'city' as const, pattern: 'organic' as const, seed: 59, density: 0.82, waterfrontBias: 0 };
+    const expected = generateWorldSettlement(legacy, legacy.towns[0].id, sampler(legacy), options);
+    const zeroDensity = structuredClone(legacy), town = zeroDensity.towns[0];
+    town.districts = [
+      { anchorId: 'empty-core', kind: 'civic', density: 0, offset: [0, 0], radius: 40 },
+      { anchorId: 'empty-edge', kind: 'edge', density: 0, offset: [0, 100], radius: 40 }
+    ];
+    zeroDensity.featureGraph = {
+      regions: [{ id: 'town-region', kind: 'settlement', name: 'Town', center: town.center, radius: town.radius }],
+      paths: [], relations: [], anchors: town.districts.map(district => ({ id: district.anchorId, kind: district.kind,
+        position: [town.center[0] + district.offset[0], town.center[1] + district.offset[1]], regionId: 'town-region' }))
+    };
+    const actual = generateWorldSettlement(zeroDensity, town.id, sampler(zeroDensity), options);
+
+    expect(actual.streets).toEqual(expected.streets);
+    expect(actual.buildings).toEqual(expected.buildings);
+  });
+
+  it('keeps 150-person housing capacity while extending one town across compact authored districts', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0]; town.radius = 100; town.blend = 100; town.foundation = 12; town.ports = []; town.population = 150;
+    town.districts = [
+      { anchorId: 'civic-anchor', kind: 'civic', density: 0.9, offset: [0, 0], radius: 24 },
+      { anchorId: 'garden-anchor', kind: 'edge', density: 0.25, offset: [-10, 75], radius: 25 },
+      { anchorId: 'residential-anchor', kind: 'residential', density: 0.65, offset: [40, 35], radius: 28 },
+      { anchorId: 'working-anchor', kind: 'working', density: 0.8, offset: [-55, -15], radius: 22 }
+    ];
+    const localRoad = (id: string, points: Point[], width: number): MapGuide => ({
+      id, name: id, points, curve: 'polyline', closed: false, width,
+      tags: ['world-route', 'road', 'town-internal', 'local_street']
+    });
+    plan.roads = [
+      localRoad('quay-route', [[0, 0], [105, -10], [-55, -15]], 4),
+      localRoad('home-route', [[0, 0], [18, 20], [40, 35]], 3.5),
+      localRoad('garden-route', [[40, 35], [12, 57], [-10, 75]], 2.5)
+    ];
+    plan.generationPolicy = 'raw-first-call';
+    plan.featureGraph = {
+      regions: town.districts.map(district => ({ id: `${district.anchorId}-region`, kind: 'settlement_district',
+        name: district.anchorId, center: district.offset, radius: district.radius })),
+      paths: [], relations: [], anchors: town.districts.map(district => ({ id: district.anchorId, kind: district.kind,
+        position: district.offset, regionId: `${district.anchorId}-region` }))
+    };
+    const flat: WorldSettlementSampler = () => ({
+      height: 12, waterLevel: null, waterBodyId: null, moisture: 0.3, temperature: 0.5,
+      continentalness: 0.8, weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', density: 0.45, waterfrontBias: 0
+    });
+    const counts = Object.fromEntries(town.districts.map(district => [district.kind, patch.buildings.filter(building =>
+      Math.hypot(building.x - district.offset[0], building.z - district.offset[1]) <= district.radius).length])) as Record<string, number>;
+    const allRoads = [...segments(patch), ...plan.roads.flatMap(route => route.points.slice(1)
+      .map((b, index) => ({ a: route.points[index], b, width: route.width })))];
+
+    expect(patch.buildings.filter(building => building.use === 'home' || building.use === 'farmhouse')).toHaveLength(30);
+    expect(counts.civic).toBeGreaterThanOrEqual(4);
+    expect(counts.working).toBeGreaterThanOrEqual(2);
+    expect(counts.residential).toBeGreaterThanOrEqual(8);
+    expect(counts.edge).toBeGreaterThanOrEqual(2);
+    for (const building of patch.buildings) {
+      const entrance: Point = [building.x + Math.sin(building.rotation ?? 0) * building.depth / 2,
+        building.z + Math.cos(building.rotation ?? 0) * building.depth / 2];
+      expect(Math.min(...allRoads.map(segment => pointDistance(entrance, segment.a, segment.b))), building.id).toBeLessThan(8.5);
+    }
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
   it('connects a corner port after clearing both town-boundary axes', () => {
     const plan = fixture(), town = plan.towns[0], base = sampler(plan);
     town.radius = 100;
