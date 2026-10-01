@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildWorldRoadChunk, sampleWorldQuaySurface, WorldContentView, worldHarborQuayExtension,
+import { buildWorldRoadChunk, sampleWorldQuaySurface, WORLD_CONTENT_CHUNK_SIZE, WorldContentView, worldHarborQuayExtension,
   selectWorldContentChunks } from '../src/client/worldContent';
 import { stepWorldWalk, type WorldWalkState } from '../src/client/worldWalkController';
 import { buildWorldAssetLibrary, disposeWorldAssetLibrary, type WorldAssetSource } from '../src/client/worldAssets';
@@ -112,5 +112,27 @@ describe('continuous-world streaming client', () => {
       distanceToSegment(x,z,[0,20],[20,0]))>.25)).toBe(true);
     built.mesh!.geometry.dispose();
     (built.mesh!.material as THREE.Material).dispose();
+  });
+
+  it('renders and walks on the same explicitly graded road surface', () => {
+    const changed=structuredClone(bundle),route=changed.plan.roads[0];
+    changed.plan.whitebox=true;changed.plan.generationPolicy='raw-first-call';
+    changed.plan.featureGraph={regions:[],anchors:[],relations:[],paths:[{
+      id:'graded-path',kind:'road',name:'Graded path',points:route.points,curve:route.curve,width:route.width
+    }]};
+    changed.plan.mobilityPlan={routes:[{id:route.id,pathId:'graded-path',mode:'cart road',connects:[],
+      construction:{terrain:'grade',maxGrade:.18}}]};
+    changed.patches=[];
+    const checked=validateWorldBundle(changed),sample=createPlannedWorldSampler(checked.plan,checked.patches);
+    const focus:[number,number]=[(route.points[0][0]+route.points[1][0])/2,(route.points[0][1]+route.points[1][1])/2];
+    const built=buildWorldRoadChunk([route],{x:Math.floor(focus[0]/WORLD_CONTENT_CHUNK_SIZE),
+      z:Math.floor(focus[1]/WORLD_CONTENT_CHUNK_SIZE)},sample,checked.plan.recipe.size);
+    const positions=built.mesh!.geometry.getAttribute('position');
+    for(let index=0;index<positions.count;index++)expect(positions.getY(index))
+      .toBeCloseTo(sample(positions.getX(index),positions.getZ(index)).height+1.2,4);
+    const view=new WorldContentView();view.reset(checked,sample);
+    const point=route.points[0],surface=view.sampleSurface(point[0],point[1]);
+    expect(surface).toEqual(sample(point[0],point[1]));
+    view.dispose();built.mesh!.geometry.dispose();(built.mesh!.material as THREE.Material).dispose();
   });
 });

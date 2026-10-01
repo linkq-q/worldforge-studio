@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { MapGuide } from '../src/shared/mapGuide';
 import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
 import {
-  buildingsOverlap, createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
+  buildingsOverlap, createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity,
+  deriveWorldRouteConstruction, mergeTownPatch,
   observeWorldWhitebox, validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldRoadPolyline,
   worldTownBuildingQuota,
   type TownPatch, type WorldBundle, type WorldPlan
@@ -38,6 +39,97 @@ function patch(plan: WorldPlan, index: number): TownPatch {
 }
 
 describe('hierarchical world planning contracts', () => {
+  function constructedRoutePlan(options: {
+    points: Array<[number, number]>;
+    heights: number[];
+    curve?: MapGuide['curve'];
+    terrain?: 'follow' | 'grade';
+    water?: WorldRecipe['waterBodies'];
+  }): WorldPlan {
+    const route = road('main-route', options.points, 6);
+    route.curve = options.curve ?? 'polyline';
+    return {
+      version: 1, id: 'constructed-route', revision: 1, prompt: 'An explicitly constructed dry route',
+      whitebox: true, generationPolicy: 'raw-first-call',
+      recipe: {
+        version: 1, seed: 19, size: 500, heightScale: .02,
+        constraints: [{ region: 'center', biome: 'grassland' }],
+        terrainBrushes: [{ id: 'source-profile', mode: 'grade',
+          region: { kind: 'path', points: options.points, width: 40 }, heights: options.heights }],
+        ...(options.water ? { waterBodies: options.water } : {})
+      },
+      ecology: [], towns: [], roads: [route],
+      featureGraph: { regions: [], anchors: [], relations: [], paths: [{
+        id: 'main-path', kind: 'road', name: 'Main path', points: options.points,
+        curve: route.curve, width: route.width
+      }] },
+      mobilityPlan: { routes: [{ id: route.id, pathId: 'main-path', mode: 'cart road', connects: [],
+        construction: { terrain: options.terrain ?? 'grade', maxGrade: .18 } }] }
+    };
+  }
+
+  it('grades an explicitly constructed dry route within slope and cut-fill bounds', () => {
+    const points:Array<[number,number]>=[[-80,0],[-10,0],[10,0],[80,0]];
+    const plan=constructedRoutePlan({points,heights:[10,10,16,16]});
+    const originalRoad=structuredClone(plan.roads[0]),base=createWorldSampler(plan.recipe);
+    const construction=deriveWorldRouteConstruction(plan),sample=createPlannedWorldSampler(plan);
+    expect(construction.diagnostics).toEqual([]);
+    expect(construction.terrainBrushes).toHaveLength(1);
+    let previous:number|undefined,maxGrade=0,maxEarthwork=0;
+    for(let x=-80;x<=80;x+=2) {
+      const cross=[-3,0,3].map(z=>sample(x,z).height),raw=[-3,0,3].map(z=>base(x,z).height);
+      maxEarthwork=Math.max(maxEarthwork,...cross.map((height,index)=>Math.abs(height-raw[index])));
+      if(previous!==undefined)maxGrade=Math.max(maxGrade,Math.abs(cross[1]-previous)/2);
+      previous=cross[1];
+    }
+    expect(maxGrade).toBeLessThanOrEqual(.18+.001);
+    expect(maxEarthwork).toBeLessThanOrEqual(1.5+.001);
+    expect(plan.roads[0]).toEqual(originalRoad);
+  });
+
+  it('leaves an infeasible short steep route unchanged and reports why', () => {
+    const plan=constructedRoutePlan({points:[[-10,0],[10,0]],heights:[0,20]});
+    const original=structuredClone(plan),base=createWorldSampler(plan.recipe);
+    expect(()=>validateWorldPlan(plan)).not.toThrow();
+    const construction=deriveWorldRouteConstruction(plan),sample=createPlannedWorldSampler(plan);
+    expect(construction.terrainBrushes).toEqual([]);
+    expect(construction.diagnostics).toContainEqual(expect.objectContaining({
+      routeId:'main-route',pathId:'main-path',code:'world_route_grade_infeasible'
+    }));
+    expect(sample(0,0).height).toBeCloseTo(base(0,0).height,10);
+    expect(plan).toEqual(original);
+  });
+
+  it('diagnoses water instead of grading a solid road across it', () => {
+    const plan=constructedRoutePlan({points:[[-80,0],[80,0]],heights:[10,10],water:[{
+      id:'lake',type:'lake',region:{kind:'circle',center:[0,0],radius:12},levels:[12],depth:4
+    }]});
+    const base=createWorldSampler(plan.recipe),construction=deriveWorldRouteConstruction(plan);
+    const sample=createPlannedWorldSampler(plan);
+    expect(construction.terrainBrushes).toEqual([]);
+    expect(construction.diagnostics).toContainEqual(expect.objectContaining({
+      routeId:'main-route',pathId:'main-path',code:'world_route_grade_crosses_water'
+    }));
+    expect(sample(0,0)).toEqual(base(0,0));
+    expect(sample(0,0).waterBodyId).toBe('lake');
+  });
+
+  it('derives curved route grading from the canonical centerline and keeps old routes opt-in', () => {
+    const plan=constructedRoutePlan({points:[[-40,0],[0,30],[40,0]],heights:[10,13,16],curve:'catmull-rom'});
+    const construction=deriveWorldRouteConstruction(plan),brush=construction.terrainBrushes[0];
+    expect(brush.mode).toBe('grade');
+    if(brush.mode!=='grade')throw new Error('expected_grade');
+    const distanceToSegment=(point:[number,number],a:[number,number],b:[number,number])=>{
+      const dx=b[0]-a[0],dz=b[1]-a[1],length2=dx*dx+dz*dz;
+      const t=Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dz)/length2));
+      return Math.hypot(point[0]-a[0]-dx*t,point[1]-a[1]-dz*t);
+    };
+    expect(brush.region.points.some(point=>Math.min(distanceToSegment(point,[-40,0],[0,30]),
+      distanceToSegment(point,[0,30],[40,0]))>.25)).toBe(true);
+    delete plan.mobilityPlan!.routes[0].construction;
+    expect(deriveWorldRouteConstruction(plan)).toEqual({terrainBrushes:[],diagnostics:[]});
+  });
+
   it('canonicalizes semantic intent and exposes a compact deterministic exploration observation', () => {
     const plan = fixture();
     Object.assign(plan, {

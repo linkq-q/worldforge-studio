@@ -1,7 +1,7 @@
 import { mapGuidePolyline, type MapGuide, type MapGuideCurve } from './mapGuide';
 import { validateEcologyRules, type EcologyRule } from './worldEcology';
 import { createWorldSampler, createWorldTerrainContext, validateWorldRecipe,
-  type WorldRecipe, type WorldSampler, type WorldTerrainContext } from './worldTerrain';
+  type WorldRecipe, type WorldSampler, type WorldTerrainBrush, type WorldTerrainContext } from './worldTerrain';
 
 export interface WorldPlan {
   version: 1;
@@ -34,7 +34,10 @@ export interface FeatureGraph {
 }
 export interface SettlementPlanEntry { id: string; anchorId: string; role: string }
 export interface SettlementPlan { settlements: SettlementPlanEntry[] }
-export interface MobilityRoute { id: string; pathId: string; mode: string; connects: string[] }
+export interface MobilityRouteConstruction { terrain: 'follow' | 'grade'; maxGrade?: number }
+export interface MobilityRoute {
+  id: string; pathId: string; mode: string; connects: string[]; construction?: MobilityRouteConstruction;
+}
 export interface MobilityPlan { routes: MobilityRoute[] }
 export interface ExplorationPointOfInterest { id: string; anchorId: string; purpose: string }
 export interface ExplorationPlan { pointsOfInterest: ExplorationPointOfInterest[]; sequence: string[] }
@@ -91,6 +94,18 @@ export interface TownBuilding {
 }
 export interface TownPatch { townId: string; worldKey: string; summary: string; streets: MapGuide[]; buildings: TownBuilding[] }
 export interface WorldBundle { plan: WorldPlan; patches: TownPatch[] }
+export interface WorldRouteConstructionDiagnostic {
+  routeId: string;
+  pathId: string;
+  code: 'world_route_grade_crosses_water' | 'world_route_grade_infeasible';
+  reason: 'water' | 'cross_section_cut_fill' | 'longitudinal_grade' | 'terrain_brush_budget';
+  position?: Point;
+  waterBodyId?: string | null;
+}
+export interface WorldRouteConstructionResult {
+  terrainBrushes: WorldTerrainBrush[];
+  diagnostics: WorldRouteConstructionDiagnostic[];
+}
 
 export const WORLD_ROAD_SAMPLE_SPACING = 24;
 export const WORLD_ROAD_VERTEX_BUDGET = 32768;
@@ -102,6 +117,12 @@ const TOLERANCE = 1e-6;
 const MAX_TOWN_SLOPE = 0.65;
 const MAX_ROAD_SLOPE = 0.5;
 const MAX_BUILDING_CUT_FILL = 1.5;
+const MAX_ROUTE_CUT_FILL = 1.5;
+// Leave interpolation headroom, then verify the continuous sampled result against the public 1.5m budget.
+const ROUTE_PROFILE_CUT_FILL = 1.25;
+const DEFAULT_ROUTE_MAX_GRADE = 0.18;
+const MAX_ROUTE_GRADE_POINTS = 64;
+const ROUTE_GRADE_SAMPLE_SPACING = 8;
 const byId = <T extends { id: string }>(a: T, b: T) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 function fail(code: string): never { throw new Error(code); }
 
@@ -144,6 +165,167 @@ export function worldRoadPolyline(guide: MapGuide): Point[] {
 }
 export function worldFeaturePathPolyline(path: FeaturePath): Point[] {
   return worldRoadPolyline({ ...path, curve: path.curve ?? 'polyline', closed: false, tags: [] });
+}
+function resampleRoutePolyline(points: Point[], spacing: number, maxPoints: number): Point[] {
+  const segments = points.slice(1).map((to, index) => ({
+    from: points[index], to,
+    length: Math.hypot(to[0] - points[index][0], to[1] - points[index][1])
+  })).filter(segment => segment.length > TOLERANCE);
+  const total = segments.reduce((sum, segment) => sum + segment.length, 0);
+  if (!segments.length || total <= TOLERANCE) return points.slice(0, 1).map(point => [...point]);
+  const count = Math.min(maxPoints, Math.max(2, Math.ceil(total / spacing) + 1));
+  return Array.from({ length: count }, (_, index): Point => {
+    const target = total * index / (count - 1);
+    let before = 0;
+    for (const segment of segments) {
+      if (target <= before + segment.length + TOLERANCE) {
+        const t = Math.max(0, Math.min(1, (target - before) / segment.length));
+        return [segment.from[0] + (segment.to[0] - segment.from[0]) * t,
+          segment.from[1] + (segment.to[1] - segment.from[1]) * t];
+      }
+      before += segment.length;
+    }
+    return [...segments.at(-1)!.to];
+  });
+}
+function routeConstructionGuide(plan: WorldPlan, route: MobilityRoute): MapGuide {
+  const road = plan.roads.find(candidate => candidate.id === route.id);
+  if (road) return road;
+  const path = plan.featureGraph!.paths.find(candidate => candidate.id === route.pathId)!;
+  return { id: route.id, name: path.name, points: path.points.map(point => [...point]),
+    curve: path.curve ?? 'polyline', closed: false, width: path.width, tags: ['world-route', path.kind] };
+}
+function derivedBrushId(plan: WorldPlan, routeId: string, used: Set<string>): string {
+  const stem = `route-grade-${routeId}`.slice(0, 88).replace(/-+$/, '');
+  let id = stem;
+  for (let suffix = 2; used.has(id); suffix++) id = `${stem.slice(0, 94 - String(suffix).length)}-${suffix}`;
+  used.add(id);
+  return id;
+}
+function deriveCheckedWorldRouteConstruction(plan: WorldPlan): WorldRouteConstructionResult {
+  const terrainBrushes: WorldTerrainBrush[] = [], diagnostics: WorldRouteConstructionDiagnostic[] = [];
+  const routes = (plan.mobilityPlan?.routes ?? []).filter(route => route.construction?.terrain === 'grade');
+  if (!routes.length) return { terrainBrushes, diagnostics };
+  const base = createWorldSampler(plan.recipe);
+  const usedIds = new Set([
+    ...(plan.recipe.terrainBrushes ?? []).map(brush => brush.id),
+    ...(plan.recipe.waterBodies ?? []).map(water => water.id),
+    ...(plan.recipe.biomePatches ?? []).map(patch => patch.id)
+  ]);
+  const availableBrushes = Math.max(0, 32 - (plan.recipe.terrainBrushes?.length ?? 0));
+  for (const route of routes) {
+    const guide = routeConstructionGuide(plan, route), centerline = worldRoadPolyline(guide);
+    const wetSamples = resampleRoutePolyline(centerline, Math.min(4, Math.max(1, guide.width / 2)), 512);
+    let wet: { position: Point; waterBodyId: string | null } | undefined;
+    for (let index = 0; index < wetSamples.length && !wet; index++) {
+      const point = wetSamples[index], previous = wetSamples[Math.max(0, index - 1)], next = wetSamples[Math.min(wetSamples.length - 1, index + 1)];
+      const dx = next[0] - previous[0], dz = next[1] - previous[1], length = Math.hypot(dx, dz) || 1;
+      for (const offset of [-guide.width / 2, 0, guide.width / 2]) {
+        const value = base(point[0] - dz / length * offset, point[1] + dx / length * offset);
+        if (value.waterLevel !== null) { wet = { position: [...point], waterBodyId: value.waterBodyId }; break; }
+      }
+    }
+    if (wet) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_crosses_water',
+        reason: 'water', position: wet.position, waterBodyId: wet.waterBodyId });
+      continue;
+    }
+    if (terrainBrushes.length >= availableBrushes) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_infeasible',
+        reason: 'terrain_brush_budget' });
+      continue;
+    }
+    const points = resampleRoutePolyline(centerline, ROUTE_GRADE_SAMPLE_SPACING, MAX_ROUTE_GRADE_POINTS);
+    if (points.length < 2) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_infeasible',
+        reason: 'longitudinal_grade' });
+      continue;
+    }
+    const centers: number[] = [], lower: number[] = [], upper: number[] = [];
+    let crossSectionFailure: Point | undefined;
+    for (let index = 0; index < points.length; index++) {
+      const point = points[index], previous = points[Math.max(0, index - 1)], next = points[Math.min(points.length - 1, index + 1)];
+      const dx = next[0] - previous[0], dz = next[1] - previous[1], length = Math.hypot(dx, dz) || 1;
+      const cross = [-guide.width / 2, 0, guide.width / 2]
+        .map(offset => base(point[0] - dz / length * offset, point[1] + dx / length * offset).height);
+      centers.push(cross[1]);
+      lower.push(Math.max(...cross.map(height => height - ROUTE_PROFILE_CUT_FILL)));
+      upper.push(Math.min(...cross.map(height => height + ROUTE_PROFILE_CUT_FILL)));
+      if (lower[index] > upper[index] + TOLERANCE) { crossSectionFailure = [...point]; break; }
+    }
+    if (crossSectionFailure) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_infeasible',
+        reason: 'cross_section_cut_fill', position: crossSectionFailure });
+      continue;
+    }
+    lower[0] = upper[0] = centers[0];
+    lower[lower.length - 1] = upper[upper.length - 1] = centers.at(-1)!;
+    const maxGrade = route.construction?.maxGrade ?? DEFAULT_ROUTE_MAX_GRADE;
+    const constrain = (from: number, to: number, step: number): boolean => {
+      for (let index = from; index !== to; index += step) {
+        const adjacent = index - step, distance = Math.hypot(points[index][0] - points[adjacent][0], points[index][1] - points[adjacent][1]);
+        const delta = maxGrade * distance;
+        lower[index] = Math.max(lower[index], lower[adjacent] - delta);
+        upper[index] = Math.min(upper[index], upper[adjacent] + delta);
+        if (lower[index] > upper[index] + TOLERANCE) return false;
+      }
+      return true;
+    };
+    if (!constrain(1, points.length, 1) || !constrain(points.length - 2, -1, -1)) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_infeasible',
+        reason: 'longitudinal_grade' });
+      continue;
+    }
+    const heights = [centers[0]];
+    let feasible = true;
+    for (let index = 1; index < points.length; index++) {
+      const distance = Math.hypot(points[index][0] - points[index - 1][0], points[index][1] - points[index - 1][1]);
+      const delta = maxGrade * distance, low = Math.max(lower[index], heights[index - 1] - delta);
+      const high = Math.min(upper[index], heights[index - 1] + delta);
+      if (low > high + TOLERANCE) { feasible = false; break; }
+      heights.push(Math.max(low, Math.min(high, centers[index])));
+    }
+    if (!feasible) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_infeasible',
+        reason: 'longitudinal_grade' });
+      continue;
+    }
+    const brush: WorldTerrainBrush = { id: derivedBrushId(plan, route.id, usedIds), mode: 'grade',
+      region: { kind: 'path', points, width: guide.width }, heights, feather: 2, strength: 1 };
+    const candidate = createWorldSampler({ ...plan.recipe,
+      terrainBrushes: [...(plan.recipe.terrainBrushes ?? []), ...terrainBrushes, brush] });
+    const verification = resampleRoutePolyline(centerline, Math.min(2, Math.max(0.5, guide.width / 4)), 512);
+    let previousHeight: number | undefined, previousPoint: Point | undefined, invalidPosition: Point | undefined;
+    for (let index = 0; index < verification.length && !invalidPosition; index++) {
+      const point = verification[index], previous = verification[Math.max(0, index - 1)], next = verification[Math.min(verification.length - 1, index + 1)];
+      const dx = next[0] - previous[0], dz = next[1] - previous[1], tangentLength = Math.hypot(dx, dz) || 1;
+      const cross = [-guide.width / 2, 0, guide.width / 2].map(offset => {
+        const x = point[0] - dz / tangentLength * offset, z = point[1] + dx / tangentLength * offset;
+        return { raw: base(x, z).height, adjusted: candidate(x, z).height };
+      });
+      if (cross.some(value => Math.abs(value.adjusted - value.raw) > MAX_ROUTE_CUT_FILL + TOLERANCE)) {
+        invalidPosition = [...point]; break;
+      }
+      if (previousHeight !== undefined && previousPoint) {
+        const distance = Math.hypot(point[0] - previousPoint[0], point[1] - previousPoint[1]);
+        if (Math.abs(cross[1].adjusted - previousHeight) / distance > maxGrade + 0.001) {
+          invalidPosition = [...point]; break;
+        }
+      }
+      previousHeight = cross[1].adjusted; previousPoint = point;
+    }
+    if (invalidPosition) {
+      diagnostics.push({ routeId: route.id, pathId: route.pathId, code: 'world_route_grade_infeasible',
+        reason: 'longitudinal_grade', position: invalidPosition });
+      continue;
+    }
+    terrainBrushes.push(brush);
+  }
+  return { terrainBrushes, diagnostics };
+}
+/** Compiles only explicitly authored route earthworks; it never rewrites the plan or infers repairs. */
+export function deriveWorldRouteConstruction(plan: WorldPlan): WorldRouteConstructionResult {
+  return deriveCheckedWorldRouteConstruction(validateWorldPlan(plan));
 }
 function segments(guide: MapGuide): Array<[Point, Point]> {
   const points = worldRoadPolyline(guide);
@@ -261,11 +443,23 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     keys(value, ['routes'], 'world_unknown_mobility_plan_field');
     const routes = list(value.routes, 64, 'world_mobility_route_quota').map(item => {
       const route = record(item, 'world_invalid_mobility_route');
-      keys(route, ['id', 'pathId', 'mode', 'connects'], 'world_unknown_mobility_route_field');
+      keys(route, ['id', 'pathId', 'mode', 'connects', 'construction'], 'world_unknown_mobility_route_field');
       const parsed = { id: safeId(route.id, 'world_invalid_mobility_route'), pathId: safeId(route.pathId, 'world_invalid_mobility_path'),
         mode: semanticText(route.mode, 'world_invalid_mobility_mode'),
         connects: list(route.connects, 32, 'world_mobility_connection_quota')
-          .map(id => safeId(id, 'world_invalid_mobility_connection')) };
+          .map(id => safeId(id, 'world_invalid_mobility_connection')) } as MobilityRoute;
+      if (route.construction !== undefined) {
+        const construction = record(route.construction, 'world_invalid_route_construction');
+        keys(construction, ['terrain', 'maxGrade'], 'world_unknown_route_construction_field');
+        if (construction.terrain !== 'follow' && construction.terrain !== 'grade') fail('world_invalid_route_terrain');
+        if (construction.terrain === 'follow' && construction.maxGrade !== undefined) fail('world_unexpected_route_max_grade');
+        parsed.construction = {
+          terrain: construction.terrain,
+          ...(construction.maxGrade === undefined ? {} : {
+            maxGrade: number(construction.maxGrade, 0.02, 0.2, 'world_invalid_route_max_grade')
+          })
+        };
+      }
       if (!paths.has(parsed.pathId) || parsed.connects.some(id => !anchors.has(id))) fail('world_unknown_mobility_feature');
       unique(parsed.connects, 'world_duplicate_mobility_connection');
       return parsed;
@@ -841,7 +1035,11 @@ export function createPlannedWorldSampler(plan: WorldPlan, patches: TownPatch[] 
 
 export function createPlannedWorldTerrainContext(plan: WorldPlan, patches: TownPatch[] = []): WorldTerrainContext {
   const checked = validateWorldBundle({ plan, patches });
-  const context = createWorldTerrainContext(checked.plan.recipe);
+  const construction = deriveCheckedWorldRouteConstruction(checked.plan);
+  const context = createWorldTerrainContext(construction.terrainBrushes.length ? {
+    ...checked.plan.recipe,
+    terrainBrushes: [...(checked.plan.recipe.terrainBrushes ?? []), ...construction.terrainBrushes]
+  } : checked.plan.recipe);
   return { ...context, sample: conformSampler(context.sample, checked.plan, checked.patches) };
 }
 
