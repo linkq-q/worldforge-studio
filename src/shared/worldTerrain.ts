@@ -365,7 +365,7 @@ function worldBiomePatchWeight(patch: WorldBiomePatch, x: number, z: number, see
   const authoredFeather = patch.feather;
   // Keep authored metre values intact while giving natural material changes a
   // small minimum transition. Explicit zero remains available for a hard edge.
-  const minimumFeather = clamp(scale * 0.12, 2, 12);
+  const minimumFeather = clamp(scale * 0.24, 4, 24);
   const feather = authoredFeather === 0 ? 0 : Math.max(authoredFeather ?? 0, minimumFeather);
   const noiseScale = clamp(scale * 0.9, 12, 192);
   const variation = fbm(x / noiseScale, z / noiseScale, waterSeed(seed, patch.id), 3)

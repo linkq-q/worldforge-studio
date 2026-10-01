@@ -247,6 +247,36 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('keeps a small nonzero biome feather readable to terrain and ecology sampling while preserving explicit hard edges', () => {
+    const baseRecipe = parseWorldPrompt('中央是森林', 6103, 500);
+    const patch = (feather: number) => validateWorldRecipe({ ...baseRecipe, biomePatches: [{
+      id: 'generic-town-meadow', region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 85 },
+      biome: 'grassland' as const, feather
+    }] });
+    const recipe = patch(0.65);
+    const sample = createWorldSampler(recipe);
+    const fine = Array.from({ length: 241 }, (_, index) => {
+      const radius = 60 + index * 0.25;
+      return { radius, forest: sample(radius, 0).weights.forest };
+    });
+    const blended = fine.filter(({ forest }) => forest > 0.01 && forest < 0.99);
+    const renderSamples = Array.from({ length: 17 }, (_, index) => sample(60 + index * 4, 0).weights.forest);
+    const maximumFourMetreStep = Math.max(...renderSamples.slice(1)
+      .map((weight, index) => Math.abs(weight - renderSamples[index])));
+
+    expect(recipe.biomePatches?.[0].feather).toBe(0.65);
+    expect(blended.at(-1)!.radius - blended[0].radius).toBeGreaterThanOrEqual(18);
+    expect(maximumFourMetreStep).toBeLessThanOrEqual(0.3);
+
+    const hardRecipe = patch(0);
+    const hardSample = createWorldSampler(hardRecipe);
+    const hardWeights = Array.from({ length: 401 }, (_, index) => hardSample(70 + index * 0.1, 0).weights.grassland);
+    expect(hardRecipe.biomePatches?.[0].feather).toBe(0);
+    expect(hardWeights).toContain(0);
+    expect(hardWeights).toContain(1);
+    expect(hardWeights.some(weight => weight > 0 && weight < 1)).toBe(false);
+  });
+
   it('shares one deterministic natural lake boundary across sampling, water geometry, ecology distance and tile seams', () => {
     const recipe = validateWorldRecipe({ ...original, waterBodies: [{
       id: 'oasis', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, validateEcologyRules, type EcologyRule } from '../src/shared/worldEcology';
-import { createWorldSampler, worldFreshWaterDistance, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
+import { createWorldSampler, parseWorldPrompt, validateWorldRecipe, worldFreshWaterDistance, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
 
 const recipe: WorldRecipe = { version: 1, seed: 42, size: 64000, constraints: [{ region: 'center', biome: 'forest' }] };
 const trees: EcologyRule[] = [
@@ -121,6 +121,33 @@ describe('deterministic chunk ecology', () => {
     expect(blended.instances.length).toBeLessThan(base.instances.length);
     const baseById = new Map(base.instances.map(point => [point.id, point]));
     for (const point of blended.instances) if (baseById.has(point.id)) expect(baseById.get(point.id)).toEqual(point);
+  });
+
+  it('uses the shared biome transition to interleave sparse meadow and dense forest ecology without an empty collar', () => {
+    const base = parseWorldPrompt('中央是森林', 6103, 500);
+    const patched = validateWorldRecipe({ ...base, biomePatches: [{
+      id: 'generic-town-meadow', region: { kind: 'circle', center: [0, 0], radius: 85 },
+      biome: 'grassland', feather: 0.65
+    }] });
+    const sample = createWorldSampler(patched);
+    const transitionRules: EcologyRule[] = [
+      { id: 'forest-canopy', kind: 'broadleaf', biome: 'forest', density: 0.78, spacing: 10, maxSlope: 60, scale: [0.8, 1.2] },
+      { id: 'meadow-tree', kind: 'broadleaf', biome: 'grassland', density: 0.19, spacing: 10, maxSlope: 60, scale: [0.6, 1] }
+    ];
+    const instances = [{ x: -1, z: -1 }, { x: -1, z: 0 }, { x: 0, z: -1 }, { x: 0, z: 0 }]
+      .flatMap(chunk => generateEcologyChunk(patched, transitionRules, chunk, { sample }).instances);
+    const collar = instances.filter(point => {
+      const radius = Math.hypot(point.x, point.z);
+      return radius >= 70 && radius < 100;
+    });
+    const sectorCounts = Array.from({ length: 8 }, (_, sector) => collar.filter(point => {
+      const angle = (Math.atan2(point.z, point.x) + Math.PI * 2) % (Math.PI * 2);
+      return Math.floor(angle / (Math.PI * 2) * 8) === sector;
+    }).length);
+
+    expect(collar.some(point => point.ruleId === 'meadow-tree')).toBe(true);
+    expect(collar.some(point => point.ruleId === 'forest-canopy')).toBe(true);
+    expect(Math.min(...sectorCounts)).toBeGreaterThan(0);
   });
 
   it('does not let an uninhabitable tree rule thin eligible neighboring trees', () => {
