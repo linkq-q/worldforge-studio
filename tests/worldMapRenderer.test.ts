@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
 import { buildMapGrassField } from '../src/client/mapGrassRenderer';
 import { getCollisionMeshBvhBuildStats, resetCollisionMeshBvhBuildStats } from '../src/client/mapMeshCollision';
-import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
+import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldRoadSurfaceStyle, worldTileSurfaceWeight } from '../src/client/worldMapRenderer';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
@@ -187,6 +187,26 @@ describe('main editor streamed world renderer', () => {
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');
+  });
+
+  it('renders wilderness routes as soil trails without a forced hard-road overlay', () => {
+    for (const tag of ['walking_trail', 'rim_trail', 'shore_trail']) {
+      expect(worldRoadSurfaceStyle({ id: `${tag}-route`, tags: [tag, 'world-route'] })).toEqual({
+        tags: ['soil'], intensity: 0.55, material: 'compacted-earth', forceRoadOverlay: false
+      });
+    }
+  });
+
+  it('keeps town streets, town access, and harbor quays visibly paved', () => {
+    expect(worldRoadSurfaceStyle({ id: 'main-street', tags: ['local_street', 'world-route'] })).toEqual({
+      tags: ['paving', 'settlement'], intensity: 1, material: 'brick-paver', forceRoadOverlay: true
+    });
+    expect(worldRoadSurfaceStyle({ id: 'trail-access', tags: ['walking_trail', 'town-access'] })).toEqual({
+      tags: ['paving', 'settlement'], intensity: 1, material: 'brick-paver', forceRoadOverlay: true
+    });
+    expect(worldRoadSurfaceStyle({ id: 'harbor-landing', tags: ['harbor-quay'] })).toEqual({
+      tags: ['paving', 'settlement'], intensity: 1, material: 'cobblestone', forceRoadOverlay: true
+    });
   });
 
   it('derives a coastal sand band without turning inland lowlands into beach', () => {

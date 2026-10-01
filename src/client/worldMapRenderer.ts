@@ -67,6 +67,15 @@ export function worldRoadSurfaceMaterial(road: Pick<MapGuide,'id'|'tags'>): 'bri
   return road.id.startsWith('town:')||road.tags.some(tag=>/street|settlement|town/i.test(tag))?'brick-paver':'compacted-earth';
 }
 
+export function worldRoadSurfaceStyle(
+  road: Pick<MapGuide, 'id' | 'tags'>
+): Pick<SceneVisualZone, 'tags' | 'intensity' | 'material'> & { forceRoadOverlay: boolean } {
+  const material = worldRoadSurfaceMaterial(road);
+  return material === 'compacted-earth'
+    ? { tags: ['soil'], intensity: 0.55, material, forceRoadOverlay: false }
+    : { tags: ['paving', 'settlement'], intensity: 1, material, forceRoadOverlay: true };
+}
+
 export function buildWorldWhiteboxOverlay(
   plan: WorldPlan,
   sample: (x: number, z: number) => { height: number; waterLevel?: number | null }
@@ -832,6 +841,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const result: SceneVisualZone[] = [];
     for (const road of roads) {
       const points = roadPolylines.get(road.id)!;
+      const surface = worldRoadSurfaceStyle(road);
       const fragments = clipPolylineToRect(points, tile.x, tile.z, tile.x + tile.size, tile.z + tile.size, Boolean(road.closed));
       fragments.forEach((fragment, index) => {
         const local = fragment.points.map(([x, z]) => [x - centerX, z - centerZ] as [number, number]);
@@ -840,16 +850,16 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         const zoneX = (minX + maxX) / 2, zoneZ = (minZ + maxZ) / 2;
         result.push({
           id: `world-road:${road.id}:${index}:${tileKey(tile)}`,
-          tags: ['paving', 'settlement'],
+          tags: surface.tags,
           center: [zoneX, zoneZ],
           radius: Math.max(...local.map(point => Math.hypot(point[0] - zoneX, point[1] - zoneZ))) + road.width,
-          intensity: 1,
-          material: worldRoadSurfaceMaterial(road),
+          intensity: surface.intensity,
+          material: surface.material,
           region: { kind: 'path', points: local, width: road.width },
           roadDistanceOffset: fragment.distanceOffset,
           roadContinuesBefore: fragment.continuesBefore,
           roadContinuesAfter: fragment.continuesAfter,
-          forceRoadOverlay: true
+          forceRoadOverlay: surface.forceRoadOverlay
         } as SceneVisualZone);
       });
     }
