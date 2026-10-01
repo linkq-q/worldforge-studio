@@ -740,8 +740,10 @@ describe('world generation compiler', () => {
       .toEqual(Array.from({length:7},(_,index)=>`southwest-port-site-${index+1}`));
     expect(failures.find(failure=>failure.candidateId==='southwest-port-site-6')?.reason)
       .toContain('world_settlement_no_landmark_site:courtyard-school:');
+    expect(failures.filter(failure=>failure.reason==='world_settlement_no_waterfront_site:fish-market')
+      .map(failure=>failure.candidateId)).toEqual(['southwest-port-site-2','southwest-port-site-3']);
     expect(failures.find(failure=>failure.candidateId==='southwest-port-site-7')?.reason)
-      .toContain('world_settlement_no_waterfront_site:fish-market');
+      .toBe('world_settlement_no_buildings');
   },15_000);
 
   it('keeps one shared candidate graph for a three-town chain at 500 metres', () => {
