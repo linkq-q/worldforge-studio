@@ -1065,7 +1065,7 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   validateWorldAssetRequests(assetRequests,constructionPlan,validationRequest,requestedPatches,false,true);
   let paidCallCount=1,assetSources:WorldAssetResult[]=[];
   const scheduledAssets=selectUsedWorldAssetRequests(assetRequests,constructionPlan,requestedPatches);
-  const generationQueue=request.generateAssets?scheduledAssets:scheduledAssets.filter(asset=>asset.existingAssetId);
+  const generationQueue=request.generateAssets?scheduledAssets:[];
   for(const asset of generationQueue) {
     if(!asset.existingAssetId) paidCallCount++;
     try {
@@ -1077,7 +1077,8 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     }
   }
   const visiblePatches=requestedPatches;
-  diagnoseUnboundExplicitBuildings(visiblePatches,new Set(assetSources.map(asset=>asset.id)),issue);
+  diagnoseUnboundExplicitBuildings(visiblePatches,new Set(request.generateAssets
+    ? assetSources.map(asset=>asset.id) : assetRequests.map(asset=>asset.key)),issue);
   for(const diagnostic of auditWorldWhiteboxSettlementConstruction(constructionPlan,materialized.towns,
     materialized.settlements,visiblePatches)) {
     for(const planningIssue of diagnostic.planningIssues) issue(diagnostic.townId,planningIssue);
@@ -1093,11 +1094,34 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     .map(([townId,planningIssues])=>({townId,planningIssues}));
   resultDiagnostics.push(...diagnoseWorldRiverSurfaceAboveBank(createPlannedWorldTerrainContext(bundle.plan,bundle.patches)));
   const draft:WorldDraft={plan:constructionPlan,settlements:materialized.settlements,assets:assetRequests};
+  const plannedBuildings=materialized.towns.flatMap(town=>town.publicBuildings.map(building=>({
+    townId:town.id,id:building.id,use:building.use,width:building.width,depth:building.depth,
+    height:building.height,...(building.siting?{siting:building.siting}:{}),
+    placed:visiblePatches.some(patch=>patch.townId===town.id
+      && patch.buildings.some(item=>item.id===building.id))
+  })));
   recordGenerationTrace('world.whitebox.construction.preview',{draft,diagnostics:resultDiagnostics,
     paidCallCount,assets:assetSources.map(asset=>({id:asset.id,assetId:asset.assetId,provider:asset.provider}))});
-  return {bundle,draft,diagnostics:resultDiagnostics,assetSources,originalPlan:structuredClone(rawPlan),
+  return {bundle,draft,plannedBuildings,diagnostics:resultDiagnostics,assetSources,originalPlan:structuredClone(rawPlan),
     planningProvider:'gpt' as const,assetProvider:'deepseek' as const,paidCallCount,preview:true,
     mode:'construct-whitebox' as const};
+}
+
+/** Asset work is an explicit second request made only after the displayed whitebox is approved. */
+export async function generateApprovedWorldAssets(input: unknown, store: MapStore, signal?: AbortSignal) {
+  const raw=exactRecord(input,['mode','bundle','assets','reusableAssetIds'],
+    'invalid_approved_world_assets_request','world_unknown_approved_assets_field');
+  if(raw.mode!=='generate-approved-world-assets') throw new Error('invalid_approved_world_assets_request');
+  const bundle=validateWorldBundle(raw.bundle as WorldBundle);
+  const request=validateWorldGenerationRequest({prompt:bundle.plan.prompt,seed:bundle.plan.recipe.seed,
+    size:bundle.plan.recipe.size,generateAssets:true,repairAttempts:0,
+    reusableAssetIds:raw.reusableAssetIds});
+  const assets=validateWorldAssetRequests(raw.assets,bundle.plan,request,bundle.patches,false,true);
+  const scheduled=selectUsedWorldAssetRequests(assets,bundle.plan,bundle.patches);
+  const newAssetCount=scheduled.filter(asset=>!asset.existingAssetId).length;
+  if(newAssetCount>3) throw new Error('world_whitebox_asset_generation_limit');
+  const assetSources=await generateWorldAssets(scheduled,store,signal,{directOnly:true,maxNewAssets:3});
+  return {mode:'generate-approved-world-assets' as const,assetSources,paidCallCount:newAssetCount,preview:true};
 }
 
 function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGenerationRequest {

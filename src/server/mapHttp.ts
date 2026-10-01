@@ -74,7 +74,7 @@ import { applyPaletteToModelJson, type ColorPalette } from '../shared/colorPalet
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
 import { generationTraceId, recordGenerationTrace, withGenerationTrace } from './generationTrace';
-import { generateWorld } from './worldGeneration';
+import { generateApprovedWorldAssets, generateWorld } from './worldGeneration';
 import {
   closeCodexRun,
   createCodexRun,
@@ -259,7 +259,10 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     try {
       await withGenerationTrace(store.rootDir, { mapId: 'world-preview', operation: 'generate' }, async () => {
         recordGenerationTrace('request.input', body);
-        sendJson(res, 200, await generateWorld(body, store, controller.signal));
+        sendJson(res, 200, await (body && typeof body === 'object' && !Array.isArray(body)
+          && (body as Record<string, unknown>).mode === 'generate-approved-world-assets'
+          ? generateApprovedWorldAssets(body, store, controller.signal)
+          : generateWorld(body, store, controller.signal)));
       });
     } catch (error) {
       throw new HttpError(422, error instanceof Error ? error.message : String(error));

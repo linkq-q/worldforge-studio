@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { auditWorldWhiteboxSettlementConstruction, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
+import { auditWorldWhiteboxSettlementConstruction, generateApprovedWorldAssets, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
   materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
@@ -248,7 +248,7 @@ function constructionExpansion(assetCount = 0) {
     towns: [{ id: 'market-village', name: 'Market Village', kind: 'village', pattern: 'organic', density: 0.45,
       population: undefined as number | undefined,
       publicBuildings: [] as Array<{ id: string; use: string; width: number; depth: number; height: number;
-        assetKey: string; siting?: 'central' | 'waterfront' | 'gateway' | 'high-ground' }> }],
+        assetKey?: string; siting?: 'central' | 'waterfront' | 'gateway' | 'high-ground' }> }],
     ecology: [{ id: 'grove', kind: 'broadleaf', biome: 'grassland', density: 0.2, spacing: 14,
       maxSlope: 35, scale: [0.8, 1.2] }],
     assets
@@ -417,6 +417,20 @@ describe('whitebox world generation', () => {
       .toThrow('world_unknown_staged_spatial_field:recipe');
   });
 
+  it('preserves a first-call follow route while ignoring its inapplicable grade hint', () => {
+    const source = originalPlan();
+    source.mobilityPlan!.routes[0].construction = { terrain: 'follow', maxGrade: 0.08 };
+    const result = parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source), request,
+      validateWorldRecipe(source.recipe));
+    expect((result.rawPlan as WorldPlan).mobilityPlan?.routes[0].construction?.maxGrade).toBe(0.08);
+    expect(result.plan.mobilityPlan?.routes.find(route => route.id === source.mobilityPlan!.routes[0].id)
+      ?.construction).toEqual({ terrain: 'follow' });
+    expect(result.technicalNormalizations).toContain('mobilityPlan.routes[0].follow_max_grade_ignored');
+    source.mobilityPlan!.routes[0].construction.maxGrade = 0.9;
+    expect(() => parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source), request,
+      validateWorldRecipe(source.recipe))).toThrow('world_unexpected_route_max_grade');
+  });
+
   it('keeps complete generation fixed at 500m with zero repair attempts', async () => {
     const plan = buildablePlan();
     await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
@@ -427,6 +441,69 @@ describe('whitebox world generation', () => {
       .rejects.toThrow('invalid_complete_world_generation_request');
     expect(mocks.llmChat).not.toHaveBeenCalled();
     expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('keeps seven public functions in a substantial town independently of asset slots', () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = Array.from({ length: 7 }, (_, index) => ({
+      id: `civic-${index + 1}`, use: `public service ${index + 1}`,
+      width: 8, depth: 8, height: 6, siting: 'central'
+    }));
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(buildablePlan()), generateAssets: false,
+      assetGenerationLimit: 0, repairAttempts: 0
+    });
+    expect(result.towns[0].publicBuildings).toHaveLength(7);
+  });
+
+  it('previews proposed asset families and building footprints without generating a model', async () => {
+    const expansion = constructionExpansion(1);
+    expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8,
+      height: 6, assetKey: 'asset-1', siting: 'central' }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.draft.assets).toEqual([expect.objectContaining({ key: 'asset-1' })]);
+    expect(result.plannedBuildings).toEqual([expect.objectContaining({
+      id: 'school', width: 8, depth: 8, height: 6, placed: true
+    })]);
+    expect(result.assetSources).toEqual([]);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('generates only the approved preview assets without replanning or moving whiteboxes', async () => {
+    const expansion = constructionExpansion(1);
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const preview = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in preview) || preview.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    const originalBundle = structuredClone(preview.bundle);
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: 'approved-model' })) } as unknown as MapStore;
+    mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    const result = await generateApprovedWorldAssets({ mode: 'generate-approved-world-assets', bundle: preview.bundle,
+      assets: preview.draft.assets }, store);
+    expect(result.assetSources).toEqual([expect.objectContaining({ id: 'asset-1', assetId: 'approved-model' })]);
+    expect(result.paidCallCount).toBe(1);
+    expect(preview.bundle).toEqual(originalBundle);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.generateModel).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not generate an unplaced landmark from an approved whitebox', async () => {
+    const expansion = constructionExpansion(1);
+    expansion.assets.push({ key: 'unplaced-hall', name: 'Hall', role: 'landmark',
+      prompt: 'A hall with no approved site', strategy: 'single' });
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const preview = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in preview) || preview.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: 'approved-model' })) } as unknown as MapStore;
+    mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    const result = await generateApprovedWorldAssets({ mode: 'generate-approved-world-assets', bundle: preview.bundle,
+      assets: preview.draft.assets }, store);
+    expect(result.assetSources.map(asset => asset.id)).toEqual(['asset-1']);
+    expect(mocks.generateModel).toHaveBeenCalledTimes(1);
   });
 
   it('loads a first-call prose siting as a visible technical normalization without retrying', () => {
@@ -1065,7 +1142,8 @@ describe('whitebox world generation', () => {
     expect(result.bundle.patches[0].buildings.find(building => building.id === 'school')?.assetKey).toBe('island-school');
     expect(issues).toContain('asset_key_normalized:school:existing-school->island-school');
     expect(issues.some(issue => issue.startsWith('explicit_asset_unbound:school:'))).toBe(false);
-    expect(result.assetSources).toEqual([expect.objectContaining({ id: 'island-school', assetId: 'existing-school' })]);
+    expect(result.assetSources).toEqual([]);
+    expect(result.draft.assets).toEqual([expect.objectContaining({ key: 'island-school', existingAssetId: 'existing-school' })]);
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
