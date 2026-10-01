@@ -224,6 +224,17 @@ describe('composable world terrain operations', () => {
     expect(sample(0, 0).weights.grassland).toBe(1);
     expect(sample(120, 0).weights.grassland).toBe(0);
     expect(Math.max(...thresholds) - Math.min(...thresholds)).toBeGreaterThan(6);
+    const meanRadius = thresholds.reduce((sum, value) => sum + value, 0) / thresholds.length;
+    const macroAmplitude = (frequency: number) => {
+      let cosine = 0, sine = 0;
+      for (let index = 0; index < thresholds.length; index += 1) {
+        const angle = index / thresholds.length * Math.PI * 2;
+        cosine += (thresholds[index] - meanRadius) * Math.cos(frequency * angle);
+        sine += (thresholds[index] - meanRadius) * Math.sin(frequency * angle);
+      }
+      return 2 * Math.hypot(cosine, sine) / thresholds.length;
+    };
+    expect(Math.max(...[2, 3, 4, 5].map(macroAmplitude))).toBeGreaterThan(3);
     expect(blended).toBeGreaterThan(250);
 
     const left = sampleWorldTile(recipe, { x: 35, z: -50, size: 50 }, 11, sample);

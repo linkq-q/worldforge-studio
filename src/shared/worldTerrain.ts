@@ -313,9 +313,9 @@ function worldBiomePatchWeight(patch: WorldBiomePatch, x: number, z: number, see
   // small minimum transition. Explicit zero remains available for a hard edge.
   const minimumFeather = clamp(scale * 0.12, 2, 12);
   const feather = authoredFeather === 0 ? 0 : Math.max(authoredFeather ?? 0, minimumFeather);
-  const noiseScale = clamp(scale * 0.32, 8, 96);
+  const noiseScale = clamp(scale * 0.9, 12, 192);
   const variation = fbm(x / noiseScale, z / noiseScale, waterSeed(seed, patch.id), 3)
-    * Math.min(scale * 0.12, Math.max(2, feather * 0.55));
+    * Math.min(scale * 0.18, Math.max(3, feather * 1.4));
   const edge = area.edge + variation;
   return edge >= 0 ? 1 : feather > 0 ? 1 - smooth(0, feather, -edge) : 0;
 }
