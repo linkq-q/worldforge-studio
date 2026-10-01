@@ -164,6 +164,33 @@ describe('world settlement growth', () => {
     expect(patch.streets.length).toBeLessThanOrEqual(12);
   });
 
+  it('does not keep compact village streets that add no buildable frontage', () => {
+    const plan = fixture(), town = plan.towns[0];
+    plan.recipe.size = 500;
+    plan.generationPolicy = 'raw-first-call';
+    town.center = [0, 0];
+    town.radius = 50;
+    town.blend = 20;
+    town.foundation = 12;
+    town.ports = [];
+    plan.roads = [];
+    const flat: WorldSettlementSampler = () => ({
+      height: 12, waterLevel: null, waterBodyId: null, moisture: 0.3, temperature: 0.5,
+      continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 1, density: 0.2, waterfrontBias: 0
+    });
+    const audit = auditWorldSettlement(patch, town, flat);
+
+    expect(patch.buildings.length).toBeGreaterThanOrEqual(8);
+    expect(patch.streets.length).toBeLessThanOrEqual(4);
+    expect(audit.builtFootprintArea).toBeGreaterThan(audit.roadSurfaceArea);
+    expectStreetFacingBuildings(patch);
+  });
+
   it('fits an explicitly populated compact village with human-scale streets', () => {
     const plan = fixture(), town = plan.towns[0];
     town.radius = 100;
@@ -222,6 +249,75 @@ describe('world settlement growth', () => {
     for (const port of town.ports) expect(patch.streets.some(street => street.width === port.width
       && [street.points[0], street.points.at(-1)!].some(point => point[0] === port.position[0]
         && point[1] === port.position[1])), port.id).toBe(true);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
+  it('adds useful frontage behind mandatory approaches in a compact village', () => {
+    const plan = fixture(), town = plan.towns[0];
+    plan.recipe.size = 500;
+    plan.generationPolicy = 'raw-first-call';
+    town.center = [0, 0];
+    town.radius = 50;
+    town.blend = 20;
+    town.foundation = 12;
+    const approaches = [
+      { id: 'east', position: [50, 0] as Point, end: [80, 0] as Point, width: 2 },
+      { id: 'north', position: [0, 50] as Point, end: [0, 80] as Point, width: 5 },
+      { id: 'west', position: [-50, 0] as Point, end: [-80, 0] as Point, width: 2.5 }
+    ];
+    town.ports = approaches.map(item => ({
+      id: `${item.id}-gate`, guideId: `${item.id}-approach`, position: item.position, width: item.width
+    }));
+    plan.roads = approaches.map(item => road(`${item.id}-approach`, [item.position, item.end], item.width));
+    const flat: WorldSettlementSampler = () => ({
+      height: 12, waterLevel: null, waterBodyId: null, moisture: 0.3, temperature: 0.5,
+      continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.62, waterfrontBias: 0
+    });
+    const audit = auditWorldSettlement(patch, town, flat);
+
+    for (const port of town.ports) expect(patch.streets.some(street => street.tags.includes('port')
+      && street.points.some(point => point[0] === port.position[0] && point[1] === port.position[1])), port.id).toBe(true);
+    expect(audit.builtFootprintArea).toBeGreaterThan(audit.roadSurfaceArea * 0.6);
+    expectStreetFacingBuildings(patch);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
+  it('uses authored local streets as frontage without filling walking trails', () => {
+    const plan = fixture(), town = plan.towns[0];
+    plan.recipe.size = 500;
+    plan.generationPolicy = 'raw-first-call';
+    town.center = [0, 0];
+    town.radius = 50;
+    town.blend = 20;
+    town.foundation = 12;
+    town.ports = [];
+    const street = road('authored-local-street', [[-45, 25], [45, 25]], 5);
+    street.tags = ['local_street', 'world-route'];
+    const trail = road('authored-walking-trail', [[-45, -25], [45, -25]], 2);
+    trail.tags = ['walking_trail', 'world-route'];
+    plan.roads = [trail, street];
+    const flat: WorldSettlementSampler = () => ({
+      height: 12, waterLevel: null, waterBodyId: null, moisture: 0.3, temperature: 0.5,
+      continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 7, density: 0.62, waterfrontBias: 0
+    });
+    const entrances = patch.buildings.map(building => [
+      building.x + Math.sin(building.rotation ?? 0) * building.depth / 2,
+      building.z + Math.cos(building.rotation ?? 0) * building.depth / 2
+    ] as Point);
+
+    expect(entrances.filter(point => pointDistance(point, street.points[0], street.points[1]) <= 3.6).length)
+      .toBeGreaterThanOrEqual(3);
+    expect(entrances.filter(point => pointDistance(point, trail.points[0], trail.points[1]) <= 2.1).length).toBe(0);
     expect(validateTownPatch(plan, patch)).toEqual(patch);
   });
 

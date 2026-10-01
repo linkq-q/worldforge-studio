@@ -258,6 +258,7 @@ describe('main editor streamed world renderer', () => {
     expect(worldBuildPaintIntervals(40, 3)).toBe(5);
     expect(worldBuildPaintIntervals(4, 3, 113)).toBe(15);
     expect(worldBuildPaintIntervals(12_000, 3)).toBe(15);
+    expect(worldBuildPaintIntervals(12_000, 3, 0, 4)).toBe(4);
   });
 
   it('keeps compact-world ocean ownership fixed while large worlds follow the streamed focus', () => {

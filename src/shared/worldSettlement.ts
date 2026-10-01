@@ -112,10 +112,17 @@ export function generateWorldSettlement(
     }, { minX: -town.radius, maxX: town.radius, minZ: -town.radius, maxZ: town.radius });
     const safeEdges = safeUrbanEdges(candidateLayout.roads, roadSafe);
     const reserved = town.ports.length + (candidateShore ? 2 : 0);
-    const candidateSelected = connectedEdges(safeEdges, candidateShore?.point ?? candidate.point, Math.max(1, Math.min(
+    let candidateSelected = connectedEdges(safeEdges, candidateShore?.point ?? candidate.point, Math.max(1, Math.min(
       settings.roadBudget - reserved, 48 - reserved - settings.landmarks.length
     )), index === 0 && blockSize === settings.blockSize ? random : seededRandom(settings.seed ^ index), candidateLayout);
     const parcels = buildableParcelCount(candidateLayout, candidateSelected, town, sample, settings);
+    const neededParcels = ordinaryBuildingTarget(parcels, town, settings);
+    while (settings.kind === 'village' && town.population === undefined
+      && plan.generationPolicy === 'raw-first-call' && candidateSelected.length > 1) {
+      const shorter = candidateSelected.slice(0, -1);
+      if (buildableParcelCount(candidateLayout, shorter, town, sample, settings) < neededParcels) break;
+      candidateSelected = shorter;
+    }
     return { site: candidate.point, shore: candidateShore, layout: candidateLayout, selected: candidateSelected, parcels };
   };
   const primary = trySite(sites[0], 0, settings.blockSize);
@@ -804,6 +811,15 @@ function routeToNetwork(
   return best;
 }
 
+function ordinaryBuildingTarget(candidateCount: number, town: TownIntent, settings: Settings): number {
+  if (town.population !== undefined) return Math.ceil(town.population / 5);
+  if (settings.kind === 'city') return Math.max(24, Math.round(candidateCount * settings.density));
+  const floor = Math.round(8 + Math.max(0, town.radius - 60) * settings.density * 0.42);
+  const occupancy = town.targetWaterBodyId === 'sea'
+    ? Math.min(1, settings.density + settings.waterfrontBias * 0.4) : settings.density;
+  return Math.max(floor, Math.round(candidateCount * occupancy));
+}
+
 function placeBuildings(
   plan: WorldPlan,
   town: TownIntent,
@@ -818,6 +834,21 @@ function placeBuildings(
   const city = settings.kind === 'city';
   const localRoads = streets.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width, road })));
   const worldRoads = plan.roads.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width })));
+  const reservedFrontage = (tags: readonly string[]) => tags.some(tag => [
+    'walking_trail', 'rim_trail', 'shore_trail', 'sea-landing', 'sea_landing',
+    'landmark-access', 'landmark_access', 'public-space', 'public_space', 'plaza', 'square'
+  ].includes(tag.toLowerCase()));
+  const localFrontageRoads = localRoads.filter(segment => !reservedFrontage(segment.road.tags));
+  const worldFrontageRoads = plan.roads.filter(road => road.tags.some(tag =>
+    ['local_street', 'local_lane', 'access_lane'].includes(tag.toLowerCase())) && !reservedFrontage(road.tags))
+    .flatMap(road => road.points.slice(1).map((worldB, index) => {
+      const worldA = road.points[index];
+      return clipTownSegment(
+        [worldA[0] - town.center[0], worldA[1] - town.center[1]],
+        [worldB[0] - town.center[0], worldB[1] - town.center[1]], town.radius
+      );
+    }).filter((segment): segment is [Point, Point] => Boolean(segment))
+      .map(([a, b]) => ({ a, b, width: road.width })));
   const selectedByRoad = new Map<string, Edge[]>();
   for (const edge of selected) selectedByRoad.set(edge.source, [...(selectedByRoad.get(edge.source) ?? []), edge]);
   const candidates = layout.parcels.filter(parcel => selectedByRoad.get(parcel.roadId)?.some(edge =>
@@ -858,13 +889,17 @@ function placeBuildings(
     }
     candidates.splice(0,candidates.length,...distributed);
   }
-  const villageFloor=Math.round(8+Math.max(0,town.radius-60)*settings.density*.42);
-  const occupancy=!city&&town.targetWaterBodyId==='sea'
-    ? Math.min(1,settings.density+settings.waterfrontBias*.4):settings.density;
   const populationHomes=town.population===undefined?0:Math.ceil(town.population/5);
-  const ordinaryTarget = town.population===undefined
-    ? Math.max(city ? 24 : villageFloor, Math.round(candidates.length * occupancy))
-    : populationHomes;
+  const fallbackWidth=city?4:5,fallbackDepth=city?6:7;
+  const worldFrontageTarget=Math.ceil(worldFrontageRoads
+    .reduce((area,road)=>area+distance(road.a,road.b)*road.width,0)
+    *settings.density/(fallbackWidth*fallbackDepth));
+  const frontageTarget = town.population === undefined && plan.generationPolicy === 'raw-first-call'
+    ? Math.ceil([...localFrontageRoads, ...worldFrontageRoads]
+      .reduce((area, road) => area + distance(road.a, road.b) * road.width, 0)
+      * settings.density / (fallbackWidth * fallbackDepth))
+    : 0;
+  const ordinaryTarget = Math.max(ordinaryBuildingTarget(candidates.length, town, settings), frontageTarget);
   const target = Math.min(worldTownBuildingQuota(town), result.length + ordinaryTarget);
   const householdCount=()=>result.filter(building=>building.use==='home'||building.use==='farmhouse').length;
   const filled=()=>town.population===undefined?result.length>=target:householdCount()>=populationHomes;
@@ -903,6 +938,29 @@ function placeBuildings(
     const worldBuilding = { ...building, x: building.x + town.center[0], z: building.z + town.center[1] };
     return !worldRoads.some(road => segmentBuildingFootprint(road.a, road.b, worldBuilding, road.width / 2));
   };
+  const placeRoadside = (roads: readonly { a:Point; b:Point; width:number }[], limit=target) => {
+    for(const road of roads) {
+      if(filled()||result.length>=limit||result.length>=worldTownBuildingQuota(town)) break;
+      const delta=sub(road.b,road.a),length=distance(road.a,road.b);
+      if(length<EPS) continue;
+      const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
+      const steps=Math.max(1,Math.floor(length/(fallbackWidth+settings.buildingGap*(1-settings.density))));
+      for(let index=0;index<=steps&&!filled()&&result.length<limit&&result.length<worldTownBuildingQuota(town);index++) {
+        for(const side of [-1,1]) {
+          if(filled()||result.length>=limit||result.length>=worldTownBuildingQuota(town)) break;
+          const roadPoint=mix(road.a,road.b,(index+.5)/(steps+1)),outward=scale(normal,side);
+          const center=add(roadPoint,scale(outward,road.width/2+fallbackDepth/2+1));
+          const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],
+            width:fallbackWidth,depth:fallbackDepth,height:city?7+random()*4:4.5+random()*3,use:'home',
+            rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))};
+          if(canPlace(building)) result.push(building);
+        }
+      }
+    }
+  };
+  if(plan.generationPolicy==='raw-first-call'&&town.population===undefined) {
+    placeRoadside(worldFrontageRoads,Math.min(target,result.length+worldFrontageTarget));
+  }
   for (let index = 0; index < candidates.length && !filled() && result.length<worldTownBuildingQuota(town); index++) {
     const parcel = candidates[index];
     const width = parcel.width - Math.min(city ? 0.25 : 1.2, parcel.width * 0.16);
@@ -932,37 +990,8 @@ function placeBuildings(
       result.push(building);
     }
   }
-  if(!filled()&&(town.population!==undefined||plan.generationPolicy==='raw-first-call')) for(const road of localRoads) {
-    if(filled()||result.length>=worldTownBuildingQuota(town)||road.road.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))) continue;
-    const delta=sub(road.b,road.a),length=distance(road.a,road.b);
-    if(length<EPS) continue;
-    const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
-    const width=city?4:5,depth=city?6:7,steps=Math.max(1,Math.floor(length/(width+settings.buildingGap)));
-    for(let index=0;index<=steps&&!filled()&&result.length<worldTownBuildingQuota(town);index++) for(const side of [-1,1]) {
-      const roadPoint=mix(road.a,road.b,(index+.5)/(steps+1)),outward=scale(normal,side);
-      const center=add(roadPoint,scale(outward,road.width/2+depth/2+1));
-      const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],width,depth,
-        height:city?7+random()*4:4.5+random()*3,use:'home',rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))};
-      if(canPlace(building)) result.push(building);
-    }
-  }
-  if(plan.generationPolicy==='raw-first-call'&&!filled()) for(const road of plan.roads) {
-    for(let segment=1;segment<road.points.length&&!filled();segment++) {
-      const a:Point=[road.points[segment-1][0]-town.center[0],road.points[segment-1][1]-town.center[1]];
-      const b:Point=[road.points[segment][0]-town.center[0],road.points[segment][1]-town.center[1]];
-      const delta=sub(b,a),length=distance(a,b);
-      if(length<EPS) continue;
-      const tangent=scale(delta,1/length),normal:Point=[-tangent[1],tangent[0]];
-      const width=city?4:5,depth=city?6:7,steps=Math.max(1,Math.floor(length/(width+settings.buildingGap)));
-      for(let index=0;index<=steps&&!filled();index++) for(const side of [-1,1]) {
-        const roadPoint=mix(a,b,(index+.5)/(steps+1)),outward=scale(normal,side);
-        const center=add(roadPoint,scale(outward,road.width/2+depth/2+1));
-        const building:TownBuilding={id:`${town.id}-building-${result.length+1}`,x:center[0],z:center[1],width,depth,
-          height:city?7+random()*4:4.5+random()*3,use:'home',rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))};
-        if(canPlace(building)) result.push(building);
-      }
-    }
-  }
+  if(!filled()&&(town.population!==undefined||plan.generationPolicy==='raw-first-call')) placeRoadside(localFrontageRoads);
+  if(plan.generationPolicy==='raw-first-call'&&town.population!==undefined&&!filled()) placeRoadside(worldFrontageRoads);
   return result;
 }
 
@@ -1104,6 +1133,22 @@ function properIntersection(a: Point, b: Point, c: Point, d: Point): Point | und
   const t = (ac[0] * cd[1] - ac[1] * cd[0]) / denominator;
   const u = (ac[0] * ab[1] - ac[1] * ab[0]) / denominator;
   return t > EPS && t < 1 - EPS && u > EPS && u < 1 - EPS ? add(a, scale(ab, t)) : undefined;
+}
+
+function clipTownSegment(a: Point, b: Point, radius: number): [Point, Point] | undefined {
+  const delta=sub(b,a);
+  let from=0,to=1;
+  for(let axis=0;axis<2;axis++) {
+    if(Math.abs(delta[axis])<EPS) {
+      if(Math.abs(a[axis])>radius) return undefined;
+      continue;
+    }
+    let near=(-radius-a[axis])/delta[axis],far=(radius-a[axis])/delta[axis];
+    if(near>far) [near,far]=[far,near];
+    from=Math.max(from,near);to=Math.min(to,far);
+    if(from>to) return undefined;
+  }
+  return [mix(a,b,from),mix(a,b,to)];
 }
 
 function inside(town: TownIntent, point: Point, margin: number): boolean {

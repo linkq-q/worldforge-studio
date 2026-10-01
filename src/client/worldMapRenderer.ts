@@ -49,6 +49,8 @@ const WORLD_STREAM_BUILD_FRAME_BUDGET_MS = 8;
 const WORLD_STREAM_MIN_BACKGROUND_PAINTS = 3;
 // Chunk build time includes its own cooperative rAF waits, so it cannot justify an unbounded second wait here.
 const WORLD_STREAM_MAX_RECOVERY_PAINTS = 15;
+// Terrain already mounts one tile per batch; keep several clean paints without multiplying the pause across 48 tiles.
+const WORLD_STREAM_MAX_TERRAIN_RECOVERY_PAINTS = 4;
 const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   strictMaterials: 0,
@@ -439,7 +441,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
           mountEntry(result.value[1]);
         }
       });
-      await yieldWorldBuild(performance.now() - batchStartedAt, limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS);
+      await yieldWorldBuild(
+        performance.now() - batchStartedAt,
+        limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS,
+        WORLD_STREAM_MAX_TERRAIN_RECOVERY_PAINTS
+      );
       if (revision !== requestRevision) { discardBuilt(); return false; }
     }
     for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
@@ -1619,17 +1625,26 @@ function reconcileRequestKey(request: ReconcileRequest): string {
   return `${request.x}:${request.z}:${request.distance}`;
 }
 
-export function worldBuildPaintIntervals(buildMs: number, minimumPaints = 1, mountFrameMs = 0): number {
+export function worldBuildPaintIntervals(
+  buildMs: number,
+  minimumPaints = 1,
+  mountFrameMs = 0,
+  maximumPaints = WORLD_STREAM_MAX_RECOVERY_PAINTS
+): number {
   return Math.max(
     minimumPaints,
     Math.min(
-      WORLD_STREAM_MAX_RECOVERY_PAINTS,
+      maximumPaints,
       Math.ceil(Math.max(0, buildMs, mountFrameMs) / WORLD_STREAM_BUILD_FRAME_BUDGET_MS)
     )
   );
 }
 
-function yieldWorldBuild(buildMs: number, minimumPaints: number): Promise<void> {
+function yieldWorldBuild(
+  buildMs: number,
+  minimumPaints: number,
+  maximumPaints = WORLD_STREAM_MAX_RECOVERY_PAINTS
+): Promise<void> {
   return new Promise(resolve => {
     if (typeof requestAnimationFrame !== 'function') { setTimeout(resolve, 0); return; }
     let painted = 0;
@@ -1640,7 +1655,9 @@ function yieldWorldBuild(buildMs: number, minimumPaints: number): Promise<void> 
       if (painted === 1) firstPaintAt = paintAt;
       // The first rendered frame pays the mounted geometry and texture uploads,
       // so its interval can be more expensive than the preceding CPU build.
-      if (painted === 2) targetPaints = worldBuildPaintIntervals(buildMs, minimumPaints, paintAt - firstPaintAt);
+      if (painted === 2) {
+        targetPaints = worldBuildPaintIntervals(buildMs, minimumPaints, paintAt - firstPaintAt, maximumPaints);
+      }
       if (painted < targetPaints) requestAnimationFrame(afterPaint);
       else setTimeout(resolve, 0);
     };
