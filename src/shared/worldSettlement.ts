@@ -222,6 +222,10 @@ export function generateWorldSettlement(
     if (route.length > 1) streets.push(guide(`${town.id}-port-${port.id}`, route, port.width,
       ['settlement', settings.kind, 'arterial', 'port']));
   }
+  const authoredRoadNodes = settings.landmarks.length ? plan.roads.filter(road => authoredBuildingFrontage(road.tags))
+    .flatMap(road => worldRoadPolyline(road).map(point =>
+      [point[0] - town.center[0], point[1] - town.center[1]] as Point))
+    .filter(point => inside(town, point, settings.roadWidth / 2)) : [];
   for (let landmarkIndex = 0; landmarkIndex < settings.landmarks.length; landmarkIndex++) {
     const landmark = settings.landmarks[landmarkIndex];
     const accessSafe = (a: Point, b: Point, width: number) => terrainRoadSafe(a, b, width)
@@ -236,7 +240,8 @@ export function generateWorldSettlement(
         ? !segmentBuildingFootprint(a, b, landmark, width / 2)
         : !segmentBuildingFootprint(a, b, building, width / 2 + 1));
     const roadside = insertRoadNodeAt(streets, outside);
-    const tail = roadside ? [roadside] : routeToNetwork(outside, roadNodes(streets), tailSafe, settings.roadWidth);
+    const tail = roadside ? [roadside] : routeToNetwork(outside,
+      [...roadNodes(streets), ...authoredRoadNodes], tailSafe, settings.roadWidth);
     const route = tail && accessSafe(entry, tail[0], settings.roadWidth) ? [entry, ...tail] : undefined;
     if (!route) {
       const reason = !tail ? 'network'
@@ -362,13 +367,14 @@ export function createWorldSettlementLandmarkLayout(
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
   const settings=normalizeOptions(options,town,task.seed);
   const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
+  const authoredFrontage=authoredTownFrontage(plan,town,sample,settings);
   const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
-    ? authoredWaterfrontFrontage(plan,town,sample,settings):[];
+    ? authoredTownFrontage(plan,town,sample,settings,true):[];
   const ordered=[...requirements].sort((a,b)=>b.width*b.depth-a.width*a.depth||a.id.localeCompare(b.id));
   const sites=ordered.map(requirement=>{
     const {siting,...building}=requirement;
     const candidates=boundedLandmarkSites(frontageLandmarkSites(
-      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:[]));
+      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:authoredFrontage));
     if(!candidates.length&&siting==='waterfront') throw new Error(`world_settlement_no_waterfront_site:${requirement.id}`);
     return candidates;
   });
@@ -417,8 +423,9 @@ export function createWorldSettlementPartialLandmarkLayout(
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
   const settings=normalizeOptions(options,town,task.seed);
   const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
+  const authoredFrontage=authoredTownFrontage(plan,town,sample,settings);
   const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
-    ? authoredWaterfrontFrontage(plan,town,sample,settings):[];
+    ? authoredTownFrontage(plan,town,sample,settings,true):[];
   const worldRoads=plan.roads.flatMap(road=>{
     const points=worldRoadPolyline(road);
     return points.slice(1).map((b,index)=>({a:points[index],b,width:road.width}));
@@ -426,7 +433,7 @@ export function createWorldSettlementPartialLandmarkLayout(
   const entries=requirements.map(requirement=>{
     const {siting,...building}=requirement;
     const sites=boundedLandmarkSites(frontageLandmarkSites(
-      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:[])).filter(candidate=>{
+      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:authoredFrontage)).filter(candidate=>{
       const worldBuilding={...candidate,x:candidate.x+town.center[0],z:candidate.z+town.center[1]};
       return !worldRoads.some(road=>segmentBuildingFootprint(road.a,road.b,worldBuilding,road.width/2));
     });
@@ -494,13 +501,14 @@ export function createWorldSettlementPartialLandmarkLayout(
 function frontageLandmarkSites(
   requirement:Omit<WorldLandmarkRequirement,'siting'>,streets:MapGuide[],town:TownIntent,
   sample:WorldSettlementSampler,settings:Settings,siting?:WorldLandmarkSiting,
-  authoredWaterfront:readonly MapGuide[]=[]
+  authoredFrontage:readonly MapGuide[]=[]
 ):TownBuilding[] {
   const points:TownBuilding[]=[],roadWidth=settings.roadWidth,blockSize=settings.blockSize;
   const ordinary=streets.filter(street=>!street.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag)));
   const frontage=siting==='waterfront'
-    ? [...ordinary.filter(street=>street.tags.includes('working-waterfront')),...authoredWaterfront]:ordinary;
-  const safetyStreets=authoredWaterfront.length?[...streets,...authoredWaterfront]:streets;
+    ? [...ordinary.filter(street=>street.tags.includes('working-waterfront')),...authoredFrontage]
+    :[...ordinary,...authoredFrontage];
+  const safetyStreets=authoredFrontage.length?[...streets,...authoredFrontage]:streets;
   for(const street of frontage) for(let segment=1;segment<street.points.length;segment++) {
     const a=street.points[segment-1],b=street.points[segment],delta=sub(b,a),length=distance(a,b);
     if(length<EPS) continue;
@@ -532,14 +540,15 @@ function frontageLandmarkSites(
   return candidates.sort(tie);
 }
 
-function authoredWaterfrontFrontage(
-  plan:WorldPlan,town:TownIntent,sample:WorldSettlementSampler,settings:Settings
+function authoredTownFrontage(
+  plan:WorldPlan,town:TownIntent,sample:WorldSettlementSampler,settings:Settings,waterfrontOnly=false
 ):MapGuide[] {
   const result:MapGuide[]=[],reach=Math.min(40,town.radius*.58);
   for(const road of plan.roads) {
     if(!authoredBuildingFrontage(road.tags)) continue;
-    for(let segment=1;segment<road.points.length;segment++) {
-      const worldA=road.points[segment-1],worldB=road.points[segment];
+    const points=worldRoadPolyline(road);
+    for(let segment=1;segment<points.length;segment++) {
+      const worldA=points[segment-1],worldB=points[segment];
       const clipped=clipTownSegment(
         [worldA[0]-town.center[0],worldA[1]-town.center[1]],
         [worldB[0]-town.center[0],worldB[1]-town.center[1]],
@@ -551,8 +560,8 @@ function authoredWaterfrontFrontage(
       for(let step=0;step<steps;step++) {
         const a=mix(clipped[0],clipped[1],step/steps),b=mix(clipped[0],clipped[1],(step+1)/steps);
         if(!segmentSafe(sample,town,a,b,road.width,settings.waterSetback,settings.maxRoadSlope)
-          ||!hasGradedWaterAccess(mix(a,b,.5),road.width,town,sample,settings,reach)) continue;
-        result.push(guide(`${road.id}-waterfront-${segment}-${step+1}`,[a,b],road.width,road.tags));
+          ||waterfrontOnly&&!hasGradedWaterAccess(mix(a,b,.5),road.width,town,sample,settings,reach)) continue;
+        result.push(guide(`${road.id}-frontage-${segment}-${step+1}`,[a,b],road.width,road.tags));
       }
     }
   }

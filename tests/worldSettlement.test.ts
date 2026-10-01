@@ -360,6 +360,29 @@ describe('world settlement growth', () => {
     expect(validateTownPatch(plan, patch)).toEqual(patch);
   });
 
+  it('places a public building on a dry authored road in an outer district', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0]; town.radius = 100; town.population = 80;
+    town.ports = [{ id: 'outer-gate', guideId: 'district-road', position: [100, 0], width: 4 }];
+    town.districts = [{ anchorId: 'outer-civic', kind: 'civic', density: 1,
+      offset: [130, 0], radius: 35 }];
+    plan.roads = [road('district-road', [[100, 0], [130, 0]], 4)];
+    plan.roads[0].tags = ['world-route', 'town-internal', 'local_street'];
+    plan.generationPolicy = 'raw-first-call';
+    plan.featureGraph = { regions: [{ id: 'outer-region', kind: 'settlement_district',
+      name: 'Outer civic quarter', center: [130, 0], radius: 35 }], paths: [], relations: [],
+    anchors: [{ id: 'outer-civic', kind: 'civic', position: [130, 0], regionId: 'outer-region' }] };
+    const highGround: WorldSettlementSampler = (x) => ({ height: 12 + x * 0.01,
+      waterLevel: null, waterBodyId: null, moisture: 0.3, temperature: 0.5, continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 } });
+    const result = createWorldSettlementLandmarkLayout(plan, town.id, highGround, {
+      kind: 'village', pattern: 'organic', seed: 17, density: 0.5, waterfrontBias: 0
+    }, [{ id: 'outer-hall', use: 'civic hall', width: 8, depth: 8, height: 7, siting: 'high-ground' }]);
+    expect(result.landmarks[0].x).toBeGreaterThan(100);
+    expect(result.patch.streets.some(street => street.id.endsWith('landmark-outer-hall'))).toBe(true);
+    expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
+  });
+
   it('keeps the legacy populated layout when every explicit district has zero density', () => {
     const legacy = fixture();
     legacy.towns[0].population = 150;
