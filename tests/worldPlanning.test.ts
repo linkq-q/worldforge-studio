@@ -363,6 +363,21 @@ describe('hierarchical world planning contracts', () => {
     expect(validateTownPatch(plan, connected).streets).toHaveLength(2);
   });
 
+  it('connects separate district streets through an authored town road without copying that road', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.ports = [];
+    plan.towns[1].ports = [];
+    plan.roads = [road('town-spine', [[-2100, 0], [-1900, 0]], 5)];
+    plan.roads[0].tags = ['world-route', 'town-internal', 'local_street'];
+    const linked: TownPatch = { townId: town.id, worldKey: worldPlanKey(plan), summary: 'Two neighborhoods on one road',
+      streets: [road('west-lane', [[-100, 0], [-100, 30]], 4),
+        road('east-lane', [[100, 0], [100, 30]], 4)], buildings: [] };
+    expect(validateTownPatch(plan, linked).streets).toHaveLength(2);
+    plan.roads[0].tags = ['world-route', 'walking_trail'];
+    linked.worldKey = worldPlanKey(plan);
+    expect(() => validateTownPatch(plan, linked)).toThrow('world_streets_disconnected');
+  });
+
   it('accepts bounded Catmull-Rom roads and samples their actual curve for water', () => {
     const controlPoints:Array<[number,number]>=[[-100,0],[-30,70],[30,-70],[100,0]];
     const curved=road('curved-road',controlPoints,2);curved.curve='catmull-rom';

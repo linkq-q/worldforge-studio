@@ -89,7 +89,7 @@ export interface TownIntent {
   targetWaterBodyId?: string;
   /** Approximate permanent residents; used to keep generated housing proportional to authored intent. */
   population?: number;
-  /** Feature-graph districts retained as local offsets inside this single settlement core. */
+  /** Feature-graph districts retained as local offsets, including connected areas beyond the core. */
   districts?: TownDistrictIntent[];
 }
 export interface TownDistrictIntent extends SettlementDistrictPlan { offset: Point; radius: number }
@@ -578,9 +578,10 @@ export function validateWorldPlan(input: unknown): WorldPlan {
         if (!['working', 'civic', 'residential', 'edge'].includes(String(district.kind))) {
           fail('world_invalid_town_district_kind');
         }
-        const offset = point(district.offset, radius, 'world_town_district_outside');
-        const districtRadius = number(district.radius, 1, radius, 'world_invalid_town_district_radius');
-        if (Math.max(Math.abs(offset[0]) + districtRadius, Math.abs(offset[1]) + districtRadius) > radius + TOLERANCE) {
+        const offset = point(district.offset, bound * 2, 'world_town_district_outside');
+        const districtRadius = number(district.radius, 1, bound, 'world_invalid_town_district_radius');
+        if (Math.abs(town.center[0] + offset[0]) > bound + TOLERANCE
+          || Math.abs(town.center[1] + offset[1]) > bound + TOLERANCE) {
           fail('world_town_district_outside');
         }
         return { anchorId: safeId(district.anchorId, 'world_invalid_town_district_anchor'),
@@ -589,7 +590,10 @@ export function validateWorldPlan(input: unknown): WorldPlan {
       }).sort((a, b) => a.anchorId.localeCompare(b.anchorId));
       unique(town.districts.map(district => district.anchorId), 'world_duplicate_town_district_anchor');
     }
-    if (town.center.some(value => Math.abs(value) + radius + town.blend > bound)) fail('world_town_outside');
+    // Conforming settlements do not flatten a collar; only platform towns need blend room.
+    if (town.center.some(value => Math.abs(value) + radius + (town.terrainMode === 'conform' ? 0 : town.blend) > bound + TOLERANCE)) {
+      fail('world_town_outside');
+    }
     return town;
   }).sort(byId);
   const ecology = validateEcologyRules(raw.ecology);
@@ -820,14 +824,20 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
   const town = plan.towns.find(candidate => candidate.id === townId);
   if (!town) fail('world_unknown_patch_town');
   if (raw.worldKey !== worldKey) fail('world_stale_patch');
-  const streets = list(raw.streets, 48, 'world_street_quota').map(value => guide(value, town.radius)).sort(byId);
+  const localBound = Math.max(town.radius, ...town.districts?.map(district => Math.max(
+    Math.abs(district.offset[0]) + district.radius, Math.abs(district.offset[1]) + district.radius
+  )) ?? []);
+  const streets = list(raw.streets, 48, 'world_street_quota').map(value => guide(value, localBound)).sort(byId);
+  if (streets.some(street => street.points.some(point =>
+    Math.abs(point[0] + town.center[0]) > plan.recipe.size / 2 + TOLERANCE
+    || Math.abs(point[1] + town.center[1]) > plan.recipe.size / 2 + TOLERANCE))) fail('world_street_outside');
   const buildings = list(raw.buildings, worldTownBuildingQuota(town), 'world_building_quota').map(value => {
     const b = record(value, 'world_invalid_building');
     keys(b, ['id', 'x', 'z', 'width', 'depth', 'height', 'use', 'rotation', 'assetKey', 'enterable'], 'world_unknown_building_field');
     const building: TownBuilding = {
       id: text(b.id, 'world_invalid_building_id'),
-      x: number(b.x, -town.radius, town.radius, 'world_building_outside'),
-      z: number(b.z, -town.radius, town.radius, 'world_building_outside'),
+      x: number(b.x, -localBound, localBound, 'world_building_outside'),
+      z: number(b.z, -localBound, localBound, 'world_building_outside'),
       width: number(b.width, 1, 300, 'world_invalid_building_width'),
       depth: number(b.depth, 1, 300, 'world_invalid_building_depth'),
       height: number(b.height, 1, 300, 'world_invalid_building_height'),
@@ -839,13 +849,15 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
       if (typeof b.enterable !== 'boolean') fail('world_invalid_building_enterable');
       building.enterable = b.enterable;
     }
-    const bounds = townBuildingBounds(building);
-    if (Math.abs(bounds.x) + bounds.width / 2 > town.radius
-      || Math.abs(bounds.z) + bounds.depth / 2 > town.radius) fail('world_building_outside');
+    if (!worldTownContainsBuilding(town, building)
+      || Math.abs(town.center[0] + building.x) + building.width / 2 > plan.recipe.size / 2 + TOLERANCE
+      || Math.abs(town.center[1] + building.z) + building.depth / 2 > plan.recipe.size / 2 + TOLERANCE) {
+      fail('world_building_outside');
+    }
     return building;
   }).sort(byId);
   unique([...streets.map(street => street.id), ...buildings.map(building => building.id)]);
-  validateStreetGraph(town, streets);
+  validateStreetGraph(town, streets, plan.roads);
   for (let i = 0; i < buildings.length; i++) {
     for (const other of buildings.slice(i + 1)) {
       if (buildingsOverlap(buildings[i], other)) fail('world_buildings_overlap');
@@ -872,31 +884,52 @@ export function worldTownBuildingQuota(town: Pick<TownIntent, 'radius'>): number
 }
 
 /** A crossing counts as a junction only when both street graphs explicitly share a vertex. */
-function validateStreetGraph(town: TownIntent, streets: MapGuide[]): void {
+function validateStreetGraph(town: TownIntent, streets: MapGuide[], authoredRoads: MapGuide[]): void {
   const nodeKey = (p: Point) => JSON.stringify(p);
-  const graph = new Map<string, Set<string>>();
-  for (const street of streets) for (const [a, b] of segments(street)) {
-    const ka = nodeKey(a), kb = nodeKey(b);
-    if (!graph.has(ka)) graph.set(ka, new Set());
-    if (!graph.has(kb)) graph.set(kb, new Set());
-    graph.get(ka)!.add(kb);
-    graph.get(kb)!.add(ka);
-  }
   for (const port of town.ports) {
     const touching = streets.filter(street => !street.closed
       && [street.points[0], street.points[street.points.length - 1]].some(p => nodeKey(p) === nodeKey(port.position)));
     if (!touching.length) fail('world_street_port_missing');
     if (!touching.some(street => Math.abs(street.width - port.width) <= TOLERANCE)) fail('world_street_port_width_mismatch');
   }
-  if (!graph.size) return;
-  const reached = new Set<string>(), queue = [graph.keys().next().value!];
-  for (let i = 0; i < queue.length; i++) {
-    const key = queue[i];
-    if (reached.has(key)) continue;
-    reached.add(key);
-    for (const next of graph.get(key)!) if (!reached.has(next)) queue.push(next);
+  if (!streets.length) return;
+  const localGraph = new Map<string, Set<string>>();
+  for (const street of streets) for (const [a, b] of segments(street)) {
+    const ka = nodeKey(a), kb = nodeKey(b);
+    if (!localGraph.has(ka)) localGraph.set(ka, new Set());
+    if (!localGraph.has(kb)) localGraph.set(kb, new Set());
+    localGraph.get(ka)!.add(kb); localGraph.get(kb)!.add(ka);
   }
-  if (reached.size !== graph.size) fail('world_streets_disconnected');
+  const localReached = new Set<string>(), localQueue = [localGraph.keys().next().value!];
+  for (let index = 0; index < localQueue.length; index++) {
+    const key = localQueue[index];
+    if (localReached.has(key)) continue;
+    localReached.add(key);
+    for (const next of localGraph.get(key)!) if (!localReached.has(next)) localQueue.push(next);
+  }
+  if (localReached.size === localGraph.size) return;
+  // A planned town road is part of the same walkable network. Outer district
+  // lanes may meet it between authored control points without duplicating its
+  // geometry in the generated patch.
+  const guides = [...streets, ...authoredRoads.filter(road => road.tags.some(tag =>
+    ['town-internal', 'town-access', 'local_street', 'local_lane'].includes(tag)))];
+  const pieces = guides.map((guide, index) => segments(guide).map(([a, b]) => index < streets.length
+    ? [[a[0] + town.center[0], a[1] + town.center[1]],
+      [b[0] + town.center[0], b[1] + town.center[1]]] as [Point, Point] : [a, b]));
+  const adjacent = guides.map(() => new Set<number>());
+  for (let left = 0; left < guides.length; left++) for (let right = left + 1; right < guides.length; right++) {
+    const localPair = left < streets.length && right < streets.length;
+    const connected = localPair
+      ? guides[left].points.some(point => guides[right].points.some(other => nodeKey(point) === nodeKey(other)))
+      : pieces[left].some(([a, b]) => pieces[right].some(([c, d]) => segmentIntersection(a, b, c, d)));
+    if (connected) { adjacent[left].add(right); adjacent[right].add(left); }
+  }
+  const reached = new Set<number>([0]), queue = [0];
+  for (let index = 0; index < queue.length; index++) for (const next of adjacent[queue[index]]) {
+    if (reached.has(next)) continue;
+    reached.add(next); queue.push(next);
+  }
+  if (streets.some((_, index) => !reached.has(index))) fail('world_streets_disconnected');
 }
 export function validateTownPatch(plan: WorldPlan, patch: unknown): TownPatch {
   const checked = validateWorldPlan(plan);
@@ -1178,6 +1211,25 @@ function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatc
 export function townBuildingBounds(b: TownBuilding): Pick<TownBuilding, 'x' | 'z' | 'width' | 'depth'> {
   const c = Math.abs(Math.cos(b.rotation ?? 0)), s = Math.abs(Math.sin(b.rotation ?? 0));
   return { x: b.x, z: b.z, width: c * b.width + s * b.depth, depth: s * b.width + c * b.depth };
+}
+
+export function worldTownContainsPoint(town: TownIntent, point: Point, margin = 0): boolean {
+  if (Math.abs(point[0]) <= town.radius - margin + TOLERANCE
+    && Math.abs(point[1]) <= town.radius - margin + TOLERANCE) return true;
+  return town.districts?.some(district => Math.hypot(
+    point[0] - district.offset[0], point[1] - district.offset[1]
+  ) <= district.radius - margin + TOLERANCE) ?? false;
+}
+
+export function worldTownContainsBuilding(town: TownIntent, building: TownBuilding): boolean {
+  const bounds = townBuildingBounds(building);
+  if (Math.abs(bounds.x) + bounds.width / 2 <= town.radius + TOLERANCE
+    && Math.abs(bounds.z) + bounds.depth / 2 <= town.radius + TOLERANCE) return true;
+  const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle);
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].every(([x, z]) => worldTownContainsPoint(town, [
+    building.x + c * x * building.width / 2 + s * z * building.depth / 2,
+    building.z - s * x * building.width / 2 + c * z * building.depth / 2
+  ]));
 }
 
 /** Exact Y-rotated footprint test. Touching the padded boundary is safe for a road ending at an entrance. */

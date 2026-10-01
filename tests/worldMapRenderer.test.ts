@@ -619,24 +619,40 @@ describe('main editor streamed world renderer', () => {
     }
   }, 30_000);
 
-  it('keeps ordinary raw construction visible as primitives beside a partial asset pack', async () => {
+  it('keeps ordinary buildings and an unbound public building visible beside a partial asset pack', async () => {
     const map = createEmptyMap();
     const town = bundle.plan.towns[0];
     const sample = createPlannedWorldSampler(bundle.plan, bundle.patches);
+    const previewBundle = structuredClone(bundle);
+    const school = previewBundle.patches.flatMap(patch => patch.buildings)
+      .find(building => building.id === 'forest-south-home-center');
+    if (!school) throw new Error('missing_fixture_building');
+    school.use = 'school';
+    school.assetKey = 'missing-school';
+    const hall = previewBundle.patches.flatMap(patch => patch.buildings)
+      .find(building => building.id !== school.id);
+    if (!hall) throw new Error('missing_second_fixture_building');
+    hall.use = 'civic hall';
+    delete hall.assetKey;
     const landmarkAsset: MapAsset = {
       id: 'asset-landmark', name: 'Landmark', prompt: 'Landmark', modelJson: {},
       colliderPlan: {version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: true},
       mode: 'voxel', createdAt: 1, updatedAt: 1
     };
     map.assets = [landmarkAsset];
-    map.world = {bundle, assets: [{key: 'landmarks', role: 'landmark', assetId: landmarkAsset.id}]};
+    map.world = {bundle: previewBundle, assets: [{key: 'landmarks', role: 'landmark', assetId: landmarkAsset.id}]};
     map.box.size = [bundle.plan.recipe.size, 4096, bundle.plan.recipe.size];
     map.spawnPoints = [[town.center[0], sample(...town.center).height, town.center[1]]];
 
     const rendered = await buildEditableMapGroup(map);
     try {
       await waitFor(() => rendered.objectGroups.has('world-building:forest-south-home-center'));
-      expect(rendered.objectGroups.get('world-building:forest-south-home-center')).toBeInstanceOf(THREE.Group);
+      const schoolGroup = rendered.objectGroups.get('world-building:forest-south-home-center');
+      expect(schoolGroup).toBeInstanceOf(THREE.Group);
+      expect(schoolGroup?.getObjectByProperty('type', 'Mesh')).toBeInstanceOf(THREE.Mesh);
+      await waitFor(() => rendered.objectGroups.has(`world-building:${hall.id}`));
+      expect(rendered.objectGroups.get(`world-building:${hall.id}`)?.getObjectByProperty('type', 'Mesh'))
+        .toBeInstanceOf(THREE.Mesh);
     } finally {
       rendered.dispose();
     }

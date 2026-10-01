@@ -47,13 +47,7 @@ export function validateWorldMapState(input: unknown): WorldMapState {
     const rule = bundle.plan.ecology.find(candidate => candidate.id === binding.ecologyRuleId);
     if (!rule || binding.ecologyKind && binding.ecologyKind !== rule.kind) throw new Error('invalid_world_asset_binding');
   }
-  // An empty pack is an explicit greybox preview; a partial pack may fall back
-  // only for ordinary buildings without an explicitly authored asset key.
-  if (assets.length) for (const patch of bundle.patches) for (const building of patch.buildings) {
-    if (building.assetKey && !keys.has(building.assetKey)) {
-      throw new Error('world_missing_asset_binding:' + building.assetKey);
-    }
-  }
+  // An unbound explicit building keeps its authored footprint as a greybox.
   return {bundle, assets};
 }
 

@@ -419,6 +419,15 @@ export function auditWorldWhiteboxSettlementConstruction(
     if(town.population!==undefined&&acceptance.ordinaryBuildings<Math.ceil(town.population/5)) {
       planningIssues.push('population_underbuilt');
     }
+    const districts=town.districts?.filter(district=>district.density>0)??[];
+    const publicIds=new Set(authored.publicBuildings.map(building=>building.id));
+    const occupied=new Set(patch.buildings.filter(building=>!publicIds.has(building.id)).map(building=>
+      districts.filter(district=>Math.hypot(building.x-district.offset[0],building.z-district.offset[1])<=district.radius)
+        .sort((a,b)=>Math.hypot(building.x-a.offset[0],building.z-a.offset[1])/a.radius
+          -Math.hypot(building.x-b.offset[0],building.z-b.offset[1])/b.radius)[0]?.anchorId));
+    for(const district of districts) if(!occupied.has(district.anchorId)) {
+      planningIssues.push(`district_unbuilt:${district.anchorId}`);
+    }
     if(planningIssues.length) result.push({townId:authored.id,planningIssues});
   }
   return result;
@@ -747,7 +756,8 @@ export function validateWorldAssetRequests(
   plan: WorldPlan,
   request: WorldGenerationRequest,
   patches: TownPatch[],
-  requireCoverage = request.generateAssets !== false
+  requireCoverage = request.generateAssets !== false,
+  allowUnboundExplicit = false
 ): WorldAssetRequest[] {
   if (!Array.isArray(input) || input.length > WORLD_ASSET_FAMILY_LIMIT) throw new Error('invalid_world_draft');
   const keys = new Set<string>();
@@ -772,7 +782,10 @@ export function validateWorldAssetRequests(
     keys.add(asset.key);
   }
   for (const patch of patches) for (const building of patch.buildings) {
-    if (building.assetKey && !keys.has(building.assetKey)) throw new Error('unknown_world_building_asset:'+building.assetKey);
+    if (building.assetKey && !keys.has(building.assetKey)) {
+      if (!allowUnboundExplicit) throw new Error('unknown_world_building_asset:'+building.assetKey);
+      continue;
+    }
     if (building.enterable && !assets.find(asset=>asset.key===building.assetKey)?.enterable) throw new Error('world_enterable_asset_required');
   }
   if (requireCoverage) {
@@ -936,26 +949,16 @@ export async function generateWorldAssets(
   return results;
 }
 
-function omitUnboundExplicitBuildings(
+function diagnoseUnboundExplicitBuildings(
   patches: TownPatch[],
   assetKeys: ReadonlySet<string>,
   issue: (townId: string, value: string) => void
-): TownPatch[] {
-  return patches.map(patch => {
-    const omitted = new Set<string>();
-    const buildings = patch.buildings.filter(building => {
-      if (!building.assetKey || assetKeys.has(building.assetKey)) return true;
-      omitted.add(building.id);
+): void {
+  for (const patch of patches) for (const building of patch.buildings) {
+    if (building.assetKey && !assetKeys.has(building.assetKey)) {
       issue(patch.townId, `explicit_asset_unbound:${building.id}:${building.assetKey}`);
-      return false;
-    });
-    if (!omitted.size) return patch;
-    const streets = patch.streets.filter(street => !street.tags.includes('landmark-access')
-      || ![...omitted].some(id => street.id === `${patch.townId}-landmark-${id}`));
-    const summary = patch.summary.replace(/;\s*\d+ roads and \d+ buildings$/,
-      `; ${streets.length} roads and ${buildings.length} buildings`);
-    return { ...patch, summary, streets, buildings };
-  });
+    }
+  }
 }
 
 function normalizeExplicitBuildingAssetKeys(
@@ -1058,9 +1061,8 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   assetRequests=bindExactReusableAssetKeys(assetRequests,reusableAssets);
   const worldKey=worldPlanKey(constructionPlan);
   const normalizedPatches=normalizeExplicitBuildingAssetKeys(patches.map(patch=>({...patch,worldKey})),assetRequests,issue);
-  const requestedPatches=omitUnboundExplicitBuildings(normalizedPatches,
-    new Set(assetRequests.map(asset=>asset.key)),issue);
-  validateWorldAssetRequests(assetRequests,constructionPlan,validationRequest,requestedPatches,false);
+  const requestedPatches=normalizedPatches;
+  validateWorldAssetRequests(assetRequests,constructionPlan,validationRequest,requestedPatches,false,true);
   let paidCallCount=1,assetSources:WorldAssetResult[]=[];
   const scheduledAssets=selectUsedWorldAssetRequests(assetRequests,constructionPlan,requestedPatches);
   const generationQueue=request.generateAssets?scheduledAssets:scheduledAssets.filter(asset=>asset.existingAssetId);
@@ -1074,7 +1076,8 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
       break;
     }
   }
-  const visiblePatches=omitUnboundExplicitBuildings(requestedPatches,new Set(assetSources.map(asset=>asset.id)),issue);
+  const visiblePatches=requestedPatches;
+  diagnoseUnboundExplicitBuildings(visiblePatches,new Set(assetSources.map(asset=>asset.id)),issue);
   for(const diagnostic of auditWorldWhiteboxSettlementConstruction(constructionPlan,materialized.towns,
     materialized.settlements,visiblePatches)) {
     for(const planningIssue of diagnostic.planningIssues) issue(diagnostic.townId,planningIssue);

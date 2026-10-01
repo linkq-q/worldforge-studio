@@ -314,7 +314,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   const assetsById = new Map((map.assets ?? []).map(asset => [asset.id, asset]));
   const bindingsByKey = new Map(world.assets.map(binding => [binding.key, binding]));
   const bindingsByRole = groupBindingsByRole(world.assets);
-  validateWorldAssets(map, bindingsByKey, bindingsByRole, assetsById);
+  validateWorldAssets(map, assetsById);
   const buildings = globalBuildings(bundle);
   const roads = globalRoads(bundle);
   const roadPolylines = new Map(roads.map(road => [road.id, worldRoadPolyline(road)] as const));
@@ -818,8 +818,6 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       binding = candidates[stableIndex(building.id, candidates.length)];
     }
     if (!binding) {
-      const role = worldBuildingRole(building);
-      if (building.assetKey || role === 'landmark') throw new Error(`world_missing_asset_binding:${building.assetKey ?? role}`);
       return null;
     }
     const asset = assetsById.get(binding.assetId);
@@ -1206,18 +1204,11 @@ function disposeWorldWhiteboxOverlay(root: THREE.Object3D): void {
 
 function validateWorldAssets(
   map: EditableMap,
-  bindingsByKey: Map<string, WorldAssetBinding>,
-  bindingsByRole: Map<WorldAssetBinding['role'], WorldAssetBinding[]>,
   assetsById: Map<string, MapAsset>
 ): void {
   const world = map.world!;
   if (world.assets.length === 0) return;
   for (const binding of world.assets) if (!assetsById.has(binding.assetId)) throw new Error(`world_missing_asset:${binding.assetId}`);
-  for (const patch of world.bundle.patches) for (const building of patch.buildings) {
-    if (building.assetKey && !bindingsByKey.has(building.assetKey)) throw new Error(`world_missing_asset_binding:${building.assetKey}`);
-    const role = worldBuildingRole(building);
-    if (role === 'landmark' && !building.assetKey && !(bindingsByRole.get(role)?.length)) throw new Error(`world_missing_asset_binding:${role}`);
-  }
 }
 
 function groupBindingsByRole(bindings: WorldAssetBinding[]): Map<WorldAssetBinding['role'], WorldAssetBinding[]> {

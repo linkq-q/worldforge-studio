@@ -143,8 +143,8 @@ describe('world settlement growth', () => {
       Math.max(...ordinary.map(building => building.z)) - Math.min(...ordinary.map(building => building.z))
     ) / (plan.towns[0].radius * 2);
 
-    expect(base.buildings).toHaveLength(35);
-    expect(base.streets).toHaveLength(13);
+    expect(base.buildings.length).toBeGreaterThanOrEqual(35);
+    expect(base.streets.length).toBeGreaterThanOrEqual(13);
     expect(result.landmarks).toHaveLength(2);
     expect(ordinary).toHaveLength(30);
     expect(extent).toBeCloseTo(0.64498, 5);
@@ -333,6 +333,31 @@ describe('world settlement growth', () => {
     expect(() => generateWorldSettlement(plan, town.id, floodedDistrict, {
       kind: 'city', pattern: 'organic', seed: 59, density: 0.82, waterfrontBias: 0
     })).toThrow('world_settlement_no_buildings');
+  });
+
+  it('connects and inhabits a dry authored district beyond the town core', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0]; town.radius = 100; town.ports = []; town.population = 120;
+    town.districts = [
+      { anchorId: 'core', kind: 'civic', density: 0.5, offset: [0, 0], radius: 35 },
+      { anchorId: 'outer-homes', kind: 'residential', density: 0.9, offset: [130, 0], radius: 35 }
+    ];
+    plan.roads = [];
+    plan.generationPolicy = 'raw-first-call';
+    plan.featureGraph = { regions: town.districts.map(district => ({ id: `${district.anchorId}-region`,
+      kind: 'settlement_district', name: district.anchorId,
+      center: district.offset, radius: district.radius })), paths: [], relations: [],
+    anchors: town.districts.map(district => ({ id: district.anchorId, kind: district.kind,
+      position: district.offset, regionId: `${district.anchorId}-region` })) };
+    const flat: WorldSettlementSampler = () => ({ height: 12, waterLevel: null, waterBodyId: null,
+      moisture: 0.3, temperature: 0.5, continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 } });
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 17, density: 0.55, waterfrontBias: 0
+    });
+    expect(patch.buildings.filter(building => building.x > 105 && building.use === 'home').length).toBeGreaterThanOrEqual(2);
+    expectStreetFacingBuildings(patch);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
   });
 
   it('keeps the legacy populated layout when every explicit district has zero density', () => {

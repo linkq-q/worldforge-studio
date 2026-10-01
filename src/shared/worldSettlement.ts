@@ -1,8 +1,8 @@
 import type { MapGuide } from './mapGuide';
 import { createUrbanLayout, type UrbanLayout, type UrbanParcel, type UrbanPoint, type UrbanRoad } from './mapUrbanLayout';
 import {
-  buildingsOverlap, createTownTasks, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch,
-  worldPlanKey, worldRoadPolyline, worldTownBuildingQuota,
+  buildingsOverlap, createTownTasks, segmentBox, segmentBuildingFootprint, validateTownPatch,
+  worldPlanKey, worldRoadPolyline, worldTownBuildingQuota, worldTownContainsBuilding, worldTownContainsPoint,
   type TownBuilding, type TownIntent, type TownPatch, type WorldPlan
 } from './worldPlanning';
 import { sampleWorldSlope, type WorldSample, type WorldSampler } from './worldTerrain';
@@ -253,7 +253,84 @@ export function generateWorldSettlement(
     if (same(street.points[index], port.position)) street.points[index] = [...port.position];
   }
 
-  const buildings = placeBuildings(plan, town, streets, layout, selected, sample, settings, random);
+  let buildings = placeBuildings(plan, town, streets, layout, selected, sample, settings, random);
+  const districts = town.districts?.filter(district => district.density > 0) ?? [];
+  if (districts.length && !settings.landmarks.length) {
+    const totalDensity = districts.reduce((sum, district) => sum + district.density, 0);
+    const assignedDistrict = (building: TownBuilding) => districts.filter(district =>
+      distance([building.x, building.z], district.offset) <= district.radius)
+      .sort((a, b) => distance([building.x, building.z], a.offset) / a.radius
+        - distance([building.x, building.z], b.offset) / b.radius)[0]?.anchorId;
+    const countIn = (items: TownBuilding[], anchorId: string) =>
+      items.filter(building => assignedDistrict(building) === anchorId).length;
+    const crossesStreet = (a: Point, b: Point) => streets.some(street => street.points.slice(1).some((end, index) => {
+      const start = street.points[index];
+      if (same(a, start) || same(a, end)) return false;
+      const cross = (p: Point, q: Point, r: Point) =>
+        (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+      return cross(a, b, start) * cross(a, b, end) < -EPS
+        && cross(start, end, a) * cross(start, end, b) < -EPS;
+    }));
+    const localBound = Math.max(town.radius, ...districts.map(district => Math.max(
+      Math.abs(district.offset[0]) + district.radius, Math.abs(district.offset[1]) + district.radius)));
+    const worldBound = plan.recipe.size / 2 - settings.roadWidth / 2;
+    const authoredConnectors = plan.roads.filter(road => road.tags.some(tag =>
+      ['town-internal', 'town-access', 'local_street', 'local_lane'].includes(tag)))
+      .flatMap(road => {
+        const points = worldRoadPolyline(road).map(point =>
+          [point[0] - town.center[0], point[1] - town.center[1]] as Point);
+        return points.slice(1).flatMap((end, index) => {
+          const start = points[index], steps = Math.max(1, Math.ceil(distance(start, end) / 10));
+          return Array.from({ length: steps + 1 }, (_, step) => mix(start, end, step / steps))
+            .filter(point => Math.abs(point[0]) <= localBound && Math.abs(point[1]) <= localBound);
+        });
+      });
+    for (const district of districts) {
+      const wanted = Math.max(2, Math.ceil((town.population === undefined ? buildings.length : town.population / 5)
+        * district.density / totalDensity * 0.6));
+      for (let branch = 0; branch < 2 && streets.length < 48 && countIn(buildings, district.anchorId) < wanted; branch++) {
+        const offsets = [-0.6, -0.3, 0, 0.3, 0.6];
+        const ends = offsets.flatMap(x => offsets.map(z => add(district.offset,
+          [x * district.radius, z * district.radius] as Point)))
+          .filter(point => distance(point, district.offset) <= district.radius - settings.roadWidth / 2
+            && dry(point, settings.waterSetback + settings.roadWidth / 2));
+        const proposals = ends.flatMap(end => [...roadNodes(streets), ...authoredConnectors].map(start => ({ start, end,
+          length: distance(start, end) })))
+          .filter(item => item.length >= 14 && item.length <= Math.max(90, town.radius * 1.8))
+          .sort((a, b) => a.length - b.length || distance(a.end, district.offset) - distance(b.end, district.offset));
+        let bestBranch: { road: MapGuide; buildings: TownBuilding[]; count: number } | undefined;
+        for (const { start, end } of proposals.slice(0, 96)) {
+          if ([start, end].some(point => Math.abs(town.center[0] + point[0]) > worldBound
+            || Math.abs(town.center[1] + point[1]) > worldBound)) continue;
+          if (!segmentSafe(sample, town, start, end, settings.roadWidth, settings.waterSetback,
+            settings.maxRoadSlope, true)
+            || settings.landmarks.some(building => segmentBuildingFootprint(start, end, building,
+              settings.roadWidth / 2 + 1)) || crossesStreet(start, end)) continue;
+          const road = guide(`${town.id}-district-access-${streets.length + 1}`, [start, end], settings.roadWidth,
+            ['settlement', settings.kind, 'street', 'district-access', district.anchorId]);
+          const candidate = placeBuildings(plan, town, [...streets, road], layout, selected, sample, settings,
+            seededRandom(settings.seed));
+          const count = countIn(candidate, district.anchorId);
+          if (count <= countIn(buildings, district.anchorId)
+            || candidate.length < buildings.length - Math.max(2, Math.floor(buildings.length * 0.05))) continue;
+          try {
+            validateTownPatch(plan, { townId: town.id, worldKey: worldPlanKey(plan), summary: 'district access',
+              streets: [...streets, road], buildings: candidate });
+          } catch (error) {
+            if (error instanceof Error && /^(world_streets_disconnected|world_street_outside|world_building_(outside|intersects_road|intersects_street))$/.test(error.message)) continue;
+            throw error;
+          }
+          if (!bestBranch || count > bestBranch.count
+            || count === bestBranch.count && candidate.length > bestBranch.buildings.length) {
+            bestBranch = { road, buildings: candidate, count };
+          }
+        }
+        if (!bestBranch) break;
+        streets.push(bestBranch.road);
+        buildings = bestBranch.buildings;
+      }
+    }
+  }
   if (!buildings.length) throw new Error('world_settlement_no_buildings');
   const patch: TownPatch = {
     townId: town.id,
@@ -465,7 +542,10 @@ function authoredWaterfrontFrontage(
       const worldA=road.points[segment-1],worldB=road.points[segment];
       const clipped=clipTownSegment(
         [worldA[0]-town.center[0],worldA[1]-town.center[1]],
-        [worldB[0]-town.center[0],worldB[1]-town.center[1]],town.radius);
+        [worldB[0]-town.center[0],worldB[1]-town.center[1]],
+        Math.max(town.radius, ...town.districts?.map(district => Math.max(
+          Math.abs(district.offset[0]) + district.radius, Math.abs(district.offset[1]) + district.radius
+        )) ?? []));
       if(!clipped) continue;
       const steps=Math.max(1,Math.ceil(distance(...clipped)/8));
       for(let step=0;step<steps;step++) {
@@ -502,8 +582,8 @@ function hasGradedWaterAccess(
 function landmarkSiteSafe(
   building:TownBuilding,streets:MapGuide[],town:TownIntent,sample:WorldSettlementSampler,settings:Settings
 ):boolean {
-  const bounds=townBuildingBounds(building),probes=buildingProbePoints(building);
-  if(Math.abs(bounds.x)+bounds.width/2>town.radius||Math.abs(bounds.z)+bounds.depth/2>town.radius
+  const probes=buildingProbePoints(building);
+  if(!worldTownContainsBuilding(town,building)
     ||!buildingEarthworkSafe(sample,town,building)
     ||probes.some(point=>!dryPoint(sample,town,point,settings.waterSetback)
       ||sampleSlope(sample,town,point)>settings.maxSiteSlope+EPS)) return false;
@@ -803,9 +883,8 @@ function buildableParcelCount(
     const center = add(parcel.center, scale(forward, (parcel.depth - depth) / 2));
     const building: TownBuilding = { id: 'probe', x: center[0], z: center[1], width, depth, height: 1,
       use: 'probe', rotation: parcel.rotationY };
-    const bounds = townBuildingBounds(building), probes = buildingProbePoints(building);
-    return Math.abs(bounds.x) + bounds.width / 2 <= town.radius
-      && Math.abs(bounds.z) + bounds.depth / 2 <= town.radius
+    const probes = buildingProbePoints(building);
+    return worldTownContainsBuilding(town, building)
       && buildingEarthworkSafe(sample, town, building)
       && probes.every(point => dryPoint(sample, town, point, settings.waterSetback)
         && sampleSlope(sample, town, point) <= settings.maxSiteSlope + EPS);
@@ -1010,6 +1089,7 @@ function placeBuildings(
 ): TownBuilding[] {
   const result: TownBuilding[] = settings.landmarks.map(building => ({ ...building }));
   const city = settings.kind === 'city';
+  const worldBound = plan.recipe.size / 2;
   const localRoads = streets.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width, road })));
   const worldRoads = plan.roads.flatMap(road => {
     const points = worldRoadPolyline(road);
@@ -1023,7 +1103,10 @@ function placeBuildings(
         const worldA = points[index];
         return clipTownSegment(
           [worldA[0] - town.center[0], worldA[1] - town.center[1]],
-          [worldB[0] - town.center[0], worldB[1] - town.center[1]], town.radius
+          [worldB[0] - town.center[0], worldB[1] - town.center[1]],
+          Math.max(town.radius, ...town.districts?.map(district => Math.max(
+            Math.abs(district.offset[0]) + district.radius, Math.abs(district.offset[1]) + district.radius
+          )) ?? [])
         );
       }).filter((segment): segment is [Point, Point] => Boolean(segment))
         .map(([a, b]) => ({ a, b, width: road.width }));
@@ -1117,9 +1200,10 @@ function placeBuildings(
   const householdCount=()=>result.filter(building=>building.use==='home'||building.use==='farmhouse').length;
   const filled=()=>town.population===undefined?result.length>=target:householdCount()>=populationHomes;
   for (const landmark of result) {
-    const bounds = townBuildingBounds(landmark);
     const probes = buildingProbePoints(landmark);
-    if (Math.abs(bounds.x) + bounds.width / 2 > town.radius || Math.abs(bounds.z) + bounds.depth / 2 > town.radius
+    if (!worldTownContainsBuilding(town, landmark)
+      || probes.some(point => Math.abs(town.center[0] + point[0]) > worldBound
+        || Math.abs(town.center[1] + point[1]) > worldBound)
       || !buildingEarthworkSafe(sample, town, landmark)
       || probes.some(point => !dryPoint(sample, town, point, settings.waterSetback)
         || sampleSlope(sample, town, point) > settings.maxSiteSlope + EPS)
@@ -1140,9 +1224,10 @@ function placeBuildings(
     }
   }
   const canPlace = (building: TownBuilding): boolean => {
-    const bounds = townBuildingBounds(building);
-    if (Math.abs(bounds.x) + bounds.width / 2 > town.radius || Math.abs(bounds.z) + bounds.depth / 2 > town.radius) return false;
+    if (!worldTownContainsBuilding(town, building)) return false;
     const probes = buildingProbePoints(building);
+    if (probes.some(point => Math.abs(town.center[0] + point[0]) > worldBound
+      || Math.abs(town.center[1] + point[1]) > worldBound)) return false;
     if (!buildingEarthworkSafe(sample, town, building)
       || probes.some(point => !dryPoint(sample, town, point, settings.waterSetback)
       || sampleSlope(sample, town, point) > settings.maxSiteSlope + EPS)) return false;
@@ -1151,9 +1236,10 @@ function placeBuildings(
     const worldBuilding = { ...building, x: building.x + town.center[0], z: building.z + town.center[1] };
     return !worldRoads.some(road => segmentBuildingFootprint(road.a, road.b, worldBuilding, road.width / 2));
   };
-  const placeRoadside = (roads: readonly { a:Point; b:Point; width:number }[], limit=target) => {
+  const placeRoadside = (roads: readonly { a:Point; b:Point; width:number }[], limit=target,
+    onlyDistrict?: NonNullable<TownIntent['districts']>[number]) => {
     if (districtIntent.length) {
-      const groups = districtIntent.map(district => ({ district, used: 0,
+      const groups = (onlyDistrict ? [onlyDistrict] : districtIntent).map(district => ({ district, used: 0,
         sites: [] as Array<{ center: Point; rotation: number }> }));
       for (const road of roads) {
         const delta=sub(road.b,road.a),length=distance(road.a,road.b);
@@ -1166,10 +1252,13 @@ function placeBuildings(
           const group=groups.filter(candidate=>distance(center,candidate.district.offset)<=candidate.district.radius*1.5)
             .sort((a,b)=>distance(center,a.district.offset)/a.district.radius-distance(center,b.district.offset)/b.district.radius
               ||a.district.anchorId.localeCompare(b.district.anchorId))[0];
-          if(group) group.sites.push({center,rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))});
+          if(group && (!onlyDistrict || distance(center, onlyDistrict.offset) <= onlyDistrict.radius)) {
+            group.sites.push({center,rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))});
+          }
         }
       }
-      while(groups.some(group=>group.sites.length)&&!filled()&&result.length<limit&&result.length<worldTownBuildingQuota(town)) {
+      while(groups.some(group=>group.sites.length)&&(!filled()||onlyDistrict!==undefined)
+        &&result.length<limit&&result.length<worldTownBuildingQuota(town)) {
         const group=groups.filter(candidate=>candidate.sites.length)
           .sort((a,b)=>(a.used+1)/a.district.density-(b.used+1)/b.district.density
             ||a.district.anchorId.localeCompare(b.district.anchorId))[0];
@@ -1202,6 +1291,13 @@ function placeBuildings(
       }
     }
   };
+  for (const district of districtIntent) {
+    const branches = localFrontageRoads.filter(road => road.road.tags.includes('district-access')
+      && road.road.tags.includes(district.anchorId));
+    if (branches.length) placeRoadside(branches, Math.min(districtLimit,
+      result.length + Math.max(2, Math.ceil(populationHomes * district.density / Math.max(1,
+        districtIntent.reduce((sum, candidate) => sum + candidate.density, 0)) * 0.6))), district);
+  }
   if(plan.generationPolicy==='raw-first-call'&&town.population===undefined&&!districtIntent.length) {
     placeRoadside(worldFrontageRoads,Math.min(target,result.length+worldFrontageTarget));
   }
@@ -1281,7 +1377,8 @@ function segmentSafe(
   b: Point,
   width: number,
   waterSetback: number,
-  maxSlope: number
+  maxSlope: number,
+  allowOutsideTown = false
 ): boolean {
   const length = distance(a, b);
   if (length < EPS) return false;
@@ -1289,15 +1386,17 @@ function segmentSafe(
   const startHeight = sampleAt(sample, town, a).height, endHeight = sampleAt(sample, town, b).height;
   for (let index = 0; index <= steps; index++) {
     const t = index / steps, point = mix(a, b, t);
-    if (!inside(town, point, width / 2) || !dryPoint(sample, town, point, waterSetback + width / 2)
+    if ((!allowOutsideTown && !inside(town, point, width / 2))
+      || !dryPoint(sample, town, point, waterSetback + width / 2, allowOutsideTown)
       || sampleSlope(sample, town, point) > maxSlope + EPS
       || Math.abs(sampleAt(sample, town, point).height - (startHeight + (endHeight - startHeight) * t)) > MAX_LOCAL_EARTHWORK) return false;
   }
   return true;
 }
 
-function dryPoint(sample: WorldSettlementSampler, town: TownIntent, point: Point, clearance: number): boolean {
-  if (!inside(town, point, clearance) || wet(sampleAt(sample, town, point))) return false;
+function dryPoint(sample: WorldSettlementSampler, town: TownIntent, point: Point, clearance: number,
+  allowOutsideTown = false): boolean {
+  if ((!allowOutsideTown && !inside(town, point, clearance)) || wet(sampleAt(sample, town, point))) return false;
   if (clearance <= 0) return true;
   for (let index = 0; index < 8; index++) {
     const angle = index / 8 * TAU;
@@ -1401,7 +1500,7 @@ function clipTownSegment(a: Point, b: Point, radius: number): [Point, Point] | u
 }
 
 function inside(town: TownIntent, point: Point, margin: number): boolean {
-  return Math.abs(point[0]) <= town.radius - margin + EPS && Math.abs(point[1]) <= town.radius - margin + EPS;
+  return worldTownContainsPoint(town, point, margin);
 }
 
 function pointKey(point: Point): string { return `${point[0].toFixed(6)},${point[1].toFixed(6)}`; }

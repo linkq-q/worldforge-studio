@@ -46,7 +46,7 @@ it('preserves ecology asset intent while accepting legacy untyped tree bindings'
     .toThrow('invalid_world_asset_binding');
 });
 
-it('allows ordinary construction to keep primitive fallbacks while requiring landmark assets', () => {
+it('keeps an unbound public building as a whitebox in a partial asset pack', () => {
   const state = world();
   const foundation = createWorldSampler(state.bundle.plan.recipe)(0, 0).height;
   state.bundle.plan.towns = [{
@@ -65,7 +65,9 @@ it('allows ordinary construction to keep primitive fallbacks while requiring lan
   state.bundle.patches[0].buildings.push({
     id: 'hall', x: 20, z: 0, width: 12, depth: 12, height: 10, use: 'school', assetKey: 'town-hall'
   });
-  expect(() => validateWorldMapState(state)).toThrow('world_missing_asset_binding:town-hall');
+  expect(validateWorldMapState(state).bundle.patches[0].buildings.find(building => building.id === 'hall')).toMatchObject({
+    id: 'hall', use: 'school', assetKey: 'town-hall', width: 12, depth: 12, height: 10
+  });
 });
 
 it('loads a legacy world whose tagged harbor quay is shorter than current generation quality', () => {
