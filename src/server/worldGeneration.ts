@@ -9,7 +9,7 @@ import { WORLD_REGIONS, type WorldRecipe, type WorldRegion, type WorldTerrainBru
 import { validateEcologyRules, type EcologyKind, type EcologyRule } from '../shared/worldEcology';
 import { findWorldRoute, findWorldSiteCandidates,
   type WorldSiteCandidate, type WorldSiteIntent } from '../shared/worldSiting';
-import { createPlannedWorldTerrainContext, deriveWorldRouteConstruction, validateWorldPlan, validateWorldBundle, worldRoadSampleSpacing,
+import { createPlannedWorldTerrainContext, deriveWorldRouteConstruction, validateWorldPlan, validateWorldBundle, worldPlanKey, worldRoadSampleSpacing,
   type TownBuilding, type TownIntent, type TownPatch, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
 import { auditWorldSettlement, createWorldSettlementLandmarkLayout, createWorldSettlementPartialLandmarkLayout,
   generateWorldSettlement, resolveWorldSettlementLandmarks,
@@ -968,37 +968,52 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   const materialized=materializeWorldWhiteboxConstruction(content,request);
   const diagnostics=new Map(materialized.diagnostics.map(item=>[item.townId,[...item.planningIssues]]));
   const issue=(townId:string,value:string)=>diagnostics.set(townId,[...diagnostics.get(townId)??[],value]);
+  let constructionPlan=materialized.plan;
+  const withPortRecovery=<T>(townId:string,build:(plan:WorldPlan)=>T):T=>{
+    while(true) {
+      try {return build(constructionPlan);}
+      catch(error) {
+        const reason=error instanceof Error?error.message:String(error);
+        const portId=/^world_settlement_port_unreachable:([A-Za-z0-9_-]+)$/.exec(reason)?.[1];
+        const town=constructionPlan.towns.find(item=>item.id===townId);
+        if(!portId||!town?.ports.some(port=>port.id===portId)) throw error;
+        constructionPlan={...constructionPlan,towns:constructionPlan.towns.map(item=>item.id===townId
+          ?{...item,ports:item.ports.filter(port=>port.id!==portId)}:item)};
+        issue(townId,`port_connection_unrealized:${portId}`);
+      }
+    }
+  };
   const terrain=createPlannedWorldTerrainContext(materialized.plan),sample=terrain.sample,patches:TownPatch[]=[];
   for(const town of materialized.towns) {
-    if(!materialized.plan.towns.some(item=>item.id===town.id)) continue;
+    if(!constructionPlan.towns.some(item=>item.id===town.id)) continue;
     const options:Omit<WorldSettlementOptions,'landmarks'>={kind:town.kind,pattern:town.pattern,density:town.density,
       ...(town.waterfrontBias===undefined?{}:{waterfrontBias:town.waterfrontBias})};
     try {
       let patch:TownPatch;
       if(town.publicBuildings.length) {
-        let layout;
+        let layout:ReturnType<typeof createWorldSettlementPartialLandmarkLayout>;
         try {
-          layout={...createWorldSettlementLandmarkLayout(
-            materialized.plan,town.id,sample,options,town.publicBuildings),unrealized:[]};
+          layout={...withPortRecovery(town.id,plan=>createWorldSettlementLandmarkLayout(
+            plan,town.id,sample,options,town.publicBuildings)),unrealized:[]};
         } catch(error) {
           const reason=error instanceof Error?error.message:String(error);
           if(!reason.startsWith('world_settlement_no_waterfront_site:')
             &&!reason.startsWith('world_settlement_no_landmark_site:')) throw error;
-          layout=createWorldSettlementPartialLandmarkLayout(
-            materialized.plan,town.id,sample,options,town.publicBuildings);
+          layout=withPortRecovery(town.id,plan=>createWorldSettlementPartialLandmarkLayout(
+            plan,town.id,sample,options,town.publicBuildings));
         }
         patch=layout.patch;
         for(const landmark of layout.unrealized) {
           issue(town.id,`public_building_unrealized:${landmark.id}:${landmark.reason}`);
         }
-      } else patch=generateWorldSettlement(materialized.plan,town.id,sample,options);
+      } else patch=withPortRecovery(town.id,plan=>generateWorldSettlement(plan,town.id,sample,options));
       patches.push(patch);
     } catch(error) {
       const reason=error instanceof Error?error.message:String(error);
       issue(town.id,'construction_unrealized:'+reason);
       if(town.publicBuildings.length) {
         try {
-          patches.push(generateWorldSettlement(materialized.plan,town.id,sample,options));
+          patches.push(withPortRecovery(town.id,plan=>generateWorldSettlement(plan,town.id,sample,options)));
           issue(town.id,'public_buildings_unrealized');
         } catch(baseError) {
           issue(town.id,'base_construction_unrealized:'+(baseError instanceof Error?baseError.message:String(baseError)));
@@ -1009,12 +1024,14 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   const validationRequest:WorldGenerationRequest={prompt:materialized.plan.prompt,seed:materialized.plan.recipe.seed,
     size:materialized.plan.recipe.size,generateAssets:false,repairAttempts:0,
     ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})};
-  let assetRequests=validateWorldAssetRequests(materialized.assets,materialized.plan,validationRequest,[],false);
+  let assetRequests=validateWorldAssetRequests(materialized.assets,constructionPlan,validationRequest,[],false);
   assetRequests=bindExactReusableAssetKeys(assetRequests,reusableAssets);
-  const requestedPatches=omitUnboundExplicitBuildings(patches,new Set(assetRequests.map(asset=>asset.key)),issue);
-  validateWorldAssetRequests(assetRequests,materialized.plan,validationRequest,requestedPatches,false);
+  const worldKey=worldPlanKey(constructionPlan);
+  const requestedPatches=omitUnboundExplicitBuildings(patches.map(patch=>({...patch,worldKey})),
+    new Set(assetRequests.map(asset=>asset.key)),issue);
+  validateWorldAssetRequests(assetRequests,constructionPlan,validationRequest,requestedPatches,false);
   let paidCallCount=1,assetSources:WorldAssetResult[]=[];
-  const scheduledAssets=selectUsedWorldAssetRequests(assetRequests,materialized.plan,requestedPatches);
+  const scheduledAssets=selectUsedWorldAssetRequests(assetRequests,constructionPlan,requestedPatches);
   const generationQueue=request.generateAssets?scheduledAssets:scheduledAssets.filter(asset=>asset.existingAssetId);
   for(const asset of generationQueue) {
     if(!asset.existingAssetId) paidCallCount++;
@@ -1027,7 +1044,7 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     }
   }
   const visiblePatches=omitUnboundExplicitBuildings(requestedPatches,new Set(assetSources.map(asset=>asset.id)),issue);
-  for(const diagnostic of auditWorldWhiteboxSettlementConstruction(materialized.plan,materialized.towns,
+  for(const diagnostic of auditWorldWhiteboxSettlementConstruction(constructionPlan,materialized.towns,
     materialized.settlements,visiblePatches)) {
     for(const planningIssue of diagnostic.planningIssues) issue(diagnostic.townId,planningIssue);
   }
@@ -1037,11 +1054,11 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   for(const diagnostic of deriveWorldRouteConstruction(materialized.plan).diagnostics) {
     issue('world',`${diagnostic.code}:${diagnostic.routeId}:${diagnostic.reason}`);
   }
-  const bundle=validateWorldBundle({plan:materialized.plan,patches:visiblePatches});
+  const bundle=validateWorldBundle({plan:constructionPlan,patches:visiblePatches});
   const resultDiagnostics:WorldConstructionDiagnostic[]=[...diagnostics]
     .map(([townId,planningIssues])=>({townId,planningIssues}));
   resultDiagnostics.push(...diagnoseWorldRiverSurfaceAboveBank(createPlannedWorldTerrainContext(bundle.plan,bundle.patches)));
-  const draft:WorldDraft={plan:materialized.plan,settlements:materialized.settlements,assets:assetRequests};
+  const draft:WorldDraft={plan:constructionPlan,settlements:materialized.settlements,assets:assetRequests};
   recordGenerationTrace('world.whitebox.construction.preview',{draft,diagnostics:resultDiagnostics,
     paidCallCount,assets:assetSources.map(asset=>({id:asset.id,assetId:asset.assetId,provider:asset.provider}))});
   return {bundle,draft,diagnostics:resultDiagnostics,assetSources,originalPlan:structuredClone(rawPlan),

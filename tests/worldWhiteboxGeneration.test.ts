@@ -347,6 +347,8 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('Biome-patch feather is a transition distance in world metres, not a 0..1 softness ratio');
     expect(systemPrompt).toContain("surfaceMode:'terrain-fit'");
     expect(systemPrompt).toContain('Terrain-fit rivers have no levels');
+    expect(systemPrompt).toContain("Only explicitly engineered canals or fixed-height waterworks may use surfaceMode:'authored'");
+    expect(systemPrompt).toContain('never omit surfaceMode for a new river');
     expect(systemPrompt).toContain("mode:'raise'|'lower',region:{kind:'circle'");
     expect(systemPrompt).toContain("{kind:'path',points:[[x,z],...],width}");
     expect(systemPrompt).toContain("districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]");
@@ -356,7 +358,7 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('lateral swings of roughly several channel widths');
     expect(systemPrompt).toContain('artificial canals and steep mountain streams may be straighter exceptions');
     expect(systemPrompt).toContain('gentle downstream slope');
-    expect(systemPrompt).toContain('compatible levels at confluences');
+    expect(systemPrompt).toContain('meeting terrain and outlet compatible');
     expect(systemPrompt).toContain('never underwater');
     expect(systemPrompt).toContain('without an intentionally authored crossing');
     expect(systemPrompt).toContain('Show the whole inhabited footprint of a requested town');
@@ -673,6 +675,27 @@ describe('whitebox world generation', () => {
     expect(result.bundle.plan.towns[0].center).toEqual(whiteboxPlan.featureGraph!.anchors[0].position);
     expect(result.bundle.patches[0].buildings.length).toBeGreaterThan(0);
     expect(result.bundle.patches[0].streets.some(street => street.tags.includes('port'))).toBe(true);
+  });
+
+  it('keeps a dry town when one derived external port cannot reach its street network', async () => {
+    const whiteboxPlan = buildablePlan();
+    whiteboxPlan.recipe.waterBodies = [{ id: 'east-cut', type: 'river',
+      region: { kind: 'path', points: [[60, -100], [60, 100]], width: 12 },
+      levels: [20, 20], depth: 3 }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan, generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    const patch = result.bundle.patches[0];
+    expect(patch.buildings.length).toBeGreaterThan(0);
+    expect(result.bundle.plan.towns[0].ports.map(port => port.id)).toEqual(['whitebox-port-1-1-1']);
+    expect(patch.streets.some(street => street.id.includes('whitebox-port-1-1-2'))).toBe(false);
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('port_connection_unrealized:whitebox-port-1-1-2');
+    expect(result.originalPlan).toEqual(whiteboxPlan);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
   });
 
   it('keeps feasible public buildings when one authored waterfront landmark has no site', async () => {
