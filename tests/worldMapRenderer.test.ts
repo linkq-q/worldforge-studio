@@ -8,7 +8,7 @@ import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWe
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
-import { WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
+import { selectWorldTiles, WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
 
 const bundle = validateWorldBundle(JSON.parse(readFileSync(
   new URL('../scripts/fixtures/hierarchical-world.json', import.meta.url),
@@ -287,7 +287,9 @@ describe('main editor streamed world renderer', () => {
     let streamed: Awaited<ReturnType<typeof buildEditableMapGroup>> | undefined;
     let sawProgressiveTerrain = false;
     let sawProgressiveContent = false;
+    let sawContentBeforeTerrainCoverage = false;
     let sawDeferredOcean = false;
+    const expectedTerrainTiles = selectWorldTiles(500, 0, 0, 400, 64).length;
     vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
       setTimeout(() => {
         paintYields += 1;
@@ -295,8 +297,12 @@ describe('main editor streamed world renderer', () => {
           const stats = streamed.getDebugStats().streaming!;
           const mounted = streamed.group.children.map(child => child.name);
           if (stats.pendingTiles > 0) {
-            sawProgressiveTerrain ||= mounted.filter(name => name.startsWith('world-tile:')).length > stats.terrainTiles;
-            sawProgressiveContent ||= mounted.filter(name => name.startsWith('world-content:')).length > stats.contentChunks;
+            const mountedTerrain = mounted.filter(name => name.startsWith('world-tile:')).length;
+            const mountedContent = mounted.filter(name => name.startsWith('world-content:')).length;
+            sawProgressiveTerrain ||= mountedTerrain > stats.terrainTiles;
+            sawProgressiveContent ||= mountedContent > stats.contentChunks;
+            sawContentBeforeTerrainCoverage ||= mountedContent > stats.contentChunks
+              && mountedTerrain < expectedTerrainTiles;
             sawDeferredOcean ||= streamed.group.getObjectByName('water:world-ocean')?.parent?.visible === false;
           }
         }
@@ -346,6 +352,7 @@ describe('main editor streamed world renderer', () => {
       expect(paintYields).toBeGreaterThanOrEqual(16);
       expect(sawProgressiveTerrain).toBe(true);
       expect(sawProgressiveContent).toBe(true);
+      expect(sawContentBeforeTerrainCoverage).toBe(false);
       expect(sawDeferredOcean).toBe(true);
       rendered.modelsRoot.traverse(object => {
         if (object.userData.isStructuredWaterRoot === true) expect(object.visible).toBe(true);

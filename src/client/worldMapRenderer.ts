@@ -418,27 +418,6 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     // await. Starting four entries together therefore samples four complete
     // tiles in one frame; keep terrain work to one tile per paint interval.
     const terrainBatchSize = 1;
-    for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
-      const batchStartedAt = performance.now();
-      const batch = missingContent.slice(index, index + contentBatchSize);
-      const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [
-        key, await buildContentEntry(chunk, desiredContent.size)
-      ] as const));
-      for (const result of results) if (result.status === 'fulfilled') builtContent.set(result.value[0], result.value[1]);
-      pendingTiles -= results.length;
-      const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
-      if (failure) {
-        discardBuilt();
-        pendingTiles = 0;
-        throw failure.reason;
-      }
-      if (disposed || revision !== requestRevision) { discardBuilt(); return false; }
-      results.forEach(result => {
-        if (result.status === 'fulfilled') mountContentEntry(result.value[1]);
-      });
-      await yieldWorldBuild(performance.now() - batchStartedAt, limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS);
-      if (revision !== requestRevision) { discardBuilt(); return false; }
-    }
     for (let index = 0; index < missingTerrain.length && !disposed; index += terrainBatchSize) {
       const batchStartedAt = performance.now();
       const batch = missingTerrain.slice(index, index + terrainBatchSize);
@@ -459,6 +438,27 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
           if (!limits) setEntryWaterVisible(result.value[1], false);
           mountEntry(result.value[1]);
         }
+      });
+      await yieldWorldBuild(performance.now() - batchStartedAt, limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS);
+      if (revision !== requestRevision) { discardBuilt(); return false; }
+    }
+    for (let index = 0; index < missingContent.length && !disposed; index += contentBatchSize) {
+      const batchStartedAt = performance.now();
+      const batch = missingContent.slice(index, index + contentBatchSize);
+      const results = await Promise.allSettled(batch.map(async ([key, chunk]) => [
+        key, await buildContentEntry(chunk, desiredContent.size)
+      ] as const));
+      for (const result of results) if (result.status === 'fulfilled') builtContent.set(result.value[0], result.value[1]);
+      pendingTiles -= results.length;
+      const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+      if (failure) {
+        discardBuilt();
+        pendingTiles = 0;
+        throw failure.reason;
+      }
+      if (disposed || revision !== requestRevision) { discardBuilt(); return false; }
+      results.forEach(result => {
+        if (result.status === 'fulfilled') mountContentEntry(result.value[1]);
       });
       await yieldWorldBuild(performance.now() - batchStartedAt, limits ? 1 : WORLD_STREAM_MIN_BACKGROUND_PAINTS);
       if (revision !== requestRevision) { discardBuilt(); return false; }
