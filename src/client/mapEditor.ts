@@ -2,7 +2,14 @@ import type { MapCatalog } from '../shared/experiments';
 import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
 import type { WorldBundle, WorldPlan, WorldWhiteboxObservation } from '../shared/worldPlanning';
-import { worldMapSampler, type WorldAssetBinding } from '../shared/worldMapState';
+import {
+  worldMapSampler,
+  worldBuildingRole,
+  type WorldAssetBinding,
+  type WorldAssetProposal,
+  type WorldBuildingReview,
+  type WorldGenerationReview
+} from '../shared/worldMapState';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import {
@@ -177,34 +184,9 @@ interface WorldConstructionDiagnostic {
   code?: string;
   message?: string;
 }
-interface WorldConstructionPreviewDetails {
-  paidCallCount: number;
-  diagnostics: string[];
-  complete: boolean;
-  draftAssets: WorldAssetDraft[];
-  plannedBuildings: PlannedWorldBuilding[];
+interface WorldConstructionPreviewDetails extends WorldGenerationReview {
   assetsApproved: boolean;
   assetPaidCallCount: number;
-}
-interface WorldAssetDraft {
-  key: string;
-  name: string;
-  role: WorldAssetBinding['role'];
-  prompt: string;
-  dimensions?: [number, number, number];
-  existingAssetId?: string;
-  ecologyKind?: WorldAssetBinding['ecologyKind'];
-  ecologyRuleId?: string;
-}
-interface PlannedWorldBuilding {
-  townId: string;
-  id: string;
-  use: string;
-  width: number;
-  depth: number;
-  height: number;
-  siting?: string;
-  placed: boolean;
 }
 import {
   TERRAIN_CLIFF_LAYOUTS,
@@ -1884,6 +1866,8 @@ class MapEditor {
           <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划（无建筑）</button>
           ${map.world?.bundle.plan.whitebox ? `<button id="construct-world-whitebox" ${this.state.busy || this.state.dirty || Boolean(suggestion) ? 'disabled' : ''}>沿当前已保存白盒施工</button>` : ''}
           <p class="empty inspector-note">先生成可检查尺寸的白盒施工预览，不调用 DeepSeek。确认灰盒和清单后，可在预览中单独确认生成 3D 资产；应用或保存预览不会自动生成资产。</p>
+          ${map.world?.review && !this.mapAiPreviewMap ? renderWorldConstructionDetails(
+            map.world.review, map.world.bundle, true, this.state.busy || this.state.dirty) : ''}
           ${map.world ? renderSavedWorldWhiteboxDetails(map.world) : ''}
           ${map.world ? `<label class="field compact"><span>前往聚落／规划点</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}${map.world!.bundle.patches.some(patch => patch.townId === town.id) ? '' : '（仅规划）'}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
@@ -2020,7 +2004,8 @@ class MapEditor {
           ${renderMapCompositionSummary(suggestion)}
           ${renderMapCodePlanSummary(suggestion)}
           ${this.worldWhiteboxDetails ? renderWorldWhiteboxDetails(this.worldWhiteboxDetails) : ''}
-          ${this.worldConstructionDetails ? renderWorldConstructionDetails(this.worldConstructionDetails, this.mapAiPreviewMap.world?.bundle) : ''}
+          ${this.worldConstructionDetails ? renderWorldConstructionDetails(
+            this.worldConstructionDetails, this.mapAiPreviewMap.world?.bundle, false, this.state.busy) : ''}
           ${suggestion.agent ? `
             <details class="inspector-disclosure compact map-ai-composition-details">
               <summary><span><b>Scene Agent 轨迹</b><small>${suggestion.agent.iterations} 轮 · ${suggestion.agent.guideCount} 条引导 · ${suggestion.agent.objectCount} 个物体</small></span></summary>
@@ -2851,8 +2836,8 @@ class MapEditor {
       const reusableAssetIds = this.mapAiReuseExistingAssets && library ? library.assetIds.slice(0, 64) : [];
       const result = await editorFetch<{
         bundle: WorldBundle;
-        draft?: {assets: WorldAssetDraft[]};
-        plannedBuildings?: PlannedWorldBuilding[];
+        draft?: {assets: WorldAssetProposal[]};
+        plannedBuildings?: WorldBuildingReview[];
         assetSources?: Array<{id: string; assetId: string; role: WorldAssetBinding['role'];
           ecologyKind?: WorldAssetBinding['ecologyKind']; ecologyRuleId?: string}>;
         diagnostics?: WorldConstructionDiagnostic[];
@@ -2893,7 +2878,13 @@ class MapEditor {
       const reusedAssets = loadedAssets.filter((asset): asset is MapAsset & {libraryId: string} =>
         reusableIds.has(asset.id) && typeof asset.libraryId === 'string');
       const previewAssets = [...new Map([...(map.assets ?? []), ...loadedAssets].map(asset => [asset.id, asset])).values()];
-      const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings}}];
+      const review: WorldGenerationReview | undefined = construction || complete
+        ? {paidCallCount: Math.max(0, Math.floor(result.paidCallCount ?? 0)),
+            diagnostics: worldConstructionDiagnosticMessages(result.diagnostics), complete,
+            draftAssets: result.draft!.assets, plannedBuildings: result.plannedBuildings!}
+        : undefined;
+      const operations: MapOperation[] = [{type: 'world.set', world: {bundle: result.bundle, assets: bindings,
+        ...(review ? {review} : {})}}];
       this.clearMapAiPreview();
       this.worldWhiteboxDetails = whitebox || complete
         ? {
@@ -2905,13 +2896,9 @@ class MapEditor {
             finalObservation: result.finalObservation!
           }
         : null;
-      const diagnosticMessages = worldConstructionDiagnosticMessages(result.diagnostics);
-      const paidCallCount = Math.max(0, Math.floor(result.paidCallCount ?? 0));
-      this.worldConstructionDetails = construction || complete
-        ? {paidCallCount, diagnostics: diagnosticMessages, complete,
-            draftAssets: result.draft!.assets, plannedBuildings: result.plannedBuildings!,
-            assetsApproved: false, assetPaidCallCount: 0}
-        : null;
+      const diagnosticMessages = review?.diagnostics ?? worldConstructionDiagnosticMessages(result.diagnostics);
+      const paidCallCount = review?.paidCallCount ?? Math.max(0, Math.floor(result.paidCallCount ?? 0));
+      this.worldConstructionDetails = review ? {...review, assetsApproved: false, assetPaidCallCount: 0} : null;
       this.mapAiSuggestion = {
         summary: whitebox
           ? `白盒世界：${result.bundle.plan.featureGraph?.regions.length ?? 0} 个区域，${result.bundle.plan.featureGraph?.paths.length ?? 0} 条路径，${result.bundle.plan.featureGraph?.anchors.length ?? 0} 个锚点。`
@@ -2951,11 +2938,15 @@ class MapEditor {
     const preview = this.mapAiPreviewMap;
     const suggestion = this.mapAiSuggestion;
     const details = this.worldConstructionDetails;
-    const world = preview?.world;
-    if (!map || !preview || !suggestion || !details || !world || details.assetsApproved || this.state.busy) return;
-    const reusableAssetIds = [...new Set(details.draftAssets.flatMap(asset => asset.existingAssetId ? [asset.existingAssetId] : []))];
+    const world = preview?.world ?? map?.world;
+    const review = world?.review;
+    if (!map || !world || !review || this.state.busy || this.state.dirty
+      || preview && (!suggestion || !details || details.assetsApproved)) return;
+    const reusableAssetIds = [...new Set(review.draftAssets.flatMap(asset => asset.existingAssetId ? [asset.existingAssetId] : []))];
     this.mapAiAbortController = new AbortController();
     this.setBusy(true, '已确认白盒尺寸，正在生成 3D 资产…');
+    let assetsResolved = false;
+    let worldUpdated = false;
     try {
       const result = await editorFetch<{
         mode: 'generate-approved-world-assets';
@@ -2965,9 +2956,10 @@ class MapEditor {
       }>('/api/editor/worlds/generate', {
         method: 'POST', signal: this.mapAiAbortController.signal,
         body: JSON.stringify({mode: 'generate-approved-world-assets', bundle: world.bundle,
-          assets: details.draftAssets, reusableAssetIds})
+          assets: review.draftAssets, reusableAssetIds})
       });
       if (result.mode !== 'generate-approved-world-assets') throw new Error('world_asset_approval_result_invalid');
+      assetsResolved = true;
       const bindings = result.assetSources.map(asset => ({key: asset.id, assetId: asset.assetId, role: asset.role,
         ...(asset.ecologyKind ? {ecologyKind: asset.ecologyKind} : {}),
         ...(asset.ecologyRuleId ? {ecologyRuleId: asset.ecologyRuleId} : {})}));
@@ -2976,23 +2968,43 @@ class MapEditor {
       const generatedAssets = loadedAssets.filter(asset => !reusedIds.has(asset.id));
       const reusedAssets = loadedAssets.filter((asset): asset is MapAsset & {libraryId: string} =>
         reusedIds.has(asset.id) && typeof asset.libraryId === 'string');
-      const nextWorld = {...world, assets: bindings};
+      const nextWorld = {bundle: world.bundle, assets: bindings};
       const operations: MapOperation[] = [{type: 'world.set', world: nextWorld}];
-      const previewAssets = [...new Map([...(preview.assets ?? []), ...loadedAssets]
-        .map(asset => [asset.id, asset])).values()];
-      this.mapAiSuggestion = {...suggestion, operations, generatedAssets, reusedAssets};
-      this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: previewAssets}, operations);
-      details.assetsApproved = true;
-      details.assetPaidCallCount = Math.max(0, Math.floor(result.paidCallCount ?? 0));
-      this.state.message = `3D 资产已绑定到当前灰盒预览；DeepSeek 调用 ${details.assetPaidCallCount} 次，世界规划未重做`;
+      const assetPaidCallCount = Math.max(0, Math.floor(result.paidCallCount ?? 0));
+      if (preview && suggestion && details) {
+        const previewAssets = [...new Map([...(preview.assets ?? []), ...loadedAssets]
+          .map(asset => [asset.id, asset])).values()];
+        this.mapAiSuggestion = {...suggestion, operations, generatedAssets, reusedAssets};
+        this.mapAiPreviewMap = applyMapOperations({...this.mapWithEditorAssets(map), assets: previewAssets}, operations);
+        worldUpdated = true;
+        details.assetsApproved = true;
+        details.assetPaidCallCount = assetPaidCallCount;
+        this.state.message = `3D 资产已绑定到当前灰盒预览；DeepSeek 调用 ${assetPaidCallCount} 次，世界规划未重做`;
+      } else {
+        const saved = await editorFetch<{map: EditableMap; transaction: MapTransactionSummary}>(
+          `/api/editor/maps/${encodeURIComponent(map.id)}/transactions`, {
+            method: 'POST',
+            body: JSON.stringify({source: 'basic-ai', label: '确认白盒尺寸并绑定 3D 资产', operations})
+          });
+        this.state.map = normalizeMap(saved.map);
+        worldUpdated = true;
+        this.state.undoTransaction = saved.transaction;
+        this.state.redoTransaction = null;
+        this.state.selectedObjectId = null;
+        this.resetManualHistory(this.state.map, true);
+        await this.reloadLists();
+        this.state.message = `已在原地图绑定 3D 资产；DeepSeek 调用 ${assetPaidCallCount} 次，世界规划未重做`;
+      }
       await this.refreshScene();
-      this.frameWorldTown(this.mapAiPreviewMap);
+      if (this.mapAiPreviewMap) this.frameWorldTown(this.mapAiPreviewMap);
     } catch (error) {
-      this.state.message = details.assetsApproved
+      this.state.message = worldUpdated
         ? `3D 资产已生成并绑定，但前端刷新失败：${humanizeAgentError(error)}；可重新打开地图恢复显示`
+        : assetsResolved
+          ? `3D 资产已生成，但写入地图失败：${humanizeAgentError(error)}；请勿重复生成，可从资产库恢复`
         : error instanceof Error && error.name === 'AbortError'
           ? '3D 资产生成已取消，灰盒预览仍保留'
-          : `3D 资产生成失败：${humanizeAgentError(error)}；灰盒预览仍保留`;
+          : `3D 资产生成失败：${humanizeAgentError(error)}；白盒评审仍保留`;
     } finally {
       this.mapAiAbortController = null;
       this.setBusy(false);
@@ -8701,18 +8713,44 @@ function worldConstructionDiagnosticMessages(diagnostics?: WorldConstructionDiag
   ]) ?? [];
 }
 
-function renderWorldConstructionDetails(details: WorldConstructionPreviewDetails, bundle?: WorldBundle): string {
+function renderWorldConstructionDetails(
+  details: WorldGenerationReview | WorldConstructionPreviewDetails,
+  bundle?: WorldBundle,
+  saved = false,
+  disabled = false
+): string {
   const dimensions = (size?: readonly number[]) => size?.length === 3
     ? `${size.map(value => Number(value).toFixed(1)).join(' × ')} m`
     : '尺寸未指定';
+  const assetDimensions = (asset: WorldAssetProposal) => {
+    if (asset.dimensions) return dimensions(asset.dimensions);
+    if (asset.role !== 'tree') return '尺寸未指定';
+    const size = asset.ecologyKind === 'shrub' ? [2.2, 2.2, 1.6]
+      : asset.ecologyKind === 'rock' ? [1.8, 1.6, 1.2] : [2.4, 2.4, 8];
+    return `约 ${dimensions(size)}（基础白盒）`;
+  };
+  const assetsApproved = 'assetsApproved' in details && details.assetsApproved;
+  const assetPaidCallCount = 'assetPaidCallCount' in details ? details.assetPaidCallCount : 0;
+  const unplacedCount = details.plannedBuildings.filter(building => !building.placed).length;
+  const hasScaledEcology = details.draftAssets.some(asset => !asset.dimensions && asset.role === 'tree');
+  const buildings = bundle?.patches.flatMap(patch => patch.buildings) ?? [];
+  const explicitKeys = new Set(buildings.flatMap(building => building.assetKey ? [building.assetKey] : []));
+  const fallbackRoles = new Set(buildings.filter(building => !building.assetKey).map(worldBuildingRole));
+  const ecologyRuleIds = new Set(bundle?.plan.ecology.map(rule => rule.id) ?? []);
+  const assetUsed = (asset: WorldAssetProposal) => explicitKeys.has(asset.key)
+    || fallbackRoles.has(asset.role)
+    || asset.role === 'tree' && !!asset.ecologyRuleId && ecologyRuleIds.has(asset.ecologyRuleId);
   const placedBuildings = bundle?.patches.flatMap(patch => patch.buildings.map(building =>
     `<span>${escapeHtml(patch.townId)} · ${escapeHtml(building.id)} · ${escapeHtml(building.use)} · ${dimensions([building.width, building.depth, building.height])} · 已放置灰盒</span>`)) ?? [];
   const plannedBuildings = details.plannedBuildings.map(building =>
     `<span>${escapeHtml(building.townId)} · ${escapeHtml(building.id)} · ${escapeHtml(building.use)} · ${dimensions([building.width, building.depth, building.height])} · ${building.placed ? '已落位' : '未解决：未落位'}${building.siting ? ` · ${escapeHtml(building.siting)}` : ''}</span>`);
-  const assetDrafts = details.draftAssets.map(asset =>
-    `<span>${escapeHtml(asset.name)} · ${escapeHtml(asset.role)}${asset.ecologyKind ? `/${escapeHtml(asset.ecologyKind)}` : ''} · ${dimensions(asset.dimensions)} · ${asset.existingAssetId ? '复用现有资产' : '待确认生成'}</span>`);
+  const assetDrafts = details.draftAssets.map(asset => {
+    const status = !assetUsed(asset) ? '当前白盒未使用，不会生成'
+      : assetsApproved ? '已绑定' : asset.existingAssetId ? '确认后复用现有资产' : '待确认生成';
+    return `<span>${escapeHtml(asset.name)} · ${escapeHtml(asset.role)}${asset.ecologyKind ? `/${escapeHtml(asset.ecologyKind)}` : ''} · ${assetDimensions(asset)} · ${status}</span>`;
+  });
   return `<details class="inspector-disclosure compact map-ai-composition-details" open>
-    <summary><span><b>${details.complete ? '一句话完整生成' : '沿白盒施工预览'}</b><small>规划调用 ${details.paidCallCount} 次 · ${details.assetsApproved ? `已确认资产调用 ${details.assetPaidCallCount} 次` : 'DeepSeek 尚未调用'}</small></span></summary>
+    <summary><span><b>${saved ? '已保存的白盒施工评审' : details.complete ? '一句话完整生成' : '沿白盒施工预览'}</b><small>规划调用 ${details.paidCallCount} 次 · ${assetsApproved ? `已确认资产调用 ${assetPaidCallCount} 次` : 'DeepSeek 尚未调用'}</small></span></summary>
     <div class="inspector-body asset-library-details">
       <p class="empty">已放置建筑灰盒（宽 × 深 × 高）</p>
       ${placedBuildings.length ? `<div class="style-tags">${placedBuildings.join('')}</div>` : '<p class="empty">无已放置建筑</p>'}
@@ -8720,13 +8758,16 @@ function renderWorldConstructionDetails(details: WorldConstructionPreviewDetails
       ${plannedBuildings.length ? `<div class="style-tags">${plannedBuildings.join('')}</div>` : '<p class="empty">无规划公共建筑</p>'}
       <p class="empty">3D 资产草案（宽 × 深 × 高）</p>
       ${assetDrafts.length ? `<div class="style-tags">${assetDrafts.join('')}</div>` : '<p class="empty">无资产草案</p>'}
+      ${hasScaledEcology ? '<p class="empty">生态资产显示 scale=1 的近似基础白盒尺寸；生态规则缩放会改变实际实例大小。</p>' : ''}
       <p class="empty">施工诊断</p>
       ${details.diagnostics.length
         ? `<div class="style-tags">${details.diagnostics.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>`
         : '<p class="empty">未报告诊断</p>'}
-      ${details.assetsApproved
+      ${assetsApproved
         ? '<p class="empty">3D 资产已绑定到这份预览，世界规划与建筑落点保持不变。</p>'
-        : '<p class="empty">先在场景和清单中检查灰盒尺寸。应用或保存不会生成资产。</p><button id="generate-approved-world-assets" type="button">确认灰盒尺寸并生成 3D 资产</button>'}
+        : `<p class="empty">${saved ? '这份评审已随地图保存，可在重载后继续确认。' : '先在场景和清单中检查灰盒尺寸。应用或保存不会生成资产。'}</p>
+          ${unplacedCount ? `<p><b>${unplacedCount} 栋公共建筑未落位；确认只会生成已落位位置用到的资产。</b></p>` : ''}
+          <button id="generate-approved-world-assets" type="button" ${disabled ? 'disabled' : ''}>确认灰盒尺寸并生成 3D 资产</button>`}
     </div>
   </details>`;
 }

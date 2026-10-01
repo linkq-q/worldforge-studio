@@ -34,6 +34,11 @@ describe('whitebox world planning UI', () => {
     expect(source).toContain('3D 资产草案（宽 × 深 × 高）');
     expect(source).toContain('未解决：未落位');
     expect(source).toContain('尺寸未指定');
+    expect(source).toContain('2.4, 2.4, 8');
+    expect(source).toContain('2.2, 2.2, 1.6');
+    expect(source).toContain('1.8, 1.6, 1.2');
+    expect(source).toContain('生态规则缩放会改变实际实例大小');
+    expect(source).toContain('栋公共建筑未落位；确认只会生成已落位位置用到的资产');
     expect(source).toContain('施工诊断');
   });
 
@@ -41,10 +46,23 @@ describe('whitebox world planning UI', () => {
     expect(source).toContain('id="generate-approved-world-assets"');
     expect(source).toContain('确认灰盒尺寸并生成 3D 资产');
     expect(source).toContain("mode: 'generate-approved-world-assets', bundle: world.bundle");
-    expect(source).toContain('assets: details.draftAssets, reusableAssetIds');
-    expect(source).toContain('const nextWorld = {...world, assets: bindings};');
+    expect(source).toContain('assets: review.draftAssets, reusableAssetIds');
+    expect(source).toContain('const nextWorld = {bundle: world.bundle, assets: bindings};');
     expect(source).toContain("const operations: MapOperation[] = [{type: 'world.set', world: nextWorld}]");
     expect(source).toContain('世界规划未重做');
+  });
+
+  it('persists the review and resumes approval from a reloaded saved map without replanning', () => {
+    expect(source).toContain('...(review ? {review} : {})');
+    expect(source).toContain('map.world?.review && !this.mapAiPreviewMap');
+    expect(source).toContain('已保存的白盒施工评审');
+    expect(source).toContain('这份评审已随地图保存，可在重载后继续确认');
+    expect(source).toContain('const world = preview?.world ?? map?.world;');
+    expect(source).toContain("label: '确认白盒尺寸并绑定 3D 资产'");
+    expect(source).toContain('this.state.map = normalizeMap(saved.map);');
+    const approvalFlow = source.slice(source.indexOf('private async generateApprovedWorldAssets()'),
+      source.indexOf('private async generateCompositionPlanPreview()'));
+    expect(approvalFlow).not.toContain('generateWorldPreview(');
   });
 
   it('shows the complete whitebox planning trace in escaped details', () => {

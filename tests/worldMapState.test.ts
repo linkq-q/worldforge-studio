@@ -46,6 +46,19 @@ it('preserves ecology asset intent while accepting legacy untyped tree bindings'
     .toThrow('invalid_world_asset_binding');
 });
 
+it('persists the reviewed whitebox dimensions and pending asset proposals across reload', () => {
+  const state = world();
+  state.review = {draftAssets: [{key: 'house', name: 'Village house', role: 'house',
+    prompt: 'A small house', dimensions: [8, 6, 7], strategy: 'single'}],
+  plannedBuildings: [], paidCallCount: 2, diagnostics: ['town_underbuilt'], complete: true};
+  const map = applyMapOperations(createEmptyMap(), [{type: 'world.set', world: state}]);
+  const reloaded = normalizeMap(JSON.parse(JSON.stringify(map)));
+  expect(reloaded.world?.review).toEqual(state.review);
+  expect(() => validateWorldMapState({...state, review: {...state.review!, draftAssets: [
+    {...state.review!.draftAssets[0], dimensions: [8, -1, 7]}
+  ]}})).toThrow('invalid_world_review_asset');
+});
+
 it('keeps an unbound public building as a whitebox in a partial asset pack', () => {
   const state = world();
   const foundation = createWorldSampler(state.bundle.plan.recipe)(0, 0).height;
