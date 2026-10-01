@@ -62,8 +62,29 @@ const MAX_LOCAL_EARTHWORK = 1.5;
 const LANDMARK_SITE_ATTEMPT_LIMIT = 24;
 const LANDMARK_LAYOUT_ATTEMPT_LIMIT = 192;
 const LANDMARK_CONFIGURATION_LIMIT = 50_000;
+const LANDMARK_LAYOUT_QUALITY_CANDIDATE_LIMIT = 4;
 const PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT = 4;
 const PARTIAL_LANDMARK_CONFIGURATION_LIMIT = 1_000;
+
+type LandmarkLayoutCandidate = { landmarks: TownBuilding[]; patch: TownPatch };
+
+function preferLandmarkLayout(candidate: LandmarkLayoutCandidate, current: LandmarkLayoutCandidate): boolean {
+  if (candidate.landmarks.length !== current.landmarks.length) {
+    return candidate.landmarks.length > current.landmarks.length;
+  }
+  const quality = ({ landmarks, patch }: LandmarkLayoutCandidate): [number, number] => {
+    const landmarkIds = new Set(landmarks.map(landmark => landmark.id));
+    const ordinary = patch.buildings.filter(building => !landmarkIds.has(building.id));
+    const x = ordinary.map(building => building.x), z = ordinary.map(building => building.z);
+    const extent = ordinary.length
+      ? Math.max(Math.max(...x) - Math.min(...x), Math.max(...z) - Math.min(...z)) : 0;
+    return [ordinary.length, extent];
+  };
+  const [candidateBuildings, candidateExtent] = quality(candidate);
+  const [currentBuildings, currentExtent] = quality(current);
+  return candidateBuildings > currentBuildings
+    || candidateBuildings === currentBuildings && candidateExtent > currentExtent + EPS;
+}
 
 /**
  * Builds one deterministic TownPatch from the shared urban geometry kernel, then adapts it to sampled terrain.
@@ -275,31 +296,35 @@ export function createWorldSettlementLandmarkLayout(
     return candidates;
   });
   const failures=ordered.map(()=>new Set<string>()),landmarks:TownBuilding[]=[];
-  let attempts=0,searchSteps=0,deepest=0;
-  const search=(index:number):TownPatch|undefined=>{
+  let attempts=0,searchSteps=0,deepest=0,feasible=0,searchLimited=false,best:LandmarkLayoutCandidate|undefined;
+  const search=(index:number):void=>{
+    if(searchLimited||feasible>=LANDMARK_LAYOUT_QUALITY_CANDIDATE_LIMIT) return;
     if(index===ordered.length) {
-      if(attempts++>=LANDMARK_LAYOUT_ATTEMPT_LIMIT) return undefined;
-      try {return generateWorldSettlement(plan,townId,sample,{...options,landmarks});}
-      catch(error) {failures[index-1].add(error instanceof Error?error.message:String(error));return undefined;}
+      if(attempts++>=LANDMARK_LAYOUT_ATTEMPT_LIMIT) {searchLimited=true;return;}
+      try {
+        const candidate={landmarks:[...landmarks],patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks})};
+        feasible++;
+        if(!best||preferLandmarkLayout(candidate,best)) best=candidate;
+      } catch(error) {failures[index-1].add(error instanceof Error?error.message:String(error));}
+      return;
     }
     deepest=Math.max(deepest,index);
     for(const candidate of sites[index]) {
       if(!landmarks.every(landmark=>landmarkSitesCompatible(candidate,landmark))) continue;
-      if(searchSteps++>=LANDMARK_CONFIGURATION_LIMIT) return undefined;
+      if(searchSteps++>=LANDMARK_CONFIGURATION_LIMIT) {searchLimited=true;return;}
       landmarks.push(candidate);
-      const patch=search(index+1);
-      if(patch) return patch;
+      search(index+1);
       landmarks.pop();
+      if(searchLimited||feasible>=LANDMARK_LAYOUT_QUALITY_CANDIDATE_LIMIT) return;
     }
-    return undefined;
   };
-  const patch=search(0);
-  if(!patch) {
+  search(0);
+  if(!best) {
     const index=Math.min(deepest,ordered.length-1),requirement=ordered[index];
     throw new Error(`world_settlement_no_landmark_site:${requirement.id}:${[...failures[index]].join('|')}`);
   }
-  const byId=new Map(landmarks.map(landmark=>[landmark.id,landmark]));
-  return {landmarks:requirements.map(requirement=>byId.get(requirement.id)!),patch};
+  const byId=new Map(best.landmarks.map(landmark=>[landmark.id,landmark]));
+  return {landmarks:requirements.map(requirement=>byId.get(requirement.id)!),patch:best.patch};
 }
 
 /** Keeps the best feasible subset found by one bounded deterministic layout search. */
@@ -337,19 +362,20 @@ export function createWorldSettlementPartialLandmarkLayout(
   const landmarks:TownBuilding[]=[];
   let best={landmarks:[] as TownBuilding[],patch:base},attempts=0,searchSteps=0,searchLimited=false;
   const search=(index:number):void=>{
-    if(searchLimited||best.landmarks.length===targetCount) return;
+    if(searchLimited) return;
     if(index===entries.length) {
-      if(landmarks.length<=best.landmarks.length) return;
+      if(landmarks.length<best.landmarks.length) return;
       if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {searchLimited=true;return;}
       try {
         const patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks});
-        best={landmarks:[...landmarks],patch};
+        const candidate={landmarks:[...landmarks],patch};
+        if(preferLandmarkLayout(candidate,best)) best=candidate;
       } catch { /* Keep searching other sites and landmark subsets. */ }
       return;
     }
-    if(landmarks.length+remainingCandidateRequirements[index]<=best.landmarks.length) return;
+    if(landmarks.length+remainingCandidateRequirements[index]<best.landmarks.length) return;
     for(const candidate of entries[index].sites) {
-      if(searchLimited||best.landmarks.length===targetCount) return;
+      if(searchLimited) return;
       if(!landmarks.every(landmark=>landmarkSitesCompatible(candidate,landmark))) continue;
       if(searchSteps++>=PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {searchLimited=true;return;}
       landmarks.push(candidate);
@@ -369,8 +395,8 @@ export function createWorldSettlementPartialLandmarkLayout(
       if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {fallbackLimited=true;break fallback;}
       if(searchSteps++>=PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {fallbackLimited=true;break fallback;}
       try {
-        best={landmarks:[candidate],patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks:[candidate]})};
-        break fallback;
+        const layout={landmarks:[candidate],patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks:[candidate]})};
+        if(preferLandmarkLayout(layout,best)) best=layout;
       } catch { /* Keep the base settlement when no bounded singleton fallback succeeds. */ }
     }
     searchLimited=targetSearchLimited||fallbackLimited;

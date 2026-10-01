@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { MapGuide } from '../src/shared/mapGuide';
 import {
@@ -6,10 +7,19 @@ import {
 } from '../src/shared/worldSettlement';
 import { createUrbanLayout } from '../src/shared/mapUrbanLayout';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
-import { buildingsOverlap, segmentBuildingFootprint, validateTownPatch, worldRoadPolyline,
+import { buildingsOverlap, createPlannedWorldTerrainContext, segmentBuildingFootprint, validateTownPatch, worldRoadPolyline,
   type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
 
 type Point = [number, number];
+
+const hawaiiV2TownRegression = JSON.parse(readFileSync(
+  new URL('../scripts/fixtures/hawaii-v2-town-regression.json', import.meta.url), 'utf8'
+)) as {
+  plan: WorldPlan;
+  requirements: Array<{ id:string;use:string;width:number;depth:number;height:number;assetKey:string;
+    enterable?:boolean;siting?:'central'|'waterfront'|'gateway'|'high-ground' }>;
+  options: { kind:'city';pattern:'organic';density:number;waterfrontBias:number };
+};
 
 function road(id: string, points: Point[], width = 8): MapGuide {
   return { id, name: id, points, curve: 'polyline', closed: false, width, tags: ['world-road'] };
@@ -120,6 +130,27 @@ function expectStreetFacingBuildings(patch: ReturnType<typeof generateWorldSettl
 }
 
 describe('world settlement growth', () => {
+  it('keeps the best bounded full-landmark patch when the first feasible layout collapses the town', () => {
+    const { plan, requirements, options } = structuredClone(hawaiiV2TownRegression);
+    const sample = createPlannedWorldTerrainContext(plan).sample;
+    const base = generateWorldSettlement(plan, plan.towns[0].id, sample, { ...options, landmarks: [] });
+    const strictRequirements = requirements.slice(0, 2);
+    const result = createWorldSettlementLandmarkLayout(plan, plan.towns[0].id, sample, options, strictRequirements);
+    const landmarkIds = new Set(strictRequirements.map(requirement => requirement.id));
+    const ordinary = result.patch.buildings.filter(building => !landmarkIds.has(building.id));
+    const extent = Math.max(
+      Math.max(...ordinary.map(building => building.x)) - Math.min(...ordinary.map(building => building.x)),
+      Math.max(...ordinary.map(building => building.z)) - Math.min(...ordinary.map(building => building.z))
+    ) / (plan.towns[0].radius * 2);
+
+    expect(base.buildings).toHaveLength(35);
+    expect(base.streets).toHaveLength(13);
+    expect(result.landmarks).toHaveLength(2);
+    expect(ordinary).toHaveLength(30);
+    expect(extent).toBeCloseTo(0.64498, 5);
+    expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
+  }, 20_000);
+
   it('reserves the sampled curve of a Catmull-Rom world road before placing buildings', () => {
     const plan = fixture(), town = plan.towns[0], sample = sampler(plan);
     town.ports = [];
