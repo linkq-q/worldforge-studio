@@ -417,6 +417,18 @@ describe('whitebox world generation', () => {
       .toThrow('world_unknown_staged_spatial_field:recipe');
   });
 
+  it('retains settlement population in the spatial whitebox and rejects invalid counts', () => {
+    const source = originalPlan();
+    source.settlementPlan!.settlements[0].population = 240;
+    const dryRecipe = validateWorldRecipe(source.recipe);
+    const result = parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source), request, dryRecipe);
+    expect(result.plan.settlementPlan!.settlements[1].population).toBe(240);
+    expect((result.rawPlan as WorldPlan).settlementPlan!.settlements[0].population).toBe(240);
+    source.settlementPlan!.settlements[0].population = 240.5;
+    expect(() => parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source), request, dryRecipe))
+      .toThrow('world_invalid_settlement_population');
+  });
+
   it('preserves a first-call follow route while ignoring its inapplicable grade hint', () => {
     const source = originalPlan();
     source.mobilityPlan!.routes[0].construction = { terrain: 'follow', maxGrade: 0.08 };
@@ -656,6 +668,21 @@ describe('whitebox world generation', () => {
     expect(result.towns[0].population).toBe(150);
     expect(result.plan.towns[0].population).toBe(150);
     expect(legacy.plan.towns[0].population).toBeUndefined();
+  });
+
+  it('keeps the approved spatial population when construction suggests a different count', () => {
+    const source = buildablePlan();
+    source.settlementPlan!.settlements[0].population = 240;
+    const expansion = constructionExpansion();
+    expansion.towns[0].population = 150;
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(source),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.towns[0].population).toBe(150);
+    expect(result.plan.towns[0].population).toBe(240);
+    expect(result.diagnostics.find(item => item.townId === result.plan.towns[0].id)?.planningIssues)
+      .toContain('settlement_population_changed_after_spatial_plan');
   });
 
   it('materializes one populated town across authored districts without turning internal routes into ports', () => {
@@ -942,7 +969,7 @@ describe('whitebox world generation', () => {
     const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content as string;
     expect(systemPrompt).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
     expect(systemPrompt).toContain('population?:integer');
-    expect(systemPrompt).toContain('Always record one integer population');
+    expect(systemPrompt).toContain("Copy each settlement's population");
     expect(systemPrompt).toContain('Choose public-building assets by their actual measured silhouette');
     expect(systemPrompt).toContain('publicBuildings:[{id,use,width,depth,height,assetKey?');
     expect(systemPrompt).toContain('visible whitebox footprint without spending an asset slot');

@@ -35,7 +35,7 @@ export interface FeatureGraph {
 export type SettlementDistrictKind = 'working' | 'civic' | 'residential' | 'edge';
 export interface SettlementDistrictPlan { anchorId: string; kind: SettlementDistrictKind; density: number }
 export interface SettlementPlanEntry {
-  id: string; anchorId: string; role: string; districts?: SettlementDistrictPlan[];
+  id: string; anchorId: string; role: string; population?: number; districts?: SettlementDistrictPlan[];
 }
 export interface SettlementPlan { settlements: SettlementPlanEntry[] }
 export interface MobilityRouteConstruction { terrain: 'follow' | 'grade'; maxGrade?: number }
@@ -435,10 +435,12 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     keys(value, ['settlements'], 'world_unknown_settlement_plan_field');
     const settlements = list(value.settlements, 64, 'world_settlement_plan_quota').map(item => {
       const settlement = record(item, 'world_invalid_settlement_plan');
-      keys(settlement, ['id', 'anchorId', 'role', 'districts'], 'world_unknown_settlement_plan_field');
+      keys(settlement, ['id', 'anchorId', 'role', 'population', 'districts'], 'world_unknown_settlement_plan_field');
       const parsed = { id: safeId(settlement.id, 'world_invalid_settlement_id'),
         anchorId: safeId(settlement.anchorId, 'world_invalid_settlement_anchor'),
         role: text(settlement.role, 'world_invalid_settlement_role', 2000),
+        ...(settlement.population === undefined ? {} : { population: number(settlement.population, 1, 1_000_000,
+          'world_invalid_settlement_population') }),
         ...(settlement.districts === undefined ? {} : { districts: list(settlement.districts, 16,
           'world_settlement_district_quota').map(item => {
           const district = record(item, 'world_invalid_settlement_district');
@@ -451,6 +453,7 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
           return { anchorId, kind: district.kind as SettlementDistrictKind,
             density: number(district.density, 0, 1, 'world_invalid_settlement_district_density') };
         }).sort((a, b) => a.anchorId.localeCompare(b.anchorId)) }) };
+      if (parsed.population !== undefined && !Number.isInteger(parsed.population)) fail('world_invalid_settlement_population');
       if (!anchors.has(parsed.anchorId)) fail('world_unknown_settlement_anchor');
       if (parsed.districts) unique(parsed.districts.map(district => district.anchorId),
         'world_duplicate_settlement_district_anchor');
