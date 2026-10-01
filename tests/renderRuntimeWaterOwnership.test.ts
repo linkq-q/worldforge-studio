@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { RENDER_PLAN_WATER_BASE_STATE } from '../src/client/defaultWaterState';
 import { shouldBindRenderPlanWaterSurface, structuredWaterShoreTransition } from '../src/client/renderRuntimeAdapter';
 
 describe('render-plan water ownership', () => {
@@ -20,5 +22,17 @@ describe('render-plan water ownership', () => {
     expect(1 - river.transparency * (1 - river.edgeAlpha)).toBeLessThan(0.5);
     expect(lake).toEqual({ transparency: 0.62, edgeAlpha: 0.38 });
     expect(structuredWaterShoreTransition('ocean').transparency).toBe(0);
+  });
+
+  it('disables the decorative toon pattern only for a terrain-bound ocean', () => {
+    const source = readFileSync(
+      new URL('../src/client/renderRuntimeAdapter.ts', import.meta.url),
+      'utf8'
+    );
+
+    expect(RENDER_PLAN_WATER_BASE_STATE.uToonPatternEnabled).toBe(true);
+    expect(source).toMatch(
+      /if \(mesh\.userData\.waterBodyType === 'ocean' && ocean\?\.texture\?\.isTexture\) \{\s*surface\.material\.uniforms\.uToonPatternEnabled\.value = false;/
+    );
   });
 });
