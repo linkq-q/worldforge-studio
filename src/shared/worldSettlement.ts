@@ -68,6 +68,18 @@ const PARTIAL_LANDMARK_CONFIGURATION_LIMIT = 1_000;
 
 type LandmarkLayoutCandidate = { landmarks: TownBuilding[]; patch: TownPatch };
 
+function cachedLandmarkSampler(sample: WorldSettlementSampler): WorldSettlementSampler {
+  const cache = new Map<string, WorldSample>();
+  return (x, z) => {
+    const key = `${x},${z}`;
+    const known = cache.get(key);
+    if (known) return known;
+    const surface = sample(x, z);
+    if (cache.size < 50_000) cache.set(key, surface);
+    return surface;
+  };
+}
+
 function preferLandmarkLayout(candidate: LandmarkLayoutCandidate, current: LandmarkLayoutCandidate): boolean {
   if (candidate.landmarks.length !== current.landmarks.length) {
     return candidate.landmarks.length > current.landmarks.length;
@@ -104,10 +116,10 @@ export function generateWorldSettlement(
   const random = seededRandom(settings.seed);
   const slope = (point: Point) => sampleSlope(sample, town, point);
   const dry = (point: Point, clearance = 0) => dryPoint(sample, town, point, clearance);
-  const terrainRoadSafe = (a: Point, b: Point, width: number) => segmentSafe(
-    sample, town, a, b, width, settings.waterSetback, settings.maxRoadSlope
+  const terrainRoadSafe = (a: Point, b: Point, width: number, maxSlope = settings.maxRoadSlope) => segmentSafe(
+    sample, town, a, b, width, settings.waterSetback, maxSlope
   );
-  const roadSafe = (a: Point, b: Point, width: number) => terrainRoadSafe(a, b, width)
+  const roadSafe = (a: Point, b: Point, width: number, maxSlope = settings.maxRoadSlope) => terrainRoadSafe(a, b, width, maxSlope)
     && settings.landmarks.every(building => !segmentBuildingFootprint(a, b, building, width / 2 + 1));
 
   const sites = selectSites(plan, town, dry, slope);
@@ -118,14 +130,16 @@ export function generateWorldSettlement(
   });
   let site: Point | undefined, shore: Shore | undefined, layout: UrbanLayout | undefined, selected: Edge[] = [];
   let best: { site: Point; shore?: Shore; layout: UrbanLayout; selected: Edge[]; parcels: number } | undefined;
-  const trySite = (candidate: SiteCandidate, index: number, blockSize: number) => {
+  const trySite = (candidate: SiteCandidate, index: number, blockSize: number,
+    maxRoadSlope = settings.maxRoadSlope) => {
+    const siteRandom = maxRoadSlope === settings.maxRoadSlope ? random : seededRandom(settings.seed);
     const candidateShore = settings.waterfrontBias > 0
       ? findShore(town, sample, candidate.point, settings.waterSetback + settings.arterialWidth / 2, town.targetWaterBodyId)
       : undefined;
     const rotation = candidateShore
       ? Math.atan2(candidateShore.tangent[1], candidateShore.tangent[0])
       : candidate.roadAngle ?? contourAngle(sample, town, candidate.point,
-        index === 0 ? random : seededRandom(settings.seed ^ index));
+        index === 0 ? siteRandom : seededRandom(settings.seed ^ index));
     const candidateLayout = createUrbanLayout({
       id: `${town.id}-fabric`, pattern: settings.pattern, center: candidate.point,
       size: [town.radius * 1.82, town.radius * 1.82], region,
@@ -134,11 +148,12 @@ export function generateWorldSettlement(
       parcelWidth: settings.parcelWidth, parcelDepth: settings.parcelDepth,
       setback: 1, irregularity: settings.pattern === 'organic' ? 0.72 : 0.42, seed: settings.seed
     }, { minX: -town.radius, maxX: town.radius, minZ: -town.radius, maxZ: town.radius });
-    const safeEdges = safeUrbanEdges(candidateLayout.roads, roadSafe);
+    const safeEdges = safeUrbanEdges(candidateLayout.roads,
+      (a, b, width) => roadSafe(a, b, width, maxRoadSlope));
     const reserved = town.ports.length + (candidateShore ? 2 : 0);
     let candidateSelected = connectedEdges(safeEdges, candidateShore?.point ?? candidate.point, Math.max(1, Math.min(
       settings.roadBudget - reserved, 48 - reserved - settings.landmarks.length
-    )), index === 0 && blockSize === settings.blockSize ? random : seededRandom(settings.seed ^ index), candidateLayout);
+    )), index === 0 && blockSize === settings.blockSize ? siteRandom : seededRandom(settings.seed ^ index), candidateLayout);
     const parcels = buildableParcelCount(candidateLayout, candidateSelected, town, sample, settings);
     const neededParcels = ordinaryBuildingTarget(parcels, town, settings);
     while (settings.kind === 'village' && town.population === undefined
@@ -150,11 +165,17 @@ export function generateWorldSettlement(
     return { site: candidate.point, shore: candidateShore, layout: candidateLayout, selected: candidateSelected, parcels };
   };
   const primary = trySite(sites[0], 0, settings.blockSize);
-  if (primary.selected.length && (primary.parcels || plan.generationPolicy !== 'raw-first-call')) best = primary;
+  const foothill = plan.generationPolicy === 'raw-first-call' && settings.kind === 'city'
+    && options.maxRoadSlope === undefined && primary.selected.length < 6
+    ? trySite(sites[0], 0, settings.blockSize, 0.25) : undefined;
+  const initial = foothill && foothill.selected.length >= 6
+    && foothill.selected.length > primary.selected.length ? foothill : primary;
+  if (initial.selected.length && (initial.parcels || plan.generationPolicy !== 'raw-first-call')) best = initial;
   else if (plan.generationPolicy === 'raw-first-call') {
     const compactBlockSize = Math.min(settings.blockSize, 16);
     for (let index = 0; index < sites.length; index++) for (const blockSize of new Set([settings.blockSize, compactBlockSize])) {
-      const candidate = index === 0 && blockSize === settings.blockSize ? primary : trySite(sites[index], index, blockSize);
+      const candidate = index === 0 && blockSize === settings.blockSize ? foothill ?? primary
+        : trySite(sites[index], index, blockSize, foothill ? 0.25 : settings.maxRoadSlope);
       if (!candidate.selected.length) continue;
       if (!best || candidate.parcels > best.parcels
         || candidate.parcels === best.parcels && candidate.selected.length > best.selected.length) best = candidate;
@@ -308,7 +329,7 @@ export function generateWorldSettlement(
           if ([start, end].some(point => Math.abs(town.center[0] + point[0]) > worldBound
             || Math.abs(town.center[1] + point[1]) > worldBound)) continue;
           if (!segmentSafe(sample, town, start, end, settings.roadWidth, settings.waterSetback,
-            settings.maxRoadSlope, true)
+            options.maxRoadSlope ?? (settings.kind === 'city' ? 0.25 : settings.maxRoadSlope), true)
             || settings.landmarks.some(building => segmentBuildingFootprint(start, end, building,
               settings.roadWidth / 2 + 1)) || crossesStreet(start, end)) continue;
           const road = guide(`${town.id}-district-access-${streets.length + 1}`, [start, end], settings.roadWidth,
@@ -362,6 +383,7 @@ export function createWorldSettlementLandmarkLayout(
   options: Omit<WorldSettlementOptions,'landmarks'>,
   requirements: readonly WorldLandmarkRequirement[]
 ): { landmarks:TownBuilding[]; patch:TownPatch } {
+  sample = cachedLandmarkSampler(sample);
   const town=plan.towns.find(item=>item.id===townId);
   if(!town) throw new Error('world_settlement_unknown_town');
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
@@ -418,6 +440,7 @@ export function createWorldSettlementPartialLandmarkLayout(
   options: Omit<WorldSettlementOptions,'landmarks'>,
   requirements: readonly WorldLandmarkRequirement[]
 ): {landmarks:TownBuilding[];patch:TownPatch;unrealized:Array<{id:string;reason:string}>} {
+  sample = cachedLandmarkSampler(sample);
   const town=plan.towns.find(item=>item.id===townId);
   if(!town) throw new Error('world_settlement_unknown_town');
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;

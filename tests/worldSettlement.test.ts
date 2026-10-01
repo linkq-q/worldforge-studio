@@ -287,6 +287,58 @@ describe('world settlement growth', () => {
     expect(validateTownPatch(plan, patch)).toEqual(patch);
   });
 
+  it('lets local district access climb a modest foothill without steepening the core streets', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0]; town.radius = 100; town.ports = []; town.population = 120;
+    town.districts = [
+      { anchorId: 'core', kind: 'civic', density: 0.5, offset: [0, 0], radius: 35 },
+      { anchorId: 'foothill-homes', kind: 'residential', density: 0.9, offset: [130, 0], radius: 35 }
+    ];
+    plan.recipe.size = 500; plan.roads = []; plan.generationPolicy = 'raw-first-call';
+    plan.featureGraph = { regions: town.districts.map(district => ({ id: `${district.anchorId}-region`,
+      kind: 'settlement_district', name: district.anchorId, center: district.offset, radius: district.radius })),
+    paths: [], relations: [], anchors: town.districts.map(district => ({ id: district.anchorId,
+      kind: district.kind, position: district.offset, regionId: `${district.anchorId}-region` })) };
+    const foothill: WorldSettlementSampler = (x) => ({
+      height: 12 + Math.max(0, x - 80) * 0.21, waterLevel: null, waterBodyId: null,
+      moisture: 0.3, temperature: 0.5, continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+
+    const options = {
+      kind: 'city', pattern: 'organic', seed: 59, density: 0.6, waterfrontBias: 0
+    } as const;
+    const strict = generateWorldSettlement(plan, town.id, foothill, { ...options, maxRoadSlope: 0.18 });
+    const patch = generateWorldSettlement(plan, town.id, foothill, options);
+    expect(patch.streets.filter(road => road.tags.includes('district-access')).length)
+      .toBeGreaterThan(strict.streets.filter(road => road.tags.includes('district-access')).length);
+    expect(patch.buildings.filter(building => building.x > 105 && building.use === 'home').length)
+      .toBeGreaterThan(strict.buildings.filter(building => building.x > 105 && building.use === 'home').length);
+    expect(auditWorldSettlement(patch, town, foothill).maxRoadSlope).toBeLessThanOrEqual(0.25 + 1e-6);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
+  it('tries walkable city streets when the default core road search finds no network', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0]; town.radius = 100; town.ports = []; town.population = 80;
+    plan.recipe.size = 500; plan.roads = []; plan.generationPolicy = 'raw-first-call';
+    const foothill: WorldSettlementSampler = (x) => ({
+      height: 12 + x * 0.21, waterLevel: null, waterBodyId: null,
+      moisture: 0.3, temperature: 0.5, continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+    const options = { kind: 'city', pattern: 'organic', seed: 59,
+      density: 0.6, waterfrontBias: 0 } as const;
+
+    expect(() => generateWorldSettlement(plan, town.id, foothill,
+      { ...options, maxRoadSlope: 0.18 })).toThrow('world_settlement_no_buildable_network');
+    const patch = generateWorldSettlement(plan, town.id, foothill, options);
+    expect(patch.streets.length).toBeGreaterThanOrEqual(4);
+    expect(patch.buildings.length).toBeGreaterThanOrEqual(8);
+    expect(auditWorldSettlement(patch, town, foothill).maxRoadSlope).toBeLessThanOrEqual(0.25 + 1e-6);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
   it('weights reachable frontage across explicit civic, residential, working and edge districts', () => {
     const plan = fixture(), town = plan.towns[0], base = sampler(plan);
     town.population = 150;
