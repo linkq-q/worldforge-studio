@@ -96,6 +96,8 @@ export interface WorldTerrainEvidence {
   slopeUnit: 1;
   /** Rows run north to south and columns west to east; each value is [height, slope] in the units above. */
   samples: Array<Array<[number, number]>>;
+  /** Approximate 8m building sites per evidence cell (0..4); planning guidance, not validation. */
+  buildingSiteScores: number[][];
   /** Interpolated sea-level loops in world metres. */
   shoreline: Array<Array<[number, number]>>;
   /** Sea-level contour endpoints where an open coast reaches the sampled world boundary. */
@@ -367,6 +369,21 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
     const px = -bound + x * step, pz = -bound + z * step;
     return [Math.round(height * 10), Math.round(Math.atan(sampleWorldSlope(sample, px, pz)) * 180 / Math.PI)];
   }));
+  const buildingSiteScores = heights.map((row, z) => row.map((_, x) => {
+    const px = -bound + x * step, pz = -bound + z * step;
+    let score = 0;
+    for (const dx of [-step / 4, step / 4]) for (const dz of [-step / 4, step / 4]) {
+      const cx = px + dx, cz = pz + dz;
+      if (Math.abs(cx) + 4 > bound || Math.abs(cz) + 4 > bound) continue;
+      const probes = [[0, 0], [-4, -4], [-4, 4], [4, -4], [4, 4]]
+        .map(([ox, oz]) => [cx + ox, cz + oz] as const);
+      const siteHeights = probes.map(([sx, sz]) => sample(sx, sz).height);
+      if (siteHeights.every(height => height > 0)
+        && Math.max(...siteHeights) - Math.min(...siteHeights) <= 1.5
+        && sampleWorldSlope(sample, cx, cz) <= 0.2) score++;
+    }
+    return score;
+  }));
   const shoreline = extractCoastLoops({ heights: heights.flat(), width: resolution, depth: resolution,
     minX: -bound, minZ: -bound, stepX: step, stepZ: step }, 0)
     .map(loop => loop.map(([x, z]): [number, number] => [Math.round(x * 10) / 10 || 0, Math.round(z * 10) / 10 || 0]));
@@ -389,7 +406,7 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   }
   const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
   return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
-    samples, shoreline, boundaryCrossings,
+    samples, buildingSiteScores, shoreline, boundaryCrossings,
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
 }
 

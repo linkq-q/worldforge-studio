@@ -305,6 +305,8 @@ describe('whitebox world generation', () => {
     const spatialInput = JSON.parse(mocks.llmChat.mock.calls[1][0][1].content);
     expect(spatialInput.dryTerrain).toEqual(plan.recipe);
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
+    expect(spatialInput.terrainEvidence.buildingSiteScores).toHaveLength(21);
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
@@ -371,6 +373,11 @@ describe('whitebox world generation', () => {
     expect(evidence.samples).toHaveLength(21);
     expect(evidence.samples.every(row => row.length === 21
       && row.every(([height, slope]) => Number.isInteger(height) && Number.isInteger(slope)))).toBe(true);
+    expect(evidence.buildingSiteScores).toHaveLength(21);
+    expect(evidence.buildingSiteScores.every(row => row.length === 21
+      && row.every(score => Number.isInteger(score) && score >= 0 && score <= 4))).toBe(true);
+    expect(evidence.buildingSiteScores.flat().some(score => score > 0)).toBe(true);
+    expect(evidence.buildingSiteScores.flat().some(score => score === 0)).toBe(true);
     expect(evidence.boundaryCrossings.length).toBeGreaterThan(0);
   });
 
