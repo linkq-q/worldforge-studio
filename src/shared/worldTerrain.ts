@@ -4,6 +4,7 @@
  */
 import { waterShoreProfile } from './waterShore';
 import {
+  riverEdgePairs,
   riverPathSamples,
   sampleRiverProfile,
   waterBoundaryContainsPoint,
@@ -96,6 +97,15 @@ export interface WorldTerrainContext {
   sample: WorldSampler;
   waterBodies: PreparedWorldWaterBody[];
   freshWaterDistance: (x: number, z: number) => number;
+}
+export interface WorldRiverSurfaceAboveBankDiagnostic {
+  code: 'river_surface_above_bank';
+  message: string;
+  waterBodyId: string;
+  affectedSampleCount: number;
+  sampleCount: number;
+  maxHoverHeight: number;
+  position: [number, number];
 }
 
 const regionWords: Record<WorldRegion, string> = {
@@ -952,6 +962,68 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     waterBodies,
     freshWaterDistance: (x, z) => preparedWorldFreshWaterDistance(waterBodies, x, z)
   };
+}
+
+const WORLD_RIVER_BANK_DIAGNOSTIC_SECTION_LIMIT = 256;
+const WORLD_RIVER_BANK_DIAGNOSTIC_OUTSET = 0.05;
+const WORLD_RIVER_BANK_DIAGNOSTIC_THRESHOLD = 0.05;
+
+/** Reports exposed river ribbons without changing authored water or terrain. */
+export function diagnoseWorldRiverSurfaceAboveBank(
+  context: WorldTerrainContext
+): WorldRiverSurfaceAboveBankDiagnostic[] {
+  const rivers = context.waterBodies.filter(water => water.mapWater.type === 'river');
+  if (!rivers.length) return [];
+  const sectionsPerRiver = Math.max(2, Math.floor(WORLD_RIVER_BANK_DIAGNOSTIC_SECTION_LIMIT / rivers.length));
+  const diagnostics: WorldRiverSurfaceAboveBankDiagnostic[] = [];
+  for (const river of rivers) {
+    const edges = riverEdgePairs(river.mapWater);
+    const sectionCount = Math.min(edges.length, sectionsPerRiver);
+    const indices = sectionCount === edges.length
+      ? edges.map((_, index) => index)
+      : Array.from({ length: sectionCount }, (_, index) => Math.round(index * (edges.length - 1) / (sectionCount - 1)));
+    let affectedSampleCount = 0, sampleCount = 0, maxHoverHeight = -Infinity;
+    let position: [number, number] = [0, 0];
+    for (const index of indices) {
+      const edge = edges[index];
+      const midpoint: [number, number] = [
+        (edge.left[0] + edge.right[0]) / 2,
+        (edge.left[1] + edge.right[1]) / 2
+      ];
+      for (const bank of [edge.left, edge.right]) {
+        const dx = bank[0] - midpoint[0], dz = bank[1] - midpoint[1];
+        const length = Math.hypot(dx, dz) || 1;
+        const samplePosition: [number, number] = [
+          bank[0] + dx / length * WORLD_RIVER_BANK_DIAGNOSTIC_OUTSET,
+          bank[1] + dz / length * WORLD_RIVER_BANK_DIAGNOSTIC_OUTSET
+        ];
+        const terrain = context.sample(...samplePosition);
+        // A point classified inside this river is its intended bed, not the adjacent bank.
+        if (terrain.waterBodyId === river.source.id) continue;
+        sampleCount += 1;
+        const hoverHeight = edge.level - terrain.height;
+        if (hoverHeight <= WORLD_RIVER_BANK_DIAGNOSTIC_THRESHOLD) continue;
+        affectedSampleCount += 1;
+        if (hoverHeight > maxHoverHeight) {
+          maxHoverHeight = hoverHeight;
+          position = samplePosition;
+        }
+      }
+    }
+    if (!affectedSampleCount) continue;
+    const roundedHeight = Number(maxHoverHeight.toFixed(3));
+    const roundedPosition = position.map(value => Number(value.toFixed(3))) as [number, number];
+    diagnostics.push({
+      code: 'river_surface_above_bank',
+      message: `${river.source.id}: ${affectedSampleCount}/${sampleCount} sampled bank points are below the river surface; maximum ${roundedHeight}m at (${roundedPosition[0]}, ${roundedPosition[1]}).`,
+      waterBodyId: river.source.id,
+      affectedSampleCount,
+      sampleCount,
+      maxHoverHeight: roundedHeight,
+      position: roundedPosition
+    });
+  }
+  return diagnostics;
 }
 
 /** Rise/run gradient sampled in world metres. */

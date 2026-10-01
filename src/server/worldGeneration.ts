@@ -3,7 +3,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { createEmptyMap, getObjectWorldTransforms, type EditableMap, type MapAsset } from '../shared/map';
 import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { applyMapOperations } from '../shared/mapOperations';
-import { validateWorldRecipe, createWorldSampler } from '../shared/worldTerrain';
+import { validateWorldRecipe, createWorldSampler, createWorldTerrainContext,
+  diagnoseWorldRiverSurfaceAboveBank, type WorldRiverSurfaceAboveBankDiagnostic } from '../shared/worldTerrain';
 import { WORLD_REGIONS, type WorldRecipe, type WorldRegion, type WorldTerrainBrush } from '../shared/worldTerrain';
 import { validateEcologyRules, type EcologyKind, type EcologyRule } from '../shared/worldEcology';
 import { findWorldRoute, findWorldSiteCandidates,
@@ -105,6 +106,9 @@ interface WorldLayoutChoice {
   settlements: Array<{ townId: string; options: WorldSettlementOptions }>;
   assets: WorldAssetRequest[];
 }
+type WorldConstructionDiagnostic =
+  | { townId: string; planningIssues: string[]; code?: never }
+  | (WorldRiverSurfaceAboveBankDiagnostic & { townId?: never; planningIssues?: never });
 
 const WORLD_INTENT_PROMPT = `You design a playable continuous world in metres. Return complete JSON only, with exactly this nesting: {"plan":{"version":1,"id":"world-id","revision":1,"prompt":"exact request.prompt","recipe":{},"ecology":[],"towns":[],"roads":[]}}. The root has only plan; recipe, ecology, towns and roads are children of plan. Request fields such as size, seed, generateAssets and repairAttempts are not fields of plan (seed and size belong inside plan.recipe). Do not pretty-print or repeat descriptions across fields. Copy request.prompt byte-for-byte into plan.prompt; elaborate only in each town.prompt. When the request states or clearly implies a population, add population as an integer approximate resident count to that town. For any other inhabited town, estimate a plausible resident count from its size and livelihood and record it in population rather than only in prose.
 This is terrain intent, not final geometry. World coordinates are centered on (0,0), north is negative Z (for example a northern mountain is near [0,-150]) and west is negative X: every authored landform center, path point, water region and biome patch must lie inside [-size/2,+size/2] on both X and Z (for size 500: -250..250), never 0..size. Keep each feature radius and feather inside that same world extent. plan={version:1,id,revision:1,prompt,recipe,ecology,towns,roads}.
@@ -935,7 +939,7 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   const materialized=materializeWorldWhiteboxConstruction(content,request);
   const diagnostics=new Map(materialized.diagnostics.map(item=>[item.townId,[...item.planningIssues]]));
   const issue=(townId:string,value:string)=>diagnostics.set(townId,[...diagnostics.get(townId)??[],value]);
-  const sample=createWorldSampler(materialized.plan.recipe),patches:TownPatch[]=[];
+  const terrain=createWorldTerrainContext(materialized.plan.recipe),sample=terrain.sample,patches:TownPatch[]=[];
   for(const town of materialized.towns) {
     if(!materialized.plan.towns.some(item=>item.id===town.id)) continue;
     const options:Omit<WorldSettlementOptions,'landmarks'>={kind:town.kind,pattern:town.pattern,density:town.density,
@@ -980,7 +984,9 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   }
   const visiblePatches=omitUnboundExplicitBuildings(requestedPatches,new Set(assetSources.map(asset=>asset.id)),issue);
   const bundle=validateWorldBundle({plan:materialized.plan,patches:visiblePatches});
-  const resultDiagnostics=[...diagnostics].map(([townId,planningIssues])=>({townId,planningIssues}));
+  const resultDiagnostics:WorldConstructionDiagnostic[]=[...diagnostics]
+    .map(([townId,planningIssues])=>({townId,planningIssues}));
+  resultDiagnostics.push(...diagnoseWorldRiverSurfaceAboveBank(terrain));
   const draft:WorldDraft={plan:materialized.plan,settlements:materialized.settlements,assets:assetRequests};
   recordGenerationTrace('world.whitebox.construction.preview',{draft,diagnostics:resultDiagnostics,
     paidCallCount,assets:assetSources.map(asset=>({id:asset.id,assetId:asset.assetId,provider:asset.provider}))});
@@ -1141,9 +1147,9 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
   }
   if(!compiled) throw new Error('world_generation_failed');
   compiled.draft.assets=bindExactReusableAssetKeys(compiled.draft.assets,reusableAssets);
-  const sample=createWorldSampler(compiled.bundle.plan.recipe);
+  const terrain=createWorldTerrainContext(compiled.bundle.plan.recipe),sample=terrain.sample;
   const landmarkKeys=new Set(compiled.draft.assets.filter(asset=>asset.role==='landmark').map(asset=>asset.key));
-  const diagnostics=compiled.bundle.patches.map(p=>{
+  const diagnostics:WorldConstructionDiagnostic[]=compiled.bundle.patches.map(p=>{
     const town=compiled.bundle.plan.towns.find(t=>t.id===p.townId)!;
     const settings=compiled.draft.settlements.find(item=>item.townId===p.townId)!.options;
     const publicBuildings=p.buildings.filter(building=>landmarkKeys.has(building.assetKey??'') || /civic|market|well|school|library|bath|council|temple|cathedral|clinic|hospital|inn|caravanserai|harbou?r|port|monument|市场|集市|水井|学校|图书馆|浴场|议事|神庙|教堂|诊所|医院|驿馆|港口|纪念/i.test(building.use)).length;
@@ -1173,6 +1179,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
       ...(populationHousingTarget===undefined?{}:{population:town.population,populationHousingTarget,
         populationHousingShortfall:Math.max(0,populationHousingTarget-ordinaryBuildings)}),planningIssues};
   });
+  diagnostics.push(...diagnoseWorldRiverSurfaceAboveBank(terrain));
   recordGenerationTrace('world.geometry.preview',{draft:compiled.draft,diagnostics});
   const assetSources=request.generateAssets?await generateWorldAssets(compiled.draft.assets,store,signal):undefined;
   recordGenerationTrace('world.preview',{draft:compiled.draft,diagnostics,assets:assetSources?.map(a=>({id:a.id,assetId:a.assetId,provider:a.provider,strategy:a.strategy}))});

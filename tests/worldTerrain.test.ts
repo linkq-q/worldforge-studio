@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWorldSampler, createWorldTerrainContext, dominantBiome, parseWorldPrompt, sampleWorldSlope,
+import { createWorldSampler, createWorldTerrainContext, diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
   type WorldRecipe } from '../src/shared/worldTerrain';
 import { riverPathSamples, waterBoundaryContainsPoint, waterBoundaryDistance, waterBoundaryPoints } from '../src/shared/mapWater';
@@ -306,6 +306,54 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('reports a bounded river-surface-above-bank diagnostic without rewriting the raw Hawaii water levels', () => {
+    const recipe = validateWorldRecipe({
+      version: 1, seed: 20261001, size: 500, reliefProfile: 'compact', heightScale: 0.03,
+      constraints: [
+        { region: 'center', biome: 'forest' }, { region: 'east', biome: 'ocean' },
+        { region: 'north', biome: 'ocean' }, { region: 'south', biome: 'ocean' },
+        { region: 'west', biome: 'ocean' }
+      ],
+      landforms: [
+        { center: [15, 5], radius: [218, 220], height: 13 },
+        { center: [78, -32], radius: [122, 160], height: 24 },
+        { center: [60, -62], radius: [69, 73], height: 15 },
+        { center: [-67, 111], radius: [111, 87], height: 5 },
+        { center: [-200, 48], radius: [77, 88], height: -17 },
+        { center: [-137, -57], radius: [61, 51], height: 6 },
+        { center: [-132, 134], radius: [56, 47], height: 5 },
+        { center: [-72, -51], radius: [93, 43], height: -5 },
+        { center: [142, 53], radius: [55, 85], height: 7 }
+      ],
+      terrainBrushes: [
+        { id: 'crater-bowl', region: { kind: 'circle', center: [60, -62], radius: 30 }, feather: 0.6,
+          mode: 'lower', amount: 14 },
+        { id: 'southern-ridge-saddle', region: { kind: 'circle', center: [58, 42], radius: 34 }, feather: 0.8,
+          mode: 'lower', amount: 4 }
+      ],
+      waterBodies: [{
+        id: 'forest-creek', type: 'river',
+        region: { kind: 'path', points: [[-18,-73],[-31,-65],[-38,-48],[-54,-43],[-67,-55],[-85,-54],
+          [-94,-36],[-110,-30],[-121,-37],[-138,-27],[-152,-14],[-172,-8]], width: 3.5 },
+        levels: [8.5,7.8,7.1,6.4,5.7,4.9,4,3.1,2.4,1.5,0.7,0],
+        widths: [2.5,2.7,3,3.2,3,3.5,3.8,4,4.3,5,6.5,9], depth: 1.1,
+        shorelineSmoothness: 0.7, shorelineIrregularity: 0.45, seed: 2501841621
+      }]
+    });
+    const rawLevels = [...recipe.waterBodies![0].levels];
+    const diagnostics = diagnoseWorldRiverSurfaceAboveBank(createWorldTerrainContext(recipe));
+
+    expect(diagnostics).toEqual([expect.objectContaining({
+      code: 'river_surface_above_bank', waterBodyId: 'forest-creek',
+      affectedSampleCount: expect.any(Number), sampleCount: expect.any(Number),
+      maxHoverHeight: expect.any(Number), position: [expect.any(Number), expect.any(Number)]
+    })]);
+    expect(diagnostics[0].affectedSampleCount).toBeGreaterThan(20);
+    expect(diagnostics[0].sampleCount).toBeLessThanOrEqual(512);
+    expect(diagnostics[0].maxHoverHeight).toBeGreaterThan(5);
+    expect(recipe.waterBodies![0].levels).toEqual(rawLevels);
+  });
+
   it('ends derived river geometry at the implicit ocean with one shared surface level', () => {
     const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
       id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
@@ -447,6 +495,7 @@ describe('composable world terrain operations', () => {
     expect(insideEdge.waterBodyId).toBe('profile-river');
     expect(outsideEdge.waterBodyId).toBeNull();
     expect(materialBank.freshWaterWeight ?? 0).toBeLessThan(0.2);
+    expect(diagnoseWorldRiverSurfaceAboveBank(context)).toEqual([]);
   });
 
   it('keeps finite-water shore weight separate from the ocean biome', () => {

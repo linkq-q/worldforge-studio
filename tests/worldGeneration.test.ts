@@ -529,6 +529,10 @@ describe('world generation compiler', () => {
   it('returns raw aesthetic diagnostics with exactly one intent and one layout call', async () => {
     const input={...request,prompt:'A complete island town',generateAssets:false,repairAttempts:0 as const};
     const intent=rawSoloIntent(input);
+    const rawLevels=[500,500];
+    Object.assign(intent.plan.recipe,{waterBodies:[{id:'high-river',type:'river',
+      region:{kind:'path',points:[[-700,-700],[-600,-700]],width:8},levels:[500,500],depth:2,
+      shorelineSmoothness:0,shorelineIrregularity:0}]});
     const parsed=parseWorldIntentDraft(intent,input),evidence=createWorldSitingEvidence(parsed);
     const layout={towns:[{townId:'market-town',candidateId:evidence.towns[0].candidates[0].id}],
       settlements:[{townId:'market-town',options:{kind:'city',pattern:'organic',density:.8}}],assets:[]};
@@ -537,7 +541,12 @@ describe('world generation compiler', () => {
     expect(mocks.llmChat).toHaveBeenCalledTimes(2);
     expect(mocks.llmChat.mock.calls.map(call=>(call[1] as {traceStage:string}).traceStage))
       .toEqual(['world.intent','world.layout']);
-    expect(result.diagnostics[0].planningIssues).toContain('island_boundary_open');
+    expect(result.diagnostics.some(item => item.planningIssues?.includes('island_boundary_open'))).toBe(true);
+    expect(result.diagnostics).toContainEqual(expect.objectContaining({
+      code:'river_surface_above_bank',waterBodyId:'high-river',affectedSampleCount:expect.any(Number),
+      maxHoverHeight:expect.any(Number),position:[expect.any(Number),expect.any(Number)]
+    }));
+    expect(result.bundle.plan.recipe.waterBodies?.[0].levels).toEqual(rawLevels);
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
