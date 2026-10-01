@@ -32,7 +32,11 @@ export interface FeatureGraph {
   anchors: FeatureAnchor[];
   relations: FeatureRelation[];
 }
-export interface SettlementPlanEntry { id: string; anchorId: string; role: string }
+export type SettlementDistrictKind = 'working' | 'civic' | 'residential' | 'edge';
+export interface SettlementDistrictPlan { anchorId: string; kind: SettlementDistrictKind; density: number }
+export interface SettlementPlanEntry {
+  id: string; anchorId: string; role: string; districts?: SettlementDistrictPlan[];
+}
 export interface SettlementPlan { settlements: SettlementPlanEntry[] }
 export interface MobilityRouteConstruction { terrain: 'follow' | 'grade'; maxGrade?: number }
 export interface MobilityRoute {
@@ -85,7 +89,10 @@ export interface TownIntent {
   targetWaterBodyId?: string;
   /** Approximate permanent residents; used to keep generated housing proportional to authored intent. */
   population?: number;
+  /** Feature-graph districts retained as local offsets inside this single settlement core. */
+  districts?: TownDistrictIntent[];
 }
+export interface TownDistrictIntent extends SettlementDistrictPlan { offset: Point; radius: number }
 export interface TownPort { id: string; guideId: string; position: [number, number]; width: number }
 export interface TownTask { worldKey: string; town: TownIntent; seed: number }
 export interface TownBuilding {
@@ -195,7 +202,7 @@ function routeConstructionGuide(plan: WorldPlan, route: MobilityRoute): MapGuide
   return { id: route.id, name: path.name, points: path.points.map(point => [...point]),
     curve: path.curve ?? 'polyline', closed: false, width: path.width, tags: ['world-route', path.kind] };
 }
-function derivedBrushId(plan: WorldPlan, routeId: string, used: Set<string>): string {
+function derivedBrushId(routeId: string, used: Set<string>): string {
   const stem = `route-grade-${routeId}`.slice(0, 88).replace(/-+$/, '');
   let id = stem;
   for (let suffix = 2; used.has(id); suffix++) id = `${stem.slice(0, 94 - String(suffix).length)}-${suffix}`;
@@ -290,7 +297,7 @@ function deriveCheckedWorldRouteConstruction(plan: WorldPlan): WorldRouteConstru
         reason: 'longitudinal_grade' });
       continue;
     }
-    const brush: WorldTerrainBrush = { id: derivedBrushId(plan, route.id, usedIds), mode: 'grade',
+    const brush: WorldTerrainBrush = { id: derivedBrushId(route.id, usedIds), mode: 'grade',
       region: { kind: 'path', points, width: guide.width }, heights, feather: 2, strength: 1 };
     const candidate = createWorldSampler({ ...plan.recipe,
       terrainBrushes: [...(plan.recipe.terrainBrushes ?? []), ...terrainBrushes, brush] });
@@ -428,11 +435,25 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     keys(value, ['settlements'], 'world_unknown_settlement_plan_field');
     const settlements = list(value.settlements, 64, 'world_settlement_plan_quota').map(item => {
       const settlement = record(item, 'world_invalid_settlement_plan');
-      keys(settlement, ['id', 'anchorId', 'role'], 'world_unknown_settlement_plan_field');
+      keys(settlement, ['id', 'anchorId', 'role', 'districts'], 'world_unknown_settlement_plan_field');
       const parsed = { id: safeId(settlement.id, 'world_invalid_settlement_id'),
         anchorId: safeId(settlement.anchorId, 'world_invalid_settlement_anchor'),
-        role: text(settlement.role, 'world_invalid_settlement_role', 2000) };
+        role: text(settlement.role, 'world_invalid_settlement_role', 2000),
+        ...(settlement.districts === undefined ? {} : { districts: list(settlement.districts, 16,
+          'world_settlement_district_quota').map(item => {
+          const district = record(item, 'world_invalid_settlement_district');
+          keys(district, ['anchorId', 'kind', 'density'], 'world_unknown_settlement_district_field');
+          if (!['working', 'civic', 'residential', 'edge'].includes(String(district.kind))) {
+            fail('world_invalid_settlement_district_kind');
+          }
+          const anchorId = safeId(district.anchorId, 'world_invalid_settlement_district_anchor');
+          if (!anchors.has(anchorId)) fail('world_unknown_settlement_district_anchor');
+          return { anchorId, kind: district.kind as SettlementDistrictKind,
+            density: number(district.density, 0, 1, 'world_invalid_settlement_district_density') };
+        }).sort((a, b) => a.anchorId.localeCompare(b.anchorId)) }) };
       if (!anchors.has(parsed.anchorId)) fail('world_unknown_settlement_anchor');
+      if (parsed.districts) unique(parsed.districts.map(district => district.anchorId),
+        'world_duplicate_settlement_district_anchor');
       return parsed;
     }).sort(byId);
     unique(settlements.map(item => item.id), 'world_duplicate_settlement_id');
@@ -513,7 +534,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   const roads = list(raw.roads, 32, 'world_road_quota').map(value => guide(value, bound)).sort(byId);
   const towns = list(raw.towns, 12, 'world_town_quota').map(value => {
     const item = record(value, 'world_invalid_town');
-    keys(item, ['id', 'name', 'prompt', 'center', 'radius', 'blend', 'foundation', 'ports', 'terrainMode', 'targetWaterBodyId', 'population'], 'world_unknown_town_field');
+    keys(item, ['id', 'name', 'prompt', 'center', 'radius', 'blend', 'foundation', 'ports', 'terrainMode', 'targetWaterBodyId', 'population', 'districts'], 'world_unknown_town_field');
     const radius = number(item.radius, Math.min(100, recipe.size / 10), 1000, 'world_invalid_town_radius');
     const town: TownIntent = {
       id: safeId(item.id, 'world_invalid_town_id'),
@@ -550,6 +571,24 @@ export function validateWorldPlan(input: unknown): WorldPlan {
       town.population = number(item.population, 1, 1_000_000, 'world_invalid_town_population');
       if (!Number.isInteger(town.population)) fail('world_invalid_town_population');
     }
+    if (item.districts !== undefined) {
+      town.districts = list(item.districts, 16, 'world_town_district_quota').map(value => {
+        const district = record(value, 'world_invalid_town_district');
+        keys(district, ['anchorId', 'kind', 'density', 'offset', 'radius'], 'world_unknown_town_district_field');
+        if (!['working', 'civic', 'residential', 'edge'].includes(String(district.kind))) {
+          fail('world_invalid_town_district_kind');
+        }
+        const offset = point(district.offset, radius, 'world_town_district_outside');
+        const districtRadius = number(district.radius, 1, radius, 'world_invalid_town_district_radius');
+        if (Math.max(Math.abs(offset[0]) + districtRadius, Math.abs(offset[1]) + districtRadius) > radius + TOLERANCE) {
+          fail('world_town_district_outside');
+        }
+        return { anchorId: safeId(district.anchorId, 'world_invalid_town_district_anchor'),
+          kind: district.kind as SettlementDistrictKind,
+          density: number(district.density, 0, 1, 'world_invalid_town_district_density'), offset, radius: districtRadius };
+      }).sort((a, b) => a.anchorId.localeCompare(b.anchorId));
+      unique(town.districts.map(district => district.anchorId), 'world_duplicate_town_district_anchor');
+    }
     if (town.center.some(value => Math.abs(value) + radius + town.blend > bound)) fail('world_town_outside');
     return town;
   }).sort(byId);
@@ -566,6 +605,10 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   if (raw.generationPolicy !== undefined) {
     if (raw.generationPolicy !== 'raw-first-call') fail('world_invalid_generation_policy');
     plan.generationPolicy = raw.generationPolicy;
+  }
+  const featureAnchorIds = new Set(plan.featureGraph?.anchors.map(anchor => anchor.id) ?? []);
+  if (towns.some(town => town.districts?.some(district => !featureAnchorIds.has(district.anchorId)))) {
+    fail('world_unknown_town_district_anchor');
   }
   unique([plan.id, ...ecology.map(rule => rule.id), ...roads.map(road => road.id),
     ...towns.flatMap(town => [town.id, ...town.ports.map(port => port.id)])]);

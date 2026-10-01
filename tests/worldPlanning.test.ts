@@ -106,6 +106,7 @@ describe('hierarchical world planning contracts', () => {
     }]});
     const base=createWorldSampler(plan.recipe),construction=deriveWorldRouteConstruction(plan);
     const sample=createPlannedWorldSampler(plan);
+    expect(()=>validateWorldPlan(plan)).not.toThrow();
     expect(construction.terrainBrushes).toEqual([]);
     expect(construction.diagnostics).toContainEqual(expect.objectContaining({
       routeId:'main-route',pathId:'main-path',code:'world_route_grade_crosses_water'
@@ -119,6 +120,8 @@ describe('hierarchical world planning contracts', () => {
     const construction=deriveWorldRouteConstruction(plan),brush=construction.terrainBrushes[0];
     expect(brush.mode).toBe('grade');
     if(brush.mode!=='grade')throw new Error('expected_grade');
+    expect(brush.region.points.length).toBeGreaterThan(plan.featureGraph!.paths[0].points.length);
+    expect(brush.region.points.length).toBeLessThanOrEqual(64);
     const distanceToSegment=(point:[number,number],a:[number,number],b:[number,number])=>{
       const dx=b[0]-a[0],dz=b[1]-a[1],length2=dx*dx+dz*dz;
       const t=Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dz)/length2));
@@ -126,6 +129,8 @@ describe('hierarchical world planning contracts', () => {
     };
     expect(brush.region.points.some(point=>Math.min(distanceToSegment(point,[-40,0],[0,30]),
       distanceToSegment(point,[0,30],[40,0]))>.25)).toBe(true);
+    plan.mobilityPlan!.routes[0].construction={terrain:'follow'};
+    expect(deriveWorldRouteConstruction(plan)).toEqual({terrainBrushes:[],diagnostics:[]});
     delete plan.mobilityPlan!.routes[0].construction;
     expect(deriveWorldRouteConstruction(plan)).toEqual({terrainBrushes:[],diagnostics:[]});
   });

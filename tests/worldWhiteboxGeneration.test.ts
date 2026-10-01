@@ -4,7 +4,7 @@ import { executeWorldWhitebox, generateWorldWhitebox,
   materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
-import { validateWorldPlan, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
+import { validateTownPatch, validateWorldPlan, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
 
 const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
@@ -119,6 +119,51 @@ function districtPlan(): WorldPlan {
     { id: 'garden-quarter', anchorId: 'garden-anchor', role: 'sparse garden edge, not a second town' }
   ] };
   plan.mobilityPlan = { routes: [] };
+  plan.explorationPlan = { pointsOfInterest: [], sequence: [] };
+  return plan;
+}
+
+function unifiedDistrictPlan(): WorldPlan {
+  const plan = buildablePlan();
+  plan.id = 'unified-leeward-port';
+  plan.prompt = 'One 150 person port town with working, civic, residential and garden districts';
+  plan.featureGraph = {
+    regions: [
+      { id: 'civic-region', kind: 'settlement_district', name: 'Civic core', center: [0, 0], radius: 24 },
+      { id: 'working-region', kind: 'settlement_district', name: 'Working harbor', center: [-55, -15], radius: 22 },
+      { id: 'residential-region', kind: 'settlement_district', name: 'Uphill homes', center: [40, 35], radius: 28 },
+      { id: 'garden-region', kind: 'settlement_edge', name: 'Garden edge', center: [-10, 75], radius: 25 }
+    ],
+    paths: [
+      { id: 'quay-lane', kind: 'road', name: 'Quay lane', points: [[0, 0], [105, -10], [-55, -15]],
+        curve: 'polyline', width: 4 },
+      { id: 'home-lane', kind: 'road', name: 'Home lane', points: [[0, 0], [18, 20], [40, 35]],
+        curve: 'polyline', width: 3.5 },
+      { id: 'garden-lane', kind: 'path', name: 'Garden lane', points: [[40, 35], [12, 57], [-10, 75]],
+        curve: 'polyline', width: 2.5 }
+    ],
+    anchors: [
+      { id: 'civic-anchor', kind: 'town_centre', position: [0, 0], regionId: 'civic-region' },
+      { id: 'working-anchor', kind: 'working_district', position: [-55, -15], regionId: 'working-region' },
+      { id: 'residential-anchor', kind: 'residential_district', position: [40, 35], regionId: 'residential-region' },
+      { id: 'garden-anchor', kind: 'settlement_edge', position: [-10, 75], regionId: 'garden-region' }
+    ],
+    relations: []
+  };
+  plan.settlementPlan = { settlements: [{
+    id: 'leeward-port', anchorId: 'civic-anchor', role: 'one connected fishing settlement',
+    districts: [
+      { anchorId: 'civic-anchor', kind: 'civic', density: 0.9 },
+      { anchorId: 'working-anchor', kind: 'working', density: 0.8 },
+      { anchorId: 'residential-anchor', kind: 'residential', density: 0.65 },
+      { anchorId: 'garden-anchor', kind: 'edge', density: 0.25 }
+    ]
+  }] };
+  plan.mobilityPlan = { routes: [
+    { id: 'quay-route', pathId: 'quay-lane', mode: 'local lane', connects: ['civic-anchor', 'working-anchor'] },
+    { id: 'home-route', pathId: 'home-lane', mode: 'local lane', connects: ['civic-anchor', 'residential-anchor'] },
+    { id: 'garden-route', pathId: 'garden-lane', mode: 'walking path', connects: ['residential-anchor', 'garden-anchor'] }
+  ] };
   plan.explorationPlan = { pointsOfInterest: [], sequence: [] };
   return plan;
 }
@@ -403,6 +448,79 @@ describe('whitebox world generation', () => {
     expect(legacy.plan.towns[0].population).toBeUndefined();
   });
 
+  it('materializes one populated town across authored districts without turning internal routes into ports', () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0] = { ...expansion.towns[0], id: 'leeward-port', name: 'Leeward Port', population: 150 };
+    const source = validateWorldPlan(unifiedDistrictPlan());
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: source,
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+
+    expect(result.plan.towns).toHaveLength(1);
+    expect(result.plan.towns[0]).toMatchObject({ id: 'leeward-port', population: 150, radius: 100, ports: [],
+      districts: [
+        { anchorId: 'civic-anchor', kind: 'civic', offset: [0, 0], radius: 24, density: 0.9 },
+        { anchorId: 'garden-anchor', kind: 'edge', offset: [-10, 75], radius: 25, density: 0.25 },
+        { anchorId: 'residential-anchor', kind: 'residential', offset: [40, 35], radius: 28, density: 0.65 },
+        { anchorId: 'working-anchor', kind: 'working', offset: [-55, -15], radius: 22, density: 0.8 }
+      ]
+    });
+    expect(result.plan.roads).toHaveLength(3);
+    expect(result.plan.roads.every(road => road.tags.includes('town-internal') && road.tags.includes('local_street'))).toBe(true);
+    expect(result.plan.roads.some(road => road.id.startsWith('whitebox-access-'))).toBe(false);
+    expect(result.plan.settlementPlan).toEqual(source.settlementPlan);
+  });
+
+  it('grows one connected 150 person patch through radial density bands in its expanded district envelope', async () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0] = { ...expansion.towns[0], id: 'leeward-port', name: 'Leeward Port', population: 150 };
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: unifiedDistrictPlan(),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    expect(result.bundle.plan.towns).toHaveLength(1);
+    expect(result.bundle.patches).toHaveLength(1);
+    const town = result.bundle.plan.towns[0], patch = result.bundle.patches[0];
+    expect(patch.townId).toBe('leeward-port');
+    expect(patch.buildings.filter(building => building.use === 'home' || building.use === 'farmhouse')).toHaveLength(30);
+    expect(() => validateTownPatch(result.bundle.plan, patch)).not.toThrow();
+    const ringCounts = [0, 0, 0];
+    for (const building of patch.buildings) {
+      const radius = Math.hypot(building.x, building.z) / town.radius;
+      ringCounts[radius < 0.4 ? 0 : radius < 0.68 ? 1 : 2]++;
+    }
+    expect(ringCounts.every(count => count > 0)).toBe(true);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('reports an infeasible authored grade without rewriting the construction plan', async () => {
+    const plan = buildablePlan();
+    plan.recipe.waterBodies = [{ id: 'ridge-lake', type: 'lake',
+      region: { kind: 'circle', center: [150, 160], radius: 12 }, levels: [20], depth: 3 }];
+    plan.featureGraph!.regions.push({ id: 'ridge-region', kind: 'highland', name: 'Outer ridge',
+      center: [180, 160], radius: 20 });
+    plan.featureGraph!.paths.push({ id: 'ridge-grade-path', kind: 'road', name: 'Outer ridge grade',
+      points: [[120, 160], [180, 160]], width: 4 });
+    plan.featureGraph!.anchors.push({ id: 'ridge-anchor', kind: 'lookout', position: [180, 160],
+      regionId: 'ridge-region' });
+    plan.mobilityPlan!.routes.push({ id: 'ridge-grade', pathId: 'ridge-grade-path', mode: 'cart road',
+      connects: ['ridge-anchor'], construction: { terrain: 'grade', maxGrade: 0.1 } });
+    const original = validateWorldPlan(plan);
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: original,
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    expect(result.bundle.plan.recipe).toEqual(original.recipe);
+    expect(result.bundle.plan.mobilityPlan).toEqual(original.mobilityPlan);
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('world_route_grade_crosses_water:ridge-grade:water');
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+  });
+
   it('diagnoses a sparse populated whitebox patch with existing coverage and population audits', () => {
     const expansion = constructionExpansion();
     expansion.towns[0].population = 150;
@@ -432,6 +550,7 @@ describe('whitebox world generation', () => {
       { id: 'whitebox-port-1-1-1', guideId: 'whitebox-access-1-1-1', position: [-80, 0], width: 5 },
       { id: 'whitebox-port-1-1-2', guideId: 'whitebox-access-1-1-2', position: [80, 0], width: 5 }
     ]);
+    expect(result.plan.towns[0].districts).toBeUndefined();
     expect(result.plan.roads.find(road => road.id === 'arrival-route')?.points)
       .toEqual(whiteboxPlan.featureGraph!.paths[0].points);
     for (const port of result.plan.towns[0].ports) {

@@ -358,6 +358,14 @@ export function materializeWorldWhiteboxConstruction(
   const anchors = new Map(graph.anchors.map(anchor => [anchor.id, anchor]));
   const regions = new Map(graph.regions.map(region => [region.id, region]));
   const paths = new Map(graph.paths.map(path => [path.id, path]));
+  const settlementAnchorSets = new Map(source.settlementPlan!.settlements.map(settlement => [settlement.id,
+    new Set([settlement.anchorId, ...(settlement.districts ?? []).map(district => district.anchorId)])]));
+  const internalRouteIds = new Set(source.mobilityPlan!.routes.filter(route =>
+    route.connects.length >= 2 && source.settlementPlan!.settlements.some(settlement => {
+      if (settlement.districts === undefined) return false;
+      const settlementAnchors = settlementAnchorSets.get(settlement.id)!;
+      return route.connects.every(anchorId => settlementAnchors.has(anchorId));
+    })).map(route => route.id));
   const sample = createWorldSampler(source.recipe);
   const minimumRadius = Math.min(100, source.recipe.size / 10);
   const minimumBlend = Math.min(100, source.recipe.size / 25);
@@ -380,8 +388,23 @@ export function materializeWorldWhiteboxConstruction(
       issue(settlement.id, 'settlement_anchor_has_no_bounded_construction_core');
       return [];
     }
-    const radius = Math.min(maximumRadius, Math.max(minimumRadius, region.radius));
-    if (radius !== region.radius) issue(settlement.id, 'settlement_radius_bounded_for_schema');
+    const authoredDistricts = (settlement.districts ?? []).map(district => {
+      const districtAnchor = anchors.get(district.anchorId)!;
+      const districtRegion = regions.get(districtAnchor.regionId)!;
+      const offset: Point = [districtAnchor.position[0] - anchor.position[0], districtAnchor.position[1] - anchor.position[1]];
+      const extent = Math.max(Math.abs(offset[0]) + districtRegion.radius, Math.abs(offset[1]) + districtRegion.radius);
+      return { ...district, offset, radius: districtRegion.radius, extent };
+    });
+    const requiredRadius = Math.max(minimumRadius, region.radius, ...authoredDistricts.map(district => district.extent));
+    const radius = Math.min(maximumRadius, requiredRadius);
+    if ((settlement.districts === undefined && radius !== region.radius) || radius !== requiredRadius) {
+      issue(settlement.id, 'settlement_radius_bounded_for_schema');
+    }
+    const districts = authoredDistricts.filter(district => {
+      if (district.extent <= radius + 1e-6) return true;
+      issue(settlement.id, `settlement_district_outside_core:${district.anchorId}`);
+      return false;
+    }).map(({ extent: _extent, ...district }) => district);
     const terrain = sample(anchor.position[0], anchor.position[1]);
     if (terrain.waterLevel !== null && terrain.waterLevel > terrain.height + 0.05) issue(settlement.id, 'settlement_anchor_on_water');
     const harborDescription = `${anchor.kind} ${settlement.role}`;
@@ -393,6 +416,7 @@ export function materializeWorldWhiteboxConstruction(
     const ports: WorldPlan['towns'][number]['ports'] = [];
     for (const [routeIndex, route] of source.mobilityPlan!.routes.entries()) {
       if (!route.connects.includes(settlement.anchorId)) continue;
+      if (internalRouteIds.has(route.id)) continue;
       const path = paths.get(route.pathId)!;
       const boundary = nearestRouteBoundaryPoints(path.points, anchor.position, radius);
       if (!boundary.length) {
@@ -427,7 +451,8 @@ export function materializeWorldWhiteboxConstruction(
     return [{ id: settlement.id, name: authored.name, prompt: settlement.role,
       center: [...anchor.position] as Point, radius, blend: minimumBlend, foundation: Math.max(2, terrain.height),
       terrainMode: 'conform' as const, ports, ...(targetWaterBodyId ? { targetWaterBodyId } : {}),
-      ...(authored.population === undefined ? {} : { population: authored.population }) }];
+      ...(authored.population === undefined ? {} : { population: authored.population }),
+      ...(settlement.districts === undefined ? {} : { districts }) }];
   });
   for (let left = 0; left < constructedTowns.length; left++) for (let right = left + 1; right < constructedTowns.length; right++) {
     const a = constructedTowns[left], b = constructedTowns[right];
@@ -440,7 +465,8 @@ export function materializeWorldWhiteboxConstruction(
     const width = Math.min(64, Math.max(2, path.width));
     if (width !== path.width) issue('world', `route_width_bounded:${route.id}`);
     return { id: route.id, name: path.name, points: path.points.map(point => [...point] as Point),
-      curve: path.curve ?? 'polyline', closed: false, width, tags: [...new Set(['world-route', path.kind])] };
+      curve: path.curve ?? 'polyline', closed: false, width,
+      tags: [...new Set(['world-route', path.kind, ...(internalRouteIds.has(route.id) ? ['town-internal', 'local_street'] : [])])] };
   }), ...accessRoads];
   const observed = executeWorldWhitebox(source).surfaceFacts;
   for (const [pathId, wet] of Object.entries(observed.pathWaterSamples)) {
