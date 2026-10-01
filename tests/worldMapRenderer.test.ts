@@ -272,11 +272,53 @@ describe('main editor streamed world renderer', () => {
     expect(worldTileSurfaceWeight(steepBank, tile, 10, 10, ['rocky'])).toBeLessThan(0.05);
   });
 
+  it('splits open grass from shorter forest understory', () => {
+    const tile = { x: 0, z: 0, size: 2 };
+    const weights = new Float32Array(4 * WORLD_BIOMES.length);
+    for (let index = 0; index < 4; index += 1) {
+      const biome = index < 2 ? 'grassland' : 'forest';
+      weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf(biome)] = 1;
+    }
+    const layers = worldGrassLayers({
+      heights: new Float32Array(4), normals: new Float32Array(), weights,
+      waterLevels: new Float32Array(4), freshWaterWeights: new Float32Array(4), resolution: 2
+    }, tile);
+    const open = layers.find(layer => layer.id === 'world-open-grass')!;
+    const understory = layers.find(layer => layer.id === 'world-forest-understory')!;
+
+    expect(open.densities).toEqual([0.72, 0.72, 0, 0]);
+    expect(understory.densities).toEqual([0, 0, 0.5, 0.5]);
+    expect(understory.height).toBeLessThan(open.height);
+    expect(understory.mix).not.toEqual(open.mix);
+  });
+
+  it('thins completed town cores and clears grass at road and building exclusions', () => {
+    const tile = { x: 0, z: 0, size: 2 };
+    const weights = new Float32Array(9 * WORLD_BIOMES.length);
+    for (let index = 0; index < 9; index += 1) {
+      weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('grassland')] = 1;
+    }
+    const blocked = new Set(['0:1', '2:1']);
+    const [open] = worldGrassLayers({
+      heights: new Float32Array(9), normals: new Float32Array(), weights,
+      waterLevels: new Float32Array(9), freshWaterWeights: new Float32Array(9), resolution: 3
+    }, tile, {
+      density: (x, z) => x === 1 && z === 1 ? 0.35 : 1,
+      exclusion: (x, z) => blocked.has(`${x}:${z}`)
+    });
+
+    expect(open.densities[0]).toBe(0.72);
+    expect(open.densities[3]).toBe(0);
+    expect(open.densities[4]).toBeCloseTo(0.252);
+    expect(open.densities[5]).toBe(0);
+  });
+
   it('gives compact grassland chunks dense ground cover within the resident streaming budget', () => {
     const tile = { x: -128, z: -128, size: 256 };
     const weights = new Float32Array(4 * WORLD_BIOMES.length);
     for (let index = 0; index < 4; index += 1) {
-      weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf('grassland')] = 1;
+      const biome = index < 2 ? 'grassland' : 'forest';
+      weights[index * WORLD_BIOMES.length + WORLD_BIOMES.indexOf(biome)] = 1;
     }
     const tileData: WorldTileData = {
       heights: new Float32Array(4), normals: new Float32Array(), weights,
@@ -289,6 +331,7 @@ describe('main editor streamed world renderer', () => {
       ...DEFAULT_RUNTIME_GRASS_STYLE,
       maxInstances: worldGrassChunkBudget(4)
     })!;
+    expect(grass.getStats().layerCount).toBe(2);
     expect(grass.getStats().bladeCount).toBeGreaterThan(3_500);
     expect(grass.getStats().bladeCount).toBeLessThanOrEqual(15_000);
     expect(worldGrassChunkBudget(25) * 25).toBeLessThanOrEqual(120_000);

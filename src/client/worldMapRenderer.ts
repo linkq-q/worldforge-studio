@@ -720,7 +720,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       room: null,
       interiorArtDirection: null,
       terrain: { resolutionX: sampled.resolution, resolutionZ: sampled.resolution, heights: Array.from(sampled.heights) },
-      grassLayers: worldGrassLayers(sampled, tile),
+      grassLayers: worldGrassLayers(sampled, tile, { density, exclusion }),
       waterBodies: [],
       paintStrokes: [],
       objects,
@@ -1604,23 +1604,48 @@ function applyWorldOceanFloor(
   }
 }
 
-export function worldGrassLayers(data: WorldTileData, tile: WorldTile): MapGrassLayer[] {
-  const densities = Array.from({ length: data.resolution * data.resolution }, (_, index) => {
+export function worldGrassLayers(
+  data: WorldTileData,
+  tile: WorldTile,
+  options: {
+    density?: (x: number, z: number) => number;
+    exclusion?: (x: number, z: number, radius: number) => boolean;
+  } = {}
+): MapGrassLayer[] {
+  const openDensities: number[] = [], forestDensities: number[] = [];
+  const sampleRadius = Math.min(1, tile.size / Math.max(1, data.resolution - 1) * 0.25);
+  for (let index = 0; index < data.resolution * data.resolution; index += 1) {
     const x = tile.x + index % data.resolution / Math.max(1, data.resolution - 1) * tile.size;
     const z = tile.z + Math.floor(index / data.resolution) / Math.max(1, data.resolution - 1) * tile.size;
-    const grass = worldTileSurfaceWeight(data, tile, x, z, ['grass', 'forest']);
+    if (options.exclusion?.(x, z, sampleRadius)) {
+      openDensities.push(0); forestDensities.push(0);
+      continue;
+    }
+    const rawGrass = data.weights[index * WORLD_BIOMES.length + BIOME_CHANNEL.grassland];
+    const rawForest = data.weights[index * WORLD_BIOMES.length + BIOME_CHANNEL.forest];
+    const vegetation = worldTileSurfaceWeight(data, tile, x, z, ['grass']);
+    const dominant = Math.max(rawGrass, rawForest);
+    const open = dominant > 0 ? vegetation * rawGrass / dominant : 0;
+    const forest = worldTileSurfaceWeight(data, tile, x, z, ['forest']);
     const blocked = Math.max(
       worldTileSurfaceWeight(data, tile, x, z, ['sand']),
       worldTileSurfaceWeight(data, tile, x, z, ['rocky'])
     );
-    return grass * (1 - blocked) * 0.72;
-  });
-  if (!densities.some(density => density > 0.01)) return [];
-  return [{
-    id: 'world-ground-cover', name: 'World ground cover', visible: true,
-    seed: stringSeed(tileKey(tile)), resolutionX: data.resolution, resolutionZ: data.resolution,
-    densities, preset: 'meadow', height: 0.82, mix: { short: 0.82, tall: 0.15, flowers: 0.03 }
+    const landUse = Math.max(0, Math.min(1, options.density?.(x, z) ?? 1));
+    openDensities.push(open * (1 - blocked) * landUse * 0.72);
+    forestDensities.push(forest * (1 - blocked) * landUse * 0.5);
+  }
+  const seed = stringSeed(tileKey(tile));
+  const layers: MapGrassLayer[] = [{
+    id: 'world-open-grass', name: 'World open grass', visible: true,
+    seed, resolutionX: data.resolution, resolutionZ: data.resolution,
+    densities: openDensities, preset: 'meadow', height: 0.82, mix: { short: 0.82, tall: 0.15, flowers: 0.03 }
+  }, {
+    id: 'world-forest-understory', name: 'World forest understory', visible: true,
+    seed: stringSeed(`${tileKey(tile)}:forest`), resolutionX: data.resolution, resolutionZ: data.resolution,
+    densities: forestDensities, preset: 'meadow', height: 0.48, mix: { short: 0.9, tall: 0.08, flowers: 0.02 }
   }];
+  return layers.filter(layer => layer.densities.some(density => density > 0.01));
 }
 
 export function worldGrassChunkBudget(residentChunks: number): number {
