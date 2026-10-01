@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createWorldSampler, createWorldTerrainContext, diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
-  type WorldRecipe } from '../src/shared/worldTerrain';
-import { riverPathSamples, waterBoundaryContainsPoint, waterBoundaryDistance, waterBoundaryPoints } from '../src/shared/mapWater';
+  WORLD_TERRAIN_FIT_RIVER_MAX_GRADE, type WorldRecipe } from '../src/shared/worldTerrain';
+import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoundaryDistance, waterBoundaryPoints } from '../src/shared/mapWater';
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
@@ -286,6 +286,119 @@ describe('composable world terrain operations', () => {
     expect(sample(0, 20).waterLevel).toBeNull();
   });
 
+  it('fits an explicit terrain-fit river to both banks and its requested depth without mutating intent', () => {
+    const input = { ...original, reliefProfile: 'compact' as const, terrainBrushes: [{
+      id: 'flat-valley', mode: 'flatten' as const, region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 180 },
+      height: 8, feather: 0
+    }], waterBodies: [{
+      id: 'fitted-river', type: 'river' as const, surfaceMode: 'terrain-fit' as const,
+      region: { kind: 'path' as const, points: [[-120, 0], [0, 10], [120, 0]] as Array<[number, number]>, width: 18 },
+      depth: 2.5, shorelineSmoothness: 0.7, shorelineIrregularity: 0
+    }] } as unknown as WorldRecipe;
+    const recipe = validateWorldRecipe(input), context = createWorldTerrainContext(recipe);
+    const prepared = context.waterBodies[0], samples = prepared.riverSamples;
+
+    expect(recipe.waterBodies![0].levels).toBeUndefined();
+    expect((input.waterBodies![0] as { levels?: number[] }).levels).toBeUndefined();
+    expect(context.diagnostics).toEqual([]);
+    expect(diagnoseWorldRiverSurfaceAboveBank(context)).toEqual([]);
+    for (const sample of samples.slice(2, -2).filter((_, index) => index % 4 === 0)) {
+      expect(context.sample(...sample.point).height).toBeCloseTo(sample.level - 2.5, 5);
+    }
+    for (const edge of riverEdgePairs(prepared.mapWater).filter((_, index) => index % 4 === 0)) {
+      const midpoint = [(edge.left[0] + edge.right[0]) / 2, (edge.left[1] + edge.right[1]) / 2] as [number, number];
+      for (const bank of [edge.left, edge.right]) {
+        const dx = bank[0] - midpoint[0], dz = bank[1] - midpoint[1], length = Math.hypot(dx, dz);
+        const outside = [bank[0] + dx / length * 0.05, bank[1] + dz / length * 0.05] as [number, number];
+        expect(context.sample(...outside).height).toBeGreaterThanOrEqual(edge.level - 0.051);
+      }
+    }
+
+    const withLevels = structuredClone(input) as unknown as Record<string, unknown>;
+    ((withLevels.waterBodies as Array<Record<string, unknown>>)[0]).levels = [8, 7, 6];
+    expect(() => validateWorldRecipe(withLevels as unknown as WorldRecipe)).toThrow('invalid_world_river_surface_mode');
+    const badWaterfall = structuredClone(input) as unknown as Record<string, unknown>;
+    ((badWaterfall.waterBodies as Array<Record<string, unknown>>)[0]).waterfallAfterPointIndices = [2];
+    expect(() => validateWorldRecipe(badWaterfall as unknown as WorldRecipe)).toThrow('invalid_world_waterfall_segment');
+  });
+
+  it('derives a continuous downhill terrain-fit river into the implicit ocean within the ordinary grade budget', () => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-150, 0], [150, 0]], width: 180 },
+      heights: [12, -12], feather: 0
+    }], waterBodies: [{
+      id: 'fitted-mouth', type: 'river', surfaceMode: 'terrain-fit',
+      region: { kind: 'path', points: [[-120, 0], [-40, 0], [40, 0], [120, 0]], width: 12 },
+      widths: [8, 10, 14, 20], depth: 2, shorelineSmoothness: 0.7, shorelineIrregularity: 0
+    }] } as unknown as WorldRecipe);
+    const context = createWorldTerrainContext(recipe), samples = context.waterBodies[0].riverSamples;
+
+    expect(context.diagnostics).toEqual([]);
+    expect(samples.at(-2)!.level).toBeCloseTo(0, 5);
+    expect(samples.at(-1)!.level).toBeCloseTo(-0.03, 5);
+    for (let index = 1; index < samples.length; index += 1) {
+      const distance = Math.hypot(samples[index].point[0] - samples[index - 1].point[0],
+        samples[index].point[1] - samples[index - 1].point[1]);
+      const drop = samples[index - 1].level - samples[index].level;
+      expect(drop).toBeGreaterThanOrEqual(-0.000001);
+      expect(drop / distance).toBeLessThanOrEqual(WORLD_TERRAIN_FIT_RIVER_MAX_GRADE + 0.000001);
+    }
+  });
+
+  it('allows only declared waterfall drops and diagnoses an impossible anchored outlet instead of digging or reversing', () => {
+    const step = { ...original, reliefProfile: 'compact' as const, terrainBrushes: [{
+      id: 'sharp-step', mode: 'grade' as const,
+      region: { kind: 'path' as const, points: [[-100, 0], [-10, 0], [10, 0], [100, 0]] as Array<[number, number]>, width: 180 },
+      heights: [20, 20, 2, 2], feather: 0
+    }] };
+    const river = {
+      id: 'step-river', type: 'river' as const, surfaceMode: 'terrain-fit' as const,
+      region: { kind: 'path' as const, points: [[-100, 0], [-10, 0], [10, 0], [100, 0]] as Array<[number, number]>, width: 10 },
+      depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    };
+    const impossible = createWorldTerrainContext(validateWorldRecipe({ ...step, waterBodies: [river] } as unknown as WorldRecipe));
+    expect(impossible.waterBodies).toHaveLength(1);
+    expect(impossible.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'river_profile_infeasible', waterBodyId: 'step-river', reason: 'excessive_cut',
+      fallback: 'truncated-before-drop'
+    }));
+    const retained = impossible.waterBodies[0].riverSamples;
+    expect(retained.at(-1)!.point[0]).toBeLessThanOrEqual(-10);
+    expect(retained.at(-1)!.width).toBeLessThan(retained[0].width * 0.2);
+
+    const waterfall = createWorldTerrainContext(validateWorldRecipe({ ...step, waterBodies: [{
+      ...river, waterfallAfterPointIndices: [1]
+    }] } as unknown as WorldRecipe));
+    const samples = waterfall.waterBodies[0].riverSamples;
+    expect(waterfall.diagnostics).toEqual([]);
+    const grades = samples.slice(1).map((sample, index) => {
+      const previous = samples[index];
+      return (previous.level - sample.level) / Math.hypot(
+        sample.point[0] - previous.point[0], sample.point[1] - previous.point[1]);
+    });
+    expect(grades[1]).toBeGreaterThan(WORLD_TERRAIN_FIT_RIVER_MAX_GRADE);
+    expect(grades.filter((_, index) => index !== 1).every(grade => grade >= -0.000001
+      && grade <= WORLD_TERRAIN_FIT_RIVER_MAX_GRADE + 0.000001)).toBe(true);
+
+    const anchored = createWorldTerrainContext(validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'uphill-outlet', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [5, 12], feather: 0
+    }], waterBodies: [{
+      id: 'receiving-lake', type: 'lake', region: { kind: 'circle', center: [100, 0], radius: 18 },
+      levels: [10], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }, {
+      id: 'uphill-river', type: 'river', surfaceMode: 'terrain-fit',
+      region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 8 }, depth: 2,
+      shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] } as unknown as WorldRecipe));
+    const detached = anchored.waterBodies.find(water => water.source.id === 'uphill-river');
+    expect(detached).toBeDefined();
+    expect(detached!.riverSamples.at(-1)!.point[0]).toBeLessThan(82);
+    expect(anchored.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'river_profile_infeasible', waterBodyId: 'uphill-river', reason: 'outlet_above_bank'
+    }));
+  });
+
   it('shares one irregular river path across its prepared boundary and terrain sampling', () => {
     const recipe = validateWorldRecipe({ ...original, waterBodies: [{ id: 'natural-river', type: 'river',
       region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 20 },
@@ -340,7 +453,7 @@ describe('composable world terrain operations', () => {
         shorelineSmoothness: 0.7, shorelineIrregularity: 0.45, seed: 2501841621
       }]
     });
-    const rawLevels = [...recipe.waterBodies![0].levels];
+    const rawLevels = [...recipe.waterBodies![0].levels!];
     const diagnostics = diagnoseWorldRiverSurfaceAboveBank(createWorldTerrainContext(recipe));
 
     expect(diagnostics).toEqual([expect.objectContaining({
@@ -398,7 +511,9 @@ describe('composable world terrain operations', () => {
       id: 'reversible-mouth', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
       levels: [2, 0], widths: [8, 20], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
     }] });
-    const reversed = validateWorldRecipe({ ...base, waterBodies: [{ ...base.waterBodies![0],
+    const baseWater = base.waterBodies![0];
+    if (baseWater.type !== 'river' || baseWater.surfaceMode === 'terrain-fit') throw new Error('expected_authored_river');
+    const reversed = validateWorldRecipe({ ...base, waterBodies: [{ ...baseWater,
       region: { kind: 'path', points: [[100, 0], [-100, 0]], width: 12 },
       levels: [0, 2], widths: [20, 8]
     }] });
