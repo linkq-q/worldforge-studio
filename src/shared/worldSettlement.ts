@@ -1,7 +1,8 @@
 import type { MapGuide } from './mapGuide';
 import { createUrbanLayout, type UrbanLayout, type UrbanParcel, type UrbanPoint, type UrbanRoad } from './mapUrbanLayout';
 import {
-  buildingsOverlap, createTownTasks, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch, worldPlanKey, worldTownBuildingQuota,
+  buildingsOverlap, createTownTasks, segmentBox, segmentBuildingFootprint, townBuildingBounds, validateTownPatch,
+  worldPlanKey, worldRoadPolyline, worldTownBuildingQuota,
   type TownBuilding, type TownIntent, type TownPatch, type WorldPlan
 } from './worldPlanning';
 import { sampleWorldSlope, type WorldSample, type WorldSampler } from './worldTerrain';
@@ -960,17 +961,23 @@ function placeBuildings(
   const result: TownBuilding[] = settings.landmarks.map(building => ({ ...building }));
   const city = settings.kind === 'city';
   const localRoads = streets.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width, road })));
-  const worldRoads = plan.roads.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width })));
+  const worldRoads = plan.roads.flatMap(road => {
+    const points = worldRoadPolyline(road);
+    return points.slice(1).map((b, index) => ({ a: points[index], b, width: road.width }));
+  });
   const localFrontageRoads = localRoads.filter(segment => !reservedFrontage(segment.road.tags));
   const worldFrontageRoads = plan.roads.filter(road => authoredBuildingFrontage(road.tags))
-    .flatMap(road => road.points.slice(1).map((worldB, index) => {
-      const worldA = road.points[index];
-      return clipTownSegment(
-        [worldA[0] - town.center[0], worldA[1] - town.center[1]],
-        [worldB[0] - town.center[0], worldB[1] - town.center[1]], town.radius
-      );
-    }).filter((segment): segment is [Point, Point] => Boolean(segment))
-      .map(([a, b]) => ({ a, b, width: road.width })));
+    .flatMap(road => {
+      const points = worldRoadPolyline(road);
+      return points.slice(1).map((worldB, index) => {
+        const worldA = points[index];
+        return clipTownSegment(
+          [worldA[0] - town.center[0], worldA[1] - town.center[1]],
+          [worldB[0] - town.center[0], worldB[1] - town.center[1]], town.radius
+        );
+      }).filter((segment): segment is [Point, Point] => Boolean(segment))
+        .map(([a, b]) => ({ a, b, width: road.width }));
+    });
   const selectedByRoad = new Map<string, Edge[]>();
   for (const edge of selected) selectedByRoad.set(edge.source, [...(selectedByRoad.get(edge.source) ?? []), edge]);
   const candidates = layout.parcels.filter(parcel => selectedByRoad.get(parcel.roadId)?.some(edge =>

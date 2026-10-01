@@ -5,7 +5,8 @@ import {
 } from '../src/shared/worldSettlement';
 import { createUrbanLayout } from '../src/shared/mapUrbanLayout';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
-import { buildingsOverlap, segmentBuildingFootprint, validateTownPatch, type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
+import { buildingsOverlap, segmentBuildingFootprint, validateTownPatch, worldRoadPolyline,
+  type TownBuilding, type WorldPlan } from '../src/shared/worldPlanning';
 
 type Point = [number, number];
 
@@ -118,6 +119,37 @@ function expectStreetFacingBuildings(patch: ReturnType<typeof generateWorldSettl
 }
 
 describe('world settlement growth', () => {
+  it('reserves the sampled curve of a Catmull-Rom world road before placing buildings', () => {
+    const plan = fixture(), town = plan.towns[0], sample = sampler(plan);
+    town.ports = [];
+    plan.roads = [];
+    const options = { kind: 'city' as const, pattern: 'organic' as const, seed: 91, density: 0.78 };
+    const target = generateWorldSettlement(plan, town.id, sample, options).buildings[0];
+    const center: Point = [target.x + town.center[0], target.z + town.center[1]];
+    const curved = road('curved-world-road', [
+      [center[0] - 20, center[1] + 90], [center[0] - 10, center[1] + 10],
+      [center[0] + 10, center[1] + 10], [center[0] + 20, center[1] + 90]
+    ], 2);
+    curved.curve = 'catmull-rom';
+    plan.roads = [curved];
+    const worldTarget = { ...target, x: center[0], z: center[1] };
+
+    expect(curved.points.slice(1).some((point, index) =>
+      segmentBuildingFootprint(curved.points[index], point, worldTarget, curved.width / 2))).toBe(false);
+    const sampled = worldRoadPolyline(curved);
+    expect(sampled.slice(1).some((point, index) =>
+      segmentBuildingFootprint(sampled[index], point, worldTarget, curved.width / 2))).toBe(true);
+
+    const patch = generateWorldSettlement(plan, town.id, sample, options);
+    expect(patch.buildings.length).toBeGreaterThan(20);
+    for (const building of patch.buildings) {
+      const worldBuilding = { ...building, x: building.x + town.center[0], z: building.z + town.center[1] };
+      expect(sampled.slice(1).some((point, index) =>
+        segmentBuildingFootprint(sampled[index], point, worldBuilding, curved.width / 2)), building.id).toBe(false);
+    }
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
   it.each(['organic', 'grid'] as const)('creates deterministic, connected %s streets and terrain-fit buildings', pattern => {
     const plan = fixture(), sample = sampler(plan);
     const options = { kind: 'city' as const, pattern, seed: 91, density: 0.78, maxRoadSlope: 0.12, maxSiteSlope: 0.1 };
