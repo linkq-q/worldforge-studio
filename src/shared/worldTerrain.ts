@@ -663,7 +663,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
           authoredDetailAmplitude = Math.max(authoredDetailAmplitude,
             slopeBand * Math.min(14 * Math.sqrt(compactDetailScale), form.height * 0.16 + smallHillBoost));
           const formSlope = form.height / minRadius;
-          if (compactRelief && form.height >= 18 && minRadius >= 18 && formSlope >= 0.18) {
+          if (compactRelief && form.height >= 14 && minRadius >= 18 && formSlope >= 0.18) {
             // Authored compact relief needs coherent downslope structure, not isotropic noise alone.
             // Ellipse angle follows the local fall line; a slow phase warp bends channels without
             // breaking them into dots, while the slope band protects both summit and foothill.
@@ -697,7 +697,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
             // takes them to zero before the summit and footprint boundary.
             const drainageAmplitude = Math.min(12 * (strongDrainage ? compactDetailScale : Math.sqrt(compactDetailScale)),
               form.height * 0.21)
-              * smooth(18, 30, form.height) * smooth(18, 30, minRadius)
+              * smooth(8, 14, form.height) * smooth(18, 30, minRadius)
               * mix(strongDrainage ? 0.2 : 0.55, 1, smooth(0.25, 0.5, formSlope));
             const ridgeAmplitude = Math.min(size * 0.006, form.height * 0.06)
               * smooth(0.18, 0.34, formSlope);

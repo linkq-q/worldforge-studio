@@ -922,6 +922,53 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('cuts coherent gullies into modest steep landforms without roughening broad town terraces', () => {
+    const amplitudes: number[] = [];
+    for (const seed of [1, 42, 2309, 20261001, 99173]) {
+      const base: WorldRecipe = {
+        version: 1, seed, size: 500, reliefProfile: 'compact', heightScale: 0.035,
+        constraints: [
+          { region: 'center', biome: 'forest' }, { region: 'north', biome: 'ocean' },
+          { region: 'south', biome: 'ocean' }, { region: 'east', biome: 'ocean' },
+          { region: 'west', biome: 'ocean' }
+        ]
+      };
+      const core = { center: [15, 5] as [number, number], radius: [218, 220] as [number, number], height: 13 };
+      const landform = { center: [60, -62] as [number, number], radius: [69, 73] as [number, number], height: 15 };
+      const plain = createWorldSampler({ ...base, landforms: [core] });
+      const shaped = createWorldSampler({ ...base, landforms: [core, landform] });
+      const count = 144, radius = 0.64;
+      const profile = Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2;
+        const x = landform.center[0] + Math.cos(angle) * landform.radius[0] * radius;
+        const z = landform.center[1] + Math.sin(angle) * landform.radius[1] * radius;
+        return shaped(x, z).height - plain(x, z).height - landform.height * (1 - radius ** 2) ** 3;
+      });
+      const amplitude = (frequency: number) => {
+        let cosine = 0, sine = 0;
+        for (let index = 0; index < count; index += 1) {
+          const angle = index / count * Math.PI * 2;
+          cosine += profile[index] * Math.cos(frequency * angle);
+          sine += profile[index] * Math.sin(frequency * angle);
+        }
+        return 2 * Math.hypot(cosine, sine) / count;
+      };
+      amplitudes.push(Math.max(amplitude(5), amplitude(7)));
+
+      const terrace = createWorldSampler({ ...base, landforms: [
+        core, { center: [-45, 95], radius: [120, 100], height: 15 }
+      ] });
+      const slopes: number[] = [];
+      for (let z = -5; z <= 195; z += 8) for (let x = -165; x <= 75; x += 8) {
+        const dx = (x + 45) / 120, dz = (z - 95) / 100;
+        if (dx * dx + dz * dz < 0.75) slopes.push(sampleWorldSlope(terrace, x, z));
+      }
+      slopes.sort((left, right) => left - right);
+      expect(slopes[Math.floor(slopes.length * 0.95)]).toBeLessThan(0.52);
+    }
+    expect(amplitudes.reduce((sum, value) => sum + value, 0) / amplitudes.length).toBeGreaterThan(0.55);
+  });
+
   it('carves coherent downslope drainage into large compact island mountains across seeds', () => {
     const recipe: WorldRecipe = {
       version: 1, seed: 6103402, size: 500, reliefProfile: 'compact', heightScale: 0.12,
