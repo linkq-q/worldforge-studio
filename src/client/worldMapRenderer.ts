@@ -47,6 +47,8 @@ const WORLD_GRASS_CHUNK_INSTANCE_BUDGET = 15_000;
 const WORLD_GRASS_RESIDENT_INSTANCE_BUDGET = 120_000;
 const WORLD_STREAM_BUILD_FRAME_BUDGET_MS = 8;
 const WORLD_STREAM_MIN_BACKGROUND_PAINTS = 3;
+// Chunk build time includes its own cooperative rAF waits, so it cannot justify an unbounded second wait here.
+const WORLD_STREAM_MAX_RECOVERY_PAINTS = 15;
 const BIOME_CHANNEL = Object.fromEntries(WORLD_BIOMES.map((biome, index) => [biome, index])) as Record<WorldBiome, number>;
 const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
   strictMaterials: 0,
@@ -1620,7 +1622,10 @@ function reconcileRequestKey(request: ReconcileRequest): string {
 export function worldBuildPaintIntervals(buildMs: number, minimumPaints = 1, mountFrameMs = 0): number {
   return Math.max(
     minimumPaints,
-    Math.ceil(Math.max(0, buildMs, mountFrameMs) / WORLD_STREAM_BUILD_FRAME_BUDGET_MS)
+    Math.min(
+      WORLD_STREAM_MAX_RECOVERY_PAINTS,
+      Math.ceil(Math.max(0, buildMs, mountFrameMs) / WORLD_STREAM_BUILD_FRAME_BUDGET_MS)
+    )
   );
 }
 
