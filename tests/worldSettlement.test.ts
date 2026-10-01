@@ -194,6 +194,37 @@ describe('world settlement growth', () => {
     expect(validateTownPatch(plan, patch)).toEqual(patch);
   });
 
+  it('keeps near-corner and fractional boundary ports connected to a compact town', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    plan.recipe.size = 500;
+    plan.recipe.reliefProfile = 'compact';
+    plan.generationPolicy = 'raw-first-call';
+    town.center = [0, 0];
+    town.radius = 50;
+    town.blend = 20;
+    town.foundation = 12;
+    town.ports = [
+      { id: 'near-corner', guideId: 'harbour-lane', position: [50, 44.483870967741936], width: 5 },
+      { id: 'fractional-edge', guideId: 'shore-lane', position: [-0.8947368421052602, 50], width: 2.5 }
+    ];
+    plan.roads = [
+      road('harbour-lane', [[50, 44.483870967741936], [60, 47.483870967741936]], 5),
+      road('shore-lane', [[-0.8947368421052602, 50], [1, 60]], 2.5)
+    ];
+    const flat: WorldSettlementSampler = (x, z) => ({
+      ...base(x, z), height: 12, waterLevel: null, waterBodyId: null
+    });
+
+    const patch = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.62, waterfrontBias: 0
+    });
+
+    for (const port of town.ports) expect(patch.streets.some(street => street.width === port.width
+      && [street.points[0], street.points.at(-1)!].some(point => point[0] === port.position[0]
+        && point[1] === port.position[1])), port.id).toBe(true);
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
   it.each([
     [100, 7, 110], [150, 19, 120], [200, 31, 160]
   ] as const)('keeps compact street-facing city blocks across radius %sm and seed %s', (radius, seed, minimumBuildings) => {

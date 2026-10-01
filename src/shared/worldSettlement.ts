@@ -168,12 +168,13 @@ export function generateWorldSettlement(
       const inset = (endpoint: Point, other: Point): Point => {
         let fraction = 0;
         for (let axis = 0; axis < 2; axis++) {
-          if (Math.abs(Math.abs(endpoint[axis]) - town.radius) > EPS) continue;
-          const inward = Math.abs(other[axis] - endpoint[axis]);
+          const extent = Math.abs(endpoint[axis]), safeExtent = town.radius - clearance;
+          if (extent <= safeExtent + EPS) continue;
+          const inward = extent - other[axis] * (Math.sign(endpoint[axis]) || 1);
           if (inward < EPS) return endpoint;
-          fraction = Math.max(fraction, clearance / inward);
+          fraction = Math.max(fraction, (extent - safeExtent) / inward);
         }
-        return fraction > 0 ? mix(endpoint, other, Math.min(0.45, fraction)) : endpoint;
+        return fraction > 0 && fraction < 1 ? mix(endpoint, other, fraction) : endpoint;
       };
       const from = same(a, port.position) ? inset(a, b) : a;
       const to = same(b, port.position) ? inset(b, a) : b;
@@ -217,6 +218,9 @@ export function generateWorldSettlement(
   }
   if (streets.length > 48) throw new Error('world_settlement_road_budget');
   splitRoadIntersections(streets);
+  for (const port of town.ports) for (const street of streets) for (const index of [0, street.points.length - 1]) {
+    if (same(street.points[index], port.position)) street.points[index] = [...port.position];
+  }
 
   const buildings = placeBuildings(plan, town, streets, layout, selected, sample, settings, random);
   if (!buildings.length) throw new Error('world_settlement_no_buildings');
