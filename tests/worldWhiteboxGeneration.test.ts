@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
+import { auditWorldWhiteboxSettlementConstruction, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
   materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
-import { validateWorldPlan, type WorldPlan } from '../src/shared/worldPlanning';
+import { validateWorldPlan, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
 
 const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
@@ -92,6 +92,47 @@ function harborPlan(): WorldPlan {
   return plan;
 }
 
+function districtPlan(): WorldPlan {
+  const plan = buildablePlan();
+  plan.id = 'leeward-port-districts';
+  plan.prompt = 'One leeward port town with civic, fishing, residential and garden quarters';
+  plan.featureGraph = {
+    regions: [
+      { id: 'civic-region', kind: 'settlement_district', name: 'Leeward Port · Civic', center: [0, 0], radius: 30 },
+      { id: 'fishing-region', kind: 'settlement_district', name: 'Leeward Port · Fishing', center: [40, 0], radius: 30 },
+      { id: 'home-region', kind: 'settlement_district', name: 'Leeward Port · Homes', center: [0, 40], radius: 30 },
+      { id: 'garden-region', kind: 'settlement_edge', name: 'Leeward Port · Gardens', center: [225, 225], radius: 25 }
+    ],
+    paths: [],
+    anchors: [
+      { id: 'civic-anchor', kind: 'settlement_district', position: [0, 0], regionId: 'civic-region' },
+      { id: 'fishing-anchor', kind: 'settlement_district', position: [40, 0], regionId: 'fishing-region' },
+      { id: 'home-anchor', kind: 'settlement_district', position: [0, 40], regionId: 'home-region' },
+      { id: 'garden-anchor', kind: 'settlement_edge', position: [225, 225], regionId: 'garden-region' }
+    ],
+    relations: []
+  };
+  plan.settlementPlan = { settlements: [
+    { id: 'civic-quarter', anchorId: 'civic-anchor', role: 'civic district serving the whole port town' },
+    { id: 'fishing-quarter', anchorId: 'fishing-anchor', role: 'working waterfront district of the same town' },
+    { id: 'home-quarter', anchorId: 'home-anchor', role: 'residential district of the same town' },
+    { id: 'garden-quarter', anchorId: 'garden-anchor', role: 'sparse garden edge, not a second town' }
+  ] };
+  plan.mobilityPlan = { routes: [] };
+  plan.explorationPlan = { pointsOfInterest: [], sequence: [] };
+  return plan;
+}
+
+function districtExpansion() {
+  return {
+    towns: ['civic', 'fishing', 'home', 'garden'].map(id => ({
+      id: `${id}-quarter`, name: `Leeward Port · ${id}`, kind: 'village', pattern: 'organic', density: 0.45,
+      publicBuildings: []
+    })),
+    ecology: [], assets: []
+  };
+}
+
 function constructionExpansion(assetCount = 0) {
   const assets: WorldAssetRequest[] = Array.from({ length: assetCount }, (_, index) => ({
     key: `asset-${index + 1}`, name: `Asset ${index + 1}`, role: index === 1 ? 'tree' : 'house',
@@ -100,6 +141,7 @@ function constructionExpansion(assetCount = 0) {
   }));
   return {
     towns: [{ id: 'market-village', name: 'Market Village', kind: 'village', pattern: 'organic', density: 0.45,
+      population: undefined as number | undefined,
       publicBuildings: [] as Array<{ id: string; use: string; width: number; depth: number; height: number;
         assetKey: string; siting?: 'central' | 'waterfront' | 'gateway' | 'high-ground' }> }],
     ecology: [{ id: 'grove', kind: 'broadleaf', biome: 'grassland', density: 0.2, spacing: 14,
@@ -348,6 +390,39 @@ describe('whitebox world generation', () => {
     expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, repairAttempts: 1 })).toThrow('invalid_world_whitebox_construction_request');
   });
 
+  it('carries an optional Stage 2 population into the constructed town while accepting legacy omissions', () => {
+    const populated = constructionExpansion();
+    populated.towns[0].population = 150;
+    const request = { mode: 'construct-whitebox' as const, whiteboxPlan: validateWorldPlan(buildablePlan()),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0 as const };
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(populated), request);
+    const legacy = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), request);
+
+    expect(result.towns[0].population).toBe(150);
+    expect(result.plan.towns[0].population).toBe(150);
+    expect(legacy.plan.towns[0].population).toBeUndefined();
+  });
+
+  it('diagnoses a sparse populated whitebox patch with existing coverage and population audits', () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].population = 150;
+    const materialized = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(buildablePlan()),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    const sparsePatch = {
+      townId: 'market-village', worldKey: 'sparse-populated-village', summary: 'Only three homes survived', streets: [],
+      buildings: [0, 1, 2].map(index => ({ id: `home-${index}`, x: index, z: 0, width: 5, depth: 7,
+        height: 5, use: 'home' }))
+    } as TownPatch;
+
+    const diagnostics = auditWorldWhiteboxSettlementConstruction(materialized.plan, materialized.towns,
+      materialized.settlements, [sparsePatch]);
+    expect(diagnostics.find(item => item.townId === 'market-village')?.planningIssues).toEqual(expect.arrayContaining([
+      'underbuilt_settlement', 'clustered_settlement', 'population_underbuilt'
+    ]));
+  });
+
   it('derives town ports only where a connected whitebox route reaches the dry town boundary', () => {
     const whiteboxPlan = validateWorldPlan(buildablePlan());
     const result = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
@@ -459,6 +534,8 @@ describe('whitebox world generation', () => {
       traceStage: 'world.whitebox.construction' });
     const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content as string;
     expect(systemPrompt).toContain("siting?:'central'|'waterfront'|'gateway'|'high-ground'");
+    expect(systemPrompt).toContain('population?:integer');
+    expect(systemPrompt).toContain('Record one integer population');
     expect(systemPrompt).toContain("role:'house'|'shop'|'workshop'|'tree'|'landmark'");
     expect(systemPrompt).toContain('Do not put width, depth, height or use directly on an asset object.');
     expect(mocks.generateModel).not.toHaveBeenCalled();
@@ -471,6 +548,38 @@ describe('whitebox world generation', () => {
     expect(result.bundle.plan.towns[0].center).toEqual(whiteboxPlan.featureGraph!.anchors[0].position);
     expect(result.bundle.patches[0].buildings.length).toBeGreaterThan(0);
     expect(result.bundle.patches[0].streets.some(street => street.tags.includes('port'))).toBe(true);
+  });
+
+  it('uses a Stage 2 population of 150 as the ordinary housing target', async () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].population = 150;
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    expect(result.bundle.plan.towns[0].population).toBe(150);
+    expect(result.bundle.patches[0].buildings.filter(building => building.use === 'home' || building.use === 'farmhouse'))
+      .toHaveLength(30);
+    expect(result.diagnostics.flatMap(item => 'planningIssues' in item ? item.planningIssues ?? [] : []))
+      .not.toContain('population_underbuilt');
+  });
+
+  it('diagnoses overlapping town districts and a missing construction patch without repairing either', async () => {
+    const plan = districtPlan();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(districtExpansion()));
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: plan, generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    const issues = result.diagnostics.flatMap(item => 'planningIssues' in item ? item.planningIssues ?? [] : []);
+    expect(issues).toContain('possible_settlement_district_split:civic-quarter:fishing-quarter');
+    expect(result.diagnostics.find(item => 'townId' in item && item.townId === 'garden-quarter')?.planningIssues)
+      .toContain('settlement_patch_missing');
+    expect(result.bundle.plan.settlementPlan?.settlements).toHaveLength(4);
+    expect(result.bundle.patches.some(patch => patch.townId === 'garden-quarter')).toBe(false);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
   it('hard-rejects construction output that tries to rewrite the saved whitebox', async () => {

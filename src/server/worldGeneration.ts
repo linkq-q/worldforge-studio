@@ -18,7 +18,8 @@ import { createMapAssetGenerator } from './mapAssetGenerator';
 import { recordGenerationTrace } from './generationTrace';
 import { buildWorldArchitecturePrompt, WORLD_ARCHITECTURE_PROMPT_MAX_CHARS } from './worldArchitecturePrompt';
 import { generateWorldWhitebox, materializeWorldWhiteboxConstruction, validateWorldWhiteboxConstructionRequest,
-  WHITEBOX_CONSTRUCTION_PROMPT, type WorldWhiteboxConstructionRequest } from './worldWhiteboxGeneration';
+  WHITEBOX_CONSTRUCTION_PROMPT, type WorldWhiteboxConstructionRequest,
+  type WorldWhiteboxConstructionTown } from './worldWhiteboxGeneration';
 import { selectUsedWorldAssetRequests } from './worldAssetScheduling';
 import type { MapStore } from './mapStore';
 
@@ -359,7 +360,9 @@ function cachedWorldSampler(sample:ReturnType<typeof createWorldSampler>):Return
   };
 }
 
-export function auditWorldSettlementAcceptance(town: Pick<WorldIntentTown,'id'|'radius'|'targetWaterBodyId'|'publicBuildings'>,
+export function auditWorldSettlementAcceptance<T extends {id:string}>(town: Pick<TownIntent,'id'|'radius'|'targetWaterBodyId'> & {
+  publicBuildings: T[]
+},
   patch: Pick<TownPatch,'buildings'|'streets'>,
   settings: Pick<WorldSettlementOptions,'kind'|'density'|'waterfrontBias'>): {
     publicBuildings:number;ordinaryBuildings:number;builtExtent:number;planningIssues:string[]
@@ -393,6 +396,30 @@ export function auditWorldSettlementCoverage(town: Pick<TownIntent,'radius'|'tar
     planningIssues.push('missing_sea_landing');
   }
   return {builtExtent,planningIssues};
+}
+
+export function auditWorldWhiteboxSettlementConstruction(
+  plan: Pick<WorldPlan,'towns'>,
+  towns: Array<Pick<WorldWhiteboxConstructionTown,'id'|'publicBuildings'>>,
+  settlements: WorldDraft['settlements'],
+  patches: TownPatch[]
+): Array<{townId:string;planningIssues:string[]}> {
+  const result:Array<{townId:string;planningIssues:string[]}>=[];
+  for(const authored of towns) {
+    const town=plan.towns.find(item=>item.id===authored.id),patch=patches.find(item=>item.townId===authored.id);
+    const settings=settlements.find(item=>item.townId===authored.id)?.options;
+    if(!town||!patch||!settings) {
+      result.push({townId:authored.id,planningIssues:['settlement_patch_missing']});
+      continue;
+    }
+    const acceptance=auditWorldSettlementAcceptance({...town,publicBuildings:authored.publicBuildings},patch,settings);
+    const planningIssues=[...acceptance.planningIssues];
+    if(town.population!==undefined&&acceptance.ordinaryBuildings<Math.ceil(town.population/5)) {
+      planningIssues.push('population_underbuilt');
+    }
+    if(planningIssues.length) result.push({townId:authored.id,planningIssues});
+  }
+  return result;
 }
 
 export function auditWorldCandidatePacking(
@@ -983,6 +1010,10 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     }
   }
   const visiblePatches=omitUnboundExplicitBuildings(requestedPatches,new Set(assetSources.map(asset=>asset.id)),issue);
+  for(const diagnostic of auditWorldWhiteboxSettlementConstruction(materialized.plan,materialized.towns,
+    materialized.settlements,visiblePatches)) {
+    for(const planningIssue of diagnostic.planningIssues) issue(diagnostic.townId,planningIssue);
+  }
   const bundle=validateWorldBundle({plan:materialized.plan,patches:visiblePatches});
   const resultDiagnostics:WorldConstructionDiagnostic[]=[...diagnostics]
     .map(([townId,planningIssues])=>({townId,planningIssues}));

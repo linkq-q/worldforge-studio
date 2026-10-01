@@ -32,6 +32,7 @@ export interface WorldWhiteboxConstructionTown {
   kind: 'city' | 'village';
   pattern: 'organic' | 'grid';
   density: number;
+  population?: number;
   waterfrontBias?: number;
   publicBuildings: Array<Omit<TownBuilding, 'x' | 'z' | 'rotation'> & {
     siting?: 'central' | 'waterfront' | 'gateway' | 'high-ground';
@@ -53,10 +54,11 @@ Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox
 concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius must be 1..250 metres; path width 0.1..256 metres; every path needs at least two distinct numeric points. A missing curve means polyline for backward compatibility. Choose catmull-rom explicitly for a naturally flowing road or trail, and polyline for deliberately straight engineered segments. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. Place harbour and lookout anchors on appropriate dry or shoreline terrain, never underwater. Trace routes over plausible ground; do not let a road cross open or deep water without an intentionally authored crossing. settlementPlan={settlements:[{id,anchorId,role}]}. A settlement is one distinct inhabited destination, never one district: if the user asks for one town, return exactly one settlement for it, linked to one town-centre anchor, and describe its working, civic, residential and edge districts plus density transition together in that settlement's role. Reserve extra settlements for genuinely separate destinations such as another village, hamlet or remote camp. Districts of one town may occupy distinct connected featureGraph regions with supporting anchors and relations, but do not promote them to separate settlementPlan entries. Show the whole inhabited footprint of a requested town, not just its centre: allocate connected, terrain-fitting regions for working, civic, residential and edge uses as appropriate, with streets and paths that allow outward growth. Give a town enough buildable area for ordinary homes and a few public services appropriate to its scale; a village is a sparser settlement, while a camp is only a small stop. Let the extent respond to the usable coast, valley, slopes, routes and requested population instead of filling the whole map or compressing all life into one marker. Leave contiguous dry plots beside, rather than inside, road junctions for civic buildings such as markets and schools; avoid converging several wide through-routes inside one small public-building district. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...]}]}; road types and walking trails may differ. Keep ordinary routes human-scale relative to nearby buildings: walking trails roughly 1.5–3m, local lanes 3–5m, main roads 5–8m; a wider boulevard needs a clear civic or freight purpose and space for buildings around it. A bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
 
 export const WHITEBOX_CONSTRUCTION_PROMPT = `Expand one already-approved WorldForge whitebox into deterministic construction inputs. Return JSON only:
-{"towns":[{"id":"existing settlementPlan id","name":"display name","kind":"city|village","pattern":"organic|grid","density":0.0,"waterfrontBias":0.0,"publicBuildings":[]}],"ecology":[],"assets":[]}.
+{"towns":[{"id":"existing settlementPlan id","name":"display name","kind":"city|village","pattern":"organic|grid","density":0.0,"population":150,"waterfrontBias":0.0,"publicBuildings":[]}],"ecology":[],"assets":[]}.
 The supplied whitebox is immutable. Never return or rewrite recipe, featureGraph, anchors, paths, concept, settlementPlan, mobilityPlan, explorationPlan or intentionalEmptyAreas. Return exactly one town entry for every supplied settlementPlan id. The server owns centers, radii, foundations and roads; do not supply coordinates. For each settlement, infer livelihood, circulation, civic needs and terrain fit. Connected waterfront, civic, housing and farm districts should form one inhabited place; a village is sparser than a town, not empty. Use organic or grid streets for a reason rooted in terrain and culture. Substantial towns need distinct public functions at roughly one per 10–20 ordinary buildings where space and the asset budget permit.
+Record one integer population for each distinct inhabited settlement from the resident scale stated or clearly implied by the approved whitebox. If no count is stated, estimate it from the approved settlement extent, livelihood and kind. Do not create another settlement or split one place's population among districts.
 Exact output contracts; use no extra fields:
-towns=[{id,name,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,waterfrontBias?:0..1,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?:false,siting?:'central'|'waterfront'|'gateway'|'high-ground'}]}]. siting is one of those four literal values, never a prose sentence. A public building assetKey must match an assets[].key and its width,height,depth must match that asset's dimensions [width,height,depth]. Ordinary buildings are generated by settlement rules; do not enumerate them.
+towns=[{id,name,kind:'city'|'village',pattern:'organic'|'grid',density:0..1,population?:integer,waterfrontBias?:0..1,publicBuildings:[{id,use,width,depth,height,assetKey,enterable?:false,siting?:'central'|'waterfront'|'gateway'|'high-ground'}]}]. siting is one of those four literal values, never a prose sentence. A public building assetKey must match an assets[].key and its width,height,depth must match that asset's dimensions [width,height,depth]. Ordinary buildings are generated by settlement rules; do not enumerate them.
 ecology=[{id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome:'ocean'|'grassland'|'forest'|'desert'|'mountains'|'snow',density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?:[outerMin,preferredMin,preferredMax,outerMax]}], at most 8 rules. region is a circle {kind:'circle',center:[x,z],radius} or path {kind:'path',points:[[x,z],...],width}; omit for broad biome coverage. Include unbounded rules for extensive suitable habitat and bounded rules for distinctive local groves; a large island should not become nearly bare without a climate or land-use reason. waterDistance refers only to authored fresh rivers/lakes. Design clustered habitat from moisture, slope, biome and human use, leaving roads and entrances clear; never enumerate plants or rocks.
 assets=[{key,name,role:'house'|'shop'|'workshop'|'tree'|'landmark',prompt,dimensions?:[width,height,depth],enterable?:false,strategy:'single',existingAssetId?,ecologyKind?,ecologyRuleId?}]. Do not put width, depth, height or use directly on an asset object. Every asset needs a nonempty name, role and prompt, including reused assets. Reuse only supplied reusableAssets IDs and their measured visualSize. Match each reused model to its supplied name, original prompt, tags and visible silhouette; do not rename a biome-specific asset to claim it fits another habitat, such as using an oasis palm as a dense forest broadleaf. Each unique publicBuildings[].assetKey needs a matching assets[] entry with role:'landmark'; if it reuses a library model, include that model's existingAssetId in the matching entry. A library ID in publicBuildings without a matching assets[] entry is unbound. Every role:'tree' asset must name one exact ecologyRuleId and copy that rule's kind into ecologyKind; non-tree assets omit both fields. Include ordinary house/shop/workshop families actually used and one tree binding per ecology rule. No more than the supplied assetGenerationLimit (at most three) assets may omit existingAssetId. New assets must be non-enterable, single models; do not request assembly. Spend new generation on important visual and functional gaps. This is construction expansion, not critique or repair.`;
 
@@ -288,7 +290,7 @@ function constructionSiting(value: unknown): 'central' | 'waterfront' | 'gateway
 }
 
 function parseConstructionTown(value: unknown, settlementIds: Set<string>, issue: (townId: string, value: string) => void): WorldWhiteboxConstructionTown {
-  const town = exact(value, ['id', 'name', 'kind', 'pattern', 'density', 'waterfrontBias', 'publicBuildings'],
+  const town = exact(value, ['id', 'name', 'kind', 'pattern', 'density', 'population', 'waterfrontBias', 'publicBuildings'],
     'invalid_world_whitebox_construction_town', 'world_unknown_whitebox_construction_town_field');
   const id = constructionId(town.id, 'invalid_world_whitebox_construction_town');
   if (!settlementIds.has(id) || town.kind !== 'city' && town.kind !== 'village'
@@ -312,9 +314,13 @@ function parseConstructionTown(value: unknown, settlementIds: Set<string>, issue
       ...(siting ? { siting } : {})
     };
   });
+  const population = town.population === undefined ? undefined
+    : constructionNumber(town.population, 1, 1_000_000, 'invalid_world_whitebox_construction_town');
+  if (population !== undefined && !Number.isInteger(population)) throw new Error('invalid_world_whitebox_construction_town');
   return { id, name: constructionText(town.name, 160, 'invalid_world_whitebox_construction_town'),
     kind: town.kind, pattern: town.pattern,
     density: constructionNumber(town.density, 0, 1, 'invalid_world_whitebox_construction_town'),
+    ...(population === undefined ? {} : { population }),
     ...(town.waterfrontBias === undefined ? {} : {
       waterfrontBias: constructionNumber(town.waterfrontBias, 0, 1, 'invalid_world_whitebox_construction_town')
     }), publicBuildings } as WorldWhiteboxConstructionTown;
@@ -420,8 +426,15 @@ export function materializeWorldWhiteboxConstruction(
     }
     return [{ id: settlement.id, name: authored.name, prompt: settlement.role,
       center: [...anchor.position] as Point, radius, blend: minimumBlend, foundation: Math.max(2, terrain.height),
-      terrainMode: 'conform' as const, ports, ...(targetWaterBodyId ? { targetWaterBodyId } : {}) }];
+      terrainMode: 'conform' as const, ports, ...(targetWaterBodyId ? { targetWaterBodyId } : {}),
+      ...(authored.population === undefined ? {} : { population: authored.population }) }];
   });
+  for (let left = 0; left < constructedTowns.length; left++) for (let right = left + 1; right < constructedTowns.length; right++) {
+    const a = constructedTowns[left], b = constructedTowns[right];
+    if (Math.hypot(a.center[0] - b.center[0], a.center[1] - b.center[1]) < Math.max(a.radius, b.radius)) {
+      issue('world', `possible_settlement_district_split:${a.id}:${b.id}`);
+    }
+  }
   const roads = [...source.mobilityPlan!.routes.map(route => {
     const path = paths.get(route.pathId)!;
     const width = Math.min(64, Math.max(2, path.width));
