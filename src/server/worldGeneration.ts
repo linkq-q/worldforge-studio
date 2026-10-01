@@ -11,7 +11,8 @@ import { findWorldRoute, findWorldSiteCandidates,
   type WorldSiteCandidate, type WorldSiteIntent } from '../shared/worldSiting';
 import { createPlannedWorldTerrainContext, deriveWorldRouteConstruction, validateWorldPlan, validateWorldBundle, worldRoadSampleSpacing,
   type TownBuilding, type TownIntent, type TownPatch, type WorldBundle, type WorldPlan } from '../shared/worldPlanning';
-import { auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, resolveWorldSettlementLandmarks,
+import { auditWorldSettlement, createWorldSettlementLandmarkLayout, createWorldSettlementPartialLandmarkLayout,
+  generateWorldSettlement, resolveWorldSettlementLandmarks,
   type WorldLandmarkRequirement, type WorldSettlementKind, type WorldSettlementOptions } from '../shared/worldSettlement';
 import { generateModel, llmChat, type ChatMessage } from './modelApi';
 import { generateMapCodeSuggestion } from './mapCodePlanner';
@@ -973,9 +974,24 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
     const options:Omit<WorldSettlementOptions,'landmarks'>={kind:town.kind,pattern:town.pattern,density:town.density,
       ...(town.waterfrontBias===undefined?{}:{waterfrontBias:town.waterfrontBias})};
     try {
-      const patch=town.publicBuildings.length
-        ? createWorldSettlementLandmarkLayout(materialized.plan,town.id,sample,options,town.publicBuildings).patch
-        : generateWorldSettlement(materialized.plan,town.id,sample,options);
+      let patch:TownPatch;
+      if(town.publicBuildings.length) {
+        let layout;
+        try {
+          layout={...createWorldSettlementLandmarkLayout(
+            materialized.plan,town.id,sample,options,town.publicBuildings),unrealized:[]};
+        } catch(error) {
+          const reason=error instanceof Error?error.message:String(error);
+          if(!reason.startsWith('world_settlement_no_waterfront_site:')
+            &&!reason.startsWith('world_settlement_no_landmark_site:')) throw error;
+          layout=createWorldSettlementPartialLandmarkLayout(
+            materialized.plan,town.id,sample,options,town.publicBuildings);
+        }
+        patch=layout.patch;
+        for(const landmark of layout.unrealized) {
+          issue(town.id,`public_building_unrealized:${landmark.id}:${landmark.reason}`);
+        }
+      } else patch=generateWorldSettlement(materialized.plan,town.id,sample,options);
       patches.push(patch);
     } catch(error) {
       const reason=error instanceof Error?error.message:String(error);

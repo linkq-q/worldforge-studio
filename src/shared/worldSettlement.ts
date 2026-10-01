@@ -61,6 +61,8 @@ const MAX_LOCAL_EARTHWORK = 1.5;
 const LANDMARK_SITE_ATTEMPT_LIMIT = 24;
 const LANDMARK_LAYOUT_ATTEMPT_LIMIT = 192;
 const LANDMARK_CONFIGURATION_LIMIT = 50_000;
+const PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT = 4;
+const PARTIAL_LANDMARK_CONFIGURATION_LIMIT = 1_000;
 
 /**
  * Builds one deterministic TownPatch from the shared urban geometry kernel, then adapts it to sampled terrain.
@@ -297,6 +299,68 @@ export function createWorldSettlementLandmarkLayout(
   }
   const byId=new Map(landmarks.map(landmark=>[landmark.id,landmark]));
   return {landmarks:requirements.map(requirement=>byId.get(requirement.id)!),patch};
+}
+
+/** Keeps the best feasible subset found by one bounded deterministic layout search. */
+export function createWorldSettlementPartialLandmarkLayout(
+  plan: WorldPlan,
+  townId: string,
+  sample: WorldSettlementSampler,
+  options: Omit<WorldSettlementOptions,'landmarks'>,
+  requirements: readonly WorldLandmarkRequirement[]
+): {landmarks:TownBuilding[];patch:TownPatch;unrealized:Array<{id:string;reason:string}>} {
+  const town=plan.towns.find(item=>item.id===townId);
+  if(!town) throw new Error('world_settlement_unknown_town');
+  const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
+  const settings=normalizeOptions(options,town,task.seed);
+  const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
+  const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
+    ? authoredWaterfrontFrontage(plan,town,sample,settings):[];
+  const entries=requirements.map(requirement=>{
+    const {siting,...building}=requirement;
+    const sites=boundedLandmarkSites(frontageLandmarkSites(
+      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:[]));
+    return {requirement,sites};
+  }).sort((a,b)=>b.requirement.width*b.requirement.depth-a.requirement.width*a.requirement.depth
+    ||a.sites.length-b.sites.length
+    ||a.requirement.id.localeCompare(b.requirement.id));
+  const landmarks:TownBuilding[]=[];
+  let best={landmarks:[] as TownBuilding[],patch:base},attempts=0,searchSteps=0,searchLimited=false;
+  const search=(index:number):void=>{
+    if(searchLimited||best.landmarks.length===entries.length) return;
+    if(index===entries.length) {
+      if(landmarks.length<=best.landmarks.length) return;
+      if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {searchLimited=true;return;}
+      try {
+        const patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks});
+        best={landmarks:[...landmarks],patch};
+      } catch { /* Keep searching other sites and landmark subsets. */ }
+      return;
+    }
+    if(landmarks.length+entries.length-index<=best.landmarks.length) return;
+    // Search the omission branch first so a hard-to-site landmark cannot starve a larger feasible subset.
+    search(index+1);
+    for(const candidate of entries[index].sites) {
+      if(searchLimited||best.landmarks.length===entries.length) return;
+      if(!landmarks.every(landmark=>landmarkSitesCompatible(candidate,landmark))) continue;
+      if(searchSteps++>=PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {searchLimited=true;return;}
+      landmarks.push(candidate);
+      search(index+1);
+      landmarks.pop();
+    }
+  };
+  search(0);
+  const byId=new Map(best.landmarks.map(landmark=>[landmark.id,landmark]));
+  const entriesById=new Map(entries.map(entry=>[entry.requirement.id,entry]));
+  return {
+    landmarks:requirements.flatMap(requirement=>byId.get(requirement.id)??[]),patch:best.patch,
+    unrealized:requirements.filter(requirement=>!byId.has(requirement.id)).map(requirement=>({
+      id:requirement.id,
+      reason:entriesById.get(requirement.id)!.sites.length
+        ? searchLimited?'layout_search_limit':'no_compatible_landmark_layout'
+        : requirement.siting==='waterfront'?'no_waterfront_site':'no_landmark_site'
+    }))
+  };
 }
 
 function frontageLandmarkSites(

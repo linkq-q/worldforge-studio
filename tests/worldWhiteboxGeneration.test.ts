@@ -675,6 +675,60 @@ describe('whitebox world generation', () => {
     expect(result.bundle.patches[0].streets.some(street => street.tags.includes('port'))).toBe(true);
   });
 
+  it('keeps feasible public buildings when one authored waterfront landmark has no site', async () => {
+    const whiteboxPlan = buildablePlan();
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = [
+      { id: 'civic-market', use: 'market hall', width: 8, depth: 7, height: 7,
+        assetKey: 'civic-kit', siting: 'central' },
+      { id: 'fishing-cooperative', use: 'fishing cooperative', width: 8, depth: 6, height: 6,
+        assetKey: 'civic-kit', siting: 'waterfront' }
+    ];
+    expansion.assets = [{ key: 'civic-kit', name: 'Civic kit', role: 'landmark', prompt: 'Civic building', strategy: 'single' }];
+    const rawExpansion = JSON.stringify(expansion);
+    mocks.llmChat.mockResolvedValueOnce(rawExpansion);
+    mocks.generateModel.mockResolvedValueOnce({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: 'saved-civic-kit' })) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan, generateAssets: true,
+      assetGenerationLimit: 1, repairAttempts: 0 }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    const publicIds = result.bundle.patches[0].buildings.filter(building => building.assetKey === 'civic-kit')
+      .map(building => building.id);
+    expect(publicIds).toContain('civic-market');
+    expect(publicIds).not.toContain('fishing-cooperative');
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('public_building_unrealized:fishing-cooperative:no_waterfront_site');
+    expect(result.originalPlan).toEqual(whiteboxPlan);
+    expect(expansion.towns[0].publicBuildings).toHaveLength(2);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.whitebox.construction.raw', { content: rawExpansion });
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
+  }, 10_000);
+
+  it('keeps every authored public building when the complete landmark layout is feasible', async () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = [
+      { id: 'civic-school', use: 'school', width: 9, depth: 8, height: 6,
+        assetKey: 'civic-kit', siting: 'central' },
+      { id: 'civic-service-house', use: 'service house', width: 8, depth: 7, height: 6,
+        assetKey: 'civic-kit', siting: 'central' }
+    ];
+    expansion.assets = [{ key: 'civic-kit', name: 'Civic kit', role: 'landmark', prompt: 'Civic building', strategy: 'single' }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    mocks.generateModel.mockResolvedValueOnce({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
+    const store = { saveAsset: vi.fn(async (asset: unknown) => ({ ...(asset as object), id: 'saved-civic-kit' })) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
+      assetGenerationLimit: 1, repairAttempts: 0 }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+
+    expect(result.bundle.patches[0].buildings.filter(building => building.assetKey === 'civic-kit')
+      .map(building => building.id)).toEqual(['civic-school', 'civic-service-house']);
+    expect(result.diagnostics.flatMap(item => 'planningIssues' in item ? item.planningIssues ?? [] : [])
+      .filter(issue => issue.startsWith('public_building_unrealized:'))).toEqual([]);
+  }, 10_000);
+
   it('uses a Stage 2 population of 150 as the ordinary housing target', async () => {
     const expansion = constructionExpansion();
     expansion.towns[0].population = 150;
