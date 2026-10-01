@@ -19,7 +19,7 @@ import { generateMapCodeSuggestion } from './mapCodePlanner';
 import { createMapAssetGenerator } from './mapAssetGenerator';
 import { recordGenerationTrace } from './generationTrace';
 import { buildWorldArchitecturePrompt, WORLD_ARCHITECTURE_PROMPT_MAX_CHARS } from './worldArchitecturePrompt';
-import { generateWorldWhitebox, materializeWorldWhiteboxConstruction, validateWorldWhiteboxConstructionRequest,
+import { generateStagedWorldWhitebox, generateWorldWhitebox, materializeWorldWhiteboxConstruction, validateWorldWhiteboxConstructionRequest,
   WHITEBOX_CONSTRUCTION_PROMPT, type WorldWhiteboxConstructionRequest,
   type WorldWhiteboxConstructionTown } from './worldWhiteboxGeneration';
 import { selectUsedWorldAssetRequests } from './worldAssetScheduling';
@@ -1081,12 +1081,14 @@ function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGe
 
 async function generateCompleteWorld(input: unknown, store: MapStore, signal?: AbortSignal) {
   const request=validateCompleteWorldGenerationRequest(input);
-  const whitebox=await generateWorldWhitebox({mode:'whitebox',prompt:request.prompt,seed:request.seed,size:500,
+  const whitebox=await generateStagedWorldWhitebox({mode:'whitebox',prompt:request.prompt,seed:request.seed,size:500,
     generateAssets:false,repairAttempts:0},signal);
   const construction=await generateWorldFromWhitebox({mode:'construct-whitebox',whiteboxPlan:whitebox.finalPlan,
     generateAssets:request.generateAssets!==false,assetGenerationLimit:request.assetGenerationLimit,repairAttempts:0,
     ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})},store,signal);
   return {...construction,mode:'generate-complete' as const,
+    originalTerrainDraft:whitebox.originalTerrainDraft,terrainDraft:whitebox.terrainDraft,
+    terrainEvidence:whitebox.terrainEvidence,planningDiagnostics:whitebox.planningDiagnostics,
     originalPlan:whitebox.originalPlan,initialPlan:whitebox.initialPlan,observation:whitebox.observation,
     adjustment:whitebox.adjustment,finalPlan:whitebox.finalPlan,finalObservation:whitebox.finalObservation,
     paidCallCount:whitebox.paidCallCount+construction.paidCallCount};

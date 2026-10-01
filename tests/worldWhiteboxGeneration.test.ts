@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { auditWorldWhiteboxSettlementConstruction, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
-  materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan,
+  materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
 import { validateTownPatch, validateWorldPlan, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
+import { createWorldSampler, createWorldTerrainEvidence, validateWorldRecipe, type WorldRecipe } from '../src/shared/worldTerrain';
 
 const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
@@ -53,6 +54,64 @@ function originalPlan(): WorldPlan {
       { id: 'old-city', anchorId: 'ruins', purpose: 'Explore ruins' }],
       sequence: ['port', 'crossing', 'old-city'] },
     intentionalEmptyAreas: [{ id: 'quiet-crater', regionId: 'crater', purpose: 'A quiet volcanic ascent before the ruins' }]
+  };
+}
+
+function dryTerrainResponse(plan: WorldPlan): string {
+  const { waterBodies: _waterBodies, ...terrain } = plan.recipe;
+  return JSON.stringify({ terrain });
+}
+
+function spatialPlanResponse(plan: WorldPlan, extra: Record<string, unknown> = {}): string {
+  return JSON.stringify({ plan: {
+    id: plan.id,
+    waterBodies: plan.recipe.waterBodies ?? [],
+    concept: plan.concept,
+    featureGraph: plan.featureGraph,
+    settlementPlan: plan.settlementPlan,
+    mobilityPlan: plan.mobilityPlan,
+    explorationPlan: plan.explorationPlan,
+    intentionalEmptyAreas: plan.intentionalEmptyAreas,
+    ...extra
+  } });
+}
+
+function v3HawaiiDryTerrain(): WorldRecipe {
+  return {
+    version: 1, seed: 20261001, size: 500, reliefProfile: 'compact', heightScale: 0.035,
+    constraints: [
+      { region: 'west', biome: 'ocean' }, { region: 'east', biome: 'ocean' },
+      { region: 'north', biome: 'ocean' }, { region: 'south', biome: 'ocean' },
+      { region: 'center', biome: 'mountains' }
+    ],
+    landforms: [
+      { center: [0, 0], radius: [215, 205], height: 8 },
+      { center: [-55, 35], radius: [145, 110], height: 7 },
+      { center: [55, -35], radius: [125, 135], height: 15 },
+      { center: [78, -48], radius: [62, 68], height: 24 },
+      { center: [-92, -8], radius: [58, 95], height: 11 },
+      { center: [25, 92], radius: [90, 58], height: 5 }
+    ],
+    terrainBrushes: [
+      { id: 'caldera-crater', mode: 'crater', region: { kind: 'circle', center: [78, -48], radius: 48 },
+        depth: 14, rimHeight: 7, feather: 12 },
+      { id: 'harbour-terrace', mode: 'raise',
+        region: { kind: 'path', points: [[-190, 62], [-145, 47], [-105, 40], [-70, 35]], width: 48 },
+        amount: 2, feather: 14 },
+      { id: 'river-valley', mode: 'lower',
+        region: { kind: 'path', points: [[18, -122], [0, -92], [-18, -58], [-5, -25], [-48, 8], [-92, 38], [-137, 58]], width: 24 },
+        amount: 3.5, feather: 18 },
+      { id: 'ridge-walk', mode: 'raise',
+        region: { kind: 'path', points: [[-118, 46], [-82, 18], [-45, -18], [-2, -48], [42, -65], [78, -48]], width: 30 },
+        amount: 2.5, feather: 20 }
+    ],
+    biomePatches: [
+      { id: 'leeward-town-grass', region: { kind: 'path', points: [[-190, 62], [-150, 48], [-108, 40], [-72, 35]], width: 78 }, biome: 'grassland', feather: 16 },
+      { id: 'rainforest-gully', region: { kind: 'path', points: [[18, -116], [0, -86], [-14, -56], [-46, -18], [-88, 22], [-132, 54]], width: 62 }, biome: 'forest', feather: 20 },
+      { id: 'lava-slope', region: { kind: 'path', points: [[-14, -8], [25, -38], [67, -67], [112, -101]], width: 70 }, biome: 'mountains', feather: 12 },
+      { id: 'coastal-sand', region: { kind: 'path', points: [[-216, 76], [-182, 70], [-145, 66], [-112, 62]], width: 30 }, biome: 'grassland', feather: 10 },
+      { id: 'crater-interior', region: { kind: 'circle', center: [78, -48], radius: 34 }, biome: 'mountains', feather: 8 }
+    ]
   };
 }
 
@@ -225,9 +284,10 @@ describe('whitebox world generation', () => {
     });
   });
 
-  it('completes one 500m prompt in two first-pass GPT stages and at most three direct DeepSeek calls', async () => {
+  it('completes one 500m prompt in three first-pass GPT stages and at most three direct DeepSeek calls', async () => {
     const plan = buildablePlan();
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+    mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
+      .mockResolvedValueOnce(spatialPlanResponse(plan))
       .mockResolvedValueOnce(JSON.stringify(constructionExpansion(3)));
     mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
     let id = 0;
@@ -237,15 +297,20 @@ describe('whitebox world generation', () => {
       size: 500, generateAssets: true, repairAttempts: 0 }, store);
 
     if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
-      .toEqual(['world.whitebox.initial-plan', 'world.whitebox.construction']);
+      .toEqual(['world.whitebox.terrain-plan', 'world.whitebox.spatial-plan', 'world.whitebox.construction']);
     expect(mocks.llmChat.mock.calls.every(([, options]) => options.provider === 'gpt' && options.maxAttempts === 1)).toBe(true);
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('do not rename a biome-specific asset');
-    expect(JSON.parse(mocks.llmChat.mock.calls[1][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
+    const spatialInput = JSON.parse(mocks.llmChat.mock.calls[1][0][1].content);
+    expect(spatialInput.dryTerrain).toEqual(plan.recipe);
+    expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
+    expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
+    expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel.mock.calls.every(([, options]) => options.providers?.join() === 'deepseek')).toBe(true);
-    expect(result.paidCallCount).toBe(5);
+    expect(result.paidCallCount).toBe(6);
+    expect(result.originalTerrainDraft).toEqual(plan.recipe);
+    expect(result.originalPlan).toEqual(JSON.parse(spatialPlanResponse(plan)).plan);
     expect(result.initialPlan).toEqual(result.finalPlan);
     expect(result.adjustment).toEqual({ decision: 'keep', applied: false, skipped: true,
       reason: 'raw_first_call_preserved' });
@@ -253,21 +318,23 @@ describe('whitebox world generation', () => {
 
   it('honours disabled asset generation in the complete flow', async () => {
     const plan = buildablePlan();
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+    mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
+      .mockResolvedValueOnce(spatialPlanResponse(plan))
       .mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
 
     const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
       size: 500, generateAssets: false, repairAttempts: 0 }, {} as MapStore);
 
     if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel).not.toHaveBeenCalled();
-    expect(result.paidCallCount).toBe(2);
+    expect(result.paidCallCount).toBe(3);
   });
 
   it('honours a smaller complete-flow DeepSeek budget without a repair pass', async () => {
     const plan = buildablePlan();
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+    mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
+      .mockResolvedValueOnce(spatialPlanResponse(plan))
       .mockResolvedValueOnce(JSON.stringify(constructionExpansion(2)));
     mocks.generateModel.mockResolvedValue({ format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {} } }] });
     let id = 0;
@@ -277,21 +344,69 @@ describe('whitebox world generation', () => {
       size: 500, generateAssets: true, assetGenerationLimit: 2, repairAttempts: 0 }, store);
 
     if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel).toHaveBeenCalledTimes(2);
-    expect(result.paidCallCount).toBe(4);
+    expect(result.paidCallCount).toBe(5);
   });
 
   it('rejects a fourth complete-flow asset before any DeepSeek call', async () => {
     const plan = buildablePlan();
-    mocks.llmChat.mockResolvedValueOnce(JSON.stringify({ plan }))
+    mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
+      .mockResolvedValueOnce(spatialPlanResponse(plan))
       .mockResolvedValueOnce(JSON.stringify(constructionExpansion(4)));
 
     await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
       size: 500, generateAssets: true, repairAttempts: 0 }, {} as MapStore))
       .rejects.toThrow('world_whitebox_asset_generation_limit');
-    expect(mocks.llmChat).toHaveBeenCalledTimes(2);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('samples deterministic compact dry-terrain evidence including a coast that crosses the map boundary', () => {
+    const plan = originalPlan();
+    const evidence = createWorldTerrainEvidence(validateWorldRecipe(plan.recipe));
+    expect(evidence).toEqual(createWorldTerrainEvidence(plan.recipe));
+    expect(evidence.resolution).toBe(21);
+    expect(evidence.samples).toHaveLength(21);
+    expect(evidence.samples.every(row => row.length === 21
+      && row.every(([height, slope]) => Number.isInteger(height) && Number.isInteger(slope)))).toBe(true);
+    expect(evidence.boundaryCrossings.length).toBeGreaterThan(0);
+  });
+
+  it('exposes the v3 river source, intervening rise and sea outlet before spatial planning', () => {
+    const recipe = validateWorldRecipe(v3HawaiiDryTerrain());
+    const sample = createWorldSampler(recipe);
+    const river = [[18, -118], [8, -96], [-12, -77], [-4, -53], [-22, -34],
+      [-48, -13], [-63, 10], [-91, 29], [-122, 46], [-151, 61]] as Array<[number, number]>;
+    const heights = river.map(([x, z]) => sample(x, z).height);
+    expect(heights[0]).toBeCloseTo(1.18, 2);
+    expect(Math.max(...heights)).toBeCloseTo(17.09, 2);
+    expect(heights.at(-1)).toBeCloseTo(-2.01, 2);
+    const evidence = createWorldTerrainEvidence(recipe);
+    const sourceColumn = Math.round((18 - evidence.origin[0]) / evidence.step);
+    const sourceRow = Math.round((-118 - evidence.origin[1]) / evidence.step);
+    const gridX = evidence.origin[0] + sourceColumn * evidence.step;
+    const gridZ = evidence.origin[1] + sourceRow * evidence.step;
+    expect(evidence.samples[sourceRow][sourceColumn][0] * evidence.heightUnit)
+      .toBeCloseTo(sample(gridX, gridZ).height, 1);
+    expect(evidence.shoreline.flat().some(([x, z]) => Math.hypot(x + 151, z - 61) < evidence.step * 2)).toBe(true);
+  });
+
+  it('composes the spatial plan onto the exact dry terrain and rejects terrain fields from Stage 2', () => {
+    const source = originalPlan();
+    source.recipe.heightScale = 0.08;
+    source.recipe.terrainBrushes = [{ id: 'dry-ridge', mode: 'raise',
+      region: { kind: 'path', points: [[-80, -40], [20, -80]], width: 18 }, amount: 6, feather: 12 }];
+    source.recipe.biomePatches = [{ id: 'ridge-snow',
+      region: { kind: 'circle', center: [0, -125], radius: 35 }, biome: 'snow', feather: 10 }];
+    const dryRecipe = validateWorldRecipe(source.recipe);
+    dryRecipe.constraints.sort((a, b) => a.region.localeCompare(b.region));
+    const result = parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source), request, dryRecipe);
+    const { waterBodies: _waterBodies, ...actualDryTerrain } = result.plan.recipe;
+    expect(actualDryTerrain).toEqual(dryRecipe);
+    expect(result.rawPlan).toEqual(JSON.parse(spatialPlanResponse(source)).plan);
+    expect(() => parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source, { recipe: dryRecipe }), request, dryRecipe))
+      .toThrow('world_unknown_staged_spatial_field:recipe');
   });
 
   it('keeps complete generation fixed at 500m with zero repair attempts', async () => {

@@ -14,6 +14,7 @@ import {
   type RiverPathSample
 } from './mapWater';
 import type { MapWaterBody } from './map';
+import { extractCoastLoops } from './oceanCoast';
 export const WORLD_MIN_SIZE = 500;
 export const WORLD_BIOMES = ['ocean', 'grassland', 'forest', 'desert', 'mountains', 'snow'] as const;
 export type WorldBiome = typeof WORLD_BIOMES[number];
@@ -86,6 +87,21 @@ export interface WorldSample {
   waterBodyId: string | null;
 }
 export type WorldSampler = (x: number, z: number) => WorldSample;
+export interface WorldTerrainEvidence {
+  version: 1;
+  resolution: 21;
+  origin: [number, number];
+  step: number;
+  heightUnit: 0.1;
+  slopeUnit: 1;
+  /** Rows run north to south and columns west to east; each value is [height, slope] in the units above. */
+  samples: Array<Array<[number, number]>>;
+  /** Interpolated sea-level loops in world metres. */
+  shoreline: Array<Array<[number, number]>>;
+  /** Sea-level contour endpoints where an open coast reaches the sampled world boundary. */
+  boundaryCrossings: Array<[number, number]>;
+  heightRange: [number, number];
+}
 export interface WorldTile { x: number; z: number; size: number }
 export interface WorldTileData {
   heights: Float32Array;
@@ -337,6 +353,44 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
     });
   }
   return recipe;
+}
+
+/** Compact deterministic observations of an authored dry terrain recipe. */
+export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvidence {
+  const recipe = validateWorldRecipe(input);
+  if (recipe.waterBodies?.length) throw new Error('world_terrain_evidence_requires_dry_recipe');
+  const resolution = 21, bound = recipe.size / 2, step = recipe.size / (resolution - 1);
+  const sample = createWorldSampler(recipe);
+  const heights = Array.from({ length: resolution }, (_, row) => Array.from({ length: resolution }, (_, column) =>
+    sample(-bound + column * step, -bound + row * step).height));
+  const samples = heights.map((row, z) => row.map((height, x): [number, number] => {
+    const px = -bound + x * step, pz = -bound + z * step;
+    return [Math.round(height * 10), Math.round(Math.atan(sampleWorldSlope(sample, px, pz)) * 180 / Math.PI)];
+  }));
+  const shoreline = extractCoastLoops({ heights: heights.flat(), width: resolution, depth: resolution,
+    minX: -bound, minZ: -bound, stepX: step, stepZ: step }, 0)
+    .map(loop => loop.map(([x, z]): [number, number] => [Math.round(x * 10) / 10 || 0, Math.round(z * 10) / 10 || 0]));
+  const boundaryCrossings: Array<[number, number]> = [], seen = new Set<string>();
+  const boundaryCrossing = (ax: number, az: number, ah: number, bx: number, bz: number, bh: number) => {
+    if ((ah > 0) === (bh > 0)) return;
+    const amount = ah / (ah - bh), point: [number, number] = [
+      Math.round((ax + (bx - ax) * amount) * 10) / 10 || 0,
+      Math.round((az + (bz - az) * amount) * 10) / 10 || 0
+    ];
+    const key = point.join(',');
+    if (!seen.has(key)) { seen.add(key); boundaryCrossings.push(point); }
+  };
+  for (let index = 0; index < resolution - 1; index++) {
+    const offset = -bound + index * step;
+    boundaryCrossing(offset, -bound, heights[0][index], offset + step, -bound, heights[0][index + 1]);
+    boundaryCrossing(offset, bound, heights.at(-1)![index], offset + step, bound, heights.at(-1)![index + 1]);
+    boundaryCrossing(-bound, offset, heights[index][0], -bound, offset + step, heights[index + 1][0]);
+    boundaryCrossing(bound, offset, heights[index].at(-1)!, bound, offset + step, heights[index + 1].at(-1)!);
+  }
+  const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
+  return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
+    samples, shoreline, boundaryCrossings,
+    heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
 }
 
 const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
