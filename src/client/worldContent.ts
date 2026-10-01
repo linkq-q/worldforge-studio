@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { WorldRecipe, WorldSample } from '../shared/worldTerrain';
 import { ECOLOGY_CHUNK_SIZE, selectEcologyChunks, type EcologyRule, type EcologyInstance } from '../shared/worldEcology';
-import { worldRoadSampleSpacing, type WorldBundle } from '../shared/worldPlanning';
+import { worldRoadPolyline, worldRoadSampleSpacing, type WorldBundle } from '../shared/worldPlanning';
 import type { MapGuide } from '../shared/mapGuide';
 import {
   buildWorldAssetBuildingPlacements, buildWorldAssetBuildings, pickWorldAsset, pickWorldEcologyAsset,
@@ -188,7 +188,7 @@ export function worldHarborQuayExtension(
   road: MapGuide, sample: (x: number, z: number) => WorldSample, worldSize: number
 ): WorldHarborQuayExtension | undefined {
   if (road.closed || !road.tags.includes('harbor-quay') || road.points.length < 2) return undefined;
-  const from=road.points.at(-1)!,previous=road.points.at(-2)!,dx=from[0]-previous[0],dz=from[1]-previous[1];
+  const points=worldRoadPolyline(road),from=points.at(-1)!,previous=points.at(-2)!,dx=from[0]-previous[0],dz=from[1]-previous[1];
   const length=Math.hypot(dx,dz);if(length<1e-6)return undefined;
   const direction:[number,number]=[dx/length,dz/length],half=worldSize/2,step=2;
   const overWater=Math.max(8,road.width*1.5),maxReach=32+overWater;
@@ -230,7 +230,7 @@ export function buildWorldRoadChunk(
   const ordinary=new THREE.Color('#a78d67'),quay=new THREE.Color('#6b5038');
   for (const road of roads) {
     const extension=worldHarborQuayExtension(road,sample,worldSize);
-    const points = road.closed ? [...road.points, road.points[0]] : extension?[...road.points,extension.to]:road.points;
+    const centerline=worldRoadPolyline(road),points=extension?[...centerline,extension.to]:centerline;
     for (let i = 1; i < points.length; i++) {
       const pad = road.width / 2;
       const clipped = clipSegment(points[i - 1], points[i], minX - pad, minZ - pad, maxX + pad, maxZ + pad);
@@ -239,7 +239,7 @@ export function buildWorldRoadChunk(
       if (length < 1e-6) continue;
       const steps = Math.max(1, Math.ceil(length / spacing)), offsetX = (bz - az) / length * pad, offsetZ = (ax - bx) / length * pad;
       const start = positions.length / 3;
-      const deck=extension&&i===road.points.length?extension:undefined,color=extension?quay:ordinary;
+      const deck=extension&&i===centerline.length?extension:undefined,color=extension?quay:ordinary;
       for (let step = 0; step <= steps; step++) {
         const x = ax + (bx - ax) * step / steps, z = az + (bz - az) * step / steps;
         for (const sign of [-1, 1]) {
@@ -392,7 +392,7 @@ export function buildWorldStructures(bundle: WorldBundle, sample: (x: number, z:
   const positions: number[] = [], indices: number[] = [];
   const spacing = worldRoadSampleSpacing(bundle.plan.recipe.size), lift = bundle.plan.recipe.size < 2000 ? 0.12 : 1.2;
   for (const road of roads) {
-    const points = road.closed ? [...road.points,road.points[0]] : road.points;
+    const points = worldRoadPolyline(road);
     for (let i = 1; i < points.length; i++) {
     const [ax,az] = points[i-1], [bx,bz] = points[i];
     const length = Math.hypot(bx-ax,bz-az);

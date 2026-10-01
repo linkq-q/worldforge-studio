@@ -3,7 +3,8 @@ import type { MapGuide } from '../src/shared/mapGuide';
 import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
 import {
   buildingsOverlap, createPlannedWorldSampler, createTownTasks, createWorldExclusion, createWorldEcologyDensity, mergeTownPatch,
-  observeWorldWhitebox, validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldTownBuildingQuota,
+  observeWorldWhitebox, validateTownPatch, validateWorldBundle, validateWorldPlan, worldPlanKey, worldRoadPolyline,
+  worldTownBuildingQuota,
   type TownPatch, type WorldBundle, type WorldPlan
 } from '../src/shared/worldPlanning';
 
@@ -212,13 +213,12 @@ describe('hierarchical world planning contracts', () => {
     invalid(p => { p.towns[1].id = p.towns[0].id; }, 'world_duplicate_id');
   });
 
-  it('rejects unsupported smoothing curves and mismatched road/port contracts', () => {
+  it('rejects mismatched road and port contracts', () => {
     for (const [edit, error] of [
       [(p: WorldPlan) => { p.towns[0].ports[0].position = [100, 0]; }, 'world_port_not_on_core_boundary'],
       [(p: WorldPlan) => { p.roads[0].points[0][0] += 1; }, 'world_port_endpoint_mismatch'],
       [(p: WorldPlan) => { p.towns[0].ports[0].width = 12; }, 'world_port_width_mismatch'],
-      [(p: WorldPlan) => { p.towns[0].ports[0].guideId = 'missing'; }, 'world_port_unknown_road'],
-      [(p: WorldPlan) => { p.roads[0].curve = 'catmull-rom'; }, 'world_polyline_required']
+      [(p: WorldPlan) => { p.towns[0].ports[0].guideId = 'missing'; }, 'world_port_unknown_road']
     ] as const) {
       const plan = fixture(); edit(plan); expect(() => validateWorldPlan(plan)).toThrow(error);
     }
@@ -264,6 +264,21 @@ describe('hierarchical world planning contracts', () => {
     const connected = patch(plan, 0);
     connected.streets.push(road('connected', [[-100, 100], [0, 100]]));
     expect(validateTownPatch(plan, connected).streets).toHaveLength(2);
+  });
+
+  it('accepts bounded Catmull-Rom roads and samples their actual curve for water', () => {
+    const controlPoints:Array<[number,number]>=[[-100,0],[-30,70],[30,-70],[100,0]];
+    const curved=road('curved-road',controlPoints,2);curved.curve='catmull-rom';
+    const sampled=worldRoadPolyline(curved);
+    expect(sampled.length).toBeGreaterThan(controlPoints.length);
+    expect(sampled.length).toBeLessThanOrEqual(512);
+    const curveOnly:[number,number]=[55.18518518518518,-59.62962962962963];
+    const recipe:WorldRecipe={version:1,seed:42,size:500,heightScale:.02,constraints:[{region:'center',biome:'grassland'}],
+      waterBodies:[{id:'curve-lake',type:'lake',region:{kind:'circle',center:curveOnly,radius:3},levels:[150],depth:4}]};
+    const plan:WorldPlan={version:1,id:'curved-water-road',revision:1,prompt:'A curved road around water',recipe,
+      ecology:[],towns:[],roads:[curved]};
+    expect(()=>validateWorldPlan(plan)).toThrow('world_road_crosses_water');
+    expect(validateWorldPlan({...plan,roads:[{...curved,curve:'polyline'}]}).roads[0].curve).toBe('polyline');
   });
 
   it('rejects buildings outside their core, overlaps and exact segment collisions without sparse sampling', () => {

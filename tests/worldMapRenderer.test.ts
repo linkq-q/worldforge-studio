@@ -77,6 +77,29 @@ describe('main editor streamed world renderer', () => {
     expect((path.material as THREE.LineBasicMaterial).depthTest).toBe(false);
   });
 
+  it('renders an explicitly curved whitebox path through its sampled centerline', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.featureGraph = {
+      regions: [],
+      paths: [{ id: 'curved-route', kind: 'trail', name: 'Curved route',
+        points: [[-20, 0], [0, 20], [20, 0]], curve: 'catmull-rom', width: 3 }],
+      anchors: [], relations: []
+    };
+    const overlay = buildWorldWhiteboxOverlay(plan, () => ({ height: 2 }));
+    const path = overlay.getObjectByName('world-whitebox-path:curved-route') as THREE.Line;
+    const positions = path.geometry.getAttribute('position');
+    const centerline = Array.from({ length: positions.count }, (_, index) =>
+      [positions.getX(index), positions.getZ(index)] as [number, number]);
+    const distanceToSegment = (point: [number, number], a: [number, number], b: [number, number]) => {
+      const dx=b[0]-a[0],dz=b[1]-a[1],length2=dx*dx+dz*dz;
+      const t=Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dz)/length2));
+      return Math.hypot(point[0]-a[0]-dx*t,point[1]-a[1]-dz*t);
+    };
+    expect(centerline.some(point => Math.min(distanceToSegment(point,[-20,0],[0,20]),
+      distanceToSegment(point,[0,20],[20,0]))>.25)).toBe(true);
+  });
+
   it('does not extend a semantic river line past the rendered river mouth', () => {
     const plan = structuredClone(smallBundle.plan);
     plan.whitebox = true;

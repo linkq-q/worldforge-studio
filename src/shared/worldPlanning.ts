@@ -1,4 +1,4 @@
-import type { MapGuide } from './mapGuide';
+import { mapGuidePolyline, type MapGuide, type MapGuideCurve } from './mapGuide';
 import { validateEcologyRules, type EcologyRule } from './worldEcology';
 import { createWorldSampler, createWorldTerrainContext, validateWorldRecipe,
   type WorldRecipe, type WorldSampler, type WorldTerrainContext } from './worldTerrain';
@@ -23,7 +23,7 @@ export interface WorldPlan {
 }
 export interface WorldConcept { premise: string; themes: string[]; experience: string }
 export interface FeatureRegion { id: string; kind: string; name: string; center: Point; radius: number }
-export interface FeaturePath { id: string; kind: string; name: string; points: Point[]; width: number }
+export interface FeaturePath { id: string; kind: string; name: string; points: Point[]; curve?: MapGuideCurve; width: number }
 export interface FeatureAnchor { id: string; kind: string; position: Point; regionId: string }
 export interface FeatureRelation { fromId: string; toId: string; kind: string }
 export interface FeatureGraph {
@@ -43,7 +43,7 @@ export type IntentionalEmptyAreas = IntentionalEmptyArea[];
 export type WorldPosition = [number, number, number];
 export interface WorldWhiteboxExecution {
   pointsOfInterest?: Array<{ id: string; position: WorldPosition }>;
-  paths?: Array<{ id: string; points: Point[] }>;
+  paths?: Array<{ id: string; points: Point[]; curve?: MapGuideCurve }>;
 }
 export interface WorldWhiteboxObservation {
   scope: 'planned' | 'executed';
@@ -94,6 +94,7 @@ export interface WorldBundle { plan: WorldPlan; patches: TownPatch[] }
 
 export const WORLD_ROAD_SAMPLE_SPACING = 24;
 export const WORLD_ROAD_VERTEX_BUDGET = 32768;
+export const WORLD_ROAD_CURVE_POINT_LIMIT = 512;
 export const worldRoadSampleSpacing = (size: number) => Math.min(WORLD_ROAD_SAMPLE_SPACING, size / 250);
 
 export type Point = [number, number];
@@ -138,22 +139,27 @@ function unique(ids: string[], code = 'world_duplicate_id'): void {
 function samePoint(a: Point, b: Point): boolean {
   return Math.hypot(a[0] - b[0], a[1] - b[1]) <= TOLERANCE;
 }
+export function worldRoadPolyline(guide: MapGuide): Point[] {
+  return mapGuidePolyline(guide, WORLD_ROAD_CURVE_POINT_LIMIT);
+}
+export function worldFeaturePathPolyline(path: FeaturePath): Point[] {
+  return worldRoadPolyline({ ...path, curve: path.curve ?? 'polyline', closed: false, tags: [] });
+}
 function segments(guide: MapGuide): Array<[Point, Point]> {
-  const result: Array<[Point, Point]> = guide.points.slice(1).map((p, i) => [guide.points[i], p]);
-  if (guide.closed) result.push([guide.points[guide.points.length - 1], guide.points[0]]);
-  return result;
+  const points = worldRoadPolyline(guide);
+  return points.slice(1).map((p, i) => [points[i], p]);
 }
 function guide(input: unknown, bound: number): MapGuide {
   const raw = record(input, 'world_invalid_guide');
   keys(raw, ['id', 'name', 'points', 'curve', 'closed', 'width', 'tags', 'generation'], 'world_unknown_guide_field');
-  if (raw.curve !== 'polyline' || typeof raw.closed !== 'boolean') fail('world_polyline_required');
+  if ((raw.curve !== 'polyline' && raw.curve !== 'catmull-rom') || typeof raw.closed !== 'boolean') fail('world_curve_required');
   const points = list(raw.points, raw.closed ? 64 : 65, 'world_guide_segment_quota')
     .map(value => point(value, bound, 'world_guide_outside'));
   if (points.length < 2) fail('world_guide_needs_points');
   const result: MapGuide = {
     id: text(raw.id, 'world_invalid_guide_id'),
     name: text(raw.name, 'world_invalid_guide_name', 160),
-    points, curve: 'polyline', closed: raw.closed,
+    points, curve: raw.curve, closed: raw.closed,
     width: number(raw.width, 2, 64, 'world_invalid_guide_width'),
     tags: list(raw.tags, 16, 'world_invalid_guide_tags').map(value => text(value, 'world_invalid_guide_tag', 64)).sort()
   };
@@ -200,13 +206,16 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     }).sort(byId);
     const paths = list(value.paths, 64, 'world_feature_path_quota').map(item => {
       const path = record(item, 'world_invalid_feature_path');
-      keys(path, ['id', 'kind', 'name', 'points', 'width'], 'world_unknown_feature_path_field');
+      keys(path, ['id', 'kind', 'name', 'points', 'curve', 'width'], 'world_unknown_feature_path_field');
       const points = list(path.points, 256, 'world_feature_path_point_quota')
         .map(item => point(item, bound, 'world_feature_outside'));
       if (points.length < 2) fail('world_feature_path_needs_points');
+      const curve = path.curve;
+      if (curve !== undefined && curve !== 'polyline' && curve !== 'catmull-rom') fail('world_invalid_feature_path_curve');
       return { id: safeId(path.id, 'world_invalid_feature_id'), kind: semanticText(path.kind, 'world_invalid_feature_kind'),
         name: semanticText(path.name, 'world_invalid_feature_name'), points,
-        width: number(path.width, 0.1, 256, 'world_invalid_feature_path_width') };
+        ...(curve === undefined ? {} : { curve }),
+        width: number(path.width, 0.1, 256, 'world_invalid_feature_path_width') } satisfies FeaturePath;
     }).sort(byId);
     const anchors = list(value.anchors, 128, 'world_feature_anchor_quota').map(item => {
       const anchor = record(item, 'world_invalid_feature_anchor');
@@ -465,14 +474,21 @@ export function observeWorldWhitebox(plan: WorldPlan, execution?: WorldWhiteboxE
   const executedPathEntries = (execution?.paths ?? []).map(item => {
     const authored = authoredPaths.get(item.id);
     if (!authored) fail('world_unknown_executed_path');
+    if (item.curve !== undefined && item.curve !== 'polyline' && item.curve !== 'catmull-rom') {
+      fail('world_invalid_executed_path_curve');
+    }
     const points = list(item.points, 256, 'world_executed_path_point_quota').map(value => point(value, bound, 'world_executed_path_outside'));
     if (points.length < 2) fail('world_executed_path_needs_points');
-    return [item.id, { ...authored, points }] as const;
+    return [item.id, { ...authored, points, curve: item.curve ?? authored.curve }] as const;
   });
   unique(executedPathEntries.map(([id]) => id), 'world_duplicate_executed_path');
   const executedPaths = new Map(executedPathEntries);
   const observedPaths = execution?.paths === undefined ? graph.paths : [...executedPaths.values()].sort(byId);
-  const pathSegments = observedPaths.flatMap(path => path.points.slice(1).map((to, index) => ({ pathId: path.id, from: path.points[index], to })));
+  const observedGeometry = new Map(observedPaths.map(path => [path.id, worldFeaturePathPolyline(path)]));
+  // Keep topology bounded by the authored control-point quota. Dense curve samples
+  // are reserved for geometry-sensitive distance, terrain, and water observations.
+  const pathSegments = observedPaths.flatMap(path => path.points.slice(1)
+    .map((to, index) => ({ pathId: path.id, from: path.points[index], to })));
   const intersections = new Map<string, Set<string>>();
   const pathLinks = new Map(observedPaths.map(path => [path.id, new Set<string>()]));
   for (let i = 0; i < pathSegments.length; i++) for (let j = i + 1; j < pathSegments.length; j++) {
@@ -512,7 +528,7 @@ export function observeWorldWhitebox(plan: WorldPlan, execution?: WorldWhiteboxE
     : poiItems.map(item => item.plannedPosition);
   const routes = (checked.mobilityPlan?.routes ?? []).map(route => {
     const path = (execution?.paths === undefined ? authoredPaths : executedPaths).get(route.pathId);
-    const points = path?.points ?? [], length = points.length > 1 ? polylineLength(points) : 0;
+    const points = path ? worldFeaturePathPolyline(path) : [], length = points.length > 1 ? polylineLength(points) : 0;
     const contentDistances = plannedPois.filter(poi => route.connects.includes(poi.anchorId))
       .filter(poi => !execution || realizedPois.has(poi.id))
       .map(poi => execution ? realizedPois.get(poi.id)! : anchors.get(poi.anchorId)!.position)
@@ -524,7 +540,8 @@ export function observeWorldWhitebox(plan: WorldPlan, execution?: WorldWhiteboxE
       longestContentFreeStretch: stops.slice(1).reduce((longest, stop, index) => Math.max(longest, stop - stops[index]), 0) };
   });
   const lengthByType: Record<string, number> = {};
-  for (const path of observedPaths) lengthByType[path.kind] = (lengthByType[path.kind] ?? 0) + polylineLength(path.points);
+  for (const path of observedPaths) lengthByType[path.kind] = (lengthByType[path.kind] ?? 0)
+    + polylineLength(observedGeometry.get(path.id)!);
   const contentRegionIds = new Set((execution ? plannedPois.filter(poi => realizedPois.has(poi.id)) : plannedPois)
     .map(poi => anchors.get(poi.anchorId)!.regionId));
   const intentionalByRegion = new Map((checked.intentionalEmptyAreas ?? []).map(area => [area.regionId, area]));
@@ -748,7 +765,7 @@ function conformSampler(base: WorldSampler, plan: WorldPlan, patches: TownPatch[
     const town = plan.towns.find(candidate => candidate.id === patch.townId)!;
     if ((town.terrainMode ?? 'platform') !== 'conform') continue;
     for (const street of patch.streets) {
-      const points = street.points.map(point => [point[0] + town.center[0], point[1] + town.center[1]] as Point);
+      const points = worldRoadPolyline(street).map(point => [point[0] + town.center[0], point[1] + town.center[1]] as Point);
       grades.push({ points, heights: points.map(point => shapedBase(point[0], point[1]).height), width: street.width });
     }
     for (const building of patch.buildings) {

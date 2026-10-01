@@ -11,7 +11,8 @@ import { createDefaultMapLayout } from '../shared/mapLayout';
 import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag } from '../shared/visualDirection';
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
-import { createWorldEcologyDensity, createWorldExclusion, type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
+import { createWorldEcologyDensity, createWorldExclusion, worldFeaturePathPolyline, worldRoadPolyline,
+  type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import type { ColorPalette } from '../shared/colorPalette';
@@ -117,9 +118,10 @@ export function buildWorldWhiteboxOverlay(
     if (renderedRiver) continue;
     const color = waterPath ? 0x468ff2
       : /trail|foot|hike/i.test(path.kind) ? 0xf6b46c : 0x35d7ff;
+    const centerline = worldFeaturePathPolyline(path);
     const points: THREE.Vector3[] = [];
-    for (let index = 1; index < path.points.length; index++) {
-      const from = path.points[index - 1], to = path.points[index];
+    for (let index = 1; index < centerline.length; index++) {
+      const from = centerline[index - 1], to = centerline[index];
       const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / 6));
       for (let step = index === 1 ? 0 : 1; step <= steps; step++) {
         const t = step / steps, x = from[0] + (to[0] - from[0]) * t, z = from[1] + (to[1] - from[1]) * t;
@@ -305,6 +307,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   validateWorldAssets(map, bindingsByKey, bindingsByRole, assetsById);
   const buildings = globalBuildings(bundle);
   const roads = globalRoads(bundle);
+  const roadPolylines = new Map(roads.map(road => [road.id, worldRoadPolyline(road)] as const));
   const manualObjectTrees = groupManualObjectTrees(map);
   const ecologyCache = new Map<string, EcologyInstance[]>();
   const exclusion = createWorldExclusion(bundle.plan, bundle.patches);
@@ -828,7 +831,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const centerZ = tile.z + tile.size / 2;
     const result: SceneVisualZone[] = [];
     for (const road of roads) {
-      const points = road.closed ? [...road.points, road.points[0]] : road.points;
+      const points = roadPolylines.get(road.id)!;
       const fragments = clipPolylineToRect(points, tile.x, tile.z, tile.x + tile.size, tile.z + tile.size, Boolean(road.closed));
       fragments.forEach((fragment, index) => {
         const local = fragment.points.map(([x, z]) => [x - centerX, z - centerZ] as [number, number]);

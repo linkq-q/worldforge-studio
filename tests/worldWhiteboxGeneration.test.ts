@@ -326,10 +326,12 @@ describe('whitebox world generation', () => {
 
   it('samples creative terrain without applying density or realism gates', () => {
     const plan = originalPlan();
+    plan.featureGraph!.paths[0].curve = 'catmull-rom';
     plan.explorationPlan!.pointsOfInterest = [];
     plan.explorationPlan!.sequence = [];
     const result = executeWorldWhitebox(plan);
     expect(result.execution.pointsOfInterest).toEqual([]);
+    expect(result.execution.paths?.find(path => path.id === 'harbor-road')?.curve).toBe('catmull-rom');
     expect(result.surfaceFacts.heightRange.every(Number.isFinite)).toBe(true);
   });
 
@@ -363,6 +365,21 @@ describe('whitebox world generation', () => {
     }
     expect(result.plan.featureGraph).toEqual(whiteboxPlan.featureGraph);
     expect(result.plan.recipe).toEqual(whiteboxPlan.recipe);
+    expect(result.plan.roads.find(road => road.id === 'arrival-route')?.curve).toBe('polyline');
+  });
+
+  it('preserves an explicitly authored curved whitebox route through construction', () => {
+    const source = buildablePlan();
+    source.featureGraph!.paths[0].curve = 'catmull-rom';
+    const whiteboxPlan = validateWorldPlan(source);
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan, generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+
+    expect(result.plan.featureGraph!.paths[0].curve).toBe('catmull-rom');
+    expect(result.plan.roads.find(road => road.id === 'arrival-route')?.curve).toBe('catmull-rom');
+    expect(result.plan.roads.find(road => road.id === 'arrival-route')?.points)
+      .toEqual(whiteboxPlan.featureGraph!.paths[0].points);
   });
 
   it('diagnoses disconnected and wet route approaches instead of inventing town ports', () => {

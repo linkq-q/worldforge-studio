@@ -93,4 +93,24 @@ describe('continuous-world streaming client', () => {
     built.mesh!.geometry.dispose();
     (built.mesh!.material as THREE.Material).dispose();
   });
+
+  it('builds a curved road mesh from the canonical sampled centerline', () => {
+    const road:MapGuide={id:'curve',name:'curve',points:[[-20,0],[0,20],[20,0]],curve:'catmull-rom',closed:false,
+      width:2,tags:['world-route']};
+    const built=buildWorldRoadChunk([road],{x:-1,z:0},()=>flatSample(2),500);
+    const positions=built.mesh!.geometry.getAttribute('position');
+    const distanceToSegment=(x:number,z:number,a:[number,number],b:[number,number])=>{
+      const dx=b[0]-a[0],dz=b[1]-a[1],length2=dx*dx+dz*dz;
+      const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length2));
+      return Math.hypot(x-a[0]-dx*t,z-a[1]-dz*t);
+    };
+    const centers=Array.from({length:positions.count/2},(_,index)=>[
+      (positions.getX(index*2)+positions.getX(index*2+1))/2,
+      (positions.getZ(index*2)+positions.getZ(index*2+1))/2
+    ] as [number,number]);
+    expect(centers.some(([x,z])=>Math.min(distanceToSegment(x,z,[-20,0],[0,20]),
+      distanceToSegment(x,z,[0,20],[20,0]))>.25)).toBe(true);
+    built.mesh!.geometry.dispose();
+    (built.mesh!.material as THREE.Material).dispose();
+  });
 });
