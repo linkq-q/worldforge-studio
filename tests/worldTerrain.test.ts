@@ -197,6 +197,45 @@ describe('composable world terrain operations', () => {
     expect(Number.isNaN(tile.waterLevels[0])).toBe(true);
   });
 
+  it('gives narrow-feather biome patches a bounded natural deterministic transition', () => {
+    const baseRecipe = parseWorldPrompt('中央是沙漠', 6103, 500);
+    const recipe = validateWorldRecipe({ ...baseRecipe, biomePatches: [{
+      id: 'leeward-town-grass', region: { kind: 'circle', center: [0, 0], radius: 85 },
+      biome: 'grassland', feather: 0.65
+    }] });
+    const sample = createWorldSampler(recipe);
+    expect(recipe.biomePatches?.[0].feather).toBe(0.65);
+    const thresholds = Array.from({ length: 48 }, (_, index) => {
+      const angle = index / 48 * Math.PI * 2;
+      for (let radius = 70; radius <= 115; radius += 0.5) {
+        if (sample(Math.cos(angle) * radius, Math.sin(angle) * radius).weights.grassland < 0.5) return radius;
+      }
+      return 115;
+    });
+    let blended = 0;
+    for (let index = 0; index < 48; index += 1) {
+      const angle = index / 48 * Math.PI * 2;
+      for (let radius = 70; radius <= 115; radius += 1) {
+        const weight = sample(Math.cos(angle) * radius, Math.sin(angle) * radius).weights.grassland;
+        if (weight > 0.05 && weight < 0.95) blended += 1;
+      }
+    }
+
+    expect(sample(0, 0).weights.grassland).toBe(1);
+    expect(sample(120, 0).weights.grassland).toBe(0);
+    expect(Math.max(...thresholds) - Math.min(...thresholds)).toBeGreaterThan(6);
+    expect(blended).toBeGreaterThan(250);
+
+    const left = sampleWorldTile(recipe, { x: 35, z: -50, size: 50 }, 11, sample);
+    const right = sampleWorldTile(recipe, { x: 85, z: -50, size: 50 }, 11, sample);
+    for (let index = 0; index < 11; index += 1) {
+      const leftOffset = (index * 11 + 10) * WORLD_BIOMES.length;
+      const rightOffset = index * 11 * WORLD_BIOMES.length;
+      expect([...left.weights.slice(leftOffset, leftOffset + WORLD_BIOMES.length)])
+        .toEqual([...right.weights.slice(rightOffset, rightOffset + WORLD_BIOMES.length)]);
+    }
+  });
+
   it('shares one deterministic natural lake boundary across sampling, water geometry, ecology distance and tile seams', () => {
     const recipe = validateWorldRecipe({ ...original, waterBodies: [{
       id: 'oasis', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 40 },

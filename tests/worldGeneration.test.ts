@@ -192,6 +192,7 @@ describe('world generation compiler', () => {
     const systemPrompt = mocks.llmChat.mock.calls[0][0][0].content as string;
     expect(systemPrompt).toContain("mode:'crater',region:CIRCLE,depth,rimHeight");
     expect(systemPrompt).toContain('depth lowers the central floor below the pre-brush sampled rim height');
+    expect(systemPrompt).toContain('Biome-patch feather is a transition distance in world metres, not a 0..1 softness ratio');
   });
 
   it('accepts one missing final brace only when the remaining JSON is complete', async () => {
@@ -569,6 +570,7 @@ describe('world generation compiler', () => {
     expect(WORLD_GENERATION_PROMPT).toContain('livelihood, population scale, external logistics, public services');
     expect(WORLD_GENERATION_PROMPT).toContain('one public or landmark building per 10..20 ordinary buildings');
     expect(WORLD_GENERATION_PROMPT).toContain('Do not copy one civic checklist into every settlement');
+    expect(WORLD_GENERATION_PROMPT).toContain('Biome-patch feather is a world-metre transition distance');
   });
 
   it('preserves an explicit resident count as deterministic settlement capacity', () => {

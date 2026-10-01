@@ -257,6 +257,7 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('north is negative Z');
     expect(systemPrompt).toContain('do not fake a bay or harbour with a round lake');
     expect(systemPrompt).toContain('every patch needs a unique id and a bounded shape');
+    expect(systemPrompt).toContain('Biome-patch feather is a transition distance in world metres, not a 0..1 softness ratio');
     expect(systemPrompt).toContain('every river must include its complete region, levels and depth');
     expect(systemPrompt).toContain('Trace river centerlines through plausible low ground');
     expect(systemPrompt).toContain('long straight chord across hills reads like a canal');

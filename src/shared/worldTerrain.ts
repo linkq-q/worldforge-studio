@@ -305,6 +305,21 @@ export function worldRegionWeight(region: WorldTerrainRegion, x: number, z: numb
   return area.inside ? 1 : feather > 0 ? 1 - smooth(0, feather, -area.edge) : 0;
 }
 
+function worldBiomePatchWeight(patch: WorldBiomePatch, x: number, z: number, seed: number): number {
+  const area = regionSample(patch.region, x, z);
+  const scale = patch.region.kind === 'circle' ? patch.region.radius : patch.region.width;
+  const authoredFeather = patch.feather;
+  // Keep authored metre values intact while giving natural material changes a
+  // small minimum transition. Explicit zero remains available for a hard edge.
+  const minimumFeather = clamp(scale * 0.12, 2, 12);
+  const feather = authoredFeather === 0 ? 0 : Math.max(authoredFeather ?? 0, minimumFeather);
+  const noiseScale = clamp(scale * 0.32, 8, 96);
+  const variation = fbm(x / noiseScale, z / noiseScale, waterSeed(seed, patch.id), 3)
+    * Math.min(scale * 0.12, Math.max(2, feather * 0.55));
+  const edge = area.edge + variation;
+  return edge >= 0 ? 1 : feather > 0 ? 1 - smooth(0, feather, -edge) : 0;
+}
+
 /** Precomputes the original editor shoreline workflow once in global coordinates. */
 export function prepareWorldWaterBodies(input: WorldRecipe): PreparedWorldWaterBody[] {
   return createWorldTerrainContext(input).waterBodies;
@@ -798,7 +813,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     let grassland = Math.max(0, remainder - desert - forest);
     const weights = { ocean, grassland, forest, desert, mountains: rock, snow };
     if (waterLevel === null) for (const patch of recipe.biomePatches ?? []) {
-      const influence = worldRegionWeight(patch.region, x, z, patch.feather ?? 0);
+      const influence = worldBiomePatchWeight(patch, x, z, seed);
       if (influence <= 0) continue;
       for (const biome of WORLD_BIOMES) weights[biome] *= 1 - influence;
       weights[patch.biome] += influence;
