@@ -703,6 +703,49 @@ describe('world settlement growth', () => {
       assetKey: 'market', siting: 'waterfront' }])).toThrow('world_settlement_no_waterfront_site:fish-market');
   });
 
+  it('uses a safe authored local street as real waterfront frontage without filling a shore trail', () => {
+    const plan = fixture(), town = plan.towns[0];
+    plan.recipe.size = 500;
+    plan.generationPolicy = 'raw-first-call';
+    town.center = [0, 0];
+    town.radius = 50;
+    town.blend = 20;
+    town.foundation = 12;
+    town.ports = [];
+    town.targetWaterBodyId = 'sea';
+    const street = road('working-lane', [[-20, -35], [-20, 35]], 3);
+    street.tags = ['local_street', 'world-route'];
+    const trail = road('shore-walk', [[-32, -35], [-32, 35]], 2);
+    trail.tags = ['shore_trail', 'world-route'];
+    plan.roads = [trail, street];
+    const terrain = (cliff: boolean): WorldSettlementSampler => (x, z) => {
+      const water = x < -40;
+      return { height: water ? -3 : cliff ? 12 : 0.4 + (x + 40) * 0.08,
+        waterLevel: water ? 0 : null, waterBodyId: null,
+        moisture: water ? 1 : 0.3, temperature: 0.5, continentalness: water ? 0 : 0.8,
+        weights: { ocean: water ? 1 : 0, grassland: water ? 0 : 1,
+          forest: 0, desert: 0, mountains: 0, snow: 0 } };
+    };
+    const sample = terrain(false);
+
+    const result = createWorldSettlementLandmarkLayout(plan, town.id, sample, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.5, waterfrontBias: 0, waterSetback: 5
+    }, [{ id: 'fish-market', use: 'fish market', width: 10, depth: 8, height: 5,
+      assetKey: 'market', siting: 'waterfront' }]);
+    const landmark = result.landmarks[0];
+    const access = result.patch.streets.find(item => item.id === `${town.id}-landmark-${landmark.id}`)!;
+
+    expect(result.patch.streets.some(item => item.tags.includes('working-waterfront'))).toBe(false);
+    expect(access.points.some(point => Math.abs(point[0] + 20) < 1e-6)).toBe(true);
+    expect(Math.abs(landmark.x + 20)).toBeLessThan(Math.abs(landmark.x + 32));
+    expect(sample(landmark.x, landmark.z).waterLevel).toBeNull();
+    expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
+    expect(() => createWorldSettlementLandmarkLayout(plan, town.id, terrain(true), {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.5, waterfrontBias: 0, waterSetback: 5
+    }, [{ id: 'cliff-market', use: 'fish market', width: 10, depth: 8, height: 5,
+      assetKey: 'market', siting: 'waterfront' }])).toThrow('world_settlement_no_waterfront_site:cliff-market');
+  });
+
   it('finds real waterfront frontage across the full core of a compact sea town', () => {
     const plan=fixture(),town=plan.towns[0],base=sampler(plan);
     town.radius=100;town.ports[0].position=[100,0];town.targetWaterBodyId='sea';

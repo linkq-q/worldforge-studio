@@ -261,10 +261,13 @@ export function createWorldSettlementLandmarkLayout(
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
   const settings=normalizeOptions(options,town,task.seed);
   const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
+  const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
+    ? authoredWaterfrontFrontage(plan,town,sample,settings):[];
   const ordered=[...requirements].sort((a,b)=>b.width*b.depth-a.width*a.depth||a.id.localeCompare(b.id));
   const sites=ordered.map(requirement=>{
     const {siting,...building}=requirement;
-    const candidates=boundedLandmarkSites(frontageLandmarkSites(building,base.streets,town,sample,settings,siting));
+    const candidates=boundedLandmarkSites(frontageLandmarkSites(
+      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:[]));
     if(!candidates.length&&siting==='waterfront') throw new Error(`world_settlement_no_waterfront_site:${requirement.id}`);
     return candidates;
   });
@@ -298,11 +301,14 @@ export function createWorldSettlementLandmarkLayout(
 
 function frontageLandmarkSites(
   requirement:Omit<WorldLandmarkRequirement,'siting'>,streets:MapGuide[],town:TownIntent,
-  sample:WorldSettlementSampler,settings:Settings,siting?:WorldLandmarkSiting
+  sample:WorldSettlementSampler,settings:Settings,siting?:WorldLandmarkSiting,
+  authoredWaterfront:readonly MapGuide[]=[]
 ):TownBuilding[] {
   const points:TownBuilding[]=[],roadWidth=settings.roadWidth,blockSize=settings.blockSize;
-  const frontage=streets.filter(street=>!street.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag))
-    &&(siting!=='waterfront'||street.tags.includes('working-waterfront')));
+  const ordinary=streets.filter(street=>!street.tags.some(tag=>['landmark-access','port','sea-landing'].includes(tag)));
+  const frontage=siting==='waterfront'
+    ? [...ordinary.filter(street=>street.tags.includes('working-waterfront')),...authoredWaterfront]:ordinary;
+  const safetyStreets=authoredWaterfront.length?[...streets,...authoredWaterfront]:streets;
   for(const street of frontage) for(let segment=1;segment<street.points.length;segment++) {
     const a=street.points[segment-1],b=street.points[segment],delta=sub(b,a),length=distance(a,b);
     if(length<EPS) continue;
@@ -312,14 +318,15 @@ function frontageLandmarkSites(
       const setback=requirement.depth/2+roadWidth/2+landmarkAccessLength(blockSize);
       const candidate={...requirement,x:roundPoint(roadPoint[0]-direction[0]*setback),
         z:roundPoint(roadPoint[1]-direction[1]*setback),rotation};
-      if(landmarkSiteSafe(candidate,streets,town,sample,settings)) points.push(candidate);
+      if(landmarkSiteSafe(candidate,safetyStreets,town,sample,settings)) points.push(candidate);
     }
   }
   const unique=new Map(points.map(item=>[`${item.x.toFixed(6)},${item.z.toFixed(6)},${(item.rotation??0).toFixed(6)}`,item]));
   const candidates=[...unique.values()],tie=(a:TownBuilding,b:TownBuilding)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z)||a.x-b.x||a.z-b.z;
   if(siting==='waterfront') {
     const reach=Math.min(180,town.radius);
-    return candidates.map(candidate=>({candidate,water:nearestWater(sample,town,[candidate.x,candidate.z],reach)}))
+    return candidates.map(candidate=>({candidate,water:nearestWater(
+      sample,town,[candidate.x,candidate.z],reach,town.targetWaterBodyId)}))
       .filter((item):item is {candidate:TownBuilding;water:{direction:Point;distance:number}}=>Boolean(item.water))
       .sort((a,b)=>a.water.distance-b.water.distance||tie(a.candidate,b.candidate)).map(item=>item.candidate);
   }
@@ -331,6 +338,50 @@ function frontageLandmarkSites(
   if(siting==='high-ground') return candidates.sort((a,b)=>
     sampleAt(sample,town,[b.x,b.z]).height-sampleAt(sample,town,[a.x,a.z]).height||tie(a,b));
   return candidates.sort(tie);
+}
+
+function authoredWaterfrontFrontage(
+  plan:WorldPlan,town:TownIntent,sample:WorldSettlementSampler,settings:Settings
+):MapGuide[] {
+  const result:MapGuide[]=[],reach=Math.min(40,town.radius*.58);
+  for(const road of plan.roads) {
+    if(!authoredBuildingFrontage(road.tags)) continue;
+    for(let segment=1;segment<road.points.length;segment++) {
+      const worldA=road.points[segment-1],worldB=road.points[segment];
+      const clipped=clipTownSegment(
+        [worldA[0]-town.center[0],worldA[1]-town.center[1]],
+        [worldB[0]-town.center[0],worldB[1]-town.center[1]],town.radius);
+      if(!clipped) continue;
+      const steps=Math.max(1,Math.ceil(distance(...clipped)/8));
+      for(let step=0;step<steps;step++) {
+        const a=mix(clipped[0],clipped[1],step/steps),b=mix(clipped[0],clipped[1],(step+1)/steps);
+        if(!segmentSafe(sample,town,a,b,road.width,settings.waterSetback,settings.maxRoadSlope)
+          ||!hasGradedWaterAccess(mix(a,b,.5),road.width,town,sample,settings,reach)) continue;
+        result.push(guide(`${road.id}-waterfront-${segment}-${step+1}`,[a,b],road.width,road.tags));
+      }
+    }
+  }
+  return result;
+}
+
+function hasGradedWaterAccess(
+  point:Point,width:number,town:TownIntent,sample:WorldSettlementSampler,settings:Settings,reach:number
+):boolean {
+  const water=nearestWater(sample,town,point,reach,town.targetWaterBodyId);
+  if(!water) return false;
+  const clearance=settings.waterSetback+width/2+1,desired=Math.max(0,water.distance-clearance);
+  if(desired<EPS) return false;
+  let low=0,high=desired;
+  for(let attempt=0;attempt<10;attempt++) {
+    const length=(low+high)/2,end=add(point,scale(water.direction,length));
+    if(segmentSafe(sample,town,point,end,width,settings.waterSetback,settings.maxRoadSlope)) low=length;
+    else high=length;
+  }
+  const end=add(point,scale(water.direction,low));
+  const waterSample=sampleAt(sample,town,add(point,scale(water.direction,water.distance)));
+  const remaining=nearestWater(sample,town,end,Math.min(24,reach),town.targetWaterBodyId)?.distance;
+  return waterSample.waterLevel!==null&&remaining!==undefined&&remaining<water.distance-EPS&&remaining<=20
+    &&sampleAt(sample,town,end).height-waterSample.waterLevel<=MAX_LOCAL_EARTHWORK+EPS;
 }
 
 function landmarkSiteSafe(
@@ -820,6 +871,18 @@ function ordinaryBuildingTarget(candidateCount: number, town: TownIntent, settin
   return Math.max(floor, Math.round(candidateCount * occupancy));
 }
 
+function reservedFrontage(tags:readonly string[]):boolean {
+  return tags.some(tag=>[
+    'walking_trail','rim_trail','shore_trail','sea-landing','sea_landing',
+    'landmark-access','landmark_access','public-space','public_space','plaza','square'
+  ].includes(tag.toLowerCase()));
+}
+
+function authoredBuildingFrontage(tags:readonly string[]):boolean {
+  return tags.some(tag=>['local_street','local_lane','access_lane'].includes(tag.toLowerCase()))
+    &&!reservedFrontage(tags);
+}
+
 function placeBuildings(
   plan: WorldPlan,
   town: TownIntent,
@@ -834,13 +897,8 @@ function placeBuildings(
   const city = settings.kind === 'city';
   const localRoads = streets.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width, road })));
   const worldRoads = plan.roads.flatMap(road => road.points.slice(1).map((b, index) => ({ a: road.points[index], b, width: road.width })));
-  const reservedFrontage = (tags: readonly string[]) => tags.some(tag => [
-    'walking_trail', 'rim_trail', 'shore_trail', 'sea-landing', 'sea_landing',
-    'landmark-access', 'landmark_access', 'public-space', 'public_space', 'plaza', 'square'
-  ].includes(tag.toLowerCase()));
   const localFrontageRoads = localRoads.filter(segment => !reservedFrontage(segment.road.tags));
-  const worldFrontageRoads = plan.roads.filter(road => road.tags.some(tag =>
-    ['local_street', 'local_lane', 'access_lane'].includes(tag.toLowerCase())) && !reservedFrontage(road.tags))
+  const worldFrontageRoads = plan.roads.filter(road => authoredBuildingFrontage(road.tags))
     .flatMap(road => road.points.slice(1).map((worldB, index) => {
       const worldA = road.points[index];
       return clipTownSegment(
