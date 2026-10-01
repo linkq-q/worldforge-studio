@@ -924,7 +924,7 @@ describe('whitebox world generation', () => {
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
-  it('omits a named public building when GPT did not bind its explicit asset key', async () => {
+  it('omits an unbound public building with its access street and refreshes the patch summary', async () => {
     const expansion = constructionExpansion();
     expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8, height: 6,
       assetKey: 'school', siting: 'central' }];
@@ -932,9 +932,63 @@ describe('whitebox world generation', () => {
     const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
       assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
     if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
-    expect(result.bundle.patches.flatMap(patch => patch.buildings).some(building => building.assetKey === 'school')).toBe(false);
+    const patch = result.bundle.patches[0];
+    expect(patch.buildings.some(building => building.assetKey === 'school')).toBe(false);
+    expect(patch.streets.some(street => street.id === 'market-village-landmark-school')).toBe(false);
+    expect(patch.summary).toMatch(new RegExp(`; ${patch.streets.length} roads and ${patch.buildings.length} buildings$`));
     expect(result.diagnostics.flatMap(item => item.planningIssues))
       .toContain('explicit_asset_unbound:school:school');
+  });
+
+  it('normalizes one unique reusable asset id alias to its semantic request key', async () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8, height: 6,
+      assetKey: 'existing-school', siting: 'central' }];
+    expansion.assets = [{ key: 'island-school', name: 'Island school', role: 'landmark', prompt: 'Reuse the school',
+      dimensions: [8, 6, 8], strategy: 'single', existingAssetId: 'existing-school' }];
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const asset = { id: 'existing-school', name: 'Island school', prompt: 'A village school', tags: ['landmark'],
+      mode: 'voxel-pro', modelJson: { format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {
+        width: 8, height: 6, depth: 8 } } }] } };
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0, reusableAssetIds: ['existing-school'] }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    const issues = result.diagnostics.flatMap(item =>
+      'planningIssues' in item ? item.planningIssues ?? [] : [],
+    );
+    expect(result.bundle.patches[0].buildings.find(building => building.id === 'school')?.assetKey).toBe('island-school');
+    expect(issues).toContain('asset_key_normalized:school:existing-school->island-school');
+    expect(issues.some(issue => issue.startsWith('explicit_asset_unbound:school:'))).toBe(false);
+    expect(result.assetSources).toEqual([expect.objectContaining({ id: 'island-school', assetId: 'existing-school' })]);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+  });
+
+  it('leaves an ambiguous reusable asset id alias unbound and diagnostic', async () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8, height: 6,
+      assetKey: 'existing-school', siting: 'central' }];
+    expansion.assets = ['school-a', 'school-b'].map(key => ({ key, name: key, role: 'landmark' as const,
+      prompt: `Reuse ${key}`, dimensions: [8, 6, 8] as [number, number, number], strategy: 'single' as const,
+      existingAssetId: 'existing-school' }));
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
+    const asset = { id: 'existing-school', name: 'Island school', prompt: 'A village school', tags: ['landmark'],
+      mode: 'voxel-pro', modelJson: { format: 2, nodes: [{ id: 'body', mesh: { type: 'box', params: {
+        width: 8, height: 6, depth: 8 } } }] } };
+    const store = { loadAsset: vi.fn().mockResolvedValue(asset) } as unknown as MapStore;
+
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0, reusableAssetIds: ['existing-school'] }, store);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    const issues = result.diagnostics.flatMap(item =>
+      'planningIssues' in item ? item.planningIssues ?? [] : [],
+    );
+    expect(result.bundle.patches[0].buildings.some(building => building.id === 'school')).toBe(false);
+    expect(issues).toContain('explicit_asset_unbound:school:existing-school');
+    expect(issues.some(issue => issue.startsWith('asset_key_normalized:school:'))).toBe(false);
+    expect(result.assetSources).toEqual([]);
+    expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
   it('caps construction at three direct DeepSeek assets and reports the paid attempts', async () => {

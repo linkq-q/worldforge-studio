@@ -941,10 +941,40 @@ function omitUnboundExplicitBuildings(
   assetKeys: ReadonlySet<string>,
   issue: (townId: string, value: string) => void
 ): TownPatch[] {
-  return patches.map(patch => ({ ...patch, buildings: patch.buildings.filter(building => {
-    if (!building.assetKey || assetKeys.has(building.assetKey)) return true;
-    issue(patch.townId, `explicit_asset_unbound:${building.id}:${building.assetKey}`);
-    return false;
+  return patches.map(patch => {
+    const omitted = new Set<string>();
+    const buildings = patch.buildings.filter(building => {
+      if (!building.assetKey || assetKeys.has(building.assetKey)) return true;
+      omitted.add(building.id);
+      issue(patch.townId, `explicit_asset_unbound:${building.id}:${building.assetKey}`);
+      return false;
+    });
+    if (!omitted.size) return patch;
+    const streets = patch.streets.filter(street => !street.tags.includes('landmark-access')
+      || ![...omitted].some(id => street.id === `${patch.townId}-landmark-${id}`));
+    const summary = patch.summary.replace(/;\s*\d+ roads and \d+ buildings$/,
+      `; ${streets.length} roads and ${buildings.length} buildings`);
+    return { ...patch, summary, streets, buildings };
+  });
+}
+
+function normalizeExplicitBuildingAssetKeys(
+  patches: TownPatch[],
+  assets: readonly WorldAssetRequest[],
+  issue: (townId: string, value: string) => void
+): TownPatch[] {
+  const keys = new Set(assets.map(asset => asset.key));
+  const aliases = new Map<string, string[]>();
+  for (const asset of assets) if (asset.existingAssetId) {
+    aliases.set(asset.existingAssetId, [...aliases.get(asset.existingAssetId) ?? [], asset.key]);
+  }
+  return patches.map(patch => ({ ...patch, buildings: patch.buildings.map(building => {
+    if (!building.assetKey || keys.has(building.assetKey)) return building;
+    const matches = aliases.get(building.assetKey);
+    if (matches?.length !== 1) return building;
+    const assetKey = matches[0];
+    issue(patch.townId, `asset_key_normalized:${building.id}:${building.assetKey}->${assetKey}`);
+    return { ...building, assetKey };
   }) }));
 }
 
@@ -1027,7 +1057,8 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   let assetRequests=validateWorldAssetRequests(materialized.assets,constructionPlan,validationRequest,[],false);
   assetRequests=bindExactReusableAssetKeys(assetRequests,reusableAssets);
   const worldKey=worldPlanKey(constructionPlan);
-  const requestedPatches=omitUnboundExplicitBuildings(patches.map(patch=>({...patch,worldKey})),
+  const normalizedPatches=normalizeExplicitBuildingAssetKeys(patches.map(patch=>({...patch,worldKey})),assetRequests,issue);
+  const requestedPatches=omitUnboundExplicitBuildings(normalizedPatches,
     new Set(assetRequests.map(asset=>asset.key)),issue);
   validateWorldAssetRequests(assetRequests,constructionPlan,validationRequest,requestedPatches,false);
   let paidCallCount=1,assetSources:WorldAssetResult[]=[];
