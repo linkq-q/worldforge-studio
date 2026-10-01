@@ -12,11 +12,13 @@ describe('render-plan water ownership', () => {
     expect(shouldBindRenderPlanWaterSurface(modelWater)).toBe(false);
   });
 
-  it('keeps structured inland water visible through its shallow shore transition', () => {
+  it('fades narrow river banks and outlet caps without changing lake or ocean transitions', () => {
     const river = structuredWaterShoreTransition('river');
-    expect(river.transparency).toBeLessThanOrEqual(0.5);
-    expect(river.edgeAlpha).toBeGreaterThanOrEqual(0.5);
-    expect(structuredWaterShoreTransition('lake').transparency).toBeGreaterThan(river.transparency);
+    const lake = structuredWaterShoreTransition('lake');
+    expect(river.transparency).toBeGreaterThan(lake.transparency);
+    expect(river.edgeAlpha).toBeLessThan(lake.edgeAlpha);
+    expect(1 - river.transparency * (1 - river.edgeAlpha)).toBeLessThan(0.5);
+    expect(lake).toEqual({ transparency: 0.62, edgeAlpha: 0.38 });
     expect(structuredWaterShoreTransition('ocean').transparency).toBe(0);
   });
 });

@@ -1522,7 +1522,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float alpha = shoreOpacity + foam * 0.08;
     if (hasTerrainDepth) {
       float transmission = exp(-terrainWaterDepth * (0.18 + uOpacity * 0.35));
-      float terrainOpacity = mix(shoreOpacity, 1.0, 1.0 - transmission);
+      // A narrow river should reveal its authored bed even at the deepest part.
+      // Lakes retain full depth occlusion, and oceans use their separate branch below.
+      float depthOpacity = uUseRiverFlow ? baseOpacity : 1.0;
+      float terrainOpacity = mix(shoreOpacity, depthOpacity, 1.0 - transmission);
       alpha = mix(terrainOpacity, 1.0, foam * 0.65);
     }
     if (uUseOceanTerrain) {

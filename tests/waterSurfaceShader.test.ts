@@ -61,7 +61,7 @@ describe('WaterSurface shader', () => {
     surface.dispose();
   });
 
-  it('uses the shore field as the depth fallback for structured water', () => {
+  it('keeps riverbed depth within authored opacity while preserving lake and ocean occlusion', () => {
     const surface = new WaterSurface(
       new THREE.Scene(),
       {} as THREE.WebGLRenderer,
@@ -71,7 +71,10 @@ describe('WaterSurface shader', () => {
 
     expect(surface.material.fragmentShader).toContain(': (uUseShoreDistance ? shoreDist : 0.0);');
     expect(surface.material.fragmentShader).toContain(
-      'float terrainOpacity = mix(shoreOpacity, 1.0, 1.0 - transmission);'
+      'float depthOpacity = uUseRiverFlow ? baseOpacity : 1.0;'
+    );
+    expect(surface.material.fragmentShader).toContain(
+      'float terrainOpacity = mix(shoreOpacity, depthOpacity, 1.0 - transmission);'
     );
 
     surface.dispose();

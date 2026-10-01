@@ -1052,7 +1052,7 @@ export function structuredWaterShoreTransition(waterBodyType: unknown): {
 } {
   if (waterBodyType === 'ocean') return { transparency: 0, edgeAlpha: 0.28 };
   return waterBodyType === 'river'
-    ? { transparency: 0.42, edgeAlpha: 0.58 }
+    ? { transparency: 0.72, edgeAlpha: 0.2 }
     : { transparency: 0.62, edgeAlpha: 0.38 };
 }
 
