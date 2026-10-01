@@ -116,7 +116,20 @@ export interface WorldRiverProfileInfeasibleDiagnostic {
   fallback: 'detached-low-water' | 'truncated-before-drop' | 'omitted';
   message: string;
 }
-export type WorldTerrainPreparationDiagnostic = WorldRiverProfileInfeasibleDiagnostic;
+export interface WorldRiverMouthClippedDiagnostic {
+  code: 'river_mouth_clipped';
+  waterBodyId: string;
+  reason: 'offshore_land_after_mouth';
+  position: [number, number];
+  fallback: 'clipped-at-first-ocean';
+  authoredLength: number;
+  retainedLength: number;
+  retainedRatio: number;
+  message: string;
+}
+export type WorldTerrainPreparationDiagnostic =
+  | WorldRiverProfileInfeasibleDiagnostic
+  | WorldRiverMouthClippedDiagnostic;
 export interface WorldRiverSurfaceAboveBankDiagnostic {
   code: 'river_surface_above_bank';
   message: string;
@@ -470,7 +483,8 @@ function clipRiverAtImplicitOcean(
   water: MapWaterBody,
   terrainHeightAt: (x: number, z: number) => number,
   endpointConnected: readonly [boolean, boolean],
-  sourceToMouth = false
+  sourceToMouth = false,
+  diagnostics?: WorldTerrainPreparationDiagnostic[]
 ): MapWaterBody {
   if (water.type !== 'river') return water;
   const authoredSamples = riverPathSamples(water);
@@ -481,11 +495,17 @@ function clipRiverAtImplicitOcean(
   const samples = reversed ? [...authoredSamples].reverse() : authoredSamples;
   const sourceConnected = endpointConnected[reversed ? 1 : 0];
   const downstreamConnected = endpointConnected[reversed ? 0 : 1];
-  if (downstreamConnected || terrainHeightAt(...samples[0].point) <= 0
-    || terrainHeightAt(...samples.at(-1)!.point) > 0) return water;
+  if (downstreamConnected || terrainHeightAt(...samples[0].point) <= 0) return water;
   let oceanIndex = samples.length - 1;
-  while (oceanIndex > 0 && terrainHeightAt(...samples[oceanIndex - 1].point) <= 0) oceanIndex -= 1;
-  if (oceanIndex === 0) return water;
+  if (sourceToMouth) {
+    // Terrain-fit paths are authored upstream to downstream. Their first contact
+    // with the implicit ocean is the mouth; later dry islets are offshore.
+    oceanIndex = samples.findIndex(sample => terrainHeightAt(...sample.point) <= 0);
+  } else {
+    if (terrainHeightAt(...samples.at(-1)!.point) > 0) return water;
+    while (oceanIndex > 0 && terrainHeightAt(...samples[oceanIndex - 1].point) <= 0) oceanIndex -= 1;
+  }
+  if (oceanIndex <= 0) return water;
   const from = samples[oceanIndex - 1], to = samples[oceanIndex];
   let land = 0, ocean = 1;
   for (let step = 0; step < 18; step += 1) {
@@ -500,6 +520,19 @@ function clipRiverAtImplicitOcean(
     width: mix(from.width, to.width, ocean)
   };
   const mouth = submergedRiverMouth(samples, oceanIndex, shore);
+  if (sourceToMouth && samples.slice(oceanIndex + 1)
+    .some(sample => terrainHeightAt(...sample.point) > 0)) {
+    const length = (path: readonly RiverPathSample[]) => path.slice(1).reduce((sum, sample, index) => sum
+      + Math.hypot(sample.point[0] - path[index].point[0], sample.point[1] - path[index].point[1]), 0);
+    const authoredLength = length(samples);
+    const retainedLength = length([...samples.slice(0, oceanIndex), shore]);
+    diagnostics?.push({
+      code: 'river_mouth_clipped', waterBodyId: water.id, reason: 'offshore_land_after_mouth',
+      position: [...shore.point], fallback: 'clipped-at-first-ocean',
+      authoredLength, retainedLength, retainedRatio: authoredLength > 0 ? retainedLength / authoredLength : 1,
+      message: `${water.id}: clipped at first ocean contact because its authored path returns to dry land offshore.`
+    });
+  }
   let clipped = [...flareRiverIntoCoast([...samples.slice(0, oceanIndex), shore], shore.width), mouth];
   if (!sourceConnected) clipped = taperIsolatedRiverSource(clipped);
   if (reversed) clipped = clipped.reverse();
@@ -726,7 +759,8 @@ function prepareTerrainFitRiver(
   const sourceRegion = source.region as Extract<WorldTerrainRegion, { kind: 'path' }>;
   const sourceConnected = worldWaterEndpointConnected(waters, waterIndex, sourceRegion.points[0]);
   const outletConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points.at(-1)!);
-  mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt, [sourceConnected, Boolean(outletConnection)], true);
+  mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt,
+    [sourceConnected, Boolean(outletConnection)], true, diagnostics);
   let samples = riverPathSamples(mapWater);
   const waterfalls = terrainFitWaterfallSegments(source, mapWater);
   const oceanMouth = (mapWater.levels?.at(-1) ?? 0) < 0;
@@ -1289,8 +1323,10 @@ export function diagnoseWorldRiverSurfaceAboveBank(
           bank[1] + dz / length * WORLD_RIVER_BANK_DIAGNOSTIC_OUTSET
         ];
         const terrain = context.sample(...samplePosition);
-        // A point classified inside this river is its intended bed, not the adjacent bank.
-        if (terrain.waterBodyId === river.source.id) continue;
+        // The river bed and its submerged ocean-mouth cap cannot expose a hovering ribbon.
+        const coveredByOcean = terrain.waterBodyId === null && terrain.waterLevel !== null
+          && terrain.waterLevel >= edge.level;
+        if (terrain.waterBodyId === river.source.id || coveredByOcean) continue;
         sampleCount += 1;
         const hoverHeight = edge.level - terrain.height;
         if (hoverHeight <= WORLD_RIVER_BANK_DIAGNOSTIC_THRESHOLD) continue;

@@ -375,6 +375,75 @@ describe('composable world terrain operations', () => {
     }
   });
 
+  it('ends a terrain-fit river at its first implicit-ocean crossing instead of a later offshore islet', () => {
+    const input = {
+      version: 1, seed: 20261001, size: 500, reliefProfile: 'compact', heightScale: 0.03,
+      constraints: [
+        { region: 'center', biome: 'forest' }, { region: 'east', biome: 'ocean' },
+        { region: 'north', biome: 'ocean' }, { region: 'south', biome: 'ocean' },
+        { region: 'west', biome: 'ocean' }
+      ],
+      landforms: [
+        { center: [10, 5], radius: [225, 220], height: 11 },
+        { center: [-85, 35], radius: [100, 120], height: 5 },
+        { center: [60, -60], radius: [115, 110], height: 32 },
+        { center: [105, 5], radius: [100, 150], height: 13 },
+        { center: [-130, -95], radius: [65, 70], height: 9 },
+        { center: [-120, 140], radius: [70, 65], height: 5 },
+        { center: [-220, 35], radius: [80, 90], height: -15 },
+        { center: [0, 245], radius: [250, 45], height: -12 },
+        { center: [0, -245], radius: [250, 45], height: -12 },
+        { center: [245, 0], radius: [45, 250], height: -12 }
+      ],
+      terrainBrushes: [{
+        id: 'southern-stream-valley', mode: 'lower',
+        region: { kind: 'path', points: [[25,65],[10,85],[25,105],[-5,125],[-40,115],[-65,140],[-95,145],[-125,165],[-165,175]], width: 30 },
+        amount: 3, feather: 20
+      }],
+      waterBodies: [{
+        id: 'forest-stream', type: 'river', surfaceMode: 'terrain-fit',
+        region: { kind: 'path', points: [[25,65],[10,85],[25,105],[-5,125],[-40,115],[-65,140],[-95,145],[-125,165],[-165,175],[-190,183]], width: 5 },
+        widths: [3,3.5,4,4.5,4,5,5,6,8,11], depth: 1.2,
+        shorelineSmoothness: 0.7, shorelineIrregularity: 0.3, seed: 565963091
+      }]
+    } as unknown as WorldRecipe;
+    const originalInput = structuredClone(input);
+    const dry = createWorldTerrainContext({ ...input, waterBodies: [] });
+    const context = createWorldTerrainContext(input), samples = context.waterBodies[0].riverSamples;
+
+    expect(context.diagnostics).toHaveLength(1);
+    const diagnostic = context.diagnostics[0];
+    expect(diagnostic).toMatchObject({
+      code: 'river_mouth_clipped', waterBodyId: 'forest-stream',
+      reason: 'offshore_land_after_mouth', fallback: 'clipped-at-first-ocean'
+    });
+    if (diagnostic.code !== 'river_mouth_clipped') throw new Error('expected river mouth diagnostic');
+    expect(diagnostic.authoredLength).toBeCloseTo(276.3357, 3);
+    expect(diagnostic.retainedLength).toBeCloseTo(110.4959, 3);
+    expect(diagnostic.retainedRatio).toBeCloseTo(0.399861, 5);
+    expect(samples.at(-2)!.point[0]).toBeGreaterThan(-50);
+    expect(samples.at(-2)!.level).toBeCloseTo(0, 5);
+    expect(samples.at(-1)!.level).toBeCloseTo(-0.03, 5);
+    expect(samples.slice(0, -2).every(sample => dry.sample(...sample.point).height > 0)).toBe(true);
+    expect(diagnoseWorldRiverSurfaceAboveBank(context)).toEqual([]);
+    expect(input).toEqual(originalInput);
+
+    const terminalIsletInput = structuredClone(input);
+    const terminalIsletRiver = terminalIsletInput.waterBodies?.[0];
+    if (!terminalIsletRiver || terminalIsletRiver.type !== 'river' || terminalIsletRiver.region.kind !== 'path') {
+      throw new Error('expected river path');
+    }
+    terminalIsletRiver.region.points = [
+      ...terminalIsletRiver.region.points.slice(0, 7), [-106.474087, 152.129097]
+    ];
+    terminalIsletRiver.widths = [...terminalIsletRiver.widths!.slice(0, 7), 5];
+    const terminalDry = createWorldTerrainContext({ ...terminalIsletInput, waterBodies: [] });
+    expect(terminalDry.sample(-106.474087, 152.129097).height).toBeGreaterThan(0);
+    const terminalIsletContext = createWorldTerrainContext(terminalIsletInput);
+    expect(terminalIsletContext.diagnostics[0]?.code).toBe('river_mouth_clipped');
+    expect(terminalIsletContext.waterBodies[0].riverSamples.at(-2)!.point[0]).toBeGreaterThan(-50);
+  });
+
   it('allows only declared waterfall drops and diagnoses an impossible anchored outlet instead of digging or reversing', () => {
     const step = { ...original, reliefProfile: 'compact' as const, terrainBrushes: [{
       id: 'sharp-step', mode: 'grade' as const,
