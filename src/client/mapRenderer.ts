@@ -1480,8 +1480,9 @@ function buildWaterGridGeometry(shore: WaterShoreBinding, waters: readonly MapWa
   prepared.sort((a,b) => Number(a.water.type === 'river') - Number(b.water.type === 'river'));
   const base = waters.reduce((sum, water) => sum + water.level, 0) / waters.length;
   const positions = geometry.getAttribute('position');
-  const flow = new Float32Array(positions.count * 2);
+  const flow = new Float32Array(positions.count * 3);
   for (let i = 0; i < positions.count; i += 1) {
+    flow[i * 3 + 2] = 1;
     const x = positions.getX(i) + shore.center[0], z = positions.getZ(i) + shore.center[1];
     let owner = prepared[0], nearest = Infinity;
     for (const candidate of prepared) {
@@ -1492,10 +1493,10 @@ function buildWaterGridGeometry(shore: WaterShoreBinding, waters: readonly MapWa
     if (owner.water.type === 'river') {
       const sample = sampleRiverProfile(x,z,owner.samples);
       positions.setY(i, sample.level - base);
-      flow.set(sample.direction, i * 2);
+      flow.set(sample.direction, i * 3);
     } else positions.setY(i, owner.water.level - base);
   }
-  if (rivers.length > 0) geometry.setAttribute('riverFlow', new THREE.BufferAttribute(flow, 2));
+  if (rivers.length > 0) geometry.setAttribute('riverFlow', new THREE.BufferAttribute(flow, 3));
   geometry.computeVertexNormals();
   return geometry;
 }
@@ -1694,20 +1695,42 @@ function buildRiverGeometry(water: MapWaterBody): THREE.BufferGeometry {
   const directions: number[] = [];
   const uvs: number[] = [];
   const columns = THREE.MathUtils.clamp(Math.ceil(maxWidth / spacing), 8, 192);
-  let distance = 0;
+  const distances = [0];
+  for (let row = 1; row < edges.length; row += 1) {
+    const edge = edges[row], previous = edges[row - 1];
+    distances.push(distances[row - 1] + Math.hypot(
+      (edge.left[0] + edge.right[0] - previous.left[0] - previous.right[0]) / 2,
+      (edge.left[1] + edge.right[1] - previous.left[1] - previous.right[1]) / 2
+    ));
+  }
+  const endpointWidth = (edge: (typeof edges)[number]): number => Math.hypot(
+    edge.right[0] - edge.left[0], edge.right[1] - edge.left[1]
+  );
+  const isImplicitOceanMouth = (edge: (typeof edges)[number]): boolean => Math.abs(edge.level + 0.03) < 1e-6;
+  const startShoreRow = isImplicitOceanMouth(edges[0])
+    ? edges.findIndex(edge => edge.level >= -1e-6) : -1;
+  let endShoreRow = -1;
+  if (isImplicitOceanMouth(edges.at(-1)!)) {
+    for (let row = edges.length - 1; row >= 0; row -= 1) {
+      if (edges[row].level >= -1e-6) { endShoreRow = row; break; }
+    }
+  }
+  const startFadeLength = startShoreRow >= 0 ? Math.max(1, endpointWidth(edges[startShoreRow])) : 0;
+  const endFadeLength = endShoreRow >= 0 ? Math.max(1, endpointWidth(edges[endShoreRow])) : 0;
   for (let row = 0; row < edges.length; row += 1) {
     const edge = edges[row];
-    if (row > 0) {
-      const previous = edges[row - 1];
-      distance += Math.hypot((edge.left[0] + edge.right[0] - previous.left[0] - previous.right[0]) / 2,
-        (edge.left[1] + edge.right[1] - previous.left[1] - previous.right[1]) / 2);
-    }
+    const mouthFade = Math.min(
+      startFadeLength > 0
+        ? THREE.MathUtils.smoothstep(distances[row] - distances[startShoreRow], 0, startFadeLength) : 1,
+      endFadeLength > 0
+        ? THREE.MathUtils.smoothstep(distances[endShoreRow] - distances[row], 0, endFadeLength) : 1
+    );
     for (let column = 0; column <= columns; column += 1) {
       const t = column / columns;
       vertices.push(edge.left[0] + (edge.right[0] - edge.left[0]) * t,
         edge.level - water.level, edge.left[1] + (edge.right[1] - edge.left[1]) * t);
-      directions.push(...edge.direction);
-      uvs.push(t, distance);
+      directions.push(...edge.direction, mouthFade);
+      uvs.push(t, distances[row]);
     }
   }
   const indices: number[] = [];
@@ -1721,7 +1744,7 @@ function buildRiverGeometry(water: MapWaterBody): THREE.BufferGeometry {
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setAttribute('riverFlow', new THREE.Float32BufferAttribute(directions, 2));
+  geometry.setAttribute('riverFlow', new THREE.Float32BufferAttribute(directions, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();

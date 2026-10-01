@@ -321,6 +321,8 @@ describe('composable world terrain operations', () => {
     const dry = createWorldSampler({ ...recipe, waterBodies: [] });
     const mouth = prepared.mapWater.points.at(-1)!;
     const samples = prepared.riverSamples;
+    const shore = samples.at(-2)!;
+    const extension = Math.hypot(mouth[0] - shore.point[0], mouth[1] - shore.point[1]);
 
     expect(mouth[0]).toBeGreaterThan(25);
     expect(dry(...mouth).height).toBeLessThanOrEqual(-0.1);
@@ -328,6 +330,7 @@ describe('composable world terrain operations', () => {
     expect(prepared.mapWater.levels?.at(-1)).toBeLessThan(0);
     expect(samples.at(-1)!.width / samples.at(-2)!.width).toBeCloseTo(1.5 / 1.35, 5);
     expect(samples.at(-2)!.width).toBeGreaterThan(samples.at(-3)!.width);
+    expect(extension).toBeCloseTo(shore.width / 1.35 * 1.5, 3);
     expect(samples[0].width).toBeLessThan(samples[1].width * 0.2);
     expect(new Set(prepared.mapWater.widths?.map(width => width.toFixed(3))).size).toBeGreaterThan(3);
     expect(prepared.boundary).toEqual(waterBoundaryPoints(prepared.mapWater));
@@ -468,6 +471,23 @@ describe('composable world terrain operations', () => {
     }] });
     expect(sample(...point)).toMatchObject({ waterLevel: -1, waterBodyId: 'sunken-river', freshWaterWeight: 1 });
     expect(sample(...point).weights.ocean).toBeCloseTo(dry(...point).weights.ocean, 10);
+  });
+
+  it('leaves the ocean floor unchanged where an underwater river mouth has fully faded', () => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'submerged-floor', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 100 },
+      height: -0.2, feather: 0
+    }], waterBodies: [{
+      id: 'submerged-river', type: 'river', region: { kind: 'path', points: [[-30, 0], [30, 0]], width: 8 },
+      levels: [-2, -2], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    const dry = createWorldSampler({ ...recipe, waterBodies: [] });
+    const wet = createWorldSampler(recipe);
+
+    for (const point of [[0, 0], [0, 5]] as Array<[number, number]>) {
+      expect(wet(...point).height).toBeCloseTo(dry(...point).height, 10);
+      expect(wet(...point).freshWaterWeight).toBe(0);
+    }
   });
 
   it('widens freshwater material on an inner river bend without moving the water surface', () => {

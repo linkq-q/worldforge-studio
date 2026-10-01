@@ -384,10 +384,8 @@ function flareRiverIntoCoast(samples: RiverPathSample[], shoreWidth: number): Ri
 function submergedRiverMouth(
   samples: readonly RiverPathSample[],
   oceanIndex: number,
-  shore: RiverPathSample,
-  terrainHeightAt: (x: number, z: number) => number
+  shore: RiverPathSample
 ): RiverPathSample {
-  const targetTerrainHeight = -0.15;
   const maximumExtension = Math.max(4, shore.width * 1.5);
   let start = shore, travelled = 0;
   const candidates = samples.slice(oceanIndex).map(sample => ({ ...sample, point: [...sample.point] as [number, number] }));
@@ -407,16 +405,6 @@ function submergedRiverMouth(
     const end = allowed < segmentLength
       ? mixRiverPathSample(start, candidate, allowed / segmentLength)
       : candidate;
-    if (terrainHeightAt(...end.point) <= targetTerrainHeight) {
-      let shallow = 0, deep = 1;
-      for (let step = 0; step < 18; step += 1) {
-        const t = (shallow + deep) / 2;
-        if (terrainHeightAt(...mixRiverPathSample(start, end, t).point) > targetTerrainHeight) shallow = t;
-        else deep = t;
-      }
-      const mouth = mixRiverPathSample(start, end, deep);
-      return { ...mouth, level: -0.03, width: shore.width * 1.5 };
-    }
     travelled += allowed;
     start = end;
     if (travelled >= maximumExtension - 0.000001) break;
@@ -456,7 +444,7 @@ function clipRiverAtImplicitOcean(
     level: 0,
     width: mix(from.width, to.width, ocean)
   };
-  const mouth = submergedRiverMouth(samples, oceanIndex, shore, terrainHeightAt);
+  const mouth = submergedRiverMouth(samples, oceanIndex, shore);
   let clipped = [...flareRiverIntoCoast([...samples.slice(0, oceanIndex), shore], shore.width), mouth];
   if (!sourceConnected) clipped = taperIsolatedRiverSource(clipped);
   if (reversed) clipped = clipped.reverse();
@@ -893,7 +881,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         // Reuse the editor's outer bank profile. Carving only the inside of a
         // water polygon creates a vertical wall exactly at its boundary.
         if (height > level && boundaryDistance < outerBankWidth) {
-          height = waterShoreProfile(level, height, boundaryDistance, outerBankWidth);
+          height = mix(height, waterShoreProfile(level, height, boundaryDistance, outerBankWidth), mouthBlend);
         }
         continue;
       }
@@ -907,8 +895,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
           : water.shorelineProfile === 'gentle'
             ? Math.max(4, water.depth * 4)
             : Math.max(1, water.depth * 2);
-      height = Math.min(height, waterShoreProfile(level, level - water.depth * mouthBlend,
-        boundaryDistance, Math.min(reach, innerShoreWidth)));
+      const waterBed = waterShoreProfile(level, level - water.depth,
+        boundaryDistance, Math.min(reach, innerShoreWidth));
+      height = Math.min(height, mix(height, waterBed, mouthBlend));
       if (height <= level + 0.000001 && (waterLevel === null || level > waterLevel)) {
         waterLevel = level;
         waterBodyId = prepared.source.id;

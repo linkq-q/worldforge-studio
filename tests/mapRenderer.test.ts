@@ -421,6 +421,47 @@ describe('structured map water rendering', () => {
     });
   });
 
+  it('fades only a submerged river endpoint while preserving inland rivers', () => {
+    const map = createEmptyMap('river mouth fade', 'river-mouth-fade');
+    map.waterBodies = [{
+      id: 'downstream-mouth', name: 'Downstream mouth', type: 'river', level: 1, depth: 2, width: 6,
+      points: [[-18, -12], [0, -12], [12, -12], [18, -12]], levels: [2, 1, 0, -0.03], shorelineSmoothness: 0
+    }, {
+      id: 'upstream-mouth', name: 'Upstream mouth', type: 'river', level: 1, depth: 2, width: 6,
+      points: [[-18, 0], [-12, 0], [0, 0], [18, 0]], levels: [-0.03, 0, 1, 2], shorelineSmoothness: 0
+    }, {
+      id: 'inland-river', name: 'Inland river', type: 'river', level: 1, depth: 2, width: 6,
+      points: [[-18, 12], [0, 12], [18, 12]], levels: [2, 1.5, 1], shorelineSmoothness: 0
+    }, {
+      id: 'below-sea-inland', name: 'Below sea inland river', type: 'river', level: -1, depth: 2, width: 6,
+      points: [[-18, 24], [0, 24], [18, 24]], levels: [-1, -1.5, -2], shorelineSmoothness: 0
+    }];
+    const root = buildStructuredWaterGroup(map);
+    const profile = (id: string): Array<{ fade: number; level: number }> => {
+      const mesh = root.getObjectByName(`water:${id}`) as THREE.Mesh;
+      const flow = mesh.geometry.getAttribute('riverFlow');
+      const positions = mesh.geometry.getAttribute('position');
+      return Array.from({ length: flow.count }, (_, index) => ({
+        fade: flow.getZ(index), level: positions.getY(index) + mesh.position.y
+      }));
+    };
+
+    const downstream = profile('downstream-mouth');
+    expect(downstream[0].fade).toBe(1);
+    expect(downstream.at(-1)!.fade).toBe(0);
+    expect(downstream.some(sample => sample.fade > 0 && sample.fade < 1)).toBe(true);
+    expect(downstream.filter(sample => sample.level <= 0).every(sample => sample.fade === 0)).toBe(true);
+    const upstream = profile('upstream-mouth');
+    expect(upstream[0].fade).toBe(0);
+    expect(upstream.at(-1)!.fade).toBe(1);
+    expect(upstream.some(sample => sample.fade > 0 && sample.fade < 1)).toBe(true);
+    expect(upstream.filter(sample => sample.level <= 0).every(sample => sample.fade === 0)).toBe(true);
+    expect(new Set(profile('inland-river').map(sample => sample.fade))).toEqual(new Set([1]));
+    expect(new Set(profile('below-sea-inland').map(sample => sample.fade))).toEqual(new Set([1]));
+
+    disposeStructuredWaterGroup(root);
+  });
+
   it('fills river terrain depth beyond the local owner tile through the world sampler', () => {
     const map = createEmptyMap('streamed river owner', 'streamed-river-owner', [20, 16, 20]);
     map.terrain = { resolutionX: 2, resolutionZ: 2, heights: [0, 0, 0, 0] };

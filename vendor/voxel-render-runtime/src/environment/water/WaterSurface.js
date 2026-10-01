@@ -106,8 +106,9 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   ${WATER_NOISE_UTILS_GLSL}
   ${OCEAN_TERRAIN_GLSL}
 
-  attribute vec2 riverFlow;
+  attribute vec3 riverFlow;
   varying vec2 vRiverFlow;
+  varying float vRiverMouthFade;
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
@@ -381,6 +382,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);
 
     vRiverFlow = (modelMatrix * vec4(riverFlow.x, 0.0, riverFlow.y, 0.0)).xz;
+    vRiverMouthFade = riverFlow.z;
     vWorldPosition = worldPos.xyz;
     vReflectionWorldPosition = reflectionWorldPos.xyz;
     vWorldNormal = normalize(mat3(modelMatrix) * perturbedNormal);
@@ -410,6 +412,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   ${OCEAN_TERRAIN_GLSL}
 
   varying vec2 vRiverFlow;
+  varying float vRiverMouthFade;
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
@@ -1538,6 +1541,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       alpha = mix(alpha, 1.0, oceanDeepOcclusion);
       alpha = mix(alpha, 1.0, foam * 0.65);
     }
+    float riverMouthFade = uUseRiverFlow ? clamp(vRiverMouthFade, 0.0, 1.0) : 1.0;
     if (hasTerrainDepth && uHasWaterSceneColor) {
       vec3 detailView = mat3(viewMatrix) * (finalWaterNormal - baseNormal);
       vec2 refractedUv = clamp(screenUV + detailView.xy * 0.018 * min(terrainWaterDepth, 2.0), vec2(0.001), vec2(0.999));
@@ -1548,6 +1552,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       finalColor = mix(transmittedColor, finalColor, clamp(alpha, 0.0, 1.0));
       alpha = 1.0;
     }
+    alpha *= riverMouthFade;
     gl_FragColor = vec4(finalColor, alpha);
   }
 `;

@@ -80,6 +80,30 @@ describe('WaterSurface shader', () => {
     surface.dispose();
   });
 
+  it('applies submerged river-mouth fade to the final transparent and refracted output', () => {
+    const surface = new WaterSurface(
+      new THREE.Scene(),
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+
+    expect(surface.material.vertexShader).toContain('attribute vec3 riverFlow;');
+    expect(surface.material.vertexShader).toContain('vRiverMouthFade = riverFlow.z;');
+    expect(surface.material.fragmentShader).toContain(
+      'float riverMouthFade = uUseRiverFlow ? clamp(vRiverMouthFade, 0.0, 1.0) : 1.0;'
+    );
+    const fade = surface.material.fragmentShader.indexOf('alpha *= riverMouthFade;');
+    const refraction = surface.material.fragmentShader.indexOf('if (hasTerrainDepth && uHasWaterSceneColor)');
+    const opaqueRefraction = surface.material.fragmentShader.indexOf('alpha = 1.0;', refraction);
+    const output = surface.material.fragmentShader.indexOf('gl_FragColor = vec4(finalColor, alpha);');
+    expect(fade).toBeGreaterThan(0);
+    expect(fade).toBeGreaterThan(opaqueRefraction);
+    expect(fade).toBeLessThan(output);
+
+    surface.dispose();
+  });
+
   it('supports terrain-driven ocean swash, foam edge, and splash droplets', () => {
     const scene = new THREE.Scene();
     const surface = new WaterSurface(
