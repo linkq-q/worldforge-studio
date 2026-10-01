@@ -1225,7 +1225,10 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     }
     for (let brushIndex = 0; brushIndex < brushLimit; brushIndex += 1) {
       const brush = terrainBrushes[brushIndex];
-      const authoredFeather = brush.feather ?? 0;
+      const defaultGradeFeather = compactRelief && (brush.mode === 'flatten' || brush.mode === 'grade')
+        ? Math.min(60, Math.max(12, (brush.region.kind === 'circle'
+          ? brush.region.radius : brush.region.width) * 0.75)) : 0;
+      const authoredFeather = brush.feather ?? defaultGradeFeather;
       // Preserve deliberate drainage cuts; only bulk earthworks need the slope-safe expansion.
       const narrowGully = brush.mode === 'lower' && brush.amount <= 8
         && brush.region.kind === 'path' && brush.region.width <= 16

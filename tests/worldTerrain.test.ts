@@ -197,6 +197,28 @@ describe('composable world terrain operations', () => {
     expect(Number.isNaN(tile.waterLevels[0])).toBe(true);
   });
 
+  it('feathers compact flatten and grade brushes by default while preserving explicit hard edges', () => {
+    const compact = validateWorldRecipe({ ...original, size: 500, reliefProfile: 'compact', heightScale: 0.04 });
+    const base = createWorldSampler(compact);
+    const target = base(0, 0).height + 30;
+    const shapes = [
+      { mode: 'flatten' as const, region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 30 },
+        height: target, probe: [35, 0] as [number, number] },
+      { mode: 'grade' as const, region: { kind: 'path' as const,
+        points: [[-50, 0], [50, 0]] as [number, number][], width: 20 },
+        heights: [target, target], probe: [0, 15] as [number, number] }
+    ];
+    for (const [index, shape] of shapes.entries()) {
+      const { probe, ...brush } = shape;
+      const soft = createWorldSampler(validateWorldRecipe({ ...compact,
+        terrainBrushes: [{ id: `soft-${index}`, ...brush }] }));
+      const hard = createWorldSampler(validateWorldRecipe({ ...compact,
+        terrainBrushes: [{ id: `hard-${index}`, ...brush, feather: 0 }] }));
+      expect(hard(...probe).height).toBeCloseTo(base(...probe).height, 8);
+      expect(soft(...probe).height).toBeGreaterThan(base(...probe).height + 1);
+    }
+  });
+
   it('gives narrow-feather biome patches a bounded natural deterministic transition', () => {
     const baseRecipe = parseWorldPrompt('中央是沙漠', 6103, 500);
     const recipe = validateWorldRecipe({ ...baseRecipe, biomePatches: [{
