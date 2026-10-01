@@ -691,7 +691,6 @@ export class RenderRuntimeAdapter {
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
-          surface.material.uniforms.uToonPatternEnabled.value = false;
           const splash = syncWaterSurfaceOcean(surface, ocean);
           if (splash) mesh.add(splash);
           surface.material.transparent = true;
