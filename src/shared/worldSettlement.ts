@@ -317,18 +317,27 @@ export function createWorldSettlementPartialLandmarkLayout(
   const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
   const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
     ? authoredWaterfrontFrontage(plan,town,sample,settings):[];
+  const worldRoads=plan.roads.flatMap(road=>{
+    const points=worldRoadPolyline(road);
+    return points.slice(1).map((b,index)=>({a:points[index],b,width:road.width}));
+  });
   const entries=requirements.map(requirement=>{
     const {siting,...building}=requirement;
     const sites=boundedLandmarkSites(frontageLandmarkSites(
-      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:[]));
+      building,base.streets,town,sample,settings,siting,siting==='waterfront'?authoredWaterfront:[])).filter(candidate=>{
+      const worldBuilding={...candidate,x:candidate.x+town.center[0],z:candidate.z+town.center[1]};
+      return !worldRoads.some(road=>segmentBuildingFootprint(road.a,road.b,worldBuilding,road.width/2));
+    });
     return {requirement,sites};
   }).sort((a,b)=>b.requirement.width*b.requirement.depth-a.requirement.width*a.requirement.depth
     ||a.sites.length-b.sites.length
     ||a.requirement.id.localeCompare(b.requirement.id));
+  const remainingCandidateRequirements=entries.map((_,index)=>entries.slice(index).filter(entry=>entry.sites.length).length);
+  const targetCount=remainingCandidateRequirements[0]??0;
   const landmarks:TownBuilding[]=[];
   let best={landmarks:[] as TownBuilding[],patch:base},attempts=0,searchSteps=0,searchLimited=false;
   const search=(index:number):void=>{
-    if(searchLimited||best.landmarks.length===entries.length) return;
+    if(searchLimited||best.landmarks.length===targetCount) return;
     if(index===entries.length) {
       if(landmarks.length<=best.landmarks.length) return;
       if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {searchLimited=true;return;}
@@ -338,19 +347,34 @@ export function createWorldSettlementPartialLandmarkLayout(
       } catch { /* Keep searching other sites and landmark subsets. */ }
       return;
     }
-    if(landmarks.length+entries.length-index<=best.landmarks.length) return;
-    // Search the omission branch first so a hard-to-site landmark cannot starve a larger feasible subset.
-    search(index+1);
+    if(landmarks.length+remainingCandidateRequirements[index]<=best.landmarks.length) return;
     for(const candidate of entries[index].sites) {
-      if(searchLimited||best.landmarks.length===entries.length) return;
+      if(searchLimited||best.landmarks.length===targetCount) return;
       if(!landmarks.every(landmark=>landmarkSitesCompatible(candidate,landmark))) continue;
       if(searchSteps++>=PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {searchLimited=true;return;}
       landmarks.push(candidate);
       search(index+1);
       landmarks.pop();
     }
+    search(index+1);
   };
   search(0);
+  if(!best.landmarks.length&&targetCount>1&&searchSteps<PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {
+    const targetSearchLimited=searchLimited,maxSites=Math.max(0,...entries.map(entry=>entry.sites.length));
+    let fallbackLimited=false;
+    attempts=0;
+    fallback: for(let siteIndex=0;siteIndex<maxSites;siteIndex++) for(const entry of entries) {
+      const candidate=entry.sites[siteIndex];
+      if(!candidate) continue;
+      if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {fallbackLimited=true;break fallback;}
+      if(searchSteps++>=PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {fallbackLimited=true;break fallback;}
+      try {
+        best={landmarks:[candidate],patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks:[candidate]})};
+        break fallback;
+      } catch { /* Keep the base settlement when no bounded singleton fallback succeeds. */ }
+    }
+    searchLimited=targetSearchLimited||fallbackLimited;
+  }
   const byId=new Map(best.landmarks.map(landmark=>[landmark.id,landmark]));
   const entriesById=new Map(entries.map(entry=>[entry.requirement.id,entry]));
   return {

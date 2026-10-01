@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { MapGuide } from '../src/shared/mapGuide';
 import {
-  auditWorldSettlement, createWorldSettlementLandmarkLayout, generateWorldSettlement, type WorldSettlementSampler
+  auditWorldSettlement, createWorldSettlementLandmarkLayout, createWorldSettlementPartialLandmarkLayout,
+  generateWorldSettlement, type WorldSettlementSampler
 } from '../src/shared/worldSettlement';
 import { createUrbanLayout } from '../src/shared/mapUrbanLayout';
 import { createWorldSampler, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
@@ -851,6 +852,36 @@ describe('world settlement growth', () => {
       kind: 'city', pattern: 'organic', seed: 71, density: 0.78
     }, requirements)).toThrow('world_settlement_no_waterfront_site:dry-quay');
   });
+
+  it('tries the full feasible landmark set before spending the partial-layout attempt budget on omissions', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0];
+    town.radius = 100;
+    town.foundation = createWorldSampler(plan.recipe)(0, 0).height;
+    town.ports = [];
+    plan.roads = [road('crossing-trail', [[-50, 0], [50, 0]], 4)];
+    const flat: WorldSettlementSampler = () => ({
+      height: town.foundation, waterLevel: null, waterBodyId: null, moisture: 0.3, temperature: 0.5,
+      continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+    const civic = ['school', 'health-post', 'market-hall', 'service-house', 'meeting-hall'].map((id, index) => ({
+      id, use: id, width: 12 - index * 0.5, depth: 10, height: 6, assetKey: id, siting: 'central' as const
+    }));
+
+    const result = createWorldSettlementPartialLandmarkLayout(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 19, density: 0.45
+    }, [
+      { id: 'fish-market', use: 'fish market', width: 12, depth: 10, height: 6,
+        assetKey: 'fish-market', siting: 'waterfront' },
+      ...civic
+    ]);
+
+    expect(result.landmarks.map(building => building.id)).toEqual(civic.map(building => building.id));
+    expect(result.unrealized).toEqual([{ id: 'fish-market', reason: 'no_waterfront_site' }]);
+    expect(result.landmarks.every(building => !segmentBuildingFootprint(
+      plan.roads[0].points[0], plan.roads[0].points[1], building, plan.roads[0].width / 2))).toBe(true);
+  }, 10_000);
 
   it('does not call an inland street across unusable ground waterfront frontage', () => {
     const plan = fixture(), town = plan.towns[0], base = sampler(plan);
