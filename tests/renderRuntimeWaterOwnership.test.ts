@@ -51,7 +51,7 @@ describe('render-plan water ownership', () => {
 
     (adapter as unknown as { applyWaterStyles(styles: []): void }).applyWaterStyles([]);
 
-    const material = ocean.material as THREE.ShaderMaterial;
+    const material = ocean.material as unknown as THREE.ShaderMaterial;
     expect(material.uniforms.uUseWaterNormalMaps.value).toBe(true);
     expect(material.uniforms.uHighlightIntensity.value).toBeCloseTo(0.06);
 
