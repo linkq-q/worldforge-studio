@@ -238,6 +238,7 @@ describe('render AI adapter', () => {
       'runtime.presentation-style',
       'runtime.color-grade',
       'runtime.water-style',
+      'runtime.underwater',
       'runtime.grass-style',
       'runtime.material-theme',
       'runtime.light-rig',

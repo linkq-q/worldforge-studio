@@ -508,7 +508,7 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     priority: 'P2',
     developerOnly: true,
     availability: 'ready',
-    availabilityNote: '结构化海、湖、河中的相机视效；默认关闭，不改变水面外观。',
+    availabilityNote: '结构化水体内的相机视效；首版按相机所在处的水面高度作水平面近似，默认关闭。',
     params: {
       mode: { type: 'enum', values: ['off', 'clear', 'coastal'], default: 'off' },
       tint: { type: 'color', default: '#19747d' },

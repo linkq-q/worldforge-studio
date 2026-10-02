@@ -205,6 +205,7 @@ export class RenderRuntimeAdapter {
   ): void {
     if (this.modelsRoot && this.modelsRoot !== modelsRoot) this.resetScopedCapabilities();
     const sceneChanged = this.contentRoot !== contentRoot;
+    if (sceneChanged) this.resetUnderwaterState();
     this.contentRoot = contentRoot;
     this.modelsRoot = modelsRoot;
     this.restoreMaterialEffects = materialRuntime?.restore ?? null;
@@ -266,6 +267,16 @@ export class RenderRuntimeAdapter {
     configureUnderwaterPass(this.underwaterPass, style);
     if (style.mode !== 'off') return;
     this.underwaterBlend = 0;
+    this.setUnderwaterPassActive(false);
+  }
+
+  isUnderwaterEnabled(): boolean {
+    return this.underwaterMode !== 'off';
+  }
+
+  private resetUnderwaterState(): void {
+    this.underwaterBlend = 0;
+    this.underwaterWaterLevel = 0;
     this.setUnderwaterPassActive(false);
   }
 
@@ -405,10 +416,17 @@ export class RenderRuntimeAdapter {
   tick(deltaTime: number, elapsedSeconds: number, waterLevel: number | null = null): void {
     this.pendingDeltaTime = deltaTime;
     this.pendingElapsedSeconds = elapsedSeconds;
-    if (waterLevel !== null) this.underwaterWaterLevel = waterLevel;
-    this.underwaterBlend = this.underwaterMode === 'off'
-      ? 0
-      : advanceUnderwaterBlend(this.underwaterBlend, waterLevel, this.camera.position.y, deltaTime);
+    if (this.underwaterMode === 'off' || waterLevel === null) {
+      this.resetUnderwaterState();
+    } else {
+      this.underwaterWaterLevel = waterLevel;
+      this.underwaterBlend = advanceUnderwaterBlend(
+        this.underwaterBlend,
+        waterLevel,
+        this.camera.position.y,
+        deltaTime
+      );
+    }
     this.setUnderwaterPassActive(this.underwaterBlend > 0);
     if (this.modelsRoot) {
       this.effectRuntime.updateRuntimeUniforms(this.modelsRoot, {

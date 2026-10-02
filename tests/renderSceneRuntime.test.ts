@@ -412,6 +412,7 @@ describe('rain water ripples', () => {
       adapter: {
         addRainRipple,
         getContentVisibilityDistance: () => 100,
+        isUnderwaterEnabled: () => false,
         tick: vi.fn(),
         render: vi.fn()
       },

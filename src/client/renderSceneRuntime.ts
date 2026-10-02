@@ -238,7 +238,9 @@ export class RenderSceneRuntime {
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
     this.volumetricLight?.update(elapsedSeconds);
-    const waterLevel = cameraWaterSurfaceLevel(this.map, this.camera.position.x, this.camera.position.z);
+    const waterLevel = this.adapter.isUnderwaterEnabled()
+      ? cameraWaterSurfaceLevel(this.map, this.camera.position.x, this.camera.position.z)
+      : null;
     this.adapter.tick(deltaTime, elapsedSeconds, waterLevel);
     this.adapter.render();
   }

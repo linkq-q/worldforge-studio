@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   advanceUnderwaterBlend,
   bindUnderwaterDepth,
@@ -7,6 +7,7 @@ import {
 } from '../src/client/underwaterRuntime';
 import { createEmptyMap, type MapWaterBody } from '../src/shared/map';
 import type { WorldMapState } from '../src/shared/worldMapState';
+import { RenderRuntimeAdapter } from '../src/client/renderRuntimeAdapter';
 
 const lake = (id: string, level: number, size = 6): MapWaterBody => ({
   id,
@@ -56,6 +57,35 @@ describe('underwater runtime state', () => {
     expect(leaving).toBeGreaterThan(0);
     expect(leaving).toBeLessThan(1);
     expect(advanceUnderwaterBlend(entering, null, 0, 1)).toBeCloseTo(0, 4);
+  });
+
+  it('snaps zero-duration still frames to the current side of the waterline', () => {
+    expect(advanceUnderwaterBlend(0, 0, -1, 0)).toBe(1);
+    expect(advanceUnderwaterBlend(1, 0, 1, 0)).toBe(0);
+  });
+
+  it('clears stale blend and water level when a map or water footprint is left', () => {
+    const setPassEnabled = vi.fn();
+    const adapter = Object.assign(Object.create(RenderRuntimeAdapter.prototype), {
+      underwaterMode: 'clear',
+      underwaterBlend: 0.75,
+      underwaterWaterLevel: 4,
+      underwaterPassActive: true,
+      frameCoordinator: { setPassEnabled },
+      camera: { position: { y: -1 } },
+      modelsRoot: null
+    }) as RenderRuntimeAdapter;
+
+    adapter.tick(1 / 60, 0, null);
+
+    expect(adapter.isUnderwaterEnabled()).toBe(true);
+    expect(adapter).toMatchObject({ underwaterBlend: 0, underwaterWaterLevel: 0, underwaterPassActive: false });
+    expect(setPassEnabled).toHaveBeenCalledWith('underwater', false);
+
+    adapter.tick(0, 0, 0);
+    expect(adapter).toMatchObject({ underwaterBlend: 1, underwaterPassActive: true });
+    adapter.tick(1 / 60, 1 / 60, null);
+    expect(adapter).toMatchObject({ underwaterBlend: 0, underwaterWaterLevel: 0, underwaterPassActive: false });
   });
 
   it('binds the shared scene depth and current camera matrices', () => {

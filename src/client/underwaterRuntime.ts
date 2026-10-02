@@ -29,6 +29,7 @@ export function advanceUnderwaterBlend(
 ): number {
   const depth = waterLevel === null ? Number.NEGATIVE_INFINITY : waterLevel - cameraY;
   const target = smoothstep(-0.08, 0.12, depth);
+  if (deltaTime <= 0) return target;
   const response = 1 - Math.exp(-12 * THREE.MathUtils.clamp(deltaTime, 0, 1));
   const next = THREE.MathUtils.lerp(THREE.MathUtils.clamp(current, 0, 1), target, response);
   return next < 0.0001 ? 0 : next > 0.9999 ? 1 : next;
