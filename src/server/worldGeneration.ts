@@ -1179,10 +1179,17 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
     && (input as Record<string, unknown>).mode === 'whitebox') return generateWorldWhitebox(input, signal);
   if (input && typeof input === 'object' && !Array.isArray(input)
     && (input as Record<string, unknown>).mode === 'construct-whitebox') return generateWorldFromWhitebox(input,store,signal);
-  const resumed = input && typeof input === 'object' && !Array.isArray(input)
-    && (input as Record<string, unknown>).mode === 'resume-intent';
+  const mode=input && typeof input === 'object' && !Array.isArray(input)
+    ? (input as Record<string, unknown>).mode : undefined;
+  if (mode !== undefined && mode !== 'resume-intent' && mode !== 'resume-layout') {
+    throw new Error('invalid_world_generation_mode');
+  }
+  const resumed=mode==='resume-intent'||mode==='resume-layout';
+  const resumeLayout=mode==='resume-layout';
   const rawIntent = resumed ? (input as Record<string, unknown>).rawIntent : undefined;
   if (resumed && rawIntent === undefined) throw new Error('invalid_world_resume_intent');
+  const rawLayout = resumeLayout ? (input as Record<string, unknown>).rawLayout : undefined;
+  if (resumeLayout && rawLayout === undefined) throw new Error('invalid_world_resume_layout');
   const request=validateWorldGenerationRequest(input);
   const reusableAssets=await Promise.all((request.reusableAssetIds??[]).map(async id=>{
     const asset=await store.loadAsset(id).catch(()=>null);
@@ -1198,6 +1205,10 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
   let intent:WorldIntentDraft|undefined = resumed ? parseWorldIntentDraft(rawIntent,request) : undefined;
   let evidence:WorldSitingEvidence|undefined = intent ? createWorldSitingEvidence(intent) : undefined;
   if (resumed) recordGenerationTrace('world.intent-resumed', {planId:intent!.plan.id});
+  if (resumeLayout) {
+    compiled=materializeWorldIntent(intent!,evidence!,rawLayout,request);
+    recordGenerationTrace('world.layout-resumed', {planId:intent!.plan.id});
+  }
   for(let attempt=0;!intent && attempt<=(request.repairAttempts??0);attempt++) {
     const content=await llmChat(messages,{provider:'gpt',maxTokens:16000,temperature:0.25,maxAttempts:1,traceStage:attempt?'world.intent-repair':'world.intent',signal});
     let draft:unknown;
@@ -1265,7 +1276,7 @@ export async function generateWorld(input:unknown,store:MapStore,signal?:AbortSi
         instruction:'Return one complete JSON object with only a plan key. Put recipe, ecology, towns and roads inside plan. Keep coordinates numeric [x,z] arrays and assign at most one biome constraint to each broad region; use bounded biome patches and landforms for interior forest and mountains. Site hints report sampled centers, ordinary-building capacity before public buildings, whether a safe waterfront street actually reaches the shore, and candidate usability per town; they are diagnostic, not authorized town coordinates. terrainHint counts 81 sampled cells, with sea height <=0 and dry height >2 metres; islandBoundary reports sampled world-edge heights, while islandLandmass reports the largest connected dry component against the combined town-core area and largest town diameter. A substantial port town must have room for its population, public buildings and an actual below-zero sea on a broad, gently sloped shore. Do not carve an abrupt circular harbor basin or a continuous coastal trench with a lower brush; let the ocean constraint form a broad shore and use gentle local cuts only. If sampled siting or the candidate graph failed, revise the terrain recipe and town regions together: create separated dry centers at least the sum of their town radii apart, with a passable route between them. If candidateUsability says allCandidatesLackBuildableNetwork, move that town region away from steep mountain terrain or shape a broad, low, gently sloped buildable terrace around it; keep the mountain terrain purposeful and do not relax settlement or route quality. world_candidate_terraces_overlap means every sampled pair for that road overlaps the square town cores; the error reports best axis separation / required sum of radii. Move or widen connected buildable terraces until at least one candidate pair meets that separation. For an island, keep the sampled world edge wet without blanket ocean constraints drowning the interior; remove non-ocean corner constraints that override cardinal ocean anchors, and put their mountain or forest detail into bounded interior patches; enlarge a broad low central landform with overlapping low interior landforms until the connected dry interior exceeds the combined 2*radius by 2*radius town cores and the largest town diameter. A compact strongly ocean-constrained island may lower global heightScale to about 0.02..0.04 and author mountain relief locally. Do not remove the sea or shrink the named towns to make room. Preserve the stated population, housing districts and public functions. world_settlement_no_landmark_site means that a named public building has no safe frontage; shape a broad, low, gently sloped civic terrace sized for its footprint and short dry street access, placing it inland unless its work truly requires the shore. Adjust public footprints and siting only as needed for plausible access. Preserve named destinations and topology; do not invent road points or settlement centers.'})});
     }
   }
-  if(intent&&evidence) {
+  if(intent&&evidence&&!compiled) {
     recordGenerationTrace('world.intent',{intent});
     recordGenerationTrace('world.siting',{evidence});
     const layoutMessages:ChatMessage[]=[{role:'system',content:WORLD_LAYOUT_PROMPT},{role:'user',content:JSON.stringify({

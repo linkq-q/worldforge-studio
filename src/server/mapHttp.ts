@@ -251,18 +251,24 @@ async function handlePublicMapRoute(req: Req, res: Res, store: MapStore, parts: 
 }
 
 async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
-  if (parts[2] === 'worlds' && parts[3] === 'generate' && parts.length === 4 && req.method === 'POST') {
+  if (parts[2] === 'worlds' && ['generate','resume-intent','resume-layout'].includes(parts[3])
+    && parts.length === 4 && req.method === 'POST') {
     const body = await readJson(req);
+    const resumeMode = parts[3] === 'resume-intent' || parts[3] === 'resume-layout' ? parts[3] : undefined;
+    if (resumeMode && (!body || typeof body !== 'object' || Array.isArray(body))) {
+      throw new HttpError(422, resumeMode === 'resume-layout' ? 'invalid_world_resume_layout' : 'invalid_world_resume_intent');
+    }
+    const generationInput = resumeMode ? {...(body as Record<string, unknown>), mode:resumeMode} : body;
     const controller = new AbortController();
     const abort = () => { if (!res.writableEnded) controller.abort(); };
     res.on('close', abort);
     try {
       await withGenerationTrace(store.rootDir, { mapId: 'world-preview', operation: 'generate' }, async () => {
-        recordGenerationTrace('request.input', body);
-        sendJson(res, 200, await (body && typeof body === 'object' && !Array.isArray(body)
-          && (body as Record<string, unknown>).mode === 'generate-approved-world-assets'
-          ? generateApprovedWorldAssets(body, store, controller.signal)
-          : generateWorld(body, store, controller.signal)));
+        recordGenerationTrace('request.input', generationInput);
+        sendJson(res, 200, await (generationInput && typeof generationInput === 'object' && !Array.isArray(generationInput)
+          && (generationInput as Record<string, unknown>).mode === 'generate-approved-world-assets'
+          ? generateApprovedWorldAssets(generationInput, store, controller.signal)
+          : generateWorld(generationInput, store, controller.signal)));
       });
     } catch (error) {
       throw new HttpError(422, error instanceof Error ? error.message : String(error));

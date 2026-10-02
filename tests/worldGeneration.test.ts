@@ -164,6 +164,28 @@ describe('world generation compiler', () => {
     expect(result.bundle.plan.ecology[0].scale).toEqual([.5,1.625]);
   });
 
+  it('resumes both preserved GPT stages after a safe layout parse fix', async () => {
+    const rawIntent=rawSoloIntent();
+    const {layout:source}=soloLayout();
+    const rawLayout=source as any;
+    rawLayout.assets.push({key:'forest-house',name:'Forest house',role:'house',
+      prompt:'A timber house',dimensions:[7,4,'10']});
+    const result=await generateWorld({...request,mode:'resume-layout',rawIntent,rawLayout},{} as MapStore);
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+    expect(result.draft.assets[0].dimensions).toEqual([7,4,10]);
+    expect(rawLayout.assets[0].dimensions).toEqual([7,4,'10']);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout-resumed',
+      {planId:'generated-world'});
+    await expect(generateWorld({...request,mode:'resume-layout',rawIntent},{} as MapStore))
+      .rejects.toThrow('invalid_world_resume_layout');
+  });
+
+  it('rejects an unknown generation mode before any paid planning call', async () => {
+    await expect(generateWorld({...request,mode:'resume-layot',rawIntent:rawSoloIntent()},{} as MapStore))
+      .rejects.toThrow('invalid_world_generation_mode');
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+  });
+
   it('accepts a decimal dimension string without changing the planned asset shape', async () => {
     const {layout:source}=soloLayout();
     const layout=source as any;

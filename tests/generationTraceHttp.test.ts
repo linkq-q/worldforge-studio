@@ -85,3 +85,33 @@ it('links a generated suggestion, its visual review and saved transaction to loc
     await rm(rootDir, { recursive: true, force: true });
   }
 });
+
+it('routes preserved planning stages through dedicated URLs that cannot become fresh GPT requests', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-resume-layout-http-'));
+  const store = new MapStore({ rootDir });
+  const pending: Array<Promise<unknown>> = [];
+  const server = http.createServer((req, res) => { pending.push(handleMapHttp(req, res, store)); });
+  try {
+    await store.ensureReady();
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    const port = (server.address() as { port: number }).port;
+    for (const [mode, body, error] of [
+      ['resume-intent', { prompt: 'A fjord', seed: 1, size: 500, generateAssets: false }, 'invalid_world_resume_intent'],
+      ['resume-layout', { prompt: 'A fjord', seed: 1, size: 500, generateAssets: false, rawIntent: {} }, 'invalid_world_resume_layout']
+    ] as const) {
+      const response = await fetch(`http://127.0.0.1:${port}/api/editor/worlds/${mode}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      expect(response.status).toBe(422);
+      expect((await response.json()).error).toBe(error);
+    }
+  } finally {
+    server.closeAllConnections();
+    if (server.listening) await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await Promise.all(pending);
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
