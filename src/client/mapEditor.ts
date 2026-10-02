@@ -8694,8 +8694,9 @@ function escapeHtml(value: string): string {
 function renderWorldWhiteboxDetails(details: WorldWhiteboxPreviewDetails): string {
   const json = (value: unknown) => escapeHtml(JSON.stringify(value, null, 2));
   const metrics = details.finalObservation;
+  const siteCount = details.finalPlan.featureGraph?.anchors.filter(anchor => anchor.site).length ?? 0;
   return `<details class="inspector-disclosure compact map-ai-composition-details" open>
-    <summary><span><b>白盒规划检查</b><small>${metrics.pointsOfInterest.realizedCount}/${metrics.pointsOfInterest.plannedCount} 个兴趣点 · ${metrics.routes.length} 条路线 · ${details.adjustment.decision === 'patch' ? '已调整' : '保留初稿'}</small></span></summary>
+    <summary><span><b>白盒规划检查</b><small>${metrics.pointsOfInterest.realizedCount}/${metrics.pointsOfInterest.plannedCount} 个兴趣点 · ${metrics.routes.length} 条路线 · ${siteCount} 个场景设施 · ${details.adjustment.decision === 'patch' ? '已调整' : '保留初稿'}</small></span></summary>
     <div class="inspector-body asset-library-details">
       <details><summary>原始规划</summary><pre>${json(details.originalPlan)}</pre></details>
       <details><summary>观察指标</summary><pre>${json(details.observation)}</pre></details>
@@ -8800,15 +8801,20 @@ function renderSavedWorldWhiteboxDetails(world: NonNullable<EditableMap['world']
     return `${text(water.id)} · ${text(water.type)} · ${status}`;
   });
   const wetAnchors = (plan.featureGraph?.anchors ?? []).flatMap((anchor) => {
+    if (anchor.site) return [];
     const surface = sample(...anchor.position);
     return surface.waterLevel != null && surface.waterLevel > surface.height + 0.05
       ? [`${text(anchor.id)} (${(surface.waterLevel - surface.height).toFixed(1)} m)`] : [];
   });
+  const siteAnchors = (plan.featureGraph?.anchors ?? []).flatMap(anchor => anchor.site ? [
+    `${text(anchor.id)} · ${text(anchor.kind)} · ${text(anchor.site.role)} / ${text(anchor.site.surface)} · ${anchor.site.dimensions.map(value => value.toFixed(1)).join(' × ')} m`
+  ] : []);
   return `<details class="inspector-disclosure compact map-ai-composition-details">
-    <summary><span><b>${plan.whitebox ? '已保存的白盒语义' : '已保存的世界规划语义'}</b><small>${settlements.length} 个聚落角色 · ${routes.length} 条移动路线 · ${exploration?.pointsOfInterest.length ?? 0} 个兴趣点</small></span></summary>
+    <summary><span><b>${plan.whitebox ? '已保存的白盒语义' : '已保存的世界规划语义'}</b><small>${settlements.length} 个聚落角色 · ${routes.length} 条移动路线 · ${exploration?.pointsOfInterest.length ?? 0} 个兴趣点 · ${siteAnchors.length} 个场景设施</small></span></summary>
     <div class="inspector-body asset-library-details">
-      <p class="empty">红色锚点表示该处地形采样被水覆盖；这里只显示问题，不修改首稿。</p>
+      <p class="empty">红色普通锚点表示该处地形采样被水覆盖；明确标注水面或结构承托的场景设施按规划显示。这里只显示问题，不修改首稿。</p>
       <div><b>被水覆盖的锚点</b>${list(wetAnchors)}</div>
+      <div><b>空间物件</b>${list(siteAnchors)}</div>
       <div><b>创作概念</b>${concept
         ? `<p>${text(concept.premise)}</p><p>${text(concept.experience)}</p>${list(concept.themes.map(text))}`
         : '<p class="empty">无</p>'}</div>

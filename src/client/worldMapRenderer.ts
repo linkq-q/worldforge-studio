@@ -12,7 +12,7 @@ import { calculateModelVisualFrame } from '../shared/modelBounds';
 import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag } from '../shared/visualDirection';
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
 import { createWorldEcologyDensity, createWorldExclusion, worldFeaturePathPolyline, worldRoadPolyline,
-  type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
+  type FeatureAnchor, type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import { createStaticWhiteboxBoxes, type StaticWhiteboxPlacement } from './generationPreviewOverlay';
@@ -79,6 +79,47 @@ export function worldRoadSurfaceStyle(
   return material === 'compacted-earth'
     ? { tags: ['soil'], intensity: 0.55, material, forceRoadOverlay: false }
     : { tags: ['paving', 'settlement'], intensity: 1, material, forceRoadOverlay: true };
+}
+
+function createWorldWhiteboxSite(anchor: FeatureAnchor, surfaceY: number): THREE.Group {
+  const site = anchor.site!;
+  const [width, height, depth] = site.dimensions;
+  const colors = {
+    structure: 0x9ea9b5,
+    vehicle: 0x47c6ee,
+    equipment: 0xe09b46,
+    furniture: 0xf3cf69,
+    landmark: 0xe67878,
+    scenery: 0x89d68a
+  } as const;
+  const material = new THREE.MeshBasicMaterial({ color: colors[site.role], depthTest: false,
+    transparent: true, opacity: 0.78 });
+  const group = new THREE.Group();
+  group.name = `world-whitebox-site:${anchor.id}`;
+  group.position.set(anchor.position[0], surfaceY, anchor.position[1]);
+  group.rotation.y = site.rotation ?? 0;
+  group.renderOrder = 21;
+  if (site.role === 'vehicle' && site.surface === 'water') {
+    const hullHeight = Math.max(0.45, height * 0.42);
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(width, hullHeight, depth), material);
+    hull.name = `world-whitebox-site-hull:${anchor.id}`;
+    hull.position.y = 0;
+    hull.renderOrder = 21;
+    group.add(hull);
+    const cabinHeight = Math.max(0.35, height - hullHeight);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(width * 0.55, cabinHeight, depth * 0.34), material.clone());
+    cabin.name = `world-whitebox-site-cabin:${anchor.id}`;
+    cabin.position.set(0, hullHeight / 2 + cabinHeight / 2, -depth * 0.08);
+    cabin.renderOrder = 21;
+    group.add(cabin);
+  } else {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+    body.name = `world-whitebox-site-body:${anchor.id}`;
+    body.position.y = height / 2;
+    body.renderOrder = 21;
+    group.add(body);
+  }
+  return group;
 }
 
 export function buildWorldWhiteboxOverlay(
@@ -175,6 +216,10 @@ export function buildWorldWhiteboxOverlay(
   const wetAnchorMaterial = new THREE.MeshBasicMaterial({ color: 0xff5252, depthTest: false });
   for (const anchor of plan.featureGraph.anchors) {
     const terrain = sample(...anchor.position);
+    if (anchor.site) {
+      root.add(createWorldWhiteboxSite(anchor, Math.max(terrain.height, terrain.waterLevel ?? terrain.height)));
+      continue;
+    }
     const flooded = terrain.waterLevel != null && terrain.waterLevel > terrain.height + 0.05;
     const marker = new THREE.Mesh(anchorGeometry, flooded ? wetAnchorMaterial : anchorMaterial);
     marker.name = `world-whitebox-anchor:${anchor.id}`;

@@ -187,6 +187,36 @@ describe('main editor streamed world renderer', () => {
     expect(overlay.getObjectByName('world-whitebox-anchor-wet:dry')).toBeUndefined();
   });
 
+  it('renders authored vessels and dockside details as visible whitebox site proxies', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.featureGraph = {
+      regions: [{ id: 'harbor', kind: 'harbor', name: 'Harbor', center: [0, 0], radius: 60 }],
+      paths: [],
+      anchors: [
+        { id: 'tour-boat', kind: 'moored-tour-boat', position: [2, 3], regionId: 'harbor',
+          site: { role: 'vehicle', surface: 'water', dimensions: [5, 3, 14], rotation: 0.4 } },
+        { id: 'net-rack', kind: 'net-drying-rack', position: [16, 3], regionId: 'harbor',
+          site: { role: 'equipment', surface: 'land', dimensions: [5, 3, 2] } }
+      ],
+      relations: []
+    };
+    const overlay = buildWorldWhiteboxOverlay(plan, (x) => x < 10
+      ? { height: -1, waterLevel: 0 } : { height: 2, waterLevel: null });
+    const vessel = overlay.getObjectByName('world-whitebox-site:tour-boat') as THREE.Group;
+    const equipment = overlay.getObjectByName('world-whitebox-site:net-rack') as THREE.Group;
+    expect(vessel).toBeInstanceOf(THREE.Group);
+    expect(vessel.getObjectByName('world-whitebox-site-hull:tour-boat')).toBeInstanceOf(THREE.Mesh);
+    expect(vessel.getObjectByName('world-whitebox-site-cabin:tour-boat')).toBeInstanceOf(THREE.Mesh);
+    expect(vessel.position.toArray()).toEqual([2, 0, 3]);
+    expect(vessel.rotation.y).toBeCloseTo(0.4);
+    expect(equipment).toBeInstanceOf(THREE.Group);
+    expect(equipment.position.toArray()).toEqual([16, 2, 3]);
+    expect(equipment.getObjectByName('world-whitebox-site-body:net-rack')).toBeInstanceOf(THREE.Mesh);
+    expect(overlay.getObjectByName('world-whitebox-anchor-wet:tour-boat')).toBeUndefined();
+    expect(overlay.getObjectByName('world-whitebox-anchor:tour-boat')).toBeUndefined();
+  });
+
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:waterfront',tags:['settlement','working-waterfront']})).toBe('cobblestone');

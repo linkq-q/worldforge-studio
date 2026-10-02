@@ -184,6 +184,37 @@ describe('hierarchical world planning contracts', () => {
     expect(worldPlanKey(reordered)).toBe(worldPlanKey(plan));
   });
 
+  it('validates visible site intent on semantic anchors without requiring it on destinations', () => {
+    const plan = fixture();
+    Object.assign(plan, {
+      featureGraph: {
+        regions: [{ id: 'harbor', kind: 'harbor', name: 'Harbor', center: [0, 0], radius: 200 }],
+        paths: [],
+        anchors: [
+          { id: 'town', kind: 'town-centre', position: [0, 40], regionId: 'harbor' },
+          { id: 'tour-boat', kind: 'moored-tour-boat', position: [0, -20], regionId: 'harbor',
+            site: { role: 'vehicle', surface: 'water', dimensions: [5, 3, 14], rotation: 1.25 } },
+          { id: 'cathedral', kind: 'cathedral', position: [60, 40], regionId: 'harbor',
+            site: { role: 'landmark', surface: 'land', dimensions: [42, 60, 120] } }
+        ],
+        relations: []
+      }
+    });
+    const checked = validateWorldPlan(plan);
+    expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'tour-boat')?.site).toEqual({
+      role: 'vehicle', surface: 'water', dimensions: [5, 3, 14], rotation: 1.25
+    });
+    expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'town')?.site).toBeUndefined();
+    expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'cathedral')?.site?.dimensions).toEqual([42, 60, 120]);
+
+    const invalidRole = structuredClone(plan);
+    invalidRole.featureGraph!.anchors.find(anchor => anchor.id === 'tour-boat')!.site!.role = 'building' as 'vehicle';
+    expect(() => validateWorldPlan(invalidRole)).toThrow('world_invalid_feature_site_role');
+    const invalidSize = structuredClone(plan);
+    invalidSize.featureGraph!.anchors.find(anchor => anchor.id === 'tour-boat')!.site!.dimensions[2] = 0;
+    expect(() => validateWorldPlan(invalidSize)).toThrow('world_invalid_feature_site_dimensions');
+  });
+
   it('reports executed POIs and deterministic path-network metrics without turning them into gates', () => {
     const plan = fixture();
     plan.whitebox = true;

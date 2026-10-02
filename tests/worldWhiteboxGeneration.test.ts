@@ -325,6 +325,10 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('heights:[12,6,2]');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Every walkable featureGraph path');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('pass through every anchor in connects');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coarsest scale that still preserves its defining physical relationships');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery'");
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("surface:'land'|'water'|'structure'");
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('rather than a fixed checklist');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
@@ -1127,6 +1131,26 @@ describe('whitebox world generation', () => {
       .toContain('maritime_settlement_no_accessible_ocean_shore');
   });
 
+  it('reports unsupported or mismatched visible site relationships without changing the raw plan', () => {
+    const source = buildablePlan();
+    source.featureGraph!.anchors.push(
+      { id: 'water-vehicle', kind: 'small-craft', position: [8, 8], regionId: 'village-region',
+        site: { role: 'vehicle', surface: 'water', dimensions: [3, 2, 8] } },
+      { id: 'raised-equipment', kind: 'loading-equipment', position: [12, 12], regionId: 'village-region',
+        site: { role: 'equipment', surface: 'structure', dimensions: [2, 3, 2] } }
+    );
+    const expansion = constructionExpansion();
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(source), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.featureGraph).toEqual(validateWorldPlan(source).featureGraph);
+    expect(result.diagnostics.flatMap(item => item.planningIssues)).toEqual(expect.arrayContaining([
+      'site_surface_mismatch:water-vehicle:expected_water',
+      'site_structure_support_missing:raised-equipment'
+    ]));
+  });
+
   it('constructs the saved whitebox with one non-retrying GPT call and preserves every semantic coordinate', async () => {
     const whiteboxPlan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
@@ -1144,6 +1168,8 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('publicBuildings:[{id,use,width,depth,height,assetKey?');
     expect(systemPrompt).toContain('visible whitebox footprint without spending an asset slot');
     expect(systemPrompt).toContain("role:'house'|'shop'|'workshop'|'tree'|'landmark'");
+    expect(systemPrompt).toContain("strategy:'single'|'assembly'");
+    expect(systemPrompt).toContain("Choose strategy:'assembly' when an approved building footprint benefits from connected reusable parts");
     expect(systemPrompt).toContain('Do not put width, depth, height or use directly on an asset object.');
     expect(mocks.generateModel).not.toHaveBeenCalled();
     expect(result.paidCallCount).toBe(1);
@@ -1407,12 +1433,14 @@ describe('whitebox world generation', () => {
     expect(result.assetSources?.map(asset => asset.id)).toEqual(['asset-1']);
   });
 
-  it('rejects assembly requests before any paid asset generation', async () => {
+  it('keeps an approved modular-building strategy in the construction preview', async () => {
     const expansion = constructionExpansion(1);
     expansion.assets[0].strategy = 'assembly';
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
-    await expect(generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
-      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore)).rejects.toThrow('world_whitebox_direct_asset_required');
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.draft.assets[0]).toEqual(expect.objectContaining({ strategy: 'assembly' }));
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 
