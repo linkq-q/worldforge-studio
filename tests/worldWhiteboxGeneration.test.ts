@@ -580,6 +580,40 @@ describe('whitebox world generation', () => {
     expect(result.towns[0].publicBuildings).toHaveLength(7);
   });
 
+  it('keeps authored habitat rules in a whitebox when no model asset slots are available', () => {
+    const expansion = constructionExpansion();
+    expansion.ecology = [{ id: 'wetland-grove', kind: 'broadleaf', biome: 'grassland',
+      density: 0.55, spacing: 11, maxSlope: 18, scale: [0.8, 1.3] }];
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(buildablePlan()), generateAssets: false,
+      assetGenerationLimit: 0, repairAttempts: 0
+    });
+    expect(result.plan.ecology).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'wetland-grove', kind: 'broadleaf' })
+    ]));
+    expect(result.assets).toEqual([]);
+  });
+
+  it('preserves spatial habitat intent when construction proposes no additional ecology', () => {
+    const source = originalPlan();
+    const dryRecipe = validateWorldRecipe(source.recipe);
+    delete dryRecipe.waterBodies;
+    const grove = { id: 'shore-grove', kind: 'broadleaf', biome: 'grassland',
+      density: 0.4, spacing: 12, maxSlope: 20, scale: [0.8, 1.3] };
+    const spatial = parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source, { ecology: [grove] }),
+      request, dryRecipe);
+    expect(spatial.plan.ecology).toEqual([grove]);
+    const buildable = buildablePlan();
+    buildable.ecology = spatial.plan.ecology;
+    const expansion = constructionExpansion();
+    expansion.ecology = [];
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(buildable), generateAssets: false,
+      assetGenerationLimit: 0, repairAttempts: 0
+    });
+    expect(result.plan.ecology).toEqual([grove]);
+  });
+
   it('previews proposed asset families and building footprints without generating a model', async () => {
     const expansion = constructionExpansion(1);
     expansion.towns[0].publicBuildings = [{ id: 'school', use: 'village school', width: 8, depth: 8,
