@@ -54,7 +54,7 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
     id: 'water',
     label: '水体',
     description: '湖泊与河流的颜色、波纹、泡沫和反射',
-    moduleIds: ['runtime.water-style']
+    moduleIds: ['runtime.water-style', 'runtime.underwater']
   },
   {
     id: 'materials',

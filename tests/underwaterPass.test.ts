@@ -22,6 +22,8 @@ describe('underwater post-process', () => {
     expect(shader).toContain('uProjectionMatrixInverse');
     expect(shader).toContain('uCameraMatrixWorld');
     expect(shader).toContain('(uWaterLevel - uCameraPosition.y) / verticalDelta');
+    expect(shader).toContain('cameraUnderwater');
+    expect(shader).toContain('sceneUnderwater');
     expect(shader).toContain('exp(-uAbsorption * max(waterDistance, 0.0))');
     expect(shader).not.toContain('texture2D(tDiffuse, vUv +');
 

@@ -17,7 +17,8 @@ import {
   createPaperTexturePass,
   createSketchHatchPass,
   createToneMapPass,
-  createExponentialFogPass
+  createExponentialFogPass,
+  createUnderwaterPass
 } from '@voxel-studio/render-runtime/postprocess';
 import { WaterSurface, WaterfallSurface, WaterSceneCapture } from '@voxel-studio/render-runtime/environment';
 import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
@@ -41,6 +42,7 @@ import {
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import { RenderFrameCoordinator, type RenderPrePassResources } from './renderFrameCoordinator';
 import { isNormalDepthPrePassMesh } from './renderPrePassPolicy';
+import { advanceUnderwaterBlend, bindUnderwaterDepth, configureUnderwaterPass } from './underwaterRuntime';
 import type { VolumetricLightRuntime } from './volumetricLightRuntime';
 import type {
   RuntimeColorGrade,
@@ -48,6 +50,7 @@ import type {
   RuntimeMaterialTheme,
   RuntimeOutlineStyle,
   RuntimePostQuality,
+  RuntimeUnderwaterStyle,
   RuntimeWaterStyle,
   RuntimePresentationStyle
 } from '../shared/renderPlan';
@@ -89,10 +92,15 @@ export class RenderRuntimeAdapter {
   private readonly sketchPass = createSketchHatchPass();
   private readonly toneMapPass = createToneMapPass();
   private readonly fogPass = createExponentialFogPass();
+  private readonly underwaterPass = createUnderwaterPass();
   private readonly ssaoPass: SharedSSAOPass;
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
   private fogDensity = 0;
+  private underwaterMode: RuntimeUnderwaterStyle['mode'] = 'off';
+  private underwaterBlend = 0;
+  private underwaterWaterLevel = 0;
+  private underwaterPassActive = false;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private waterDetailTexture: THREE.DataTexture | null = null;
@@ -176,6 +184,7 @@ export class RenderRuntimeAdapter {
     this.frameCoordinator.registerPass(this.sketchPass, 'sketch', 52, false);
     // Fog is last so water, outlines and presentation effects share one depth fade.
     this.frameCoordinator.registerPass(this.fogPass, 'fog', 60, false);
+    this.frameCoordinator.registerPass(this.underwaterPass, 'underwater', 70, false);
     this.frameCoordinator.registerPass(new OutputPass(), 'output', 100, true);
     this.frameCoordinator.syncPasses();
     this.setNumber(this.toneMapPass, 'uLUTStrength', 0);
@@ -250,6 +259,14 @@ export class RenderRuntimeAdapter {
       ?? (quality.bloom === 'strong' ? 0.85 : quality.bloom === 'soft' ? 0.38 : 0);
     this.bloomPass.radius = quality.bloom === 'strong' ? 0.55 : 0.32;
     this.bloomPass.threshold = quality.bloom === 'strong' ? 0.72 : 0.86;
+  }
+
+  applyUnderwater(style: RuntimeUnderwaterStyle): void {
+    this.underwaterMode = style.mode;
+    configureUnderwaterPass(this.underwaterPass, style);
+    if (style.mode !== 'off') return;
+    this.underwaterBlend = 0;
+    this.setUnderwaterPassActive(false);
   }
 
   getPerformanceStats() {
@@ -385,9 +402,14 @@ export class RenderRuntimeAdapter {
     }
   }
 
-  tick(deltaTime: number, elapsedSeconds: number): void {
+  tick(deltaTime: number, elapsedSeconds: number, waterLevel: number | null = null): void {
     this.pendingDeltaTime = deltaTime;
     this.pendingElapsedSeconds = elapsedSeconds;
+    if (waterLevel !== null) this.underwaterWaterLevel = waterLevel;
+    this.underwaterBlend = this.underwaterMode === 'off'
+      ? 0
+      : advanceUnderwaterBlend(this.underwaterBlend, waterLevel, this.camera.position.y, deltaTime);
+    this.setUnderwaterPassActive(this.underwaterBlend > 0);
     if (this.modelsRoot) {
       this.effectRuntime.updateRuntimeUniforms(this.modelsRoot, {
         uTime: elapsedSeconds,
@@ -786,7 +808,8 @@ export class RenderRuntimeAdapter {
       || this.curvaturePass.enabled
       || needsSketchWorld
       || this.ssaoPass.enabled
-      || this.fogPass.enabled;
+      || this.fogPass.enabled
+      || this.underwaterPass.enabled;
   }
 
   private producePrePass(): RenderPrePassResources | null {
@@ -806,6 +829,15 @@ export class RenderRuntimeAdapter {
     }
     if (this.fogPass.enabled && depthTexture) {
       bindDistanceFogDepth(this.fogPass, depthTexture, this.camera);
+    }
+    if (this.underwaterPass.enabled && depthTexture) {
+      bindUnderwaterDepth(
+        this.underwaterPass,
+        depthTexture,
+        this.camera,
+        this.underwaterWaterLevel,
+        this.underwaterBlend
+      );
     }
     if (this.curvaturePass.enabled) {
       this.curvaturePass.uniforms.tNormal.value = normalTexture;
@@ -872,6 +904,12 @@ export class RenderRuntimeAdapter {
       }
       binding.surface.update(deltaTime, this.camera, binding.usesSceneDepth ? depthTexture : null);
     }
+  }
+
+  private setUnderwaterPassActive(active: boolean): void {
+    if (active === this.underwaterPassActive) return;
+    this.underwaterPassActive = active;
+    this.frameCoordinator.setPassEnabled('underwater', active);
   }
 
   private renderNormalDepth(root: THREE.Object3D): void {

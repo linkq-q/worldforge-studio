@@ -54,12 +54,14 @@ const UnderwaterShader = {
       float sceneDistance = depthSample >= 0.9999 ? uCameraFar : length(cameraToScene);
       float waterDistance = sceneDistance;
 
-      // Upward sight lines leave the medium at the water plane. Downward
-      // sight lines remain submerged until the first scene surface.
       float verticalDelta = scenePosition.y - uCameraPosition.y;
-      if (verticalDelta > 0.00001 && scenePosition.y > uWaterLevel) {
-        float exitFraction = (uWaterLevel - uCameraPosition.y) / verticalDelta;
-        waterDistance *= clamp(exitFraction, 0.0, 1.0);
+      bool cameraUnderwater = uCameraPosition.y <= uWaterLevel;
+      bool sceneUnderwater = scenePosition.y <= uWaterLevel;
+      if (!cameraUnderwater && !sceneUnderwater) {
+        waterDistance = 0.0;
+      } else if (abs(verticalDelta) > 0.00001 && cameraUnderwater != sceneUnderwater) {
+        float planeFraction = clamp((uWaterLevel - uCameraPosition.y) / verticalDelta, 0.0, 1.0);
+        waterDistance *= cameraUnderwater ? planeFraction : 1.0 - planeFraction;
       }
 
       vec3 transmission = exp(-uAbsorption * max(waterDistance, 0.0));

@@ -6,6 +6,7 @@ import { AtmosphereFxRuntime } from './atmosphereFxRuntime';
 import { VolumetricLightRuntime } from './volumetricLightRuntime';
 import { WeatherRuntime, type WeatherFrame } from './weatherRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
+import { cameraWaterSurfaceLevel } from './underwaterRuntime';
 import { configureRendererOutput } from './renderOutputPipeline';
 import { compileSceneArt } from '../shared/sceneArt';
 import type { RenderedMap } from './mapRenderer';
@@ -36,6 +37,7 @@ import {
   compileRuntimeMaterialThemes,
   compileRuntimeOutline,
   compileRuntimePostQuality,
+  compileRuntimeUnderwater,
   compileRuntimeVolumetricLight,
   compileRuntimeGlassStyle,
   compileRuntimePresentation,
@@ -66,6 +68,7 @@ export interface RenderSchemeTargets {
     | 'applyPresentation'
     | 'applyColorGrade'
     | 'applyPostQuality'
+    | 'applyUnderwater'
     | 'applyDistanceFog'
     | 'applyScopedCapabilities'
   >;
@@ -235,7 +238,8 @@ export class RenderSceneRuntime {
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
     this.volumetricLight?.update(elapsedSeconds);
-    this.adapter.tick(deltaTime, elapsedSeconds);
+    const waterLevel = cameraWaterSurfaceLevel(this.map, this.camera.position.x, this.camera.position.z);
+    this.adapter.tick(deltaTime, elapsedSeconds, waterLevel);
     this.adapter.render();
   }
 
@@ -469,6 +473,7 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     configureRendererOutput(renderer, applySceneLightingContext(targets, 'noon', 1));
     adapter.applyColorGrade({ recipe: 'neutral' });
     adapter.applyPostQuality({ bloom: 'off', ssao: 'off', depthOfField: 'off' });
+    adapter.applyUnderwater({ mode: 'off', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72 });
     adapter.applyDistanceFog('#111719', 0);
     adapter.applyScopedCapabilities([], [], []);
     targets.rendered?.setGrassStyle(grassStyleWithSharedWind(DEFAULT_RUNTIME_GRASS_STYLE, targets.map));
@@ -504,6 +509,9 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   adapter.applyPostQuality(
     plan ? compileRuntimePostQuality(plan) : { bloom: 'off', ssao: 'off', depthOfField: 'off' }
   );
+  adapter.applyUnderwater(plan
+    ? compileRuntimeUnderwater(plan)
+    : { mode: 'off', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72 });
   if (plan) applyLightRig(compileRuntimeLightRig(plan), sunLight, hemisphereLight, settings);
   const timeOfDay = renderTimeOfDay(plan);
   configureRendererOutput(renderer, applySceneLightingContext(targets, timeOfDay, settings.exposure));
