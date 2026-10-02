@@ -411,6 +411,16 @@ function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[
         length + Math.hypot(point[0] - points[index][0], point[1] - points[index][1]), 0);
     }
     const distanceTolerance = extent === null ? 0 : Math.max(0.5, extent * 0.01);
+    const fractionalDistance = keyframes.every((keyframe, index) => keyframe
+      && typeof keyframe === 'object' && !Array.isArray(keyframe)
+      && Object.keys(keyframe).every(key => key === 'distance' || key === 'height')
+      && typeof keyframe.distance === 'number' && Number.isFinite(keyframe.distance)
+      && typeof keyframe.height === 'number' && Number.isFinite(keyframe.height)
+      && keyframe.height >= -1000 && keyframe.height <= 5000
+      && (index === 0 || keyframe.distance > (keyframes[index - 1].distance as number))
+      && keyframe.distance >= 0 && keyframe.distance <= 1)
+      && keyframes[0].distance === 0 && keyframes.at(-1)?.distance === 1
+      ? keyframes.map(keyframe => ({ position: keyframe.distance as number, height: keyframe.height as number })) : null;
     const distanceBased = extent !== null && extent > 0 && keyframes.every((keyframe, index) => keyframe
       && typeof keyframe === 'object' && !Array.isArray(keyframe)
       && Object.keys(keyframe).every(key => key === 'distance' || key === 'height')
@@ -424,7 +434,7 @@ function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[
       ? keyframes.map((keyframe, index) => ({ position: index === 0 ? 0
         : index === keyframes.length - 1 ? 1 : (keyframe.distance as number) / extent,
         height: keyframe.height as number })) : null;
-    const normalizedKeyframes = positioned ?? distanceBased;
+    const normalizedKeyframes = positioned ?? fractionalDistance ?? distanceBased;
     if (normalizedKeyframes) {
       const heights = Array.from({ length: 64 }, (_, index) => {
         const t = index / 63;
@@ -435,7 +445,7 @@ function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[
         return a.height * (1 - weight) + b.height * weight;
       });
       normalized = { ...normalized, heights };
-      notes.push(`${path}.${distanceBased ? 'distance' : 'positioned'}_grade_keyframes_to_samples`);
+      notes.push(`${path}.${positioned ? 'positioned' : fractionalDistance ? 'fractional_distance' : 'distance'}_grade_keyframes_to_samples`);
     }
   }
   return normalized;

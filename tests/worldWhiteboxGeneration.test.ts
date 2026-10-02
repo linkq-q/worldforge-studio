@@ -654,6 +654,33 @@ describe('whitebox world generation', () => {
     expect(result.technicalNormalizations).toContain('terrainBrushes[0].distance_grade_keyframes_to_samples');
   });
 
+  it('accepts normalized distance keyframes for any grade path without changing the raw response', () => {
+    const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact',
+      constraints: [{ region: 'center', biome: 'grassland' }], terrainBrushes: [
+        { id: 'ridge-softening', mode: 'grade',
+          region: { kind: 'path', points: [[-180, -125], [-145, -85], [-125, -40], [-105, 5], [-110, 55]], width: 48 },
+          heights: [{ distance: 0, height: 6 }, { distance: 0.5, height: 9 }, { distance: 1, height: 7 }],
+          strength: 0.35 },
+        { id: 'mouth-transition', mode: 'grade',
+          region: { kind: 'path', points: [[-35, 75], [5, 105], [45, 135], [85, 165], [125, 190]], width: 55 },
+          heights: [{ distance: 0, height: 1 }, { distance: 0.5, height: -1 }, { distance: 1, height: -4 }],
+          strength: 0.5 }
+      ] } };
+    const result = parseWorldDryTerrainDraft(JSON.stringify(raw), request);
+    expect(result.rawTerrain).toEqual(raw.terrain);
+    const grades = result.recipe.terrainBrushes ?? [];
+    expect(grades).toHaveLength(2);
+    for (const [index, grade] of grades.entries()) {
+      expect(grade.mode).toBe('grade');
+      if (grade.mode !== 'grade') throw new Error('expected_grade');
+      expect(grade.heights).toHaveLength(64);
+      expect(grade.heights[0]).toBe([6, 1][index]);
+      expect(grade.heights[63]).toBe([7, -4][index]);
+      expect(result.technicalNormalizations)
+        .toContain(`terrainBrushes[${index}].fractional_distance_grade_keyframes_to_samples`);
+    }
+  });
+
   it('rejects metre grade keyframes with a mismatched, non-increasing or non-finite distance', () => {
     const terrain = (terrainBrushes: unknown[]) => ({ terrain: { version: 1, seed: 74, size: 500,
       reliefProfile: 'compact', constraints: [{ region: 'center', biome: 'desert' }], terrainBrushes } });
