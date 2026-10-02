@@ -357,6 +357,32 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
+  it('keeps adjacent streamed terrain skirt segments joined down a sloped edge', async () => {
+    const map = createEmptyMap('sloped streamed edge', 'sloped-streamed-edge');
+    map.terrain = {
+      resolutionX: 3,
+      resolutionZ: 2,
+      heights: [0, 10, 20, 0, 10, 20]
+    };
+    const rendered = await buildNormalizedEditableMapGroupCore(map, {
+      terrainOnly: true,
+      terrainBorderSides: ['north'],
+      terrainBorderDepth: 24,
+      oceanCoast: false
+    });
+    const skirt = rendered.group.getObjectByName('terrain-skirt') as THREE.Mesh;
+    const positions = skirt.geometry.getAttribute('position');
+    const sharedBottomHeights = Array.from({ length: positions.count }, (_, index) => ({
+      x: positions.getX(index),
+      y: positions.getY(index)
+    })).filter((point, index) => index % 4 >= 2 && Math.abs(point.x) < 1e-6)
+      .map(point => point.y);
+
+    expect(sharedBottomHeights).toHaveLength(2);
+    expect(new Set(sharedBottomHeights)).toEqual(new Set([-14]));
+    rendered.dispose();
+  });
+
   it('builds tagged lake and river geometry under the model root', async () => {
     const map = createEmptyMap('waters', 'map-render-water');
     map.waterBodies = [

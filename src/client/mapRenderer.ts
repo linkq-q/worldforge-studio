@@ -1994,8 +1994,14 @@ function addBorderSides(
   // lowest point on the map instead of always stopping at y=0.
   const base = depth === undefined ? terrain.heights.reduce((lowest, height) => Math.min(lowest, height), 0) : 0;
   const addBorder = (a: number[], b: number[]): void => {
-    const edgeBase = depth === undefined ? base : Math.min(a[1], b[1]) - Math.max(0.1, depth);
-    addSideToBase(vertices, uvs, indices, map, edgeBase, a, b);
+    if (depth === undefined) {
+      addSideToBase(vertices, uvs, indices, map, base, a, b);
+      return;
+    }
+    const skirtDepth = Math.max(0.1, depth);
+    addQuad(vertices, uvs, indices, map,
+      [a[0], a[1], a[2]], [b[0], b[1], b[2]],
+      [a[0], a[1] - skirtDepth, a[2]], [b[0], b[1] - skirtDepth, b[2]]);
   };
   const hasSide = (side: TerrainBorderSide): boolean => sides === true
     || (sides !== false && sides.includes(side));
