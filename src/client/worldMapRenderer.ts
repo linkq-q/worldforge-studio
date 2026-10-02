@@ -16,7 +16,8 @@ import { createWorldEcologyDensity, createWorldExclusion, worldFeaturePathPolyli
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import { createStaticWhiteboxBoxes, type StaticWhiteboxPlacement } from './generationPreviewOverlay';
-import { worldHarborQuayExtension, type WorldHarborQuayExtension } from './worldContent';
+import { worldBridgeDeck, worldHarborQuayExtension, type WorldBridgeDeck,
+  type WorldHarborQuayExtension } from './worldContent';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
@@ -66,7 +67,8 @@ const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
 };
 
 export function worldRoadSurfaceMaterial(road: Pick<MapGuide,'id'|'tags'>): 'brick-paver'|'cobblestone'|'compacted-earth' {
-  if(road.tags.includes('harbor-quay') || road.tags.includes('working-waterfront')) return 'cobblestone';
+  if(road.tags.includes('harbor-quay') || road.tags.includes('working-waterfront')
+    || road.tags.some(tag => /bridge/i.test(tag))) return 'cobblestone';
   return road.id.startsWith('town:')||road.tags.some(tag=>/street|settlement|town/i.test(tag))?'brick-paver':'compacted-earth';
 }
 
@@ -326,6 +328,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   const harborQuays = roads.flatMap(road => {
     const extension = worldHarborQuayExtension(road, sample, bundle.plan.recipe.size);
     return extension ? [{ id: road.id, ...extension }] : [];
+  });
+  const bridgeDecks = roads.flatMap(road => {
+    const deck = worldBridgeDeck(road, sample);
+    return deck ? [{ id: road.id, ...deck }] : [];
   });
   const manualObjectTrees = groupManualObjectTrees(map);
   const ecologyCache = new Map<string, EcologyInstance[]>();
@@ -606,6 +612,15 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         }
       });
     }
+    for (const bridge of bridgeDecks.filter(item => pointEcologyKey(
+      (item.from[0] + item.to[0]) / 2, (item.from[1] + item.to[1]) / 2
+    ) === ecologyKey(chunk))) {
+      rendered.objectGroups.get(`world-bridge:${bridge.id}`)?.traverse(child => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          child.material.color.setHex(0x8d7861);
+        }
+      });
+    }
     const publicBuildingIds = new Set(world.review?.plannedBuildings.filter(building => building.placed)
       .map(building => building.id) ?? []);
     const whiteboxes: StaticWhiteboxPlacement[] = [];
@@ -772,6 +787,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       ...harborQuays.filter(item => pointEcologyKey(
         (item.from[0] + item.to[0]) / 2, (item.from[1] + item.to[1]) / 2
       ) === ecologyKey(chunk)).map(quay => harborQuayObject(quay, centerX, centerZ)),
+      ...bridgeDecks.filter(item => pointEcologyKey(
+        (item.from[0] + item.to[0]) / 2, (item.from[1] + item.to[1]) / 2
+      ) === ecologyKey(chunk)).map(bridge => bridgeDeckObject(bridge, centerX, centerZ)),
       ...manualObjectsForTile(manualObjectTrees, tile, contentKeys, centerX, centerZ)
     ];
     const usedAssetIds = new Set(objects.flatMap(object => object.assetId ? [object.assetId] : []));
@@ -994,6 +1012,25 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
           (quay.from[1] + quay.to[1]) / 2 - centerZ],
         rotation: [0, Math.atan2(dx, dz), 0], scale: [1, 1, 1],
         size: [quay.width, 0.45, Math.hypot(dx, dz)]
+      },
+      heightMode: 'fixed', visible: true, locked: true,
+      behavior: { kind: 'static', locomotion: 'static' }
+    };
+  }
+
+  function bridgeDeckObject(
+    bridge: WorldBridgeDeck & { id: string }, centerX: number, centerZ: number
+  ): MapObject {
+    const dx = bridge.to[0] - bridge.from[0], dz = bridge.to[1] - bridge.from[1];
+    const length = Math.hypot(dx, dz);
+    return {
+      id: `world-bridge:${bridge.id}`, name: '跨水桥', parentId: null, assetId: null,
+      transform: {
+        position: [(bridge.from[0] + bridge.to[0]) / 2 - centerX,
+          (bridge.fromHeight + bridge.toHeight) / 2 - .3,
+          (bridge.from[1] + bridge.to[1]) / 2 - centerZ],
+        rotation: [-Math.atan2(bridge.toHeight - bridge.fromHeight, length), Math.atan2(dx, dz), 0],
+        scale: [1, 1, 1], size: [bridge.width, .3, length]
       },
       heightMode: 'fixed', visible: true, locked: true,
       behavior: { kind: 'static', locomotion: 'static' }

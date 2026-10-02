@@ -190,6 +190,7 @@ describe('main editor streamed world renderer', () => {
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:waterfront',tags:['settlement','working-waterfront']})).toBe('cobblestone');
+    expect(worldRoadSurfaceMaterial({id:'island-bridge',tags:['world-route','walking-bridge']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');
   });
 
@@ -720,6 +721,33 @@ describe('main editor streamed world renderer', () => {
         [68, 3, 0], [0, -1, 0], 10, new Set(['scene'])
       );
       expect(hit?.meshId).toContain('world-harbor-quay:harbor-landing');
+    } finally {
+      rendered.dispose();
+    }
+  }, 30_000);
+
+  it('renders an explicit bridge route as a collidable deck over planned water', async () => {
+    const map = createEmptyMap();
+    const previewBundle = structuredClone(smallBundle);
+    previewBundle.plan.recipe.heightScale = 0.02;
+    previewBundle.plan.recipe.waterBodies = [{ id: 'crossing-lake', type: 'lake',
+      region: { kind: 'circle', center: [0, 0], radius: 10 }, levels: [1.5], depth: 3 }];
+    previewBundle.plan.roads.push({ id: 'island-bridge', name: 'Island bridge',
+      points: [[-30, 0], [30, 0]], curve: 'polyline', closed: false, width: 4,
+      tags: ['world-route', 'walking-bridge'] });
+    map.world = { bundle: previewBundle, assets: [] };
+    map.box.size = [500, 4096, 500];
+    map.spawnPoints = [[0, 3, 0]];
+
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      await waitFor(() => rendered.objectGroups.has('world-bridge:island-bridge'));
+      const bridge = rendered.objectGroups.get('world-bridge:island-bridge')!;
+      expect(bridge.scale.z).toBeCloseTo(60);
+      const hit = rendered.getCollisionWorld?.()?.raycastFirst(
+        [0, 8, 0], [0, -1, 0], 10, new Set(['scene'])
+      );
+      expect(hit?.meshId).toContain('world-bridge:island-bridge');
     } finally {
       rendered.dispose();
     }

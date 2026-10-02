@@ -344,6 +344,8 @@ describe('hierarchical world planning contracts', () => {
       waterBodies:[{id:'harbor',type:'lake',region:{kind:'circle',center:[-180,0],radius:80},levels:[150],depth:8}]};
     const roadPlan:WorldPlan={...fixture(),recipe,towns:[],roads:[road('wet-road',[[-220,0],[-140,0]])]};
     expect(()=>validateWorldPlan(roadPlan)).toThrow('world_road_crosses_water');
+    roadPlan.roads[0].tags.push('bridge');
+    expect(validateWorldPlan(roadPlan).roads[0].tags).toContain('bridge');
     const sample=createWorldSampler(recipe),town={...fixture().towns[0],id:'coast',center:[0,0] as [number,number],
       foundation:sample(0,0).height,terrainMode:'conform' as const,ports:[]};
     expect(validateWorldPlan({...fixture(),recipe,towns:[town],roads:[]} as WorldPlan).towns[0].terrainMode).toBe('conform');

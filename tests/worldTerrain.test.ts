@@ -1,11 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import { createWorldSampler, createWorldTerrainContext, diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
+  summarizeWorldLandmasses,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
   WORLD_TERRAIN_FIT_RIVER_MAX_GRADE, type WorldRecipe } from '../src/shared/worldTerrain';
 import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoundaryDistance, waterBoundaryPoints } from '../src/shared/mapWater';
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
+  it('exposes detached buildable land and its nearest mainland banks to the planner', () => {
+    const heights = [
+      [-1, -1, -1, -1, -1, -1, -1],
+      [-1, 2, 2, -1, -1, -1, -1],
+      [-1, 2, 2, -1, -1, 2, -1],
+      [-1, 2, 2, -1, -1, 2, -1],
+      [-1, -1, -1, -1, -1, -1, -1]
+    ];
+    const scores = heights.map(row => row.map(height => height > 0 ? 2 : 0));
+    const evidence = summarizeWorldLandmasses(heights, scores, [0, 0], 10);
+    expect(evidence.landmassLabels[2]).toEqual([0, 1, 1, 0, 0, 2, 0]);
+    expect(evidence.landmasses).toEqual([
+      { id: 1, areaM2: 600, buildingSiteScore: 12, center: [15, 20] },
+      { id: 2, areaM2: 200, buildingSiteScore: 4, center: [50, 25],
+        nearestMainland: { from: [50, 20], to: [20, 20], bankDistanceM: 30 } }
+    ]);
+  });
   it('turns the requested sentence into explicit directional constraints', () => {
     expect(parseWorldPrompt('我希望西方是海洋，东方是沙漠').constraints).toEqual([
       { region: 'west', biome: 'ocean' }, { region: 'east', biome: 'desert' }

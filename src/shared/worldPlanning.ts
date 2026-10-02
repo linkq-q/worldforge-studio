@@ -1158,6 +1158,8 @@ function validateTerrain(plan: WorldPlan): void {
   }
   let sampleBudget = 0;
   for (const road of plan.roads) for (const [a, b] of segments(road)) {
+    // Explicit bridge decks are elevated structures, not roads painted onto the sampled ground.
+    if (road.tags.some(tag => /bridge/i.test(tag))) continue;
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.ceil(length / worldRoadSampleSpacing(plan.recipe.size));
     sampleBudget += steps + 1;
     if (sampleBudget > 8192) fail('world_road_sampling_quota');

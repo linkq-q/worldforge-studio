@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildWorldRoadChunk, sampleWorldQuaySurface, WORLD_CONTENT_CHUNK_SIZE, WorldContentView, worldHarborQuayExtension,
+import { buildWorldRoadChunk, sampleWorldQuaySurface, WORLD_CONTENT_CHUNK_SIZE, WorldContentView, worldBridgeDeck, worldHarborQuayExtension,
   selectWorldContentChunks } from '../src/client/worldContent';
 import { stepWorldWalk, type WorldWalkState } from '../src/client/worldWalkController';
 import { buildWorldAssetLibrary, disposeWorldAssetLibrary, type WorldAssetSource } from '../src/client/worldAssets';
@@ -17,6 +17,18 @@ const flatSample = (height = 0, waterLevel: number | null = null): WorldSample =
 });
 
 describe('continuous-world streaming client', () => {
+  it('keeps an authored bridge on dry banks while spanning sampled water', () => {
+    const road: MapGuide = { id: 'island-bridge', name: 'Island bridge',
+      points: [[0, 0], [40, 0]], curve: 'polyline', closed: false, width: 4,
+      tags: ['world-route', 'walking-bridge'] };
+    const sample = (x: number) => x > 10 && x < 30 ? flatSample(-2, 0)
+      : flatSample(x <= 10 ? 1 : 2);
+    expect(worldBridgeDeck(road, x => sample(x))).toEqual({
+      from: [0, 0], to: [40, 0], width: 4, fromHeight: 1.25, toHeight: 2.25
+    });
+    expect(worldBridgeDeck({ ...road, tags: ['world-route'] }, x => sample(x))).toBeUndefined();
+    expect(worldBridgeDeck({ ...road, points: [[20, 0], [40, 0]] }, x => sample(x))).toBeUndefined();
+  });
   it('keeps only a fixed nearby content window and replaces its scene roots after travel', () => {
     const sample = createPlannedWorldSampler(bundle.plan, bundle.patches), view = new WorldContentView();
     view.reset(bundle, sample);

@@ -98,6 +98,10 @@ export interface WorldTerrainEvidence {
   samples: Array<Array<[number, number]>>;
   /** Approximate 8m building sites per evidence cell (0..4); planning guidance, not validation. */
   buildingSiteScores: number[][];
+  /** Approximate connected dry areas on the 25m evidence grid; 0 in landmassLabels means sea. */
+  landmassLabels: number[][];
+  landmasses: Array<{ id: number; areaM2: number; buildingSiteScore: number;
+    center: [number, number]; nearestMainland?: { from: [number, number]; to: [number, number]; bankDistanceM: number } }>;
   /** Interpolated sea-level loops in world metres. */
   shoreline: Array<Array<[number, number]>>;
   /** Sea-level contour endpoints where an open coast reaches the sampled world boundary. */
@@ -384,6 +388,8 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
     }
     return score;
   }));
+  const { landmassLabels, landmasses } = summarizeWorldLandmasses(heights, buildingSiteScores,
+    [-bound, -bound], step);
   const shoreline = extractCoastLoops({ heights: heights.flat(), width: resolution, depth: resolution,
     minX: -bound, minZ: -bound, stepX: step, stepZ: step }, 0)
     .map(loop => loop.map(([x, z]): [number, number] => [Math.round(x * 10) / 10 || 0, Math.round(z * 10) / 10 || 0]));
@@ -406,8 +412,64 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   }
   const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
   return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
-    samples, buildingSiteScores, shoreline, boundaryCrossings,
+    samples, buildingSiteScores, landmassLabels, landmasses, shoreline, boundaryCrossings,
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
+}
+
+/** Coarse connectivity for planning, never a rule that silently moves or rejects AI intent. */
+export function summarizeWorldLandmasses(
+  heights: number[][], buildingSiteScores: number[][], origin: [number, number], step: number
+): Pick<WorldTerrainEvidence, 'landmassLabels' | 'landmasses'> {
+  const rows = heights.length, columns = heights[0]?.length ?? 0;
+  const labels = heights.map(row => row.map(() => 0));
+  const components: Array<Array<[number, number]>> = [];
+  for (let z = 0; z < rows; z++) for (let x = 0; x < columns; x++) {
+    if (heights[z][x] <= 0 || labels[z][x]) continue;
+    const cells: Array<[number, number]> = [], queue: Array<[number, number]> = [[x, z]];
+    labels[z][x] = components.length + 1;
+    for (let head = 0; head < queue.length; head++) {
+      const [cx, cz] = queue[head];
+      cells.push([cx, cz]);
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = cx + dx, nz = cz + dz;
+        if (nx < 0 || nz < 0 || nx >= columns || nz >= rows
+          || heights[nz][nx] <= 0 || labels[nz][nx]) continue;
+        labels[nz][nx] = components.length + 1;
+        queue.push([nx, nz]);
+      }
+    }
+    components.push(cells);
+  }
+  const ordered = components.map((cells, index) => ({ cells, originalId: index + 1 }))
+    .sort((a, b) => b.cells.length - a.cells.length || a.originalId - b.originalId);
+  const ids = new Map(ordered.map((item, index) => [item.originalId, index + 1]));
+  const landmassLabels = labels.map(row => row.map(id => id ? ids.get(id)! : 0));
+  const point = ([x, z]: [number, number]): [number, number] =>
+    [origin[0] + x * step, origin[1] + z * step];
+  const shore = (cells: Array<[number, number]>) => cells.filter(([x, z]) =>
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => {
+      const nx = x + dx, nz = z + dz;
+      return nx >= 0 && nz >= 0 && nx < columns && nz < rows && heights[nz][nx] <= 0;
+    }));
+  const mainShore = shore(ordered[0]?.cells ?? []);
+  const landmasses = ordered.map(({ cells }, index) => {
+    const center: [number, number] = [
+      Math.round((origin[0] + cells.reduce((sum, [x]) => sum + x * step, 0) / cells.length) * 10) / 10,
+      Math.round((origin[1] + cells.reduce((sum, [, z]) => sum + z * step, 0) / cells.length) * 10) / 10
+    ];
+    let nearestMainland: WorldTerrainEvidence['landmasses'][number]['nearestMainland'];
+    if (index > 0) for (const fromCell of shore(cells)) for (const toCell of mainShore) {
+      const from = point(fromCell), to = point(toCell);
+      const bankDistanceM = Math.round(Math.hypot(from[0] - to[0], from[1] - to[1]) * 10) / 10;
+      if (!nearestMainland || bankDistanceM < nearestMainland.bankDistanceM) {
+        nearestMainland = { from, to, bankDistanceM };
+      }
+    }
+    return { id: index + 1, areaM2: cells.length * step * step,
+      buildingSiteScore: cells.reduce((sum, [x, z]) => sum + (buildingSiteScores[z]?.[x] ?? 0), 0),
+      center, ...(nearestMainland ? { nearestMainland } : {}) };
+  });
+  return { landmassLabels, landmasses };
 }
 
 const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));

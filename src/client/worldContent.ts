@@ -142,6 +142,10 @@ export interface WorldBuildingCollider {
 export interface WorldHarborQuayExtension {
   from: [number, number]; to: [number, number]; width: number; height: number;
 }
+export interface WorldBridgeDeck {
+  from: [number, number]; to: [number, number]; width: number;
+  fromHeight: number; toHeight: number;
+}
 
 const contentKey = (chunk: WorldContentChunk) => chunk.x + ':' + chunk.z;
 
@@ -204,6 +208,32 @@ export function worldHarborQuayExtension(
   if(firstWater===undefined||!lastWater||waterLevel===undefined||Math.hypot(lastWater[0]-from[0],lastWater[1]-from[1])-firstWater<overWater-1e-6)return undefined;
   const shore=sample(...from),lift=worldSize<2000?.12:1.2;
   return {from:[...from],to:lastWater,width:road.width,height:Math.max(shore.height+lift,waterLevel+.55)};
+}
+
+/** An explicitly planned bridge spans sampled water between two dry banks. */
+export function worldBridgeDeck(
+  road: MapGuide, sample: (x: number, z: number) => WorldSample
+): WorldBridgeDeck | undefined {
+  if (road.closed || !road.tags.some(tag => /bridge/i.test(tag)) || road.points.length < 2) return undefined;
+  const from = road.points[0], to = road.points.at(-1)!;
+  const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  if (length < 4) return undefined;
+  const first = sample(...from), last = sample(...to);
+  if (first.waterLevel !== null && first.waterLevel > first.height + .05
+    || last.waterLevel !== null && last.waterLevel > last.height + .05) return undefined;
+  let waterLevel = -Infinity;
+  const steps = Math.ceil(length / 4);
+  for (let index = 1; index < steps; index++) {
+    const point = sample(from[0] + (to[0] - from[0]) * index / steps,
+      from[1] + (to[1] - from[1]) * index / steps);
+    if (point.waterLevel !== null && point.waterLevel > point.height + .05) {
+      waterLevel = Math.max(waterLevel, point.waterLevel);
+    }
+  }
+  if (!Number.isFinite(waterLevel)) return undefined;
+  return { from: [...from], to: [...to], width: road.width,
+    fromHeight: Math.max(first.height + .25, waterLevel + .65),
+    toHeight: Math.max(last.height + .25, waterLevel + .65) };
 }
 
 function pointSegmentDistance(x:number,z:number,a:[number,number],b:[number,number]):number {

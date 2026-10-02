@@ -306,7 +306,11 @@ describe('whitebox world generation', () => {
     expect(spatialInput.dryTerrain).toEqual(plan.recipe);
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
     expect(spatialInput.terrainEvidence.buildingSiteScores).toHaveLength(21);
+    expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
+    expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.landmassLabels');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("kind contains 'bridge'");
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Reserve connected dry, gently sloped land');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Terrain brushes execute in listed order');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Do not make the port a raised, isolated 6–10m plateau');
