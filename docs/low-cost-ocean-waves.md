@@ -27,7 +27,9 @@ xz    = D * A * steepness * cos(phase)
 
 The horizontal displacement is the important difference from a stack of scrolling height-only sine waves: vertices follow a bounded orbital path and form sharper crests. The existing `waveStrength`, `waveSpeed`, `waveScale`, `waveDirection`, and `waveSharpness` controls remain the public parameter surface. River flow keeps its previous height-only path.
 
-Ocean terrain depth attenuates lateral displacement near land before the existing swash function takes over. The existing world-space normal maps still provide micro ripples, so high-frequency geometry waves are unnecessary.
+One shared primary-phase shader chunk now drives both vertex displacement and crest-dependent whitecaps/highlights. It includes the same deep-water dispersion, global scale, wind direction, crest stretch, and bounded spacing warp in both shader stages. Previously those visual crest lines still used the old phase formula, so they could slide independently of the geometry.
+
+Ocean terrain depth attenuates lateral displacement near land before the existing swash function takes over. The swash band is `max(0.16 m, shoreWaveRange * 0.42)` rather than the previous `shoreWaveRange * 3.1`: the old formula classified the example island's approximately 0.25 m-deep shelf as almost entirely shoreline and suppressed the open-water spectrum. The revised band keeps orbital Gerstner motion in the playable ocean, blends around 0.10 m depth, and leaves only the final approximately 0.025 m shoreline to the swash crest. The existing world-space normal maps still provide micro ripples, so high-frequency geometry waves are unnecessary.
 
 ### Geometry budget
 

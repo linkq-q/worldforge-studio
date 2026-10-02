@@ -25,6 +25,23 @@ const SHALLOW_WATER_DOMAIN_SIZE = 16;
 const SHALLOW_WATER_FIXED_STEP = 1 / 30;
 const SHALLOW_WATER_ACTIVE_SECONDS = 3;
 
+const PRIMARY_GERSTNER_PHASE_GLSL = /* glsl */ `
+  float primaryGerstnerPhase(vec2 position) {
+    vec2 dir = normalizeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
+    vec2 tangent = vec2(-dir.y, dir.x);
+    float k = max(abs(uLargeWaveScale * max(uWaveScale, 0.05) / 1.3), 0.001);
+    float ridgeStretch = max(uLargeWaveStretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
+    float along = dot(position, dir) * k;
+    float across = dot(position, tangent) * k / ridgeStretch;
+    float seed = dot(dir, vec2(19.17, 47.23)) + k * 7.31;
+    float spacingNoise = noise2D(vec2(along, across) * uWaveSpacingScale + vec2(seed, -seed * 0.37));
+    float phaseWarp = (spacingNoise - 0.5) * 2.0 * uWaveSpacingVariation;
+    return along + phaseWarp
+      + sin((across + phaseWarp * 0.25) * 0.65) * 0.25 * (1.0 - uWaveCrossDamping)
+      + uTime * sqrt(9.81 * k) * uLargeWaveSpeed * uWaveSpeed * 0.45;
+  }
+`;
+
 const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform sampler2D tOceanTerrain;
   uniform bool uUseOceanTerrain;
@@ -92,14 +109,20 @@ const OCEAN_SWASH_GLSL = /* glsl */ `
     return -0.025 - 0.035 * oceanSwashNoise(p * 0.31 + vec2(-uTime * 0.018, uTime * 0.025));
   }
 
+  float oceanWaveDepthRange() {
+    // WorldForge's authored island shelves are intentionally shallow (often
+    // about 0.25 m below sea level). Treat only the final shoreline band as
+    // swash so the playable ocean still retains its open-water wave spectrum.
+    return max(0.16, uShoreWaveRange * 0.42);
+  }
+
   float computeOceanSwashHeight(vec2 p, float openWave) {
     if (uShoreWaveStrength <= 0.0) return openWave;
     float ground = sampleOceanTerrainHeight(p) - uOceanLevel;
     float phase = oceanSwashPhase(p, ground);
     float push = smoothstep(0.0, 0.30, phase) * (1.0 - smoothstep(0.30, 1.0, phase));
     float swash = mix(oceanSwashTrough(p), oceanSwashCrest(p), push);
-    float shoreDepth = max(0.45, uShoreWaveRange * 3.1);
-    float shore = smoothstep(-shoreDepth, -0.20, ground);
+    float shore = smoothstep(-oceanWaveDepthRange(), -0.025, ground);
     return mix(openWave * 1.3, swash, shore);
   }
 `;
@@ -226,6 +249,16 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return lenSq > 0.000001 ? normalize(direction) : normalize(fallback);
   }
 
+  ${PRIMARY_GERSTNER_PHASE_GLSL}
+
+  vec3 gerstnerDisplacement(vec2 direction, float amplitude, float steepness, float phase) {
+    vec2 dir = normalizeDirection(direction, vec2(1.0, 0.25));
+    float s = sin(phase);
+    float c = cos(phase);
+    float lateral = amplitude * steepness * c;
+    return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);
+  }
+
   vec3 gerstnerWave(
     vec2 position,
     vec2 direction,
@@ -242,10 +275,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     float phase = dot(position, dir) * k
       + uTime * angularFrequency * speed * uWaveSpeed * 0.45
       + phaseOffset;
-    float s = sin(phase);
-    float c = cos(phase);
-    float lateral = amplitude * steepness * c;
-    return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);
+    return gerstnerDisplacement(dir, amplitude, steepness, phase);
   }
 
   float sampleShallowWaterHeight(vec2 worldXZ) {
@@ -272,14 +302,11 @@ const WATER_VERTEX_SHADER = /* glsl */ `
       vec2(0.6, 1.0)
     );
 
-    vec3 displacement = gerstnerWave(
-      worldXZ,
+    vec3 displacement = gerstnerDisplacement(
       uPrimaryWaveDirection,
-      uLargeWaveScale * scaleMultiplier,
-      uLargeWaveSpeed,
       uWaveHeight * uLargeWaveStrength * 0.62,
       choppiness,
-      0.0
+      primaryGerstnerPhase(worldXZ)
     );
     displacement += gerstnerWave(
       worldXZ,
@@ -376,7 +403,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     if (uUseOceanTerrain && uShoreWaveEnabled) {
       float ground = sampleOceanTerrainHeight(worldBase.xz);
       float waterDepth = max(uOceanLevel - ground, 0.0);
-      float lateralDamp = smoothstep(0.08, max(0.45, uShoreWaveRange * 3.1), waterDepth);
+      float lateralDamp = smoothstep(0.025, oceanWaveDepthRange(), waterDepth);
       waveOffset.xz *= lateralDamp;
       waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y)
         + shallowWaterHeight * smoothstep(0.025, 0.2, waterDepth);
@@ -696,34 +723,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     return flowDir * uTime * uFlowSpeed * (uUseRiverFlow ? -1.0 : 1.0);
   }
 
-  float directionalWavePhase(
-    vec2 position,
-    vec2 direction,
-    float scale,
-    float speed,
-    float stretch
-  ) {
-    vec2 dir = normalizeDirection(direction, vec2(1.0, 0.25));
-    vec2 tangent = vec2(-dir.y, dir.x);
-    float ridgeStretch = max(stretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
-    float along = dot(position, dir) * scale;
-    float across = dot(position, tangent) * scale / ridgeStretch;
-    float seed = dot(dir, vec2(19.17, 47.23)) + scale * 7.31;
-    float spacingNoise = noise2D(vec2(along, across) * uWaveSpacingScale + vec2(seed, -seed * 0.37));
-    float phaseWarp = (spacingNoise - 0.5) * 2.0 * uWaveSpacingVariation;
-    return along + phaseWarp
-      + sin((across + phaseWarp * 0.25) * 0.65) * 0.25 * (1.0 - uWaveCrossDamping)
-      + uTime * speed;
-  }
+  ${PRIMARY_GERSTNER_PHASE_GLSL}
 
   float computePrimaryCrestProfile(vec2 worldXZ, out float phase) {
-    phase = directionalWavePhase(
-      worldXZ,
-      uPrimaryWaveDirection,
-      uLargeWaveScale,
-      uLargeWaveSpeed,
-      uLargeWaveStretch
-    );
+    phase = primaryGerstnerPhase(worldXZ);
     return smoothstep(0.45, 0.95, exp(sin(phase) - 1.0));
   }
 
@@ -1053,7 +1056,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float waveWhitecapShadow = 0.0;
     if (uWaterMode < 0.5 && uWhitecapEnabled && uUseDirectionalWaves) {
       float crestPhase;
-      float crestProfile = computePrimaryCrestProfile(vWorldPosition.xz, crestPhase);
+      float crestProfile = computePrimaryCrestProfile(vReflectionWorldPosition.xz, crestPhase);
       float ridgeBand = smoothstep(
         uWhitecapThreshold - max(uWhitecapSoftness, 0.0001),
         uWhitecapThreshold + max(uWhitecapSoftness, 0.0001),
@@ -1387,7 +1390,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         uHighlightThreshold + max(uHighlightSoftness, 0.001),
         highlightBase
       );
-      float ridgeMask = computeWaveRidgeMask(N, vWorldPosition.xz);
+      float ridgeMask = computeWaveRidgeMask(N, vReflectionWorldPosition.xz);
       highlightMask *= mix(
         1.0,
         ridgeMask,
@@ -1437,7 +1440,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float toonSparkle = 0.0;
     if (uWaterMode < 0.5 && uToonSparkleEnabled) {
       vec3 Ns = normalize(normalForHighlight);
-      float ridgeMask = computeWaveRidgeMask(Ns, vWorldPosition.xz);
+      float ridgeMask = computeWaveRidgeMask(Ns, vReflectionWorldPosition.xz);
       vec2 sDir = normalizeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
       vec2 sTan = vec2(-sDir.y, sDir.x);
       // 波向坐标系：沿波向压缩（拉长亮片）、垂直方向保持密度

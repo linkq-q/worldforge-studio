@@ -49,15 +49,26 @@ describe('WaterSurface shader', () => {
 
     expect(shader).toContain('float angularFrequency = sqrt(9.81 * k);');
     expect(shader).toContain('float scaleMultiplier = max(uWaveScale, 0.05) / 1.3;');
-    expect(shader).toContain('uLargeWaveScale * scaleMultiplier');
+    expect(shader).toContain('uLargeWaveScale * max(uWaveScale, 0.05) / 1.3');
     expect(shader).toContain('return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);');
+    expect(shader).toContain('primaryGerstnerPhase(worldXZ)');
     expect(shader).toContain('uUseDirectionalWaves && !uUseRiverFlow');
+    expect(shader).toContain('return max(0.16, uShoreWaveRange * 0.42);');
+    expect(shader).toContain('smoothstep(0.025, oceanWaveDepthRange(), waterDepth)');
+    expect(shader).toContain('smoothstep(-oceanWaveDepthRange(), -0.025, ground)');
     expect(shader).toContain('waveOffset.xz *= lateralDamp;');
     expect(shader).toContain('texture2D(tShallowWaterHeight');
     expect(shader).toContain('shallowWaterHeight * smoothstep(0.025, 0.2, waterDepth)');
     expect(shader).toContain('cross(displacedZ - displaced, displacedX - displaced)');
     expect(shader.match(/displacement \+= gerstnerWave\(/g)).toHaveLength(3);
     expect(shader).not.toContain('float directionalWavePhase(');
+    expect(surface.material.fragmentShader).toContain(
+      'uTime * sqrt(9.81 * k) * uLargeWaveSpeed * uWaveSpeed * 0.45'
+    );
+    expect(surface.material.fragmentShader).toContain(
+      'computePrimaryCrestProfile(vReflectionWorldPosition.xz, crestPhase)'
+    );
+    expect(surface.material.fragmentShader).not.toContain('float directionalWavePhase(');
     expect(surface.material.fragmentShader).toContain('vec2 sampleShallowWaterSlope(vec2 worldXZ)');
     expect(surface.material.fragmentShader).toContain(
       'vec3 shallowWaterNormal = vec3(shallowWaterSlope.x, 0.0, shallowWaterSlope.y) * 1.4;'
