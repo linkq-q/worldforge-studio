@@ -414,5 +414,13 @@
     "provenance": "raw",
     "aestheticStatus": "rejected",
     "originPlanGroup": "badlands-arch-2041110"
+  },
+  {
+    "id": "map-9c617f21-7e49-4dab",
+    "name": "2026-10-02 热带环礁与泻湖村落 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "tropical-atoll-2041111"
   }
 ]
