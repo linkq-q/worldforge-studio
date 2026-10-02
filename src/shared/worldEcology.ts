@@ -3,6 +3,7 @@ import { createWorldSampler, prepareWorldWaterBodies, preparedWorldFreshWaterDis
   worldRegionWeight, WORLD_BIOMES, WORLD_MIN_SIZE, type WorldBiome, type WorldRecipe, type WorldSample, type WorldTerrainRegion } from './worldTerrain';
 
 export type EcologyKind = 'broadleaf' | 'pine' | 'shrub' | 'rock';
+export type EcologyWaterSource = 'fresh' | 'sea' | 'any';
 export interface EcologyRule {
   id: string;
   kind: EcologyKind;
@@ -13,8 +14,10 @@ export interface EcologyRule {
   scale: [number, number];
   region?: WorldTerrainRegion;
   regionFeather?: number;
-  /** Four-point fresh-water distance band: outer min, preferred min/max, outer max. */
+  /** Four-point water distance band: outer min, preferred min/max, outer max. */
   waterDistance?: HabitatBand;
+  /** Water measured by waterDistance; omitted keeps the legacy fresh-water behavior. */
+  waterSource?: EcologyWaterSource;
 }
 export interface EcologyInstance {
   id: string;
@@ -42,6 +45,7 @@ export function validateEcologyRules(input: unknown): EcologyRule[] {
       || !Number.isFinite(rule.maxSlope) || rule.maxSlope < 0 || rule.maxSlope > 60
       || !Array.isArray(rule.scale) || rule.scale.length !== 2 || !rule.scale.every(Number.isFinite)
       || rule.scale[0] <= 0 || rule.scale[1] < rule.scale[0] || rule.scale[1] > 8
+      || rule.waterSource !== undefined && !['fresh', 'sea', 'any'].includes(rule.waterSource)
       || rule.regionFeather !== undefined && (!Number.isFinite(rule.regionFeather) || rule.regionFeather < 0 || rule.regionFeather > 2000)) throw new Error('invalid_ecology_rule');
     let region: WorldTerrainRegion | undefined;
     if (rule.region !== undefined) {
@@ -61,7 +65,7 @@ export function validateEcologyRules(input: unknown): EcologyRule[] {
     return { id: rule.id, kind: rule.kind, biome: rule.biome, density: rule.density,
       spacing: rule.spacing, maxSlope: rule.maxSlope, scale: [rule.scale[0], rule.scale[1]],
       ...(region ? { region } : {}), ...(rule.regionFeather === undefined ? {} : { regionFeather: rule.regionFeather }),
-      ...(waterDistance ? { waterDistance } : {}) };
+      ...(waterDistance ? { waterDistance } : {}), ...(rule.waterSource ? { waterSource: rule.waterSource } : {}) };
   });
   return rules.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
@@ -95,6 +99,34 @@ function random(x: number, z: number, seed: number, channel: number): number {
   return ((value ^ value >>> 16) >>> 0) / 4294967296;
 }
 const isTree = (kind: EcologyKind) => kind === 'broadleaf' || kind === 'pine';
+const isSea = (sample: WorldSample) => sample.waterLevel !== null && sample.waterBodyId === null;
+function seaWaterDistance(sample: (x: number, z: number) => WorldSample, x: number, z: number,
+  maxDistance: number, worldBound: number): number {
+  const origin = sample(x, z);
+  if (isSea(origin)) return 0;
+  const rays = 16, step = 4;
+  let previousDistance = 0;
+  const previous = Array.from({ length: rays }, () => origin);
+  for (let distance = Math.min(step, maxDistance); distance > previousDistance; distance = Math.min(distance + step, maxDistance)) {
+    let nearest = Infinity;
+    for (let ray = 0; ray < rays; ray++) {
+      const angle = ray * Math.PI * 2 / rays;
+      const px = x + Math.cos(angle) * distance, pz = z + Math.sin(angle) * distance;
+      if (Math.abs(px) > worldBound || Math.abs(pz) > worldBound) continue;
+      const current = sample(px, pz);
+      if (isSea(current)) {
+        const before = previous[ray];
+        const amount = before.height > 0 && current.height <= 0
+          ? before.height / Math.max(0.000001, before.height - current.height) : 1;
+        nearest = Math.min(nearest, previousDistance + (distance - previousDistance) * amount);
+      }
+      previous[ray] = current;
+    }
+    if (nearest < Infinity) return nearest;
+    previousDistance = distance;
+  }
+  return Infinity;
+}
 interface Candidate {
   id: string;
   x: number;
@@ -109,8 +141,8 @@ interface Candidate {
 /**
  * Local Matérn-II-like priority thinning on jittered cells, not a maximal Poisson-disk solver.
  * Habitat eligibility is cached before thinning, so an impossible species cannot suppress a
- * viable neighbor. Each cached candidate uses at most 5 environment samples. Neighbor tests use
- * bounded cells (spacing 6..100), never the whole world.
+ * viable neighbor. Each cached candidate uses at most 5 terrain samples, plus bounded sea probes
+ * when selected. Neighbor tests use bounded cells (spacing 6..100), never the whole world.
  */
 export function generateEcologyChunk(
   input: WorldRecipe,
@@ -121,6 +153,7 @@ export function generateEcologyChunk(
     exclusion?: (x: number, z: number, radius: number) => boolean;
     density?: (x: number, z: number) => number;
     freshWaterDistance?: (x: number, z: number) => number;
+    seaWaterDistance?: (x: number, z: number, maxDistance: number) => number;
   } = {}
 ): { instances: EcologyInstance[]; candidateCount: number; rejectedCount: number } {
   const recipe = validateWorldRecipe(input), rules = validateEcologyRules(inputRules);
@@ -134,6 +167,8 @@ export function generateEcologyChunk(
   const waterBodies = options.freshWaterDistance ? [] : prepareWorldWaterBodies(recipe);
   const freshWaterDistance = options.freshWaterDistance
     ?? ((x: number, z: number) => preparedWorldFreshWaterDistance(waterBodies, x, z));
+  const distanceToSea = options.seaWaterDistance
+    ?? ((x: number, z: number, maxDistance: number) => seaWaterDistance(sample, x, z, maxDistance, recipe.size / 2));
   const worldMin = -recipe.size / 2, worldMax = recipe.size / 2;
   const contexts = rules.map(rule => {
     const seed = ruleSeed(recipe.seed, rule.id), cache = new Map<string, Candidate>();
@@ -166,9 +201,15 @@ export function generateEcologyChunk(
     const density = rule.density * Math.max(0, Math.min(1, localDensity));
     const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
     if (point.threshold >= density * regionDensity) return reject();
-    if (rule.waterDistance && point.threshold >= density * habitatBandSuitability(
-      freshWaterDistance(point.x, point.z), rule.waterDistance
-    )) return reject();
+    if (rule.waterDistance) {
+      const source = rule.waterSource ?? 'fresh';
+      const freshDistance = source === 'sea' ? Infinity : freshWaterDistance(point.x, point.z);
+      const seaDistance = source === 'fresh' ? Infinity
+        : distanceToSea(point.x, point.z, rule.waterDistance[3]);
+      if (point.threshold >= density * habitatBandSuitability(
+        Math.min(freshDistance, seaDistance), rule.waterDistance
+      )) return reject();
+    }
     const environment = sample(point.x, point.z);
     const weight = environment.weights[rule.biome];
     if (!Number.isFinite(environment.height) || environment.height < 0 || environment.waterLevel !== null

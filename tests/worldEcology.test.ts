@@ -28,7 +28,8 @@ describe('deterministic chunk ecology', () => {
       ...[
         { id: '' }, { id: 'x'.repeat(65) }, { kind: '__proto__' }, { biome: 'swamp' },
         { density: -0.1 }, { density: 1.1 }, { density: NaN }, { spacing: 5.9 }, { spacing: 101 },
-        { maxSlope: -1 }, { maxSlope: 61 }, { scale: [0, 1] }, { scale: [2, 1] }, { scale: [1, Infinity] }, { scale: [1, 8.01] }
+        { maxSlope: -1 }, { maxSlope: 61 }, { scale: [0, 1] }, { scale: [2, 1] }, { scale: [1, Infinity] }, { scale: [1, 8.01] },
+        { waterSource: 'tidal' }
       ].map(change => [{ ...trees[0], ...change }])
     ]) expect(() => validateEcologyRules(value)).toThrow();
   });
@@ -260,6 +261,28 @@ describe('localized ecology rules', () => {
     expect(generateEcologyChunk(coastRecipe,[riparian],{x:0,z:0},{sample:flat}).instances).toHaveLength(0);
     expect(validateEcologyRules([riparian])[0].waterDistance).toEqual([4,10,42,72]);
     expect(()=>validateEcologyRules([{...riparian,waterDistance:[0,20,10,30]}])).toThrow('invalid_ecology_rule');
+  });
+
+  it('selects fresh, sea or either water source deterministically for shore habitat', () => {
+    const coast = (x: number, z: number): WorldSample => x >= 60
+      ? { ...flat(x, z), height: -1, weights: { ...flat(x, z).weights, ocean: 1, forest: 0 }, waterLevel: 0 }
+      : flat(x, z);
+    const shore: EcologyRule = { ...trees[0], id: 'shore', spacing: 6, maxSlope: 60,
+      waterDistance: [0, 0, 20, 20] };
+    const generate = (waterSource?: EcologyRule['waterSource']) => generateEcologyChunk(recipe,
+      [{ ...shore, ...(waterSource ? { waterSource } : {}) }], { x: 0, z: 0 }, { sample: coast });
+    const fresh = generate(), sea = generate('sea'), any = generate('any');
+
+    expect(fresh.instances).toHaveLength(0);
+    expect(sea.instances.length).toBeGreaterThan(0);
+    expect(any).toEqual(sea);
+    expect(generate('fresh')).toEqual(fresh);
+    expect(generate('sea')).toEqual(sea);
+    for (const point of sea.instances) {
+      expect(point.x).toBeGreaterThanOrEqual(40);
+      expect(point.x).toBeLessThan(60);
+    }
+    expect(validateEcologyRules([{ ...shore, waterSource: 'sea' }])[0].waterSource).toBe('sea');
   });
 
   it('naturally favors fresh-water banks through shared moisture and biome weights', () => {
