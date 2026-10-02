@@ -126,6 +126,33 @@ describe('main editor streamed world renderer', () => {
     expect(overlay.getObjectByName('world-whitebox-path-surface:trail')).toBeInstanceOf(THREE.Mesh);
   });
 
+  it('shows the complete authored path of an infeasible river as a distinct terrain-following intent line', () => {
+    const plan = structuredClone(smallBundle.plan);
+    plan.whitebox = true;
+    plan.recipe.waterBodies = [{
+      id: 'infeasible-river', type: 'river', surfaceMode: 'terrain-fit',
+      region: { kind: 'path', points: [[-30, 0], [0, 12], [40, 20]], width: 10 },
+      depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }];
+    plan.featureGraph = { regions: [], paths: [], anchors: [], relations: [] };
+    expect(buildWorldWhiteboxOverlay(plan, () => ({ height: 0 }), true)
+      .getObjectByName('world-whitebox-water-intent:infeasible-river')).toBeUndefined();
+    const overlay = buildWorldWhiteboxOverlay(plan, (x, z) => ({ height: x / 10 + z / 20 }), true, [{
+      code: 'river_profile_infeasible', waterBodyId: 'infeasible-river', reason: 'excessive_cut',
+      position: [0, 12], fallback: 'omitted', message: 'infeasible-river: excessive_cut; fallback=omitted.'
+    }]);
+
+    const intent = overlay.getObjectByName('world-whitebox-water-intent:infeasible-river') as THREE.Line;
+    const positions = intent.geometry.getAttribute('position');
+    expect([positions.getX(0), positions.getZ(0)]).toEqual([-30, 0]);
+    expect([positions.getX(positions.count - 1), positions.getZ(positions.count - 1)]).toEqual([40, 20]);
+    expect(positions.getY(0)).toBeCloseTo(-2.2);
+    expect(positions.getY(positions.count - 1)).toBeCloseTo(5.8);
+    expect(intent.material).toBeInstanceOf(THREE.LineDashedMaterial);
+    expect((intent.material as THREE.LineDashedMaterial).color.getHex()).toBe(0xc778ff);
+    expect(overlay.getObjectByName('world-whitebox-water-intent:infeasible-river-surface')).toBeUndefined();
+  });
+
   it('outlines only unique authored settlement and intentional-empty regions in whitebox mode', () => {
     const plan = structuredClone(smallBundle.plan);
     plan.whitebox = true;

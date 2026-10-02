@@ -13,7 +13,8 @@ import { DEFAULT_MAP_VISUAL_SEMANTICS, type SceneVisualZone, type VisualZoneTag 
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, type EcologyChunk, type EcologyInstance } from '../shared/worldEcology';
 import { createWorldEcologyDensity, createWorldExclusion, worldFeaturePathPolyline, worldRoadPolyline,
   type FeatureAnchor, type TownBuilding, type WorldPlan } from '../shared/worldPlanning';
-import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
+import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTerrainPreparationDiagnostic,
+  type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import { createStaticWhiteboxBoxes, type StaticWhiteboxPlacement } from './generationPreviewOverlay';
 import { worldBridgeDeck, worldHarborQuayExtension, type WorldBridgeDeck,
@@ -125,7 +126,8 @@ function createWorldWhiteboxSite(anchor: FeatureAnchor, surfaceY: number): THREE
 export function buildWorldWhiteboxOverlay(
   plan: WorldPlan,
   sample: (x: number, z: number) => { height: number; waterLevel?: number | null },
-  showSemantic = plan.whitebox === true
+  showSemantic = plan.whitebox === true,
+  diagnostics: readonly WorldTerrainPreparationDiagnostic[] = []
 ): THREE.Group {
   const root = new THREE.Group();
   root.name = 'world-whitebox-overlay';
@@ -158,6 +160,62 @@ export function buildWorldWhiteboxOverlay(
     outline.renderOrder = 18;
     root.add(outline);
   }
+  const addPathOverlay = (
+    name: string,
+    centerline: readonly [number, number][],
+    width: number,
+    color: number,
+    intentOnly = false
+  ) => {
+    const points: THREE.Vector3[] = [];
+    for (let index = 1; index < centerline.length; index++) {
+      const from = centerline[index - 1], to = centerline[index];
+      const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / 6));
+      for (let step = index === 1 ? 0 : 1; step <= steps; step++) {
+        const t = step / steps, x = from[0] + (to[0] - from[0]) * t, z = from[1] + (to[1] - from[1]) * t;
+        points.push(new THREE.Vector3(x, visibleHeight(x, z), z));
+      }
+    }
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = intentOnly
+      ? new THREE.LineDashedMaterial({ color, depthTest: false, transparent: true, opacity: 0.95,
+        dashSize: 4, gapSize: 3 })
+      : new THREE.LineBasicMaterial({ color, depthTest: false });
+    const line = new THREE.Line(geometry, material);
+    line.name = name;
+    line.renderOrder = 20;
+    if (intentOnly) line.computeLineDistances();
+    root.add(line);
+    if (intentOnly) return;
+    const ribbon: number[] = [];
+    const halfWidth = Math.max(0.8, Math.min(4, width / 2));
+    for (let index = 1; index < points.length; index++) {
+      const a = points[index - 1], b = points[index], dx = b.x - a.x, dz = b.z - a.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance < 1e-6) continue;
+      const ox = -dz / distance * halfWidth, oz = dx / distance * halfWidth;
+      ribbon.push(a.x + ox, a.y, a.z + oz, a.x - ox, a.y, a.z - oz, b.x + ox, b.y, b.z + oz,
+        b.x + ox, b.y, b.z + oz, a.x - ox, a.y, a.z - oz, b.x - ox, b.y, b.z - oz);
+    }
+    const surface = new THREE.BufferGeometry();
+    surface.setAttribute('position', new THREE.Float32BufferAttribute(ribbon, 3));
+    surface.computeVertexNormals();
+    const strip = new THREE.Mesh(surface, new THREE.MeshBasicMaterial({ color, depthTest: false,
+      side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
+    strip.name = name.startsWith('world-whitebox-path:')
+      ? name.replace('world-whitebox-path:', 'world-whitebox-path-surface:')
+      : `${name}-surface`;
+    strip.renderOrder = 19;
+    root.add(strip);
+  };
+  const infeasibleRiverIds = new Set(diagnostics.flatMap(diagnostic =>
+    diagnostic.code === 'river_profile_infeasible' ? [diagnostic.waterBodyId] : []));
+  for (const water of plan.recipe.waterBodies ?? []) {
+    if (water.type !== 'river' || water.region.kind !== 'path' || !infeasibleRiverIds.has(water.id)) continue;
+    // This is a planning guide only. Physical terrain and water continue to use
+    // the strict prepared river, which may be truncated or omitted.
+    addPathOverlay(`world-whitebox-water-intent:${water.id}`, water.region.points, water.region.width, 0xc778ff, true);
+  }
   // Construction already renders these paths as roads; avoid a second bright ribbon over the town.
   for (const path of plan.whitebox ? plan.featureGraph.paths : []) {
     const waterPath = /river|water|canal/i.test(path.kind);
@@ -175,41 +233,7 @@ export function buildWorldWhiteboxOverlay(
     if (renderedRiver) continue;
     const color = waterPath ? 0x468ff2
       : /trail|foot|hike/i.test(path.kind) ? 0xf6b46c : 0x35d7ff;
-    const centerline = worldFeaturePathPolyline(path);
-    const points: THREE.Vector3[] = [];
-    for (let index = 1; index < centerline.length; index++) {
-      const from = centerline[index - 1], to = centerline[index];
-      const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / 6));
-      for (let step = index === 1 ? 0 : 1; step <= steps; step++) {
-        const t = step / steps, x = from[0] + (to[0] - from[0]) * t, z = from[1] + (to[1] - from[1]) * t;
-        const surface = sample(x, z);
-        const y = Math.max(surface.height, surface.waterLevel ?? surface.height) + 0.8;
-        points.push(new THREE.Vector3(x, y, z));
-      }
-    }
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, depthTest: false }));
-    line.name = `world-whitebox-path:${path.id}`;
-    line.renderOrder = 20;
-    root.add(line);
-    const ribbon: number[] = [];
-    const halfWidth = Math.max(0.8, Math.min(4, path.width / 2));
-    for (let index = 1; index < points.length; index++) {
-      const a = points[index - 1], b = points[index], dx = b.x - a.x, dz = b.z - a.z;
-      const distance = Math.hypot(dx, dz);
-      if (distance < 1e-6) continue;
-      const ox = -dz / distance * halfWidth, oz = dx / distance * halfWidth;
-      ribbon.push(a.x + ox, a.y, a.z + oz, a.x - ox, a.y, a.z - oz, b.x + ox, b.y, b.z + oz,
-        b.x + ox, b.y, b.z + oz, a.x - ox, a.y, a.z - oz, b.x - ox, b.y, b.z - oz);
-    }
-    const surface = new THREE.BufferGeometry();
-    surface.setAttribute('position', new THREE.Float32BufferAttribute(ribbon, 3));
-    surface.computeVertexNormals();
-    const strip = new THREE.Mesh(surface, new THREE.MeshBasicMaterial({ color, depthTest: false,
-      side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
-    strip.name = `world-whitebox-path-surface:${path.id}`;
-    strip.renderOrder = 19;
-    root.add(strip);
+    addPathOverlay(`world-whitebox-path:${path.id}`, worldFeaturePathPolyline(path), path.width, color);
   }
   const anchorGeometry = new THREE.ConeGeometry(1.8, 5, 8);
   const anchorMaterial = new THREE.MeshBasicMaterial({ color: 0xffb547, depthTest: false });
@@ -360,7 +384,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   modelsRoot.userData.isModelRoot = true;
   root.add(modelsRoot);
   const whiteboxOverlay = buildWorldWhiteboxOverlay(bundle.plan, sample,
-    bundle.plan.whitebox === true || Boolean(world.review && world.assets.length === 0));
+    bundle.plan.whitebox === true || Boolean(world.review && world.assets.length === 0), terrainContext.diagnostics);
   root.add(whiteboxOverlay);
 
   const assetsById = new Map((map.assets ?? []).map(asset => [asset.id, asset]));

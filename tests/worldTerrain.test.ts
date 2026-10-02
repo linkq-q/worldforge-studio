@@ -577,6 +577,32 @@ describe('composable world terrain operations', () => {
     }));
   });
 
+  it('keeps a below-sea river across a high saddle as unchanged intent without carving an infeasible channel', () => {
+    const input = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'sea-saddle-sea', mode: 'grade',
+      region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 180 },
+      heights: [-5, 12, -5], feather: 0
+    }], waterBodies: [{
+      id: 'saddle-river', type: 'river', surfaceMode: 'terrain-fit',
+      region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 10 },
+      depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] } as unknown as WorldRecipe);
+    const originalInput = structuredClone(input);
+    const dry = createWorldTerrainContext({ ...input, waterBodies: [] });
+    const prepared = createWorldTerrainContext(input);
+
+    expect(prepared.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'river_profile_infeasible', waterBodyId: 'saddle-river', reason: 'excessive_cut', fallback: 'omitted'
+    }));
+    expect(prepared.waterBodies).toHaveLength(0);
+    let maximumCarve = 0;
+    for (let x = -100; x <= 100; x += 2) {
+      maximumCarve = Math.max(maximumCarve, dry.sample(x, 0).height - prepared.sample(x, 0).height);
+    }
+    expect(maximumCarve).toBe(0);
+    expect(input).toEqual(originalInput);
+  });
+
   it('shares one irregular river path across its prepared boundary and terrain sampling', () => {
     const recipe = validateWorldRecipe({ ...original, waterBodies: [{ id: 'natural-river', type: 'river',
       region: { kind: 'path', points: [[-100, 0], [0, 0], [100, 0]], width: 20 },
