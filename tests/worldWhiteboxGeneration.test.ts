@@ -321,37 +321,33 @@ describe('whitebox world generation', () => {
     expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
     expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
     expect(Array.isArray(spatialInput.terrainEvidence.terrainFeatureProfiles)).toBe(true);
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.buildableAreas');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.settlementMinRadius');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('descriptive dry-terrain observations, not pass/fail labels');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.landmassLabels');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.terrainFeatureProfiles');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('does not infer drainage, a spill point or water connectivity');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("kind contains 'bridge'");
+    const spatialPrompt = mocks.llmChat.mock.calls[1][0][0].content;
+    expect(spatialPrompt.length).toBeLessThan(6500);
+    for (const field of ['buildingSiteScores', 'buildableAreas', 'settlementMinRadius', 'landmassLabels',
+      'shoreline', 'absoluteBrushObservations', 'terrainFeatureProfiles', 'waterBodies', 'ecology',
+      'featureGraph', 'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas']) {
+      expect(spatialPrompt).toContain(field);
+    }
+    expect(spatialPrompt).toContain('descriptive context, not a pass/fail gate');
+    expect(spatialPrompt).toContain('does not infer drainage, a spill point or water connectivity');
+    expect(spatialPrompt).toContain("kind containing 'bridge'");
+    expect(spatialPrompt).toContain('fewest regions, paths, anchors and relations');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Preserve enough usable terrain for requested places and activities');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Terrain brushes execute in listed order');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain("choosing their scale and relationship to surrounding relief from the user's intent");
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('physically suitable terrain');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('rather than assuming a fixed layout');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("Infer population, extent, districts, density and street pattern from the user's wording");
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Ordinary reaches permit at most 0.08 slope and 4m extra cut');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Check the full extent of each district region');
-    expect(mocks.llmChat.mock.calls[1][0][0].content)
-      .toContain('Any settlement area that needs ordinary or public construction must appear in districts');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coordinate values must be JSON numbers');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('heights:[12,6,2]');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Every walkable featureGraph path');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('pass through every anchor in connects');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coarsest scale that still preserves its defining physical relationships');
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery'");
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("surface:'land'|'water'|'structure'");
-    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('rather than a fixed checklist');
+    expect(spatialPrompt).toContain('0.08 slope and 4m extra cut');
+    expect(spatialPrompt).toContain('District anchors define the inhabited footprint');
+    expect(spatialPrompt).toContain('heights:[12,6,2]');
+    expect(spatialPrompt).toContain('path passes through connected anchors');
+    expect(spatialPrompt).toContain("role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery'");
+    expect(spatialPrompt).toContain("surface:'land'|'water'|'structure'");
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('metadata and silhouette fit the requested use');
     const constructionInput = JSON.parse(mocks.llmChat.mock.calls[2][0][1].content);
     expect(constructionInput.whiteboxPlan).toEqual(result.initialPlan);
     expect(constructionInput.environmentEvidence).toMatchObject({ version: 1, anchors: expect.any(Array) });
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('ground height, slope, water surface');
+    expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('nearestWater is bounded context');
+    expect(mocks.llmChat.mock.calls[2][0][0].content).toContain("waterSource?:'fresh'|'sea'|'any'");
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel.mock.calls.every(([, options]) => options.providers?.join() === 'deepseek')).toBe(true);
     expect(result.paidCallCount).toBe(6);
@@ -551,7 +547,7 @@ describe('whitebox world generation', () => {
 
     const messages = mocks.llmChat.mock.calls[0][0];
     const stagedInput = JSON.parse(messages[1].content);
-    expect(messages[0].content).toContain('targets are absolute world elevations in metres and can both cut and fill');
+    expect(messages[0].content).toContain('absoluteBrushObservations describes actual grade/flatten cuts, fills and slopes');
     expect(stagedInput.terrainEvidence.absoluteBrushObservations)
       .toEqual([expect.objectContaining({ id: 'observed-grade', mode: 'grade' })]);
     expect(stagedInput.terrainEvidence.terrainFeatureProfiles)
