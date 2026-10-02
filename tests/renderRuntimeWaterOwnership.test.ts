@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   RenderRuntimeAdapter,
   shouldBindRenderPlanWaterSurface,
@@ -69,5 +69,44 @@ describe('render-plan water ownership', () => {
     ocean.geometry.dispose();
     shoreTexture.dispose();
     terrainTexture.dispose();
+  });
+
+  it('restores materials and releases water runtime state when scoped capabilities reset', () => {
+    const mesh = new THREE.Mesh();
+    const originalMaterial = new THREE.MeshBasicMaterial();
+    const runtimeMaterial = new THREE.MeshBasicMaterial();
+    mesh.material = runtimeMaterial;
+    const disposeSurface = vi.fn();
+    const disposeDetail = vi.fn();
+    const disposeCapture = vi.fn();
+    const adapter = Object.create(RenderRuntimeAdapter.prototype) as RenderRuntimeAdapter;
+    Object.assign(adapter as unknown as Record<string, unknown>, {
+      modelsRoot: null,
+      materialBaselines: new Map(),
+      waterBindings: [{
+        mesh,
+        originalMaterial,
+        surface: { dispose: disposeSurface },
+        usesSceneDepth: false
+      }],
+      waterDetailTexture: { dispose: disposeDetail },
+      waterSceneCapture: { dispose: disposeCapture },
+      waterInteractionAt: new Map([['ocean:interaction', 1], ['ocean:rain', 2]])
+    });
+
+    adapter.resetScopedCapabilities();
+
+    expect(mesh.material).toBe(originalMaterial);
+    expect(disposeSurface).toHaveBeenCalledOnce();
+    expect(disposeDetail).toHaveBeenCalledOnce();
+    expect(disposeCapture).toHaveBeenCalledOnce();
+    const runtime = adapter as unknown as Record<string, unknown>;
+    expect(runtime.waterBindings).toEqual([]);
+    expect(runtime.waterDetailTexture).toBeNull();
+    expect(runtime.waterSceneCapture).toBeNull();
+    expect(runtime.waterInteractionAt).toEqual(new Map());
+
+    runtimeMaterial.dispose();
+    originalMaterial.dispose();
   });
 });

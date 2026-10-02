@@ -41,4 +41,55 @@ describe('bounded shallow-water interaction', () => {
     surface.dispose();
     expect(disposeTexture).toHaveBeenCalledOnce();
   });
+
+  it('caps a long frame at three fixed simulation steps', () => {
+    const createSurface = () => new WaterSurface(
+      new THREE.Scene(),
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+    const longFrame = createSurface();
+    const fixedFrames = createSurface();
+    const camera = new THREE.PerspectiveCamera();
+    longFrame.addShallowWaterImpulse(0, 0, 0.08, 0.9);
+    fixedFrames.addShallowWaterImpulse(0, 0, 0.08, 0.9);
+
+    longFrame.update(1, camera, null);
+    for (let step = 0; step < 3; step += 1) fixedFrames.update(1 / 30, camera, null);
+
+    const longData = longFrame.material.uniforms.tShallowWaterHeight.value.image.data as Float32Array;
+    const fixedData = fixedFrames.material.uniforms.tShallowWaterHeight.value.image.data as Float32Array;
+    expect(Array.from(longData)).toEqual(Array.from(fixedData));
+
+    longFrame.dispose();
+    fixedFrames.dispose();
+  });
+
+  it('keeps simulation textures and lifetimes isolated per water surface', () => {
+    const first = new WaterSurface(
+      new THREE.Scene(),
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+    const second = new WaterSurface(
+      new THREE.Scene(),
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+    first.addShallowWaterImpulse(2, 3);
+    second.addShallowWaterImpulse(-4, 5);
+
+    const firstUniforms = first.material.uniforms;
+    const secondUniforms = second.material.uniforms;
+    expect(firstUniforms.tShallowWaterHeight.value).not.toBe(secondUniforms.tShallowWaterHeight.value);
+    expect(firstUniforms.uShallowWaterCenter.value.toArray()).toEqual([2, 3]);
+    expect(secondUniforms.uShallowWaterCenter.value.toArray()).toEqual([-4, 5]);
+
+    first.dispose();
+    expect(secondUniforms.uUseShallowWaterHeight.value).toBe(true);
+    second.dispose();
+  });
 });
