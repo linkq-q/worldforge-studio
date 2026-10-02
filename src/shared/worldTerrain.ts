@@ -1149,7 +1149,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     };
   });
   const shapedIslandCore = landforms.some(({ formPhase }) => formPhase !== null);
-  const craterRimReferences = new Map<number, number>();
+  const craterRimReferences = new Map<number, { mean: number; samples: number[] }>();
   let waterBodies: PreparedWorldWaterBody[] = [];
   const sample = (x: number, z: number, brushLimit = terrainBrushes.length): WorldSample => {
     const nx = x / (size / 2), nz = z / (size / 2);
@@ -1312,8 +1312,9 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         continue;
       }
       if (brush.mode === 'crater') {
-        const reference = craterRimReference(brush, brushIndex);
         const distance = brush.region.radius - area.edge;
+        const reference = craterRimReference(brush, brushIndex, distance,
+          Math.atan2(z - brush.region.center[1], x - brush.region.center[0]));
         const target = area.inside
           ? mix(reference - brush.depth, reference + brush.rimHeight,
               smooth(brush.region.radius * 0.3, brush.region.radius, distance))
@@ -1406,17 +1407,28 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       weights, freshWaterWeight, waterLevel, waterBodyId
     };
   };
-  function craterRimReference(brush: Extract<WorldTerrainBrush, { mode: 'crater' }>, brushIndex: number): number {
-    const cached = craterRimReferences.get(brushIndex);
-    if (cached !== undefined) return cached;
-    const count = 16;
-    const reference = Array.from({ length: count }, (_, index) => {
-      const angle = index / count * Math.PI * 2;
-      return sample(brush.region.center[0] + Math.cos(angle) * brush.region.radius,
-        brush.region.center[1] + Math.sin(angle) * brush.region.radius, brushIndex).height;
-    }).reduce((sum, height) => sum + height, 0) / count;
-    craterRimReferences.set(brushIndex, reference);
-    return reference;
+  function craterRimReference(
+    brush: Extract<WorldTerrainBrush, { mode: 'crater' }>,
+    brushIndex: number,
+    distance = 0,
+    angle = 0
+  ): number {
+    let profile = craterRimReferences.get(brushIndex);
+    if (!profile) {
+      const count = 64;
+      const samples = Array.from({ length: count }, (_, index) => {
+        const angle = index / count * Math.PI * 2;
+        return sample(brush.region.center[0] + Math.cos(angle) * brush.region.radius,
+          brush.region.center[1] + Math.sin(angle) * brush.region.radius, brushIndex).height;
+      });
+      profile = { samples, mean: samples.reduce((sum, height) => sum + height, 0) / count };
+      craterRimReferences.set(brushIndex, profile);
+    }
+    const scaled = ((angle / (Math.PI * 2) + 1) % 1) * profile.samples.length;
+    const index = Math.floor(scaled), next = (index + 1) % profile.samples.length;
+    const local = mix(profile.samples[index], profile.samples[next], scaled - index);
+    // Keep one stable bowl floor, then let the outer shoulder follow the pre-brush slope.
+    return mix(profile.mean, local, smooth(brush.region.radius * 0.65, brush.region.radius, distance));
   }
   terrainBrushes.forEach((brush, index) => {
     if (brush.mode === 'crater') craterRimReference(brush, index);

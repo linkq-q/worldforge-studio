@@ -135,6 +135,7 @@ export class WorldEcologyView {
 }
 
 export const WORLD_CONTENT_CHUNK_SIZE = ECOLOGY_CHUNK_SIZE;
+const WORLD_ROAD_RENDER_SPACING = 4;
 export interface WorldContentChunk { x: number; z: number }
 export interface WorldBuildingCollider {
   id: string; x: number; z: number; width: number; depth: number; rotation: number;
@@ -257,7 +258,8 @@ export function buildWorldRoadChunk(
   const positions: number[] = [], colors:number[]=[],indices: number[] = [];
   const minX = chunk.x * WORLD_CONTENT_CHUNK_SIZE, minZ = chunk.z * WORLD_CONTENT_CHUNK_SIZE;
   const maxX = minX + WORLD_CONTENT_CHUNK_SIZE, maxZ = minZ + WORLD_CONTENT_CHUNK_SIZE;
-  const spacing = worldRoadSampleSpacing(worldSize), lift = worldSize < 2000 ? .12 : 1.2;
+  const spacing = Math.min(worldRoadSampleSpacing(worldSize), WORLD_ROAD_RENDER_SPACING);
+  const lift = worldSize < 2000 ? .12 : 1.2;
   const ordinary=new THREE.Color('#a78d67'),quay=new THREE.Color('#6b5038');
   for (const road of roads) {
     const extension=worldHarborQuayExtension(road,sample,worldSize);
@@ -268,16 +270,24 @@ export function buildWorldRoadChunk(
       if (!clipped) continue;
       const [[ax, az], [bx, bz]] = clipped, length = Math.hypot(bx - ax, bz - az);
       if (length < 1e-6) continue;
-      const steps = Math.max(1, Math.ceil(length / spacing)), offsetX = (bz - az) / length * pad, offsetZ = (ax - bx) / length * pad;
+      const steps = Math.max(1, Math.ceil(length / spacing));
+      // Even cross-step counts keep a sampled centerline while bounding each cell to 4 m.
+      const crossSteps = Math.max(2, Math.ceil(road.width / (WORLD_ROAD_RENDER_SPACING * 2)) * 2);
+      const offsetX = (bz - az) / length * pad, offsetZ = (ax - bx) / length * pad;
       const start = positions.length / 3;
       const deck=extension&&i===centerline.length?extension:undefined,color=extension?quay:ordinary;
       for (let step = 0; step <= steps; step++) {
         const x = ax + (bx - ax) * step / steps, z = az + (bz - az) * step / steps;
-        for (const sign of [-1, 1]) {
-          const px = x + offsetX * sign, pz = z + offsetZ * sign;
+        for (let cross = 0; cross <= crossSteps; cross++) {
+          const offset = cross / crossSteps * 2 - 1;
+          const px = x + offsetX * offset, pz = z + offsetZ * offset;
           positions.push(px,deck?.height??sample(px,pz).height+lift,pz);colors.push(color.r,color.g,color.b);
+          if (step && cross) {
+            const next = start + step * (crossSteps + 1) + cross;
+            const previous = next - crossSteps - 1;
+            indices.push(previous - 1, previous, next - 1, next - 1, previous, next);
+          }
         }
-        if (step) { const next = start + step * 2; indices.push(next - 2, next - 1, next, next, next - 1, next + 1); }
       }
     }
   }

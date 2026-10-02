@@ -179,11 +179,31 @@ describe('composable world terrain operations', () => {
       depth: 8, rimHeight: 4, feather: 10
     }] });
     const sample = createWorldSampler(recipe), center = sample(0, 0).height;
-    const rim = [[30, 0], [0, 30], [-30, 0], [0, -30]]
-      .map(([x, z]) => sample(x, z).height);
+    const rim = Array.from({ length: 64 }, (_, index) => {
+      const angle = index / 64 * Math.PI * 2;
+      return sample(Math.cos(angle) * 30, Math.sin(angle) * 30).height;
+    });
 
-    expect(Math.min(...rim) - center).toBeCloseTo(12, 8);
+    expect(rim.reduce((sum, height) => sum + height, 0) / rim.length - center).toBeCloseTo(12, 8);
     expect(sample(41, 0)).toEqual(before(41, 0));
+  });
+
+  it('keeps a crater rim aligned with the pre-brush slope instead of cutting a level ring', () => {
+    const sloped = validateWorldRecipe({ ...original, terrainBrushes: [{
+      id: 'summit-slope', mode: 'grade',
+      region: { kind: 'path', points: [[-60, 0], [60, 0]], width: 120 },
+      heights: [0, 30], feather: 0
+    }] });
+    const before = createWorldSampler(sloped);
+    const recipe = validateWorldRecipe({ ...sloped, terrainBrushes: [...sloped.terrainBrushes!, {
+      id: 'slope-crater', mode: 'crater', region: { kind: 'circle', center: [0, 0], radius: 30 },
+      depth: 8, rimHeight: 4, feather: 10
+    }] });
+    const sample = createWorldSampler(recipe);
+    const originalRimDelta = before(30, 0).height - before(-30, 0).height;
+
+    expect(originalRimDelta).toBeCloseTo(15, 8);
+    expect(sample(30, 0).height - sample(-30, 0).height).toBeCloseTo(originalRimDelta, 8);
   });
 
   it('applies bounded circle and path grades through the shared sampler', () => {

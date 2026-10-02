@@ -118,12 +118,30 @@ describe('continuous-world streaming client', () => {
       const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length2));
       return Math.hypot(x-a[0]-dx*t,z-a[1]-dz*t);
     };
-    const centers=Array.from({length:positions.count/2},(_,index)=>[
-      (positions.getX(index*2)+positions.getX(index*2+1))/2,
-      (positions.getZ(index*2)+positions.getZ(index*2+1))/2
+    const centers=Array.from({length:positions.count/3},(_,index)=>[
+      positions.getX(index*3+1), positions.getZ(index*3+1)
     ] as [number,number]);
     expect(centers.some(([x,z])=>Math.min(distanceToSegment(x,z,[-20,0],[0,20]),
       distanceToSegment(x,z,[0,20],[20,0]))>.25)).toBe(true);
+    built.mesh!.geometry.dispose();
+    (built.mesh!.material as THREE.Material).dispose();
+  });
+
+  it('samples a large-world road across and along the ribbon without cutting through a narrow ridge', () => {
+    const road: MapGuide = { id: 'ridge-road', name: 'ridge road', points: [[0, 128], [48, 128]],
+      curve: 'polyline', closed: false, width: 12, tags: ['world-route'] };
+    const sample = (_x: number, z: number) => flatSample(4.8 * Math.exp(-Math.pow((z - 128) / 2, 2)));
+    const built = buildWorldRoadChunk([road], { x: 0, z: 0 }, sample, 64_000);
+    const positions = built.mesh!.geometry.getAttribute('position');
+    const centerVertices = Array.from({ length: positions.count }, (_, index) => index)
+      .filter(index => Math.abs(positions.getZ(index) - 128) < 0.0001);
+    const xs = [...new Set(Array.from({ length: positions.count }, (_, index) => positions.getX(index)))]
+      .sort((left, right) => left - right);
+
+    expect(centerVertices.length).toBeGreaterThan(2);
+    for (const index of centerVertices) expect(positions.getY(index)).toBeCloseTo(6, 5);
+    expect(Math.max(...xs.slice(1).map((x, index) => x - xs[index]))).toBeLessThanOrEqual(4.0001);
+    expect(built.triangles).toBeLessThanOrEqual(128);
     built.mesh!.geometry.dispose();
     (built.mesh!.material as THREE.Material).dispose();
   });
