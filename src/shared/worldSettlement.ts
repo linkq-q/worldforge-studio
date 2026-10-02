@@ -113,6 +113,12 @@ export function generateWorldSettlement(
   if (!task) throw new Error('world_settlement_unknown_town');
   const town = task.town;
   const settings = normalizeOptions(options, town, task.seed);
+  const harborAnchor = plan.featureGraph?.anchors
+    .filter(anchor => /harbo(u)?r|(?:^|[-_ ])port|quay|dock|港|码头/i.test(anchor.kind)
+      && distance(anchor.position, town.center) <= town.radius)
+    .sort((a, b) => distance(a.position, town.center) - distance(b.position, town.center))[0];
+  const preferredShore: Point | undefined = harborAnchor
+    ? [harborAnchor.position[0] - town.center[0], harborAnchor.position[1] - town.center[1]] : undefined;
   const random = seededRandom(settings.seed);
   const slope = (point: Point) => sampleSlope(sample, town, point);
   const dry = (point: Point, clearance = 0) => dryPoint(sample, town, point, clearance);
@@ -134,7 +140,8 @@ export function generateWorldSettlement(
     maxRoadSlope = settings.maxRoadSlope) => {
     const siteRandom = maxRoadSlope === settings.maxRoadSlope ? random : seededRandom(settings.seed);
     const candidateShore = settings.waterfrontBias > 0
-      ? findShore(town, sample, candidate.point, settings.waterSetback + settings.arterialWidth / 2, town.targetWaterBodyId)
+      ? findShore(town, sample, candidate.point, settings.waterSetback + settings.arterialWidth / 2,
+        town.targetWaterBodyId, preferredShore)
       : undefined;
     const rotation = candidateShore
       ? Math.atan2(candidateShore.tangent[1], candidateShore.tangent[0])
@@ -806,15 +813,18 @@ function findShore(
   sample: WorldSettlementSampler,
   center: Point,
   clearance: number,
-  targetWaterBodyId?: string
+  targetWaterBodyId?: string,
+  preferred?: Point
 ): Shore | undefined {
   let best: { point: Point; direction: Point; distance: number; score: number } | undefined;
-  for (let z = -4; z <= 4; z++) for (let x = -4; x <= 4; x++) {
-    const point: Point = [center[0] + x * town.radius * 0.1, center[1] + z * town.radius * 0.1];
+  for (const origin of preferred ? [center, preferred] : [center])
+    for (let z = -4; z <= 4; z++) for (let x = -4; x <= 4; x++) {
+    const point: Point = [origin[0] + x * town.radius * 0.1, origin[1] + z * town.radius * 0.1];
     if (!inside(town, point, clearance) || wet(sampleAt(sample, town, point))) continue;
     const water = nearestWater(sample, town, point, Math.min(180, town.radius * 0.58),targetWaterBodyId);
     if (!water || water.distance < clearance) continue;
-    const score = water.distance + sampleSlope(sample, town, point) * town.radius * 2;
+    const score = water.distance + sampleSlope(sample, town, point) * town.radius * 2
+      + (preferred ? distance(point, preferred) * 0.8 : 0);
     if (!best || score < best.score) best = { point, direction: water.direction, distance: water.distance, score };
   }
   if (!best) return undefined;

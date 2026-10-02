@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { auditWorldWhiteboxSettlementConstruction, generateApprovedWorldAssets, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
-  materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
+  hasAccessibleOceanShore, materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
 import { validateTownPatch, validateWorldPlan, worldPlanKey, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
@@ -419,6 +419,19 @@ describe('whitebox world generation', () => {
     expect(result.rawPlan).toEqual(JSON.parse(spatialPlanResponse(source)).plan);
     expect(() => parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source, { recipe: dryRecipe }), request, dryRecipe))
       .toThrow('world_unknown_staged_spatial_field:recipe');
+  });
+
+  it('keeps authored local terrain refinements in the first spatial plan', () => {
+    const source = originalPlan();
+    const dryRecipe = validateWorldRecipe(source.recipe);
+    const refinement = { id: 'river-mouth-grade', mode: 'grade' as const,
+      region: { kind: 'path' as const, points: [[-80, 20], [-120, 40], [-155, 55]] as Array<[number, number]>, width: 20 },
+      heights: [4, 2, 0], feather: 12 };
+    const result = parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source,
+      { terrainRefinements: [refinement] }), request, dryRecipe);
+    expect(result.plan.recipe.terrainBrushes).toEqual([expect.objectContaining(refinement)]);
+    expect(dryRecipe.terrainBrushes).toBeUndefined();
+    expect((result.rawPlan as { terrainRefinements: unknown[] }).terrainRefinements).toEqual([refinement]);
   });
 
   it('retains settlement population in the spatial whitebox and rejects invalid counts', () => {
@@ -930,6 +943,30 @@ describe('whitebox world generation', () => {
     expect(result.plan.towns[0].targetWaterBodyId).toBe('sea');
     expect(result.diagnostics.flatMap(item => item.planningIssues))
       .not.toContain('maritime_settlement_no_accessible_ocean_shore');
+  });
+
+  it('retains a separate harbor anchor when the town-centre role only says fishing town', () => {
+    const plan = harborPlan();
+    plan.featureGraph!.anchors[0].kind = 'town-center';
+    plan.featureGraph!.anchors.push({ id: 'working-harbor', kind: 'working-harbor',
+      position: [-105, 60], regionId: 'harbor-region' });
+    plan.settlementPlan!.settlements[0].role = 'working fishing town';
+    const expansion = constructionExpansion();
+    expansion.towns[0].id = 'port-town';
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(plan),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.towns[0].targetWaterBodyId).toBe('sea');
+  });
+
+  it('detects a narrow sea inlet in the square town core beyond the old radial probe', () => {
+    const land = createWorldSampler(buildablePlan().recipe);
+    const sample = (x: number, z: number) => {
+      const sea = x < -86 && z < -86;
+      return { ...land(x, z), height: sea ? -3 : 12, waterLevel: sea ? 0 : null, waterBodyId: null };
+    };
+    expect(hasAccessibleOceanShore(sample, [0, 0], 100)).toBe(true);
   });
 
   it('keeps an inland river port from pretending it has a sea landing', () => {

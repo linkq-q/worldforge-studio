@@ -874,6 +874,37 @@ describe('world settlement growth', () => {
     expect(validateTownPatch(plan, result.patch)).toEqual(result.patch);
   });
 
+  it('uses the authored harbor anchor to choose between two accessible coasts', () => {
+    const plan = fixture(), town = plan.towns[0], base = sampler(plan);
+    town.ports = [];
+    town.targetWaterBodyId = 'sea';
+    plan.settlementPlan = { settlements: [{ id: town.id, anchorId: 'town-center', role: 'working harbor' }] };
+    plan.featureGraph = { regions: [{ id: 'bay', kind: 'coast', name: 'Bay', center: town.center, radius: 200 }],
+      paths: [], anchors: [
+        { id: 'town-center', kind: 'town-center', position: town.center, regionId: 'bay' },
+        { id: 'harbor-anchor', kind: 'working-harbor',
+          position: [town.center[0] - 90, town.center[1]], regionId: 'bay' }
+      ], relations: [] };
+    const sample: WorldSettlementSampler = (x, z) => {
+      const original = base(x, z);
+      const sea = x - town.center[0] < -110 || z - town.center[1] > 80;
+      return { ...original, height: sea ? -3 : 12, waterLevel: sea ? 0 : null, waterBodyId: null };
+    };
+    const patch = generateWorldSettlement(plan, town.id, sample,
+      { kind: 'city', pattern: 'organic', seed: 47, density: 0.8, waterfrontBias: 1, waterSetback: 6 });
+    const waterfront = patch.streets.find(street => street.tags.includes('working-waterfront'));
+    expect(waterfront).toBeDefined();
+    expect(Math.min(...waterfront!.points.map(point => point[0]))).toBeLessThan(-70);
+    expect(Math.max(...waterfront!.points.map(point => point[1]))).toBeLessThan(75);
+    plan.featureGraph.anchors[1].position = [town.center[0], town.center[1] + 90];
+    const southPatch = generateWorldSettlement(plan, town.id, sample,
+      { kind: 'city', pattern: 'organic', seed: 47, density: 0.8, waterfrontBias: 1, waterSetback: 6 });
+    const southFront = southPatch.streets.find(street => street.tags.includes('working-waterfront'));
+    expect(southFront).toBeDefined();
+    expect(Math.max(...southFront!.points.map(point => point[1]))).toBeGreaterThan(50);
+    expect(Math.min(...southFront!.points.map(point => point[0]))).toBeGreaterThan(-100);
+  });
+
   it('samples a rotated landmark footprint in the same orientation used by placement', () => {
     const plan = fixture(), town = plan.towns[0], base = sampler(plan);
     const rotation = Math.PI / 4;
