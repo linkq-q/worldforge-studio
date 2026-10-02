@@ -8,7 +8,7 @@ import {
   observeWorldWhitebox, validateWorldPlan, worldFeaturePathPolyline,
   type Point, type TownBuilding, type WorldPlan, type WorldWhiteboxExecution
 } from '../shared/worldPlanning';
-import { llmChat, type ChatMessage } from './modelApi';
+import { ChatPartialResponseError, llmChat, type ChatMessage } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
 import { parseLlmJsonObject } from './llmJson';
 
@@ -959,14 +959,17 @@ function prepareStagedWorldTerrain(input: unknown, terrainContent: string) {
 
 function completeStagedWorldWhitebox(
   prepared: ReturnType<typeof prepareStagedWorldTerrain>,
-  spatialContent: string
+  spatialContent: string,
+  spatialDiagnostics: string[] = []
 ) {
   const { request, terrain, terrainEvidence } = prepared;
   const spatial = parseWorldWhiteboxSpatialPlan(spatialContent, request, terrain.recipe);
   recordGenerationTrace('world.whitebox.spatial-plan', spatial.plan);
   const first = executeWorldWhitebox(spatial.plan);
   const observation = observeWorldWhitebox(spatial.plan, first.execution);
-  const technicalNormalizations = [...terrain.technicalNormalizations, ...spatial.technicalNormalizations];
+  const technicalNormalizations = [
+    ...terrain.technicalNormalizations, ...spatial.technicalNormalizations, ...spatialDiagnostics
+  ];
   const observed = { ...observation, surfaceFacts: first.surfaceFacts, technicalNormalizations };
   recordGenerationTrace('world.whitebox.observation', observed);
   const adjustment: WorldWhiteboxAdjustment = {
@@ -978,7 +981,8 @@ function completeStagedWorldWhitebox(
   return { bundle, originalTerrainDraft: terrain.rawTerrain, terrainDraft: terrain.recipe, terrainEvidence,
     originalPlan: spatial.rawPlan, initialPlan: spatial.plan, observation: observed, adjustment,
     finalPlan: spatial.plan, finalObservation: observed,
-    planningDiagnostics: { terrain: terrain.technicalNormalizations, spatial: spatial.technicalNormalizations },
+    planningDiagnostics: { terrain: terrain.technicalNormalizations,
+      spatial: [...spatial.technicalNormalizations, ...spatialDiagnostics] },
     draft: { plan: spatial.plan, settlements: [], assets: [] }, diagnostics: [], assetSources: [],
     planningProvider: 'gpt', paidCallCount: 2, preview: true, mode: 'whitebox' as const };
 }
@@ -987,14 +991,36 @@ function completeStagedWorldWhitebox(
 export async function continueStagedWorldWhitebox(input: unknown, terrainContent: string, signal?: AbortSignal) {
   const prepared = prepareStagedWorldTerrain(input, terrainContent);
   const { request, terrain, terrainEvidence } = prepared;
-  const spatialContent = await llmChat([
-    { role: 'system', content: STAGED_SPATIAL_PROMPT },
-    { role: 'user', content: JSON.stringify({ prompt: request.prompt, seed: request.seed, size: request.size,
-      dryTerrain: terrain.recipe, terrainEvidence }) }
-  ], { provider: 'gpt', temperature: 0.45, maxTokens: 20_000, maxAttempts: 1,
-    traceStage: 'world.whitebox.spatial-plan', signal });
-  recordGenerationTrace('world.whitebox.spatial-raw', { content: spatialContent });
-  return completeStagedWorldWhitebox(prepared, spatialContent);
+  let spatialContent: string, transportError: ChatPartialResponseError | undefined;
+  try {
+    spatialContent = await llmChat([
+      { role: 'system', content: STAGED_SPATIAL_PROMPT },
+      { role: 'user', content: JSON.stringify({ prompt: request.prompt, seed: request.seed, size: request.size,
+        dryTerrain: terrain.recipe, terrainEvidence }) }
+    ], { provider: 'gpt', temperature: 0.45, maxTokens: 20_000, maxAttempts: 1,
+      traceStage: 'world.whitebox.spatial-plan', signal });
+  } catch (error) {
+    if (!(error instanceof ChatPartialResponseError)) throw error;
+    spatialContent = error.partialContent;
+    transportError = error;
+  }
+  recordGenerationTrace('world.whitebox.spatial-raw', { content: spatialContent,
+    ...(transportError ? { partial: true, transportError: transportError.message } : {}) });
+  try {
+    const result = completeStagedWorldWhitebox(prepared, spatialContent,
+      transportError ? ['transport_partial_recovered'] : []);
+    if (transportError) recordGenerationTrace('world.whitebox.spatial-partial-recovered', {
+      transportError: transportError.message
+    });
+    return result;
+  } catch (error) {
+    if (!transportError) throw error;
+    recordGenerationTrace('world.whitebox.spatial-partial-rejected', {
+      transportError: transportError.message,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw transportError;
+  }
 }
 
 /** Resume unchanged terrain and spatial responses after a parser fix, without paying to plan either stage again. */

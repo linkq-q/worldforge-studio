@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  ChatPartialResponseError,
   generateModel,
   mountModel,
   llmChat,
@@ -230,6 +231,29 @@ describe('model API adapter', () => {
       stream: true,
       thinking: true
     });
+  });
+
+  it('preserves partial content when a paid SSE chat terminates without retrying', async () => {
+    const partialContent = '{"plan":{"intentionalEmptyAreas":[]';
+    const fetchImpl = vi.fn().mockResolvedValue(new Response([
+      `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: partialContent })}`,
+      '',
+      `data: ${JSON.stringify({ type: 'response.error', error: { message: 'terminated' } })}`,
+      ''
+    ].join('\n'), {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream; charset=utf-8' }
+    }));
+
+    const result = llmChat([{ role: 'user', content: 'plan an atoll' }], {
+      apiBase: 'https://example.test', fetchImpl, maxAttempts: 1
+    });
+
+    await expect(result).rejects.toEqual(expect.objectContaining({
+      name: 'ChatPartialResponseError', message: 'terminated', partialContent
+    }));
+    await result.catch(error => expect(error).toBeInstanceOf(ChatPartialResponseError));
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it('accepts OpenAI-compatible chat completion reasoning chunks', async () => {

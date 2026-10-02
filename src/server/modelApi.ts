@@ -61,6 +61,14 @@ export interface ChatApiOptions {
   maxAttempts?: 1 | 2 | 3;
 }
 
+/** A failed chat transport that still delivered model output to the caller. */
+export class ChatPartialResponseError extends Error {
+  constructor(message: string, readonly partialContent: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = 'ChatPartialResponseError';
+  }
+}
+
 interface ChatApiResponse {
   ok?: boolean;
   content?: string;
@@ -361,7 +369,10 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     } catch (error) {
       trace('chat.attempt.error', { attempt, elapsedMs: Date.now() - attemptStartedAt, error, cancelled: options.signal?.aborted || isAbortError(error) });
       if (options.signal?.aborted || isAbortError(error)) throw error;
-      if (attempt === maxAttempts) throw new Error('chat_service_unreachable');
+      if (attempt === maxAttempts) {
+        if (error instanceof ChatPartialResponseError) throw error;
+        throw new Error('chat_service_unreachable');
+      }
       lastError = error;
       await abortableDelay(300, options.signal);
       continue;
@@ -370,7 +381,10 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     if (response.ok && data.ok && typeof data.content === 'string' && data.content.trim()) {
       return data.content;
     }
-    const error = new Error(data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`));
+    const message = data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`);
+    const error = typeof data.content === 'string' && data.content.trim()
+      ? new ChatPartialResponseError(message, data.content)
+      : new Error(message);
     trace('chat.attempt.rejected', { attempt, error });
     if (!isRetryableChatResponse(data, response.status) || attempt === maxAttempts) throw error;
     lastError = error;
@@ -533,6 +547,8 @@ async function readChatApiResponse(
     consume(buffer);
   } catch (error) {
     observe?.('stream.error', { error, partialContent: content, partialReasoning: reasoning, unparsedTail: buffer });
+    if (!isAbortError(error) && content.trim()) throw new ChatPartialResponseError(
+      error instanceof Error ? error.message : 'chat_stream_failed', content, { cause: error });
     throw error;
   }
   if (pendingReasoningReport) reportReasoning('模型正在推理并返回摘要', true);
