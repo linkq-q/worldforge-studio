@@ -669,4 +669,30 @@ describe('main editor streamed world renderer', () => {
       rendered.dispose();
     }
   }, 30_000);
+
+  it('shows unbound ecology as planning frames instead of solid fallback cubes', async () => {
+    const map = createEmptyMap();
+    const town = bundle.plan.towns[0];
+    const sample = createPlannedWorldSampler(bundle.plan, bundle.patches);
+    map.world = { bundle, assets: [] };
+    map.box.size = [bundle.plan.recipe.size, 4096, bundle.plan.recipe.size];
+    map.spawnPoints = [[town.center[0], sample(...town.center).height, town.center[1]]];
+
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      await waitFor(() => [...rendered.objectGroups.keys()].some(id => id.startsWith('world-ecology:')));
+      const ecologyGroups = [...rendered.objectGroups].filter(([id]) => id.startsWith('world-ecology:'));
+      expect(ecologyGroups.length).toBeGreaterThan(0);
+      expect(ecologyGroups.every(([, group]) => group.children.every(child => !child.visible))).toBe(true);
+      const frames: THREE.InstancedMesh[] = [];
+      rendered.modelsRoot.traverse(child => {
+        if (child instanceof THREE.InstancedMesh && child.parent?.name.startsWith('world-ecology-whitebox:')) {
+          frames.push(child);
+        }
+      });
+      expect(frames.reduce((count, frame) => count + frame.count, 0)).toBeGreaterThan(ecologyGroups.length);
+    } finally {
+      rendered.dispose();
+    }
+  }, 30_000);
 });

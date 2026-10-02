@@ -607,6 +607,33 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const whiteboxGroup = createStaticWhiteboxBoxes(whiteboxes);
     whiteboxGroup.name = `world-building-whitebox:${ecologyKey(chunk)}`;
     rendered.modelsRoot.add(whiteboxGroup);
+    const ecologyWhiteboxes: StaticWhiteboxPlacement[] = [];
+    for (const instance of ecologyForChunk(chunk).filter(item => !resolveEcologyAsset(item))) {
+      const group = rendered.objectGroups.get(`world-ecology:${instance.id}`);
+      if (!group) continue;
+      group.children.forEach(child => { child.visible = false; });
+      const position: Vec3 = [instance.x - centerX, instance.y, instance.z - centerZ];
+      const scale = instance.scale;
+      if (instance.kind === 'broadleaf' || instance.kind === 'pine') {
+        ecologyWhiteboxes.push({ position, size: [0.8 * scale, 5.5 * scale, 0.8 * scale],
+          rotationY: instance.rotation, color: 0x9b815b });
+        ecologyWhiteboxes.push({
+          position: [position[0], position[1] + (instance.kind === 'pine' ? 2.5 : 5) * scale, position[2]],
+          size: instance.kind === 'pine' ? [4.5 * scale, 6 * scale, 4.5 * scale]
+            : [5.4 * scale, 4.3 * scale, 5.4 * scale],
+          rotationY: instance.rotation, color: instance.kind === 'pine' ? 0x438e70 : 0x63ac6b
+        });
+      } else {
+        ecologyWhiteboxes.push({ position,
+          size: instance.kind === 'rock' ? [1.8 * scale, 1.2 * scale, 1.6 * scale]
+            : [2.2 * scale, 1.6 * scale, 2.2 * scale],
+          rotationY: instance.rotation, color: instance.kind === 'rock' ? 0xbba98d : 0x91a95e
+        });
+      }
+    }
+    const ecologyWhiteboxGroup = createStaticWhiteboxBoxes(ecologyWhiteboxes);
+    ecologyWhiteboxGroup.name = `world-ecology-whitebox:${ecologyKey(chunk)}`;
+    rendered.modelsRoot.add(ecologyWhiteboxGroup);
     applyStyle(rendered, contentMap, tile);
     const grassChunkBudget = worldGrassChunkBudget(residentContentCount);
     rendered.setGrassStyle(worldGrassStyle(style.grass, grassChunkBudget));
