@@ -59,6 +59,7 @@ type Shore = { point: Point; tangent: Point; waterDistance: number };
 const EPS = 1e-6;
 const TAU = Math.PI * 2;
 const MAX_LOCAL_EARTHWORK = 1.5;
+const MAX_TERRACED_SITE_SLOPE = 0.5;
 const LANDMARK_SITE_ATTEMPT_LIMIT = 24;
 const LANDMARK_LAYOUT_ATTEMPT_LIMIT = 192;
 const LANDMARK_CONFIGURATION_LIMIT = 50_000;
@@ -113,7 +114,7 @@ export function generateWorldSettlement(
   const task = createTownTasks(plan).find(candidate => candidate.town.id === townId);
   if (!task) throw new Error('world_settlement_unknown_town');
   const town = task.town;
-  const settings = normalizeOptions(options, town, task.seed);
+  const settings = normalizeOptions(options, town, task.seed, plan.generationPolicy === 'raw-first-call');
   const harborAnchor = plan.featureGraph?.anchors
     .filter(anchor => /harbo(u)?r|(?:^|[-_ ])port|quay|dock|港|码头/i.test(anchor.kind)
       && distance(anchor.position, town.center) <= town.radius)
@@ -395,7 +396,7 @@ export function createWorldSettlementLandmarkLayout(
   const town=plan.towns.find(item=>item.id===townId);
   if(!town) throw new Error('world_settlement_unknown_town');
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
-  const settings=normalizeOptions(options,town,task.seed);
+  const settings=normalizeOptions(options,town,task.seed,plan.generationPolicy==='raw-first-call');
   const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
   const authoredFrontage=authoredTownFrontage(plan,town,sample,settings);
   const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
@@ -454,7 +455,7 @@ export function createWorldSettlementPartialLandmarkLayout(
   const town=plan.towns.find(item=>item.id===townId);
   if(!town) throw new Error('world_settlement_unknown_town');
   const task=createTownTasks(plan).find(candidate=>candidate.town.id===townId)!;
-  const settings=normalizeOptions(options,town,task.seed);
+  const settings=normalizeOptions(options,town,task.seed,plan.generationPolicy==='raw-first-call');
   const base=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[]});
   const authoredFrontage=authoredTownFrontage(plan,town,sample,settings);
   const authoredWaterfront=requirements.some(requirement=>requirement.siting==='waterfront')
@@ -743,7 +744,12 @@ export function auditWorldSettlement(
   };
 }
 
-function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fallbackSeed: number): Settings {
+function normalizeOptions(
+  options: WorldSettlementOptions,
+  town: TownIntent,
+  fallbackSeed: number,
+  rawFirstCall = false
+): Settings {
   if (!options || !['city', 'village'].includes(options.kind)
     || (options.pattern !== undefined && !['organic', 'grid'].includes(options.pattern))) {
     throw new Error('world_settlement_invalid_options');
@@ -764,7 +770,8 @@ function normalizeOptions(options: WorldSettlementOptions, town: TownIntent, fal
     landmarks: options.landmarks?.map(building => ({ ...building })) ?? [],
     waterfrontBias: number(options.waterfrontBias, city ? 0.8 : 0.55, 0, 1, 'world_settlement_invalid_waterfront_bias'),
     maxRoadSlope: number(options.maxRoadSlope, city ? 0.18 : 0.24, 0.01, 0.5, 'world_settlement_invalid_road_slope'),
-    maxSiteSlope: number(options.maxSiteSlope, city ? 0.25 : 0.2, 0.01, 0.5, 'world_settlement_invalid_site_slope'),
+    maxSiteSlope: number(options.maxSiteSlope, city ? 0.25 : rawFirstCall ? MAX_TERRACED_SITE_SLOPE : 0.2,
+      0.01, MAX_TERRACED_SITE_SLOPE, 'world_settlement_invalid_site_slope'),
     waterSetback: number(options.waterSetback, city ? 7 : 5, 0, town.radius / 2, 'world_settlement_invalid_water_setback'),
     roadWidth: city ? 4.2 : 3,
     arterialWidth: city ? 6.4 : 4.6,

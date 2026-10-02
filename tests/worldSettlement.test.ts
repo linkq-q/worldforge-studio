@@ -269,6 +269,46 @@ describe('world settlement growth', () => {
     expect(Math.max(...patch.streets.map(street => street.width))).toBeLessThanOrEqual(4.6);
   });
 
+  it('uses the raw compact-village terrace allowance when strict siting would lose every home', () => {
+    const plan = fixture(), town = plan.towns[0];
+    town.center = [0, 0]; town.radius = 50; town.ports = []; town.population = 30;
+    plan.recipe.size = 500; plan.generationPolicy = 'raw-first-call';
+    plan.roads = [road('terrace-street', [[0, -40], [0, 40]], 3)];
+    plan.roads[0].tags = ['local_street', 'town-internal', 'world-route'];
+    const hillside: WorldSettlementSampler = (x) => ({
+      height: 12 + Math.abs(x) * 0.4, waterLevel: null, waterBodyId: null,
+      moisture: 0.3, temperature: 0.5, continentalness: 0.8,
+      weights: { ocean: 0, grassland: 1, forest: 0, desert: 0, mountains: 0, snow: 0 }
+    });
+
+    const options = {
+      kind: 'village', pattern: 'organic', seed: 59, density: 0.55, waterfrontBias: 0
+    } as const;
+    expect(() => generateWorldSettlement(plan, town.id, hillside, { ...options, maxSiteSlope: 0.2 }))
+      .toThrow('world_settlement_no_buildings');
+    const patch = generateWorldSettlement(plan, town.id, hillside, options);
+    const audit = auditWorldSettlement(patch, town, hillside);
+    expect(patch.buildings.length).toBeGreaterThanOrEqual(6);
+    expect(audit.maxBuildingSlope).toBeGreaterThan(0.2);
+    expect(audit.maxBuildingSlope).toBeLessThanOrEqual(0.5 + 1e-6);
+    for (const building of patch.buildings) {
+      const rotation = building.rotation ?? 0, c = Math.cos(rotation), s = Math.sin(rotation);
+      const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([x, z]): Point => [
+        building.x + c * x * building.width / 2 + s * z * building.depth / 2,
+        building.z - s * x * building.width / 2 + c * z * building.depth / 2
+      ]);
+      const probes = [[building.x, building.z] as Point, ...corners,
+        ...corners.map((point, index) => [(point[0] + corners[(index + 1) % 4][0]) / 2,
+          (point[1] + corners[(index + 1) % 4][1]) / 2] as Point)];
+      const heights = probes.map(([x, z]) => hillside(x, z).height).sort((a, b) => a - b);
+      const foundation = heights[Math.floor(heights.length / 2)];
+      expect(Math.max(...heights.map(height => Math.abs(height - foundation))), building.id)
+        .toBeLessThanOrEqual(1.5 + 1e-6);
+      expect(probes.every(([x, z]) => hillside(x, z).waterLevel === null), building.id).toBe(true);
+    }
+    expect(validateTownPatch(plan, patch)).toEqual(patch);
+  });
+
   it('uses buildable moderate city slopes when a house footprint needs no more than local earthwork', () => {
     const plan = fixture(), town = plan.towns[0];
     town.center = [0, 0]; town.radius = 100; town.ports = []; town.population = 80;
