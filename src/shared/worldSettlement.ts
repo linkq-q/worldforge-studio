@@ -1177,22 +1177,27 @@ function placeBuildings(
   const parcelDistricts = new Map<string, NonNullable<TownIntent['districts']>[number]>();
   const districtIntent = town.districts?.length ? town.districts.filter(district => district.density > 0) : [];
   const districtUseCounts = new Map<string, number>();
+  const districtKey = (district: NonNullable<TownIntent['districts']>[number]) =>
+    `${district.anchorId}:${district.kind}`;
   const districtUse = (district: NonNullable<TownIntent['districts']>[number]) => {
-    const index = districtUseCounts.get(district.anchorId) ?? 0;
+    const index = districtUseCounts.get(districtKey(district)) ?? 0;
     return district.kind === 'civic' ? index % 3 === 0 ? 'shop' : 'home'
       : district.kind === 'working' ? index % 2 === 0 ? 'workshop' : 'home'
         : district.kind === 'edge' ? 'farmhouse' : 'home';
   };
   if (districtIntent.length) {
     const order = new Map(candidates.map((parcel, index) => [parcel.id, index]));
-    const groups = districtIntent.map(district => ({ district, used: 0, parcels: [] as UrbanParcel[] }));
+    const groups = districtIntent.map(district => ({ district, used: 0, assigned: 0,
+      parcels: [] as UrbanParcel[] }));
     for (const parcel of candidates) {
       const group = groups.filter(candidate => distance(parcel.center, candidate.district.offset) <= candidate.district.radius * 1.5)
         .sort((a, b) => distance(parcel.center, a.district.offset) / a.district.radius
           - distance(parcel.center, b.district.offset) / b.district.radius
+          || (a.assigned + 1) / a.district.density - (b.assigned + 1) / b.district.density
           || a.district.anchorId.localeCompare(b.district.anchorId))[0];
       if (!group) continue;
       group.parcels.push(parcel);
+      group.assigned++;
       parcelDistricts.set(parcel.id, group.district);
     }
     for (const group of groups) group.parcels.sort((a, b) =>
@@ -1286,7 +1291,7 @@ function placeBuildings(
   const placeRoadside = (roads: readonly { a:Point; b:Point; width:number }[], limit=target,
     onlyDistrict?: NonNullable<TownIntent['districts']>[number]) => {
     if (districtIntent.length) {
-      const groups = (onlyDistrict ? [onlyDistrict] : districtIntent).map(district => ({ district, used: 0,
+      const groups = (onlyDistrict ? [onlyDistrict] : districtIntent).map(district => ({ district, used: 0, assigned: 0,
         sites: [] as Array<{ center: Point; rotation: number }> }));
       for (const road of roads) {
         const delta=sub(road.b,road.a),length=distance(road.a,road.b);
@@ -1298,9 +1303,11 @@ function placeBuildings(
           const center=add(roadPoint,scale(outward,road.width/2+fallbackDepth/2+1));
           const group=groups.filter(candidate=>distance(center,candidate.district.offset)<=candidate.district.radius*1.5)
             .sort((a,b)=>distance(center,a.district.offset)/a.district.radius-distance(center,b.district.offset)/b.district.radius
+              ||(a.assigned+1)/a.district.density-(b.assigned+1)/b.district.density
               ||a.district.anchorId.localeCompare(b.district.anchorId))[0];
           if(group && (!onlyDistrict || distance(center, onlyDistrict.offset) <= onlyDistrict.radius)) {
             group.sites.push({center,rotation:normalizeAngle(Math.atan2(-outward[0],-outward[1]))});
+            group.assigned++;
           }
         }
       }
@@ -1314,7 +1321,8 @@ function placeBuildings(
           width:fallbackWidth,depth:fallbackDepth,height:city?7+random()*4:4.5+random()*3,use,rotation:site.rotation};
         if(canPlace(building)) {
           result.push(building);group.used++;
-          districtUseCounts.set(group.district.anchorId,(districtUseCounts.get(group.district.anchorId)??0)+1);
+          const key=districtKey(group.district);
+          districtUseCounts.set(key,(districtUseCounts.get(key)??0)+1);
         }
       }
       return;
@@ -1378,7 +1386,10 @@ function placeBuildings(
     };
     if (canPlace(building)) {
       result.push(building);
-      if (district) districtUseCounts.set(district.anchorId, (districtUseCounts.get(district.anchorId) ?? 0) + 1);
+      if (district) {
+        const key=districtKey(district);
+        districtUseCounts.set(key, (districtUseCounts.get(key) ?? 0) + 1);
+      }
     }
   }
   if(!filled()&&(town.population!==undefined||plan.generationPolicy==='raw-first-call')) placeRoadside(localFrontageRoads,

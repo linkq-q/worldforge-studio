@@ -309,6 +309,9 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Reserve connected dry, gently sloped land');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Terrain brushes execute in listed order');
+    expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Do not make the port a raised, isolated 6–10m plateau');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('continuous, buildable sea-level shoreline');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('cannot by itself serve as a quay');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Do not downgrade a named town');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('A mouth-only grade cannot fix an inland drop');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Do not stack every district anchor');
@@ -726,6 +729,33 @@ describe('whitebox world generation', () => {
     expect(result.plan.roads.every(road => road.tags.includes('town-internal') && road.tags.includes('local_street'))).toBe(true);
     expect(result.plan.roads.some(road => road.id.startsWith('whitebox-access-'))).toBe(false);
     expect(result.plan.settlementPlan).toEqual(source.settlementPlan);
+  });
+
+  it('keeps civic and residential uses at one mixed town-center anchor', () => {
+    const source = unifiedDistrictPlan();
+    source.settlementPlan!.settlements[0].districts!.push({
+      anchorId: 'civic-anchor', kind: 'residential', density: 0.8
+    });
+    const validated = validateWorldPlan(source);
+    const expansion = constructionExpansion();
+    expansion.towns[0] = { ...expansion.towns[0], id: 'leeward-port', population: 150 };
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validated,
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    const town = result.plan.towns[0];
+    expect(town.districts?.filter(district => district.anchorId === 'civic-anchor')
+      .map(district => district.kind)).toEqual(['civic', 'residential']);
+    const base = createWorldSampler(result.plan.recipe);
+    const flat = (x: number, z: number) => ({ ...base(x, z), height: 10,
+      waterLevel: null, waterBodyId: null });
+    const patch = generateWorldSettlement(result.plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', density: 0.65
+    });
+    const centerBuildings = patch.buildings.filter(building =>
+      Math.hypot(building.x, building.z) <= 24);
+    expect(centerBuildings.some(building => building.use === 'shop')).toBe(true);
+    expect(centerBuildings.some(building => building.use === 'home')).toBe(true);
   });
 
   it('retains near-boundary districts in one construction core instead of dropping their intent', () => {

@@ -452,10 +452,10 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
           if (!anchors.has(anchorId)) fail('world_unknown_settlement_district_anchor');
           return { anchorId, kind: district.kind as SettlementDistrictKind,
             density: number(district.density, 0, 1, 'world_invalid_settlement_district_density') };
-        }).sort((a, b) => a.anchorId.localeCompare(b.anchorId)) }) };
+        }).sort((a, b) => a.anchorId.localeCompare(b.anchorId) || a.kind.localeCompare(b.kind)) }) };
       if (parsed.population !== undefined && !Number.isInteger(parsed.population)) fail('world_invalid_settlement_population');
       if (!anchors.has(parsed.anchorId)) fail('world_unknown_settlement_anchor');
-      if (parsed.districts) unique(parsed.districts.map(district => district.anchorId),
+      if (parsed.districts) unique(parsed.districts.map(district => `${district.anchorId}:${district.kind}`),
         'world_duplicate_settlement_district_anchor');
       return parsed;
     }).sort(byId);
@@ -590,8 +590,9 @@ export function validateWorldPlan(input: unknown): WorldPlan {
         return { anchorId: safeId(district.anchorId, 'world_invalid_town_district_anchor'),
           kind: district.kind as SettlementDistrictKind,
           density: number(district.density, 0, 1, 'world_invalid_town_district_density'), offset, radius: districtRadius };
-      }).sort((a, b) => a.anchorId.localeCompare(b.anchorId));
-      unique(town.districts.map(district => district.anchorId), 'world_duplicate_town_district_anchor');
+      }).sort((a, b) => a.anchorId.localeCompare(b.anchorId) || a.kind.localeCompare(b.kind));
+      unique(town.districts.map(district => `${district.anchorId}:${district.kind}`),
+        'world_duplicate_town_district_anchor');
     }
     // Conforming settlements do not flatten a collar; only platform towns need blend room.
     if (town.center.some(value => Math.abs(value) + radius + (town.terrainMode === 'conform' ? 0 : town.blend) > bound + TOLERANCE)) {
