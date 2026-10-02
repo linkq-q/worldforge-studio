@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { auditWorldWhiteboxSettlementConstruction, generateApprovedWorldAssets, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
-  hasAccessibleOceanShore, materializeWorldWhiteboxConstruction, parseWorldDryTerrainDraft,
+  continueStagedWorldWhitebox, hasAccessibleOceanShore, materializeWorldWhiteboxConstruction,
+  observeWorldAbsoluteTerrainBrushes, parseWorldDryTerrainDraft,
   parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
@@ -424,6 +425,51 @@ describe('whitebox world generation', () => {
     expect(evidence.buildableAreas.every(area => area.buildingSiteScore > 0
       && area.bounds.every(value => Number.isFinite(value)))).toBe(true);
     expect(evidence.boundaryCrossings.length).toBeGreaterThan(0);
+  });
+
+  it('observes the actual cut and slope around absolute brushes without changing the dry recipe', () => {
+    const source = originalPlan().recipe;
+    const base = createWorldSampler(source), target = base(0, 20).height;
+    const mild = validateWorldRecipe({ ...source, terrainBrushes: [{
+      id: 'mild-grade', mode: 'grade',
+      region: { kind: 'path', points: [[-80, 20], [80, 20]], width: 24 },
+      heights: [target, target], strength: 0.1
+    }] });
+    const severe = validateWorldRecipe({ ...source, terrainBrushes: [{
+      id: 'severe-grade', mode: 'grade',
+      region: { kind: 'path', points: [[-80, 20], [80, 20]], width: 24 },
+      heights: [target - 40, target - 40], strength: 0.9
+    }] });
+    const original = structuredClone(severe);
+    const mildObservation = observeWorldAbsoluteTerrainBrushes(mild)[0];
+    const severeObservation = observeWorldAbsoluteTerrainBrushes(severe)[0];
+
+    expect(severeObservation.maxAppliedCutM).toBeGreaterThan(mildObservation.maxAppliedCutM + 20);
+    expect(severeObservation.maxAppliedSlopeDegrees).toBeGreaterThan(mildObservation.maxAppliedSlopeDegrees + 10);
+    expect(severeObservation.worstSlopePosition.every(Number.isFinite)).toBe(true);
+    expect(severe).toEqual(original);
+  });
+
+  it('passes absolute-brush observations to Stage 2 while preserving the first dry recipe', async () => {
+    const source = originalPlan();
+    source.recipe.terrainBrushes = [{
+      id: 'observed-grade', mode: 'grade',
+      region: { kind: 'path', points: [[-80, 20], [80, 20]], width: 24 },
+      heights: [8, -2], strength: 0.8
+    }];
+    const original = structuredClone(source.recipe);
+    mocks.llmChat.mockResolvedValueOnce(spatialPlanResponse(source));
+
+    await continueStagedWorldWhitebox(request, dryTerrainResponse(source));
+
+    const messages = mocks.llmChat.mock.calls[0][0];
+    const stagedInput = JSON.parse(messages[1].content);
+    expect(messages[0].content).toContain('targets are absolute world elevations in metres and can both cut and fill');
+    expect(stagedInput.terrainEvidence.absoluteBrushObservations)
+      .toEqual([expect.objectContaining({ id: 'observed-grade', mode: 'grade' })]);
+    expect(stagedInput.dryTerrain.terrainBrushes).toEqual(original.terrainBrushes);
+    expect(source.recipe).toEqual(original);
+    expect(mocks.llmChat).toHaveBeenCalledTimes(1);
   });
 
   it('exposes the v3 river source, intervening rise and sea outlet before spatial planning', () => {

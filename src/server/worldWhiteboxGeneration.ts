@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
-import { createWorldSampler, createWorldTerrainEvidence, validateWorldRecipe, WORLD_BIOMES, WORLD_REGIONS,
+import { createWorldSampler, createWorldTerrainEvidence, sampleWorldSlope, validateWorldRecipe, WORLD_BIOMES, WORLD_REGIONS,
   type WorldRecipe, type WorldSampler, type WorldTerrainBrush } from '../shared/worldTerrain';
 import { validateEcologyRules } from '../shared/worldEcology';
 import { DEFAULT_WATER_DEPTH } from '../shared/map';
@@ -66,6 +66,7 @@ const STAGED_SPATIAL_PROMPT = `Plan the water and complete editable whitebox sem
 For an explicitly requested port, locate the continuous, buildable sea-level shoreline in terrainEvidence before choosing the settlement centre. Place the working district on that shore and keep the civic and residential districts on connected dry land. The shore must support real waterfront public-building footprints and a land-to-water landing, not merely a harbor label or a distant water view. If a proposed shoreline is too steep or separated from the main landmass, choose another sampled coast; do not create an isolated high terrace with a late flatten or grade brush. A harbor terrace several metres above sea level needs a long, walkable descent and cannot by itself serve as a quay.
 terrainEvidence.landmassLabels marks connected dry evidence cells (0 is sea, 1 is the largest island), and landmasses reports each area's approximate size, buildable score and nearest sampled mainland banks. These are coarse observations, not hard rejection gates. Before finalizing a settlement, identify its landmass and how people reach the other destinations. If a busy village is on a detached island across a short sheltered channel, consider a purposeful walkable bridge; across a long exposed gap, consider a ferry and landing, or choose a connected town site. A bridge must be an explicit featureGraph path whose kind contains 'bridge', with a roughly straight polyline from one dry bank to the other and a mobility route using it; ordinary roads must not cross water. Check both bank elevations and reserve approach space, not just the narrowest water gap.
 {"plan":{"id":"world-id","terrainRefinements":[],"waterBodies":[],"ecology":[],"concept":{},"featureGraph":{},"settlementPlan":{},"mobilityPlan":{},"explorationPlan":{},"intentionalEmptyAreas":[]}}.
+terrainEvidence.absoluteBrushObservations reports the actual cut, fill and steepest local slope around each dry-terrain grade or flatten brush. Their targets are absolute world elevations in metres and can both cut and fill; do not assume later water hides a dangerous exposed transition.
 Return those eight required plan fields and optional terrainRefinements and ecology. Do not return recipe, seed, size, constraints, heightScale, landforms, terrainBrushes, biomePatches, towns, roads, buildings or assets. The server preserves the dryTerrain base and appends your terrainRefinements in listed order before placing water and settlements. terrainEvidence is a deterministic 21 x 21 observation of that recipe: rows run north to south, columns west to east, origin and step are metres, and each samples value is [height,slope]. buildingSiteScores uses the same grid: each 0..4 score counts approximate dry, gentle 8m building sites sampled within that cell. terrainEvidence.buildableAreas summarizes connected positive-score cells with bounds, an approximate buildingSiteScore capacity and the nearest sampled ocean pair. Use those areas to reserve enough connected frontage for the stated population (roughly one ordinary building per five residents); do not put a civic, working or housing district over all-zero cells unless terrainRefinements in this same response make that district buildable. These scores are planning evidence, not a rejection gate, and later water or roads may reduce available sites. Multiply height by heightUnit to get metres and slope by slopeUnit to get degrees; heightRange also uses heightUnit. shoreline contains closed interpolated sea-level loops in metres, and boundaryCrossings lists open coast endpoints on the sampled world boundary. Use this evidence to choose actual dry, low-slope anchors and plausible downhill water and route paths. Use this evidence to choose connected sites and to plan only local, bounded earthworks where a river mouth, harbor work area or essential access cannot fit the dry land. terrainRefinements is an optional array of standard terrain brushes: {id,mode:'lower'|'raise',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width}|{kind:'circle',center:[x,z],radius},heights:[two or more scalar height keyframes such as heights:[12,6,2]],strength?,feather?}. heights contains elevations only, never [x,z] coordinate pairs. For a path grade, keyframes interpolate from the first to last point; for a circle grade, they interpolate radially from centre to rim. Keep broad landforms and the chosen coastline recognizable; let a refined river descend into its first sea outlet and keep the harbor terrace above sea level. These are authored parts of your first plan, never automatic post-generation repair. Preserve unusual authored terrain and report one raw plan; do not critique, repair or offer alternatives.
 waterBodies may contain lakes {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or rivers {id,type:'river',surfaceMode:'terrain-fit',region:{kind:'path',points:[[x,z],...],width},widths?:[one width per path point],depth,waterfallAfterPointIndices?:[segment indices],shorelineSmoothness?,shorelineIrregularity?}. Terrain-fit rivers have no levels: the shared sampler derives their surface profile and carved bed from dry banks. Only engineered canals or fixed-height waterworks may use surfaceMode:'authored' with one level per point. A natural river must begin on dry inland terrain, follow a sampled downhill valley with dry banks, and stop at its first sea-level shoreline crossing. Ordinary reaches permit at most 0.08 slope and 4m extra cut; declare a waterfall segment only for an intended sharp drop. Check the entire proposed centerline against terrainEvidence, including the first inland descent: a 25m evidence interval dropping more than about 2m already exceeds an ordinary reach. A mouth-only grade cannot fix an inland drop. Re-route through gentler ground, grade the full short transition from above its break, or intentionally declare a waterfall segment. Trace natural centerlines with bends appropriate to their valleys instead of drawing a straight chord across high ground. A dry world may intentionally have no fresh water.
 ecology may contain up to 8 habitat scatter rules: {id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome:'ocean'|'grassland'|'forest'|'desert'|'mountains'|'snow',density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?:[outerMin,preferredMin,preferredMax,outerMax]}. Use broad rules for widespread vegetation and bounded circle or path regions for distinctive groves, reeds or stony areas. Decide habitats from terrain, water, climate and settlement use; each rule is a batch placement intent and requires no 3D asset.
@@ -782,6 +783,96 @@ export interface WorldWhiteboxAdjustment {
   reason: 'raw_first_call_preserved';
 }
 
+export interface WorldAbsoluteBrushObservation {
+  id: string;
+  mode: 'grade' | 'flatten';
+  maxAppliedCutM: number;
+  maxAppliedFillM: number;
+  maxAppliedSlopeDegrees: number;
+  maxFinalSlopeDegrees: number;
+  worstSlopePosition: Point;
+}
+
+function absoluteBrushSamplePoints(recipe: WorldRecipe,
+  brush: Extract<WorldTerrainBrush, { mode: 'grade' | 'flatten' }>): Point[] {
+  const bound = recipe.size / 2, transition = Math.min(bound, Math.max(64, brush.feather ?? 0));
+  const points = new Map<string, Point>();
+  const add = (x: number, z: number) => {
+    const point: Point = [Math.max(-bound, Math.min(bound, x)), Math.max(-bound, Math.min(bound, z))];
+    points.set(`${point[0].toFixed(3)},${point[1].toFixed(3)}`, point);
+  };
+  if (brush.region.kind === 'circle') {
+    const reach = Math.min(bound * 2, brush.region.radius + transition);
+    for (let angleIndex = 0; angleIndex < 16; angleIndex += 1) {
+      const angle = angleIndex / 16 * Math.PI * 2;
+      for (let step = 0; step <= 24; step += 1) {
+        const distance = reach * step / 24;
+        add(brush.region.center[0] + Math.cos(angle) * distance,
+          brush.region.center[1] + Math.sin(angle) * distance);
+      }
+    }
+    return [...points.values()];
+  }
+  const sections: Array<{ point: Point; tangent: Point }> = [];
+  for (let index = 0; index < brush.region.points.length; index += 1) {
+    const point = brush.region.points[index];
+    const before = brush.region.points[Math.max(0, index - 1)];
+    const after = brush.region.points[Math.min(brush.region.points.length - 1, index + 1)];
+    sections.push({ point, tangent: [after[0] - before[0], after[1] - before[1]] });
+    if (index + 1 < brush.region.points.length) {
+      const next = brush.region.points[index + 1];
+      sections.push({ point: [(point[0] + next[0]) / 2, (point[1] + next[1]) / 2],
+        tangent: [next[0] - point[0], next[1] - point[1]] });
+    }
+  }
+  const selected = sections.length <= 17 ? sections : Array.from({ length: 17 }, (_, index) =>
+    sections[Math.round(index / 16 * (sections.length - 1))]);
+  const reach = Math.min(bound * 2, brush.region.width / 2 + transition);
+  for (const section of selected) {
+    const length = Math.hypot(...section.tangent);
+    if (length <= 0.000001) continue;
+    const normal: Point = [-section.tangent[1] / length, section.tangent[0] / length];
+    for (let step = -24; step <= 24; step += 1) {
+      const offset = reach * step / 24;
+      add(section.point[0] + normal[0] * offset, section.point[1] + normal[1] * offset);
+    }
+  }
+  return [...points.values()];
+}
+
+/** Observes authored absolute brushes without rejecting or rewriting the dry terrain recipe. */
+export function observeWorldAbsoluteTerrainBrushes(input: WorldRecipe): WorldAbsoluteBrushObservation[] {
+  const checked = validateWorldRecipe(input);
+  const { waterBodies: _waterBodies, ...dryTerrain } = checked;
+  const brushes = dryTerrain.terrainBrushes ?? [];
+  const finalSample = createWorldSampler(dryTerrain);
+  const rounded = (value: number) => Math.round(value * 10) / 10;
+  return brushes.flatMap((brush, brushIndex) => {
+    if (brush.mode !== 'grade' && brush.mode !== 'flatten') return [];
+    const points = absoluteBrushSamplePoints(dryTerrain, brush);
+    const before = createWorldSampler({ ...dryTerrain, terrainBrushes: brushes.slice(0, brushIndex) });
+    const after = createWorldSampler({ ...dryTerrain, terrainBrushes: brushes.slice(0, brushIndex + 1) });
+    let maxAppliedCutM = 0, maxAppliedFillM = 0, maxAppliedSlope = 0, maxFinalSlope = -Infinity;
+    let worstSlopePosition: Point = points[0] ?? [0, 0];
+    const appliedHeight = (x: number, z: number) => after(x, z).height - before(x, z).height;
+    for (const point of points) {
+      const delta = appliedHeight(...point);
+      maxAppliedCutM = Math.max(maxAppliedCutM, -delta);
+      maxAppliedFillM = Math.max(maxAppliedFillM, delta);
+      const dx = (appliedHeight(point[0] + 2, point[1]) - appliedHeight(point[0] - 2, point[1])) / 4;
+      const dz = (appliedHeight(point[0], point[1] + 2) - appliedHeight(point[0], point[1] - 2)) / 4;
+      maxAppliedSlope = Math.max(maxAppliedSlope, Math.hypot(dx, dz));
+      const slope = sampleWorldSlope(finalSample, point[0], point[1], 2);
+      if (slope > maxFinalSlope) { maxFinalSlope = slope; worstSlopePosition = point; }
+    }
+    return [{ id: brush.id, mode: brush.mode,
+      maxAppliedCutM: rounded(maxAppliedCutM), maxAppliedFillM: rounded(maxAppliedFillM),
+      maxAppliedSlopeDegrees: rounded(Math.atan(maxAppliedSlope) * 180 / Math.PI),
+      maxFinalSlopeDegrees: rounded(Math.atan(Math.max(0, maxFinalSlope)) * 180 / Math.PI),
+      worstSlopePosition: worstSlopePosition.map(rounded) as Point }];
+  });
+}
+
 /** Terrain-first planning used only by generate-complete. Public whitebox generation remains single-stage. */
 export async function generateStagedWorldWhitebox(input: unknown, signal?: AbortSignal) {
   const request = validateWorldWhiteboxRequest(input);
@@ -802,7 +893,8 @@ export async function continueStagedWorldWhitebox(input: unknown, terrainContent
   recordGenerationTrace('world.whitebox.terrain-plan', {
     recipe: terrain.recipe, technicalNormalizations: terrain.technicalNormalizations
   });
-  const terrainEvidence = createWorldTerrainEvidence(terrain.recipe);
+  const terrainEvidence = { ...createWorldTerrainEvidence(terrain.recipe),
+    absoluteBrushObservations: observeWorldAbsoluteTerrainBrushes(terrain.recipe) };
   recordGenerationTrace('world.whitebox.terrain-evidence', terrainEvidence);
   const spatialContent = await llmChat([
     { role: 'system', content: STAGED_SPATIAL_PROMPT },
