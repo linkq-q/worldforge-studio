@@ -772,10 +772,19 @@ export function validateWorldAssetRequests(
 ): WorldAssetRequest[] {
   if (!Array.isArray(input) || input.length > WORLD_ASSET_FAMILY_LIMIT) throw new Error('invalid_world_draft');
   const keys = new Set<string>();
-  const assets = input.map(assetInput => exactRecord(assetInput,
+  const assets = input.map(assetInput => ({...exactRecord(assetInput,
     ['key','name','role','prompt','dimensions','enterable','strategy','existingAssetId','ecologyKind','ecologyRuleId'],
-    'invalid_world_asset_request','world_unknown_asset_field')) as unknown as WorldAssetRequest[];
+    'invalid_world_asset_request','world_unknown_asset_field')})) as unknown as WorldAssetRequest[];
   for (const asset of assets) {
+    if (Array.isArray(asset.dimensions) && asset.dimensions.length === 3) {
+      const original = asset.dimensions;
+      const dimensions = original.map(value => typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value)
+        ? Number(value) : value) as [number, number, number];
+      if (dimensions.some((value, index) => value !== original[index])) {
+        asset.dimensions = dimensions;
+        recordGenerationTrace('world.layout-asset-dimension-parsed', {key:asset.key,original,dimensions});
+      }
+    }
     const ecologyRule=asset.ecologyRuleId?plan.ecology.find(rule=>rule.id===asset.ecologyRuleId):undefined;
     if (!asset || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(asset.key) || keys.has(asset.key)
       || !['house','shop','workshop','tree','landmark'].includes(asset.role)

@@ -164,6 +164,23 @@ describe('world generation compiler', () => {
     expect(result.bundle.plan.ecology[0].scale).toEqual([.5,1.625]);
   });
 
+  it('accepts a decimal dimension string without changing the planned asset shape', async () => {
+    const {layout:source}=soloLayout();
+    const layout=source as any;
+    layout.assets.push({key:'forest-house',name:'Forest house',role:'house',
+      prompt:'A timber house',dimensions:[7,4,'10']} as any);
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld({...request,mode:'resume-intent',rawIntent:rawSoloIntent()},{} as MapStore);
+    expect(result.draft.assets[0].dimensions).toEqual([7,4,10]);
+    expect(layout.assets[0].dimensions).toEqual([7,4,'10']);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.layout-asset-dimension-parsed',
+      {key:'forest-house',original:[7,4,'10'],dimensions:[7,4,10]});
+    layout.assets[0].dimensions=[7,4,'ten'] as any;
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(layout));
+    await expect(generateWorld({...request,mode:'resume-intent',rawIntent:rawSoloIntent()},{} as MapStore))
+      .rejects.toThrow('invalid_world_asset_request');
+  }, 15000);
+
   it('keeps a circular landform and treats a one-town loop as a local street request', () => {
     const intent=rawSoloIntent() as any;
     intent.plan.recipe.landforms=[{center:[0,0],radius:90,height:8}];
