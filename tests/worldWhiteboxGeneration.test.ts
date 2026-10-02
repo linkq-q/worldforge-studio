@@ -532,6 +532,65 @@ describe('whitebox world generation', () => {
     expect(result.technicalNormalizations).toContain('terrainBrushes[1].positioned_grade_keyframes_to_samples');
   });
 
+  it('normalizes metre grade keyframes across circle radius and path length without changing the raw terrain trace', () => {
+    const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact',
+      constraints: [{ region: 'center', biome: 'desert' }], terrainBrushes: [
+        { id: 'oasis-basin', mode: 'grade', region: { kind: 'circle', center: [20, -15], radius: 58.4 },
+          heights: [{ distance: 0, height: -24 }, { distance: 58, height: -12 }] },
+        { id: 'wadi-grade', mode: 'grade', region: { kind: 'path', points: [[0, 0], [30, 40], [30, 60]], width: 16 },
+          heights: [{ distance: 0, height: 12 }, { distance: 50, height: 4 }, { distance: 70, height: 0 }] }
+      ] } };
+    const result = parseWorldDryTerrainDraft(JSON.stringify(raw), request);
+    expect(result.rawTerrain).toEqual(raw.terrain);
+    const [circle, path] = result.recipe.terrainBrushes ?? [];
+    expect(circle?.mode).toBe('grade');
+    expect(path?.mode).toBe('grade');
+    if (circle?.mode !== 'grade' || path?.mode !== 'grade') throw new Error('expected_grades');
+    expect(circle.heights).toHaveLength(64);
+    expect(circle.heights[0]).toBe(-24);
+    expect(circle.heights[63]).toBe(-12);
+    expect(path.heights).toHaveLength(64);
+    expect(path.heights[45]).toBeCloseTo(4, 8);
+    expect(path.heights[63]).toBe(0);
+    expect(result.technicalNormalizations).toContain('terrainBrushes[0].distance_grade_keyframes_to_samples');
+    expect(result.technicalNormalizations).toContain('terrainBrushes[1].distance_grade_keyframes_to_samples');
+  });
+
+  it('accepts a rounded metre endpoint for a path with a non-integer length and pins its last sample', () => {
+    const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact',
+      constraints: [{ region: 'center', biome: 'desert' }], terrainBrushes: [{ id: 'diagonal-wadi', mode: 'grade',
+        region: { kind: 'path', points: [[0, 0], [10, 10]], width: 12 },
+        heights: [{ distance: 0, height: 8 }, { distance: 14, height: 1 }] }] } };
+    const result = parseWorldDryTerrainDraft(JSON.stringify(raw), request);
+    expect(result.rawTerrain).toEqual(raw.terrain);
+    const grade = result.recipe.terrainBrushes?.[0];
+    expect(grade?.mode).toBe('grade');
+    if (grade?.mode !== 'grade') throw new Error('expected_grade');
+    expect(grade.heights).toHaveLength(64);
+    expect(grade.heights[0]).toBe(8);
+    expect(grade.heights[63]).toBe(1);
+    expect(result.technicalNormalizations).toContain('terrainBrushes[0].distance_grade_keyframes_to_samples');
+  });
+
+  it('rejects metre grade keyframes with a mismatched, non-increasing or non-finite distance', () => {
+    const terrain = (terrainBrushes: unknown[]) => ({ terrain: { version: 1, seed: 74, size: 500,
+      reliefProfile: 'compact', constraints: [{ region: 'center', biome: 'desert' }], terrainBrushes } });
+    const mismatched = terrain([{ id: 'oasis-basin', mode: 'grade',
+      region: { kind: 'circle', center: [0, 0], radius: 58 },
+      heights: [{ distance: 0, height: -24 }, { distance: 57, height: -12 }] }]);
+    const nonIncreasing = terrain([{ id: 'wadi-grade', mode: 'grade',
+      region: { kind: 'path', points: [[0, 0], [30, 40], [30, 60]], width: 16 },
+      heights: [{ distance: 0, height: 12 }, { distance: 60, height: 4 },
+        { distance: 50, height: 2 }, { distance: 70, height: 0 }] }]);
+    const nonFinite = JSON.stringify(terrain([{ id: 'oasis-basin', mode: 'grade',
+      region: { kind: 'circle', center: [0, 0], radius: 58 },
+      heights: [{ distance: 0, height: -24 }, { distance: 58, height: -12 }] }]))
+      .replace('"distance":58', '"distance":1e400');
+    for (const content of [JSON.stringify(mismatched), JSON.stringify(nonIncreasing), nonFinite]) {
+      expect(() => parseWorldDryTerrainDraft(content, request)).toThrow('invalid_world_terrain_brush');
+    }
+  });
+
   it('interprets a bounded percentage heightScale and tuple grade keyframes without changing the raw draft', () => {
     const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact', heightScale: 18,
       constraints: [{ region: 'center', biome: 'grassland' }], terrainBrushes: [{ id: 'downhill', mode: 'grade',

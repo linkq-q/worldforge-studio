@@ -386,24 +386,54 @@ function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[
     && brush.heights.length >= 2 && brush.heights.length <= 64) {
     const keyframes = (brush.heights as unknown[]).map(value => Array.isArray(value) && value.length === 2
       ? { position: value[0], height: value[1] }
-      : value) as Array<{ position?: unknown; height?: unknown }>;
-    const valid = keyframes.every((keyframe, index) => keyframe && typeof keyframe === 'object'
+      : value) as Array<{ position?: unknown; distance?: unknown; height?: unknown }>;
+    const validHeights = keyframes.every(keyframe => keyframe && typeof keyframe === 'object'
       && !Array.isArray(keyframe) && Object.keys(keyframe).every(key => key === 'position' || key === 'height')
-      && typeof keyframe.position === 'number' && Number.isFinite(keyframe.position)
+      && typeof keyframe.height === 'number' && Number.isFinite(keyframe.height)
+      && keyframe.height >= -1000 && keyframe.height <= 5000);
+    const positioned = validHeights && keyframes.every((keyframe, index) => typeof keyframe.position === 'number'
+      && Number.isFinite(keyframe.position)
+      && (index === 0 || keyframe.position > (keyframes[index - 1].position as number)))
+      && keyframes[0].position === 0 && keyframes.at(-1)?.position === 1
+      ? keyframes.map(keyframe => ({ position: keyframe.position as number, height: keyframe.height as number })) : null;
+    const region = brush.region && typeof brush.region === 'object' && !Array.isArray(brush.region)
+      ? brush.region as Record<string, unknown> : null;
+    let extent: number | null = null;
+    if (region?.kind === 'circle' && typeof region.radius === 'number' && Number.isFinite(region.radius)) {
+      extent = region.radius;
+    } else if (region?.kind === 'path' && Array.isArray(region.points) && region.points.length >= 2
+      && region.points.every(point => Array.isArray(point) && point.length === 2
+        && point.every(value => typeof value === 'number' && Number.isFinite(value)))) {
+      const points = region.points as Array<[number, number]>;
+      extent = points.slice(1).reduce((length, point, index) =>
+        length + Math.hypot(point[0] - points[index][0], point[1] - points[index][1]), 0);
+    }
+    const distanceTolerance = extent === null ? 0 : Math.max(0.5, extent * 0.01);
+    const distanceBased = extent !== null && extent > 0 && keyframes.every((keyframe, index) => keyframe
+      && typeof keyframe === 'object' && !Array.isArray(keyframe)
+      && Object.keys(keyframe).every(key => key === 'distance' || key === 'height')
+      && typeof keyframe.distance === 'number' && Number.isFinite(keyframe.distance)
       && typeof keyframe.height === 'number' && Number.isFinite(keyframe.height)
       && keyframe.height >= -1000 && keyframe.height <= 5000
-      && (index === 0 || keyframe.position > (keyframes[index - 1].position as number)));
-    if (valid && keyframes[0].position === 0 && keyframes.at(-1)?.position === 1) {
+      && (index === 0 || keyframe.distance > (keyframes[index - 1].distance as number))
+      && (index === 0 || index === keyframes.length - 1 || keyframe.distance < extent))
+      && keyframes[0].distance === 0
+      && Math.abs((keyframes.at(-1)?.distance as number) - extent) <= distanceTolerance
+      ? keyframes.map((keyframe, index) => ({ position: index === 0 ? 0
+        : index === keyframes.length - 1 ? 1 : (keyframe.distance as number) / extent,
+        height: keyframe.height as number })) : null;
+    const normalizedKeyframes = positioned ?? distanceBased;
+    if (normalizedKeyframes) {
       const heights = Array.from({ length: 64 }, (_, index) => {
         const t = index / 63;
-        const end = keyframes.findIndex(keyframe => (keyframe.position as number) >= t);
-        if (end <= 0) return keyframes[0].height as number;
-        const a = keyframes[end - 1], b = keyframes[end];
-        const weight = (t - (a.position as number)) / ((b.position as number) - (a.position as number));
-        return (a.height as number) * (1 - weight) + (b.height as number) * weight;
+        const end = normalizedKeyframes.findIndex(keyframe => keyframe.position >= t);
+        if (end <= 0) return normalizedKeyframes[0].height;
+        const a = normalizedKeyframes[end - 1], b = normalizedKeyframes[end];
+        const weight = (t - a.position) / (b.position - a.position);
+        return a.height * (1 - weight) + b.height * weight;
       });
       normalized = { ...normalized, heights };
-      notes.push(`${path}.positioned_grade_keyframes_to_samples`);
+      notes.push(`${path}.${distanceBased ? 'distance' : 'positioned'}_grade_keyframes_to_samples`);
     }
   }
   return normalized;
