@@ -27,4 +27,29 @@ describe('LLM JSON extraction', () => {
     expect(() => parseLlmJsonObject('{"plan":{"x":thirty}', 'invalid'))
       .toThrow('invalid');
   });
+
+  it('repairs bounded array closers without changing JSON values', () => {
+    const parsed = parseLlmJsonObject(
+      '{"terrain":{"terrainBrushes":['
+      + '{"id":"western_mouth_cut","mode":"grade","region":{"kind":"path","points":[[-135,55],[-178,205]},"width":18},"heights":[1,-2]},'
+      + '{"id":"central_mouth_cut","mode":"grade","region":{"kind":"path","points":[[14,78],[-2,205]},"width":20},"heights":[1,-2.5]},'
+      + '{"id":"eastern_mouth_cut","mode":"grade","region":{"kind":"path","points":[[133,25],[195,190]},"width":17},"heights":[1,-3]}'
+      + ']}}',
+      'invalid'
+    );
+
+    expect((parsed.terrain as { terrainBrushes: unknown[] }).terrainBrushes).toEqual([
+      { id: 'western_mouth_cut', mode: 'grade',
+        region: { kind: 'path', points: [[-135, 55], [-178, 205]], width: 18 }, heights: [1, -2] },
+      { id: 'central_mouth_cut', mode: 'grade',
+        region: { kind: 'path', points: [[14, 78], [-2, 205]], width: 20 }, heights: [1, -2.5] },
+      { id: 'eastern_mouth_cut', mode: 'grade',
+        region: { kind: 'path', points: [[133, 25], [195, 190]], width: 17 }, heights: [1, -3] }
+    ]);
+  });
+
+  it('does not select a later object after a malformed top-level value', () => {
+    expect(() => parseLlmJsonObject('{"terrain":oops}\n{"id":"nested"}', 'invalid'))
+      .toThrow('invalid');
+  });
 });

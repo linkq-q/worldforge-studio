@@ -4,10 +4,23 @@ export function parseLlmJsonObject(content: string, errorCode: string): Record<s
   const trimmed = content.trim();
   if (trimmed) candidates.push(trimmed);
 
+  const rootedCandidates: string[] = [];
+  if (trimmed.startsWith('{')) rootedCandidates.push(trimmed);
   for (const match of content.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)) {
-    if (match[1]?.trim()) candidates.push(match[1].trim());
+    const fenced = match[1]?.trim();
+    if (fenced) {
+      candidates.push(fenced);
+      if (fenced.startsWith('{')) rootedCandidates.push(fenced);
+    }
   }
-  candidates.push(...balancedJsonObjects(content));
+  if (rootedCandidates.length) {
+    for (const rooted of rootedCandidates) {
+      const root = balancedJsonObjects(rooted).find(candidate => rooted.startsWith(candidate));
+      if (root) candidates.push(root);
+    }
+  } else {
+    candidates.push(...balancedJsonObjects(content));
+  }
 
   let result: Record<string, unknown> | null = null;
   for (const candidate of candidates) {
@@ -17,11 +30,11 @@ export function parseLlmJsonObject(content: string, errorCode: string): Record<s
         result = parsed as Record<string, unknown>;
       }
     } catch {
-      // Only finish an otherwise complete container; never invent a value or close a string.
-      const suffix = missingContainerClosers(candidate);
-      if (suffix) {
+      // Only repair structural closers; never invent a value or close a string.
+      const repaired = repairContainerClosers(candidate);
+      if (repaired) {
         try {
-          const parsed = JSON.parse(candidate + suffix) as unknown;
+          const parsed = JSON.parse(repaired) as unknown;
           if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             result = parsed as Record<string, unknown>;
           }
@@ -33,24 +46,33 @@ export function parseLlmJsonObject(content: string, errorCode: string): Record<s
   return result;
 }
 
-function missingContainerClosers(content: string): string | undefined {
+function repairContainerClosers(content: string): string | undefined {
+  const maxRepairedClosers = 4;
   if (!/[}\]]$/.test(content)) return undefined;
   const stack: string[] = [];
+  let repaired = '';
+  let repairedClosers = 0;
   let inString = false, escaped = false;
   for (const char of content) {
     if (inString) {
       if (escaped) escaped = false;
       else if (char === '\\') escaped = true;
       else if (char === '"') inString = false;
-      continue;
-    }
-    if (char === '"') inString = true;
+    } else if (char === '"') inString = true;
     else if (char === '{' || char === '[') stack.push(char === '{' ? '}' : ']');
     else if (char === '}' || char === ']') {
-      if (stack.pop() !== char) return undefined;
+      if (stack.at(-1) === char) stack.pop();
+      else if (stack.at(-1) === ']' && stack.at(-2) === char && repairedClosers < maxRepairedClosers) {
+        repaired += stack.pop() as string;
+        repairedClosers += 1;
+        continue;
+      } else return undefined;
     }
+    repaired += char;
   }
-  return !inString && stack.length > 0 && stack.length <= 2 ? stack.reverse().join('') : undefined;
+  if (inString || repairedClosers + stack.length === 0
+    || repairedClosers + stack.length > maxRepairedClosers) return undefined;
+  return repaired + stack.reverse().join('');
 }
 
 function balancedJsonObjects(content: string): string[] {

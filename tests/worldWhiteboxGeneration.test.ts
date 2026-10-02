@@ -486,6 +486,19 @@ describe('whitebox world generation', () => {
     expect(result.technicalNormalizations).toContain('terrainBrushes[1].positioned_grade_keyframes_to_samples');
   });
 
+  it('interprets a bounded percentage heightScale and tuple grade keyframes without changing the raw draft', () => {
+    const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact', heightScale: 18,
+      constraints: [{ region: 'center', biome: 'grassland' }], terrainBrushes: [{ id: 'downhill', mode: 'grade',
+        region: { kind: 'path', points: [[-60, -20], [80, 20]], width: 24 },
+        heights: [[0, 10], [0.4, 4], [1, 0]], strength: 0.8 }] } };
+    const result = parseWorldDryTerrainDraft(JSON.stringify(raw), request);
+    expect(result.rawTerrain).toEqual(raw.terrain);
+    expect(result.recipe.heightScale).toBe(0.18);
+    expect(result.recipe.terrainBrushes?.[0]).toMatchObject({ mode: 'grade', strength: 0.8 });
+    expect(result.technicalNormalizations).toContain('heightScale.percent_to_multiplier');
+    expect(result.technicalNormalizations).toContain('terrainBrushes[0].positioned_grade_keyframes_to_samples');
+  });
+
   it('keeps authored local terrain refinements in the first spatial plan', () => {
     const source = originalPlan();
     const dryRecipe = validateWorldRecipe(source.recipe);
