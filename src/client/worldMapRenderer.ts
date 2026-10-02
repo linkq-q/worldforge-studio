@@ -727,15 +727,19 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   function buildCompactWorldOcean(): { group: THREE.Group; coast: OceanCoastField } {
     const size = bundle.plan.recipe.size;
     const tile: WorldTile = { x: -size / 2, z: -size / 2, size };
-    const resolution = Math.min(129, Math.max(65, Math.ceil(size / 4) + 1));
-    const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample, false);
+    const resolution = Math.min(257, Math.max(65, Math.ceil(size / 2) + 1));
+    const heights = new Float32Array(resolution * resolution);
+    const step = size / (resolution - 1);
+    for (let z = 0; z < resolution; z++) for (let x = 0; x < resolution; x++) {
+      heights[z * resolution + x] = sample(tile.x + x * step, tile.z + z * step).height;
+    }
     const oceanMap: EditableMap = {
       ...map,
       id: `${map.id}:world-ocean`,
       world: undefined,
       box: { ...map.box, size: [size, map.box.size[1], size] },
       sceneMode: 'outdoor', room: null, interiorArtDirection: null,
-      terrain: { resolutionX: resolution, resolutionZ: resolution, heights: Array.from(sampled.heights) },
+      terrain: { resolutionX: resolution, resolutionZ: resolution, heights: Array.from(heights) },
       grassLayers: [], paintStrokes: [], objects: [], spawnPoints: [[0, sample(0, 0).height, 0]],
       waterBodies: [{
         id: 'world-ocean', name: '海面', type: 'ocean', level: 0, depth: 12, width: size,

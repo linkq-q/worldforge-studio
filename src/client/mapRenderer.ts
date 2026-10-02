@@ -963,7 +963,7 @@ function buildTerrain(
     color: 0xffffff,
     roughness: 1,
     vertexColors: true,
-    side: THREE.FrontSide
+    side: THREE.DoubleSide
   });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'terrain';

@@ -337,7 +337,7 @@ describe('structured map water rendering', () => {
     expect(terrain.castShadow).toBe(true);
     expect(terrain.receiveShadow).toBe(true);
     expect(material.emissive.getHex()).toBe(0x000000);
-    expect(material.side).toBe(THREE.FrontSide);
+    expect(material.side).toBe(THREE.DoubleSide);
     expect(material.vertexColors).toBe(true);
     expect(material.roughness).toBe(1);
     expect((material.map?.image as { width: number }).width).toBe(1536);

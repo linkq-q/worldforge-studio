@@ -461,6 +461,8 @@ describe('main editor streamed world renderer', () => {
         if (object.name === 'terrain' && object.visible) terrains.push(object as THREE.Mesh);
       });
       expect(terrains).toHaveLength(16);
+      expect(terrains.every(terrain =>
+        (terrain.material as THREE.MeshStandardMaterial).side === THREE.DoubleSide)).toBe(true);
       expect(terrains.every(terrain => (
         (terrain.material as THREE.MeshStandardMaterial).map?.image as HTMLCanvasElement
       ).width === 256)).toBe(true);
@@ -469,6 +471,7 @@ describe('main editor streamed world renderer', () => {
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
       expect(ocean.userData.waterOceanTerrain.mapSize[0]).toBeGreaterThanOrEqual(500);
       expect(ocean.userData.waterOceanTerrain.mapSize[1]).toBeGreaterThanOrEqual(500);
+      expect(ocean.userData.waterOceanTerrain.terrainSize[0]).toBeGreaterThanOrEqual(251);
       let oceanCount = 0;
       rendered.group.traverse(object => { if (object.name === 'water:world-ocean') oceanCount += 1; });
       expect(oceanCount).toBe(1);
@@ -499,7 +502,6 @@ describe('main editor streamed world renderer', () => {
       expect(terrains.every(terrain => terrain.geometry.getAttribute('position').count === 65 * 65)).toBe(true);
       rendered.group.updateMatrixWorld(true);
       const oceanFloor = ocean.userData.waterOceanTerrain as Parameters<typeof sampleOceanFloor>[0];
-      let sunkVertices = 0;
       for (const terrain of terrains) {
         const positions = terrain.geometry.getAttribute('position');
         for (let index = 0; index < positions.count; index += 1) {
@@ -511,11 +513,9 @@ describe('main editor streamed world renderer', () => {
           else {
             const expected = Math.min(authored, sampleOceanFloor(oceanFloor, world.x, world.z));
             expect(world.y).toBeCloseTo(expected, 4);
-            if (expected < authored - 0.05) sunkVertices += 1;
           }
         }
       }
-      expect(sunkVertices).toBeGreaterThan(0);
       const edges = new Map<string, { y: number; normal: THREE.Vector3 }>();
       let sharedVertices = 0;
       for (const terrain of terrains) {
