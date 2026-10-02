@@ -937,6 +937,15 @@ describe('whitebox world generation', () => {
     expect(() => validateWorldWhiteboxConstructionRequest({ ...valid, repairAttempts: 1 })).toThrow('invalid_world_whitebox_construction_request');
   });
 
+  it('accepts habitat intent already authored by spatial planning', () => {
+    const whiteboxPlan = buildablePlan();
+    whiteboxPlan.ecology = [{ id: 'shore-grove', kind: 'broadleaf', biome: 'grassland',
+      density: 0.4, spacing: 12, maxSlope: 20, scale: [0.8, 1.3] }];
+    const request = validateWorldWhiteboxConstructionRequest({ mode: 'construct-whitebox',
+      whiteboxPlan, generateAssets: false, assetGenerationLimit: 0, repairAttempts: 0 });
+    expect(request.whiteboxPlan.ecology).toEqual(whiteboxPlan.ecology);
+  });
+
   it('carries an optional Stage 2 population into the constructed town while accepting legacy omissions', () => {
     const populated = constructionExpansion();
     populated.towns[0].population = 150;

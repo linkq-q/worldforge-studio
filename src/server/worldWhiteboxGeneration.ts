@@ -260,7 +260,7 @@ export function validateWorldWhiteboxConstructionRequest(input: unknown): WorldW
     throw new Error('invalid_world_whitebox_construction_request');
   }
   const whiteboxPlan = validateWorldPlan(value.whiteboxPlan);
-  if (!whiteboxPlan.whitebox || whiteboxPlan.towns.length || whiteboxPlan.roads.length || whiteboxPlan.ecology.length
+  if (!whiteboxPlan.whitebox || whiteboxPlan.towns.length || whiteboxPlan.roads.length
     || !whiteboxPlan.featureGraph || !whiteboxPlan.settlementPlan || !whiteboxPlan.mobilityPlan
     || !whiteboxPlan.explorationPlan || !whiteboxPlan.intentionalEmptyAreas) {
     throw new Error('world_whitebox_plan_required');
