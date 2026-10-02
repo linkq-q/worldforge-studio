@@ -48,6 +48,10 @@ export function shouldUseSceneDepthForWater(binding: WaterShoreBinding | undefin
   return !binding?.texture?.isTexture;
 }
 
+export function shouldUseStructuredWaterMaterialDetail(binding: WaterShoreBinding | undefined): boolean {
+  return binding?.texture?.isTexture === true;
+}
+
 export interface WaterReflectionSettings {
   environmentStrength: number;
   environmentExposure?: number;

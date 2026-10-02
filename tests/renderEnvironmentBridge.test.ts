@@ -7,6 +7,7 @@ import {
   configureDistanceFogPass,
   distanceAtFogOpacity,
   shouldUseSceneDepthForWater,
+  shouldUseStructuredWaterMaterialDetail,
   syncWaterSurfaceEnvironment,
   syncWaterSurfaceOcean,
   syncWaterSurfaceShore
@@ -161,5 +162,17 @@ describe('render environment bridge', () => {
     expect(shouldUseSceneDepthForWater({ texture, center: [0, 0], size: 8 })).toBe(false);
     expect(shouldUseSceneDepthForWater(undefined)).toBe(true);
     texture.dispose();
+  });
+
+  it('keeps ocean and lake material detail independent from terrain depth', () => {
+    const texture = new THREE.Texture();
+    const oceanShore = { texture, center: [0, 0] as [number, number], size: 4096 };
+    const lakeShore = { ...oceanShore, depthTexture: new THREE.Texture() };
+
+    expect(shouldUseStructuredWaterMaterialDetail(oceanShore)).toBe(true);
+    expect(shouldUseStructuredWaterMaterialDetail(lakeShore)).toBe(true);
+    expect(shouldUseStructuredWaterMaterialDetail(undefined)).toBe(false);
+    texture.dispose();
+    lakeShore.depthTexture.dispose();
   });
 });

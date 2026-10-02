@@ -31,6 +31,7 @@ import {
   configureDistanceFogPass,
   distanceAtFogOpacity,
   shouldUseSceneDepthForWater,
+  shouldUseStructuredWaterMaterialDetail,
   syncWaterSurfaceEnvironment,
   syncWaterSurfaceOcean,
   syncWaterSurfaceShore,
@@ -660,16 +661,8 @@ export class RenderRuntimeAdapter {
           // Grid vertices use local XZ; the fragment shader uses the matching 0..1 UVs.
           if (shore.worldSpace === false) surface.material.uniforms.uWaterPlaneSize.value = shore.size;
           surface.material.uniforms.uShoreDistanceScale.value = shore.distanceScale ?? 1;
-          if (shore.depthTexture) {
+          if (shouldUseStructuredWaterMaterialDetail(shore)) {
             this.waterDetailTexture ??= createWaterDetailTexture();
-            if (!this.waterSceneCapture) {
-              this.waterSceneCapture = new WaterSceneCapture(this.renderer, this.scene, { scale: 0.5 });
-              this.waterSceneCapture.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
-            }
-            mesh.userData.isWaterRefractionBody = true;
-            surface.material.uniforms.tWaterSceneColor.value = this.waterSceneCapture.texture;
-            surface.material.uniforms.tWaterSceneDepth.value = this.waterSceneCapture.target.depthTexture;
-            surface.material.uniforms.uHasWaterSceneColor.value = true;
             surface.setWaterNormalTexture('A', this.waterDetailTexture);
             surface.setWaterNormalTexture('B', this.waterDetailTexture);
             surface.importState({
@@ -688,11 +681,19 @@ export class RenderRuntimeAdapter {
               uUseCartoonBands: recipe.mode === 'cartoon'
             });
           }
+          if (shore.depthTexture) {
+            if (!this.waterSceneCapture) {
+              this.waterSceneCapture = new WaterSceneCapture(this.renderer, this.scene, { scale: 0.5 });
+              this.waterSceneCapture.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+            }
+            mesh.userData.isWaterRefractionBody = true;
+            surface.material.uniforms.tWaterSceneColor.value = this.waterSceneCapture.texture;
+            surface.material.uniforms.tWaterSceneDepth.value = this.waterSceneCapture.target.depthTexture;
+            surface.material.uniforms.uHasWaterSceneColor.value = true;
+          }
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
-          // The large ocean surface stretches this highlight into screen-wide diagonal stripes.
-          surface.importState({ uHighlightIntensity: 0 });
           const splash = syncWaterSurfaceOcean(surface, ocean);
           if (splash) mesh.add(splash);
           surface.material.transparent = true;
@@ -866,7 +867,7 @@ export class RenderRuntimeAdapter {
 
   private updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void {
     for (const binding of this.waterBindings) {
-      if (binding.mesh.userData.waterShore?.depthTexture) {
+      if (shouldUseStructuredWaterMaterialDetail(binding.mesh.userData.waterShore as WaterShoreBinding | undefined)) {
         syncWaterSurfaceLight(binding.surface.material, this.scene.userData.directionalLight ?? null);
       }
       binding.surface.update(deltaTime, this.camera, binding.usesSceneDepth ? depthTexture : null);
