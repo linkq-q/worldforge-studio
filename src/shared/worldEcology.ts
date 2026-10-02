@@ -100,32 +100,30 @@ function random(x: number, z: number, seed: number, channel: number): number {
 }
 const isTree = (kind: EcologyKind) => kind === 'broadleaf' || kind === 'pine';
 const isSea = (sample: WorldSample) => sample.waterLevel !== null && sample.waterBodyId === null;
-function seaWaterDistance(sample: (x: number, z: number) => WorldSample, x: number, z: number,
-  maxDistance: number, worldBound: number): number {
-  const origin = sample(x, z);
-  if (isSea(origin)) return 0;
-  const rays = 16, step = 4;
-  let previousDistance = 0;
-  const previous = Array.from({ length: rays }, () => origin);
-  for (let distance = Math.min(step, maxDistance); distance > previousDistance; distance = Math.min(distance + step, maxDistance)) {
-    let nearest = Infinity;
-    for (let ray = 0; ray < rays; ray++) {
-      const angle = ray * Math.PI * 2 / rays;
-      const px = x + Math.cos(angle) * distance, pz = z + Math.sin(angle) * distance;
-      if (Math.abs(px) > worldBound || Math.abs(pz) > worldBound) continue;
-      const current = sample(px, pz);
-      if (isSea(current)) {
-        const before = previous[ray];
-        const amount = before.height > 0 && current.height <= 0
-          ? before.height / Math.max(0.000001, before.height - current.height) : 1;
-        nearest = Math.min(nearest, previousDistance + (distance - previousDistance) * amount);
-      }
-      previous[ray] = current;
-    }
-    if (nearest < Infinity) return nearest;
-    previousDistance = distance;
+function createSeaWaterDistance(sample: (x: number, z: number) => WorldSample,
+  bounds: { minX: number; minZ: number; maxX: number; maxZ: number }): (x: number, z: number) => number {
+  const width = bounds.maxX - bounds.minX, depth = bounds.maxZ - bounds.minZ;
+  const step = Math.max(4, Math.max(width, depth) / 128);
+  const columns = Math.ceil(width / step) + 1, rows = Math.ceil(depth / step) + 1;
+  const values = Array.from({ length: rows }, (_, row) => Array.from({ length: columns }, (_, column) => {
+    const x = Math.min(bounds.maxX, bounds.minX + column * step);
+    const z = Math.min(bounds.maxZ, bounds.minZ + row * step);
+    return { x, z, sample: sample(x, z) };
+  }));
+  const coast: Array<[number, number]> = [];
+  const addCrossing = (a: typeof values[number][number], b: typeof values[number][number]) => {
+    if (isSea(a.sample) === isSea(b.sample)) return;
+    const amount = a.sample.height > 0 && b.sample.height <= 0
+      || a.sample.height <= 0 && b.sample.height > 0
+      ? Math.max(0, Math.min(1, a.sample.height / (a.sample.height - b.sample.height))) : 0.5;
+    coast.push([a.x + (b.x - a.x) * amount, a.z + (b.z - a.z) * amount]);
+  };
+  for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
+    if (column + 1 < columns) addCrossing(values[row][column], values[row][column + 1]);
+    if (row + 1 < rows) addCrossing(values[row][column], values[row + 1][column]);
   }
-  return Infinity;
+  return (x, z) => coast.reduce((nearest, point) =>
+    Math.min(nearest, Math.hypot(x - point[0], z - point[1])), Infinity);
 }
 interface Candidate {
   id: string;
@@ -141,8 +139,8 @@ interface Candidate {
 /**
  * Local Matérn-II-like priority thinning on jittered cells, not a maximal Poisson-disk solver.
  * Habitat eligibility is cached before thinning, so an impossible species cannot suppress a
- * viable neighbor. Each cached candidate uses at most 5 terrain samples, plus bounded sea probes
- * when selected. Neighbor tests use bounded cells (spacing 6..100), never the whole world.
+ * viable neighbor. Sea rules share one bounded shoreline sample grid per chunk. Neighbor tests use
+ * bounded cells (spacing 6..100), never the whole world.
  */
 export function generateEcologyChunk(
   input: WorldRecipe,
@@ -167,9 +165,16 @@ export function generateEcologyChunk(
   const waterBodies = options.freshWaterDistance ? [] : prepareWorldWaterBodies(recipe);
   const freshWaterDistance = options.freshWaterDistance
     ?? ((x: number, z: number) => preparedWorldFreshWaterDistance(waterBodies, x, z));
-  const distanceToSea = options.seaWaterDistance
-    ?? ((x: number, z: number, maxDistance: number) => seaWaterDistance(sample, x, z, maxDistance, recipe.size / 2));
   const worldMin = -recipe.size / 2, worldMax = recipe.size / 2;
+  const seaRules = rules.filter(rule => rule.waterDistance && rule.waterSource !== undefined
+    && rule.waterSource !== 'fresh');
+  const seaReach = Math.max(0, ...seaRules.map(rule => rule.waterDistance![3] + rule.spacing));
+  const sampledSeaDistance = options.seaWaterDistance || !seaRules.length ? null : createSeaWaterDistance(sample, {
+    minX: Math.max(worldMin, minX - seaReach), minZ: Math.max(worldMin, minZ - seaReach),
+    maxX: Math.min(worldMax, maxX + seaReach), maxZ: Math.min(worldMax, maxZ + seaReach)
+  });
+  const distanceToSea = options.seaWaterDistance
+    ?? ((x: number, z: number, _maxDistance: number) => sampledSeaDistance!(x, z));
   const contexts = rules.map(rule => {
     const seed = ruleSeed(recipe.seed, rule.id), cache = new Map<string, Candidate>();
     return { rule, at: (ix: number, iz: number): Candidate => {
