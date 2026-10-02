@@ -134,6 +134,9 @@ export interface WorldTerrainEvidence {
   landmassLabels: number[][];
   landmasses: Array<{ id: number; areaM2: number; buildingSiteScore: number;
     center: [number, number]; nearestMainland?: { from: [number, number]; to: [number, number]; bankDistanceM: number } }>;
+  /** Equal 3x3 zones summarize actual dry ground above sea level; detailed samples remain authoritative. */
+  zoneSurfaceSummary: Array<{ region: WorldRegion; dryFraction: number;
+    meanHeightM: number; heightRangeM: [number, number] }>;
   /** Interpolated sea-level loops in world metres. */
   shoreline: Array<Array<[number, number]>>;
   /** Sea-level contour endpoints where an open coast reaches the sampled world boundary. */
@@ -557,6 +560,20 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   }));
   const { landmassLabels, landmasses } = summarizeWorldLandmasses(heights, buildingSiteScores,
     [-bound, -bound], step);
+  const regionRows: WorldRegion[][] = [
+    ['northwest', 'north', 'northeast'], ['west', 'center', 'east'],
+    ['southwest', 'south', 'southeast']
+  ];
+  const zoneSurfaceSummary = regionRows.flatMap((regions, zoneZ) => regions.map((region, zoneX) => {
+    const zoneHeights = heights.slice(zoneZ * 7, (zoneZ + 1) * 7)
+      .flatMap(row => row.slice(zoneX * 7, (zoneX + 1) * 7));
+    const roundMetres = (height: number) => Math.round(height * 10) / 10;
+    return { region, dryFraction: Math.round(zoneHeights.filter(height => height > 0).length
+      / zoneHeights.length * 1000) / 1000,
+      meanHeightM: roundMetres(zoneHeights.reduce((sum, height) => sum + height, 0) / zoneHeights.length),
+      heightRangeM: [roundMetres(Math.min(...zoneHeights)), roundMetres(Math.max(...zoneHeights))] as [number, number]
+    };
+  }));
   const settlementMinRadius = worldSettlementMinimumRadius(recipe.size);
   const buildableAreas = summarizeWorldBuildableAreas(buildingSiteScores, landmassLabels,
     [-bound, -bound], step).map(area => ({ ...area,
@@ -584,7 +601,8 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
   const terrainFeatureProfiles = createWorldTerrainFeatureProfiles(recipe);
   return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
-    samples, buildingSiteScores, settlementMinRadius, buildableAreas, landmassLabels, landmasses, shoreline, boundaryCrossings,
+    samples, buildingSiteScores, settlementMinRadius, buildableAreas, landmassLabels, landmasses,
+    zoneSurfaceSummary, shoreline, boundaryCrossings,
     terrainFeatureProfiles,
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
 }

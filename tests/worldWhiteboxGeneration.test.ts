@@ -320,6 +320,7 @@ describe('whitebox world generation', () => {
       .toEqual(expect.objectContaining({ radius: 50, sampleSpacing: 8 }));
     expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
     expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
+    expect(spatialInput.terrainEvidence.zoneSurfaceSummary).toHaveLength(9);
     expect(Array.isArray(spatialInput.terrainEvidence.terrainFeatureProfiles)).toBe(true);
     const spatialPrompt = mocks.llmChat.mock.calls[1][0][0].content;
     expect(spatialPrompt.length).toBeLessThan(6500);
@@ -329,6 +330,8 @@ describe('whitebox world generation', () => {
       expect(spatialPrompt).toContain(field);
     }
     expect(spatialPrompt).toContain('descriptive context, not a pass/fail gate');
+    expect(spatialPrompt).toContain('zoneSurfaceSummary gives actual dry fraction');
+    expect(spatialPrompt).toContain('a biome patch or semantic name cannot create water');
     expect(spatialPrompt).toContain('does not infer drainage, a spill point or water connectivity');
     expect(spatialPrompt).toContain("kind containing 'bridge'");
     expect(spatialPrompt).toContain('fewest regions, paths, anchors and relations');

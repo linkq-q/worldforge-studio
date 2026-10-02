@@ -8,6 +8,28 @@ import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoun
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
+  it('summarizes the observed dry surface in nine regions without replacing detailed samples', () => {
+    const evidence = createWorldTerrainEvidence(validateWorldRecipe({ version: 1, seed: 2041111,
+      size: 500, reliefProfile: 'compact', constraints: [
+        { region: 'west', biome: 'ocean' }, { region: 'east', biome: 'grassland' }
+      ] }));
+    expect(evidence.zoneSurfaceSummary.map(zone => zone.region)).toEqual([
+      'northwest', 'north', 'northeast', 'west', 'center', 'east',
+      'southwest', 'south', 'southeast'
+    ]);
+    expect(evidence.samples).toHaveLength(21);
+    for (const [index, zone] of evidence.zoneSurfaceSummary.entries()) {
+      const row = Math.floor(index / 3), column = index % 3;
+      const labels = evidence.landmassLabels.slice(row * 7, row * 7 + 7)
+        .flatMap(values => values.slice(column * 7, column * 7 + 7));
+      expect(zone.dryFraction).toBeCloseTo(labels.filter(Boolean).length / 49, 3);
+      expect(zone.heightRangeM[0]).toBeLessThanOrEqual(zone.meanHeightM);
+      expect(zone.meanHeightM).toBeLessThanOrEqual(zone.heightRangeM[1]);
+    }
+    expect(evidence.zoneSurfaceSummary.find(zone => zone.region === 'west')!.dryFraction)
+      .toBeLessThan(evidence.zoneSurfaceSummary.find(zone => zone.region === 'east')!.dryFraction);
+  });
+
   it('profiles a narrow authored terrain path that the 25m evidence grid misses', () => {
     const broadProfiles: NonNullable<WorldRecipe['terrainBrushes']> = Array.from({ length: 8 }, (_, index) => ({
       id: `broad-profile-${index}`, mode: 'grade', region: { kind: 'path',
