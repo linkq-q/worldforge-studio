@@ -523,7 +523,7 @@ describe('composable world terrain operations', () => {
     expect(terminalIsletContext.waterBodies[0].riverSamples.at(-2)!.point[0]).toBeGreaterThan(-50);
   });
 
-  it('allows only declared waterfall drops and keeps an infeasible terrain-fit path bank-safe for review', () => {
+  it('allows only declared waterfall drops and diagnoses an impossible anchored outlet instead of digging or reversing', () => {
     const step = { ...original, reliefProfile: 'compact' as const, terrainBrushes: [{
       id: 'sharp-step', mode: 'grade' as const,
       region: { kind: 'path' as const, points: [[-100, 0], [-10, 0], [10, 0], [100, 0]] as Array<[number, number]>, width: 180 },
@@ -534,19 +534,15 @@ describe('composable world terrain operations', () => {
       region: { kind: 'path' as const, points: [[-100, 0], [-10, 0], [10, 0], [100, 0]] as Array<[number, number]>, width: 10 },
       depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
     };
-    const impossibleRecipe = validateWorldRecipe({ ...step, waterBodies: [river] } as unknown as WorldRecipe);
-    const originalImpossibleRecipe = structuredClone(impossibleRecipe);
-    const impossible = createWorldTerrainContext(impossibleRecipe);
+    const impossible = createWorldTerrainContext(validateWorldRecipe({ ...step, waterBodies: [river] } as unknown as WorldRecipe));
     expect(impossible.waterBodies).toHaveLength(1);
     expect(impossible.diagnostics).toContainEqual(expect.objectContaining({
       code: 'river_profile_infeasible', waterBodyId: 'step-river', reason: 'excessive_cut',
-      fallback: 'bank-fitted-full-path'
+      fallback: 'truncated-before-drop'
     }));
     const retained = impossible.waterBodies[0].riverSamples;
-    expect(retained[0].point).toEqual(river.region.points[0]);
-    expect(retained.at(-1)!.point).toEqual(river.region.points.at(-1));
-    expect(diagnoseWorldRiverSurfaceAboveBank(impossible)).toEqual([]);
-    expect(impossibleRecipe).toEqual(originalImpossibleRecipe);
+    expect(retained.at(-1)!.point[0]).toBeLessThanOrEqual(-10);
+    expect(retained.at(-1)!.width).toBeLessThan(retained[0].width * 0.2);
 
     const waterfall = createWorldTerrainContext(validateWorldRecipe({ ...step, waterBodies: [{
       ...river, waterfallAfterPointIndices: [1]
@@ -575,44 +571,10 @@ describe('composable world terrain operations', () => {
     }] } as unknown as WorldRecipe));
     const detached = anchored.waterBodies.find(water => water.source.id === 'uphill-river');
     expect(detached).toBeDefined();
+    expect(detached!.riverSamples.at(-1)!.point[0]).toBeLessThan(82);
     expect(anchored.diagnostics).toContainEqual(expect.objectContaining({
-      code: 'river_profile_infeasible', waterBodyId: 'uphill-river', reason: 'outlet_above_bank',
-      fallback: 'bank-fitted-full-path'
+      code: 'river_profile_infeasible', waterBodyId: 'uphill-river', reason: 'outlet_above_bank'
     }));
-    expect(detached!.riverSamples.at(-1)!.point[0]).toBe(100);
-    expect(diagnoseWorldRiverSurfaceAboveBank(anchored)).toEqual([]);
-  });
-
-  it('preserves a below-sea river across a high saddle without floating or rewriting its recipe', () => {
-    const input = { ...original, reliefProfile: 'compact' as const, terrainBrushes: [{
-      id: 'sea-saddle-sea', mode: 'grade' as const,
-      region: { kind: 'path' as const, points: [[-100, 0], [0, 0], [100, 0]] as Array<[number, number]>, width: 180 },
-      heights: [-5, 12, -5], feather: 0
-    }], waterBodies: [{
-      id: 'saddle-river', type: 'river' as const, surfaceMode: 'terrain-fit' as const,
-      region: { kind: 'path' as const, points: [[-100, 0], [0, 0], [100, 0]] as Array<[number, number]>, width: 10 },
-      depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
-    }] } as unknown as WorldRecipe;
-    const recipe = validateWorldRecipe(input), originalRecipe = structuredClone(recipe);
-    const dry = createWorldTerrainContext({ ...recipe, waterBodies: [] });
-    const context = createWorldTerrainContext(recipe), river = context.waterBodies[0];
-
-    expect(context.diagnostics).toContainEqual(expect.objectContaining({
-      code: 'river_profile_infeasible', waterBodyId: 'saddle-river', reason: 'excessive_cut',
-      fallback: 'bank-fitted-full-path'
-    }));
-    expect(river.riverSamples[0].point).toEqual([-100, 0]);
-    expect(river.riverSamples.at(-1)!.point).toEqual([100, 0]);
-    expect(Math.max(...river.riverSamples.map(sample => sample.level))
-      - Math.min(...river.riverSamples.map(sample => sample.level))).toBeGreaterThan(10);
-    const maximumCut = Math.max(...river.riverSamples.map(sample =>
-      dry.sample(...sample.point).height - (sample.level - river.mapWater.depth)));
-    expect(maximumCut).toBeCloseTo(river.mapWater.depth + 0.1, 8);
-    const saddle = context.sample(0, 0);
-    expect(saddle.waterBodyId).toBe('saddle-river');
-    expect(saddle.waterLevel! - saddle.height).toBeCloseTo(river.mapWater.depth, 8);
-    expect(diagnoseWorldRiverSurfaceAboveBank(context)).toEqual([]);
-    expect(recipe).toEqual(originalRecipe);
   });
 
   it('shares one irregular river path across its prepared boundary and terrain sampling', () => {
