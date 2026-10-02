@@ -52,6 +52,8 @@ describe('WaterSurface shader', () => {
     expect(shader).toContain('uLargeWaveScale * max(uWaveScale, 0.05) / 1.3');
     expect(shader).toContain('return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);');
     expect(shader).toContain('primaryGerstnerPhase(worldXZ)');
+    expect(shader).toContain('float foldoverBudget = abs(primaryAmplitude * primaryWaveNumber)');
+    expect(shader).toContain('float safeChoppiness = min(choppiness, 0.82 / max(foldoverBudget, 0.001));');
     expect(shader).toContain('uUseDirectionalWaves && !uUseRiverFlow');
     expect(shader).toContain('return max(0.16, uShoreWaveRange * 0.42);');
     expect(shader).toContain('smoothstep(0.025, oceanWaveDepthRange(), waterDepth)');

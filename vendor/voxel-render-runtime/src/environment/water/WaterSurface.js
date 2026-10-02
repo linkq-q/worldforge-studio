@@ -301,38 +301,53 @@ const WATER_VERTEX_SHADER = /* glsl */ `
       uPrimaryWaveDirection - uSecondaryWaveDirection * 0.45,
       vec2(0.6, 1.0)
     );
+    float primaryAmplitude = uWaveHeight * uLargeWaveStrength * 0.62;
+    float secondaryAmplitude = uWaveHeight * uSecondaryWaveStrength * 0.34 * spread;
+    float midAmplitude = uWaveHeight * uMidWaveStrength * 0.24 * spread;
+    float detailAmplitude = uWaveHeight * uDetailWaveStrength * 0.1 * spread;
+    float primaryWaveNumber = max(abs(uLargeWaveScale * scaleMultiplier), 0.001);
+    float secondaryWaveNumber = max(abs(uSecondaryWaveScale * scaleMultiplier), 0.001);
+    float midWaveNumber = max(abs(uMidWaveScale * scaleMultiplier), 0.001);
+    float detailWaveNumber = max(abs(uDetailWaveScale * scaleMultiplier), 0.001);
+    // A Gerstner component folds when Q*A*k exceeds one. Bound the sum so
+    // imported/extreme parameters cannot make the surface self-intersect.
+    float foldoverBudget = abs(primaryAmplitude * primaryWaveNumber)
+      + abs(secondaryAmplitude * secondaryWaveNumber) * 0.82
+      + abs(midAmplitude * midWaveNumber) * 0.68
+      + abs(detailAmplitude * detailWaveNumber) * 0.45;
+    float safeChoppiness = min(choppiness, 0.82 / max(foldoverBudget, 0.001));
 
     vec3 displacement = gerstnerDisplacement(
       uPrimaryWaveDirection,
-      uWaveHeight * uLargeWaveStrength * 0.62,
-      choppiness,
+      primaryAmplitude,
+      safeChoppiness,
       primaryGerstnerPhase(worldXZ)
     );
     displacement += gerstnerWave(
       worldXZ,
       uSecondaryWaveDirection,
-      uSecondaryWaveScale * scaleMultiplier,
+      secondaryWaveNumber,
       uSecondaryWaveSpeed,
-      uWaveHeight * uSecondaryWaveStrength * 0.34 * spread,
-      choppiness * 0.82,
+      secondaryAmplitude,
+      safeChoppiness * 0.82,
       1.73 + uWaveSpacingVariation * 0.31
     );
     displacement += gerstnerWave(
       worldXZ,
       midDirection,
-      uMidWaveScale * scaleMultiplier,
+      midWaveNumber,
       uMidWaveSpeed,
-      uWaveHeight * uMidWaveStrength * 0.24 * spread,
-      choppiness * 0.68,
+      midAmplitude,
+      safeChoppiness * 0.68,
       3.91 + uWaveSpacingVariation * 0.47
     );
     displacement += gerstnerWave(
       worldXZ,
       detailDirection,
-      uDetailWaveScale * scaleMultiplier,
+      detailWaveNumber,
       uDetailWaveSpeed,
-      uWaveHeight * uDetailWaveStrength * 0.1 * spread,
-      choppiness * 0.45,
+      detailAmplitude,
+      safeChoppiness * 0.45,
       5.37 + uWaveSpacingVariation * 0.73
     );
     return displacement;

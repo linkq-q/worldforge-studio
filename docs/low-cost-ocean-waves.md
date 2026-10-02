@@ -29,6 +29,8 @@ The horizontal displacement is the important difference from a stack of scrollin
 
 One shared primary-phase shader chunk now drives both vertex displacement and crest-dependent whitecaps/highlights. It includes the same deep-water dispersion, global scale, wind direction, crest stretch, and bounded spacing warp in both shader stages. Previously those visual crest lines still used the old phase formula, so they could slide independently of the geometry.
 
+The shader also enforces a Gerstner foldover budget. It calculates the summed horizontal derivative contribution of the four components and reduces only their choppiness when `sum(abs(A * k * Q))` would exceed `0.82`. Normal presets remain unchanged; extreme or imported parameter combinations retain their wave height but cannot fold the mesh through itself.
+
 Ocean terrain depth attenuates lateral displacement near land before the existing swash function takes over. The swash band is `max(0.16 m, shoreWaveRange * 0.42)` rather than the previous `shoreWaveRange * 3.1`: the old formula classified the example island's approximately 0.25 m-deep shelf as almost entirely shoreline and suppressed the open-water spectrum. The revised band keeps orbital Gerstner motion in the playable ocean, blends around 0.10 m depth, and leaves only the final approximately 0.025 m shoreline to the swash crest. The existing world-space normal maps still provide micro ripples, so high-frequency geometry waves are unnecessary.
 
 ### Geometry budget
@@ -78,6 +80,8 @@ The local solver was also measured in the original play mode on the same pond an
 | Solver active, player wading | 137.3 | 92.6 | 7.28 ms | 401 | 454,485 |
 
 The run-to-run variation is larger than any measured solver cost, so these numbers support only a bounded conclusion: no FPS regression was measurable on this machine, and activation adds neither a draw call nor geometry. An active surface uploads 4 KiB of height data at 30 Hz and keeps three 4 KiB CPU arrays (12 KiB total). The active/sleep browser screenshots show the local ring trail disappearing after the three-second timeout. The same pre-existing HDRI 404 was present and no WebGL shader error occurred.
+
+Parameter-boundary runs used the same browser/GPU and ten-second capture. A calm profile (`strength=0.15`, `scale=0.5`, `sharpness=0.7`) measured 164.0 FPS. A maximum public-control stress profile (`strength=1.5`, `scale=4`, `sharpness=4`) measured 164.9 FPS with the same 67 draw calls and 398,050 scene triangles; two time-separated screenshots showed motion without foldover or LOD cracks. A separate five-run V8 microbenchmark measured the active `32 x 32` solver step at a 0.00384 ms median and the inactive early-out at 0.000022 ms median. These synthetic CPU numbers explain the bounded cost but are not a substitute for browser profiling on lower-end hardware.
 
 ## Deliberate boundaries
 
