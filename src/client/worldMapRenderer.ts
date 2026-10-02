@@ -16,6 +16,7 @@ import { createWorldEcologyDensity, createWorldExclusion, worldFeaturePathPolyli
 import { WORLD_BIOMES, sampleWorldTile, selectWorldTiles, type WorldBiome, type WorldTile, type WorldTileData } from '../shared/worldTerrain';
 import { selectWorldEcologyAsset, worldBuildingRole, worldMapTerrainContext, type WorldAssetBinding } from '../shared/worldMapState';
 import { createStaticWhiteboxBoxes, type StaticWhiteboxPlacement } from './generationPreviewOverlay';
+import { worldHarborQuayExtension, type WorldHarborQuayExtension } from './worldContent';
 import type { ColorPalette } from '../shared/colorPalette';
 import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
@@ -65,7 +66,7 @@ const EMPTY_PALETTE_REPORT: PaletteCoverageReport = {
 };
 
 export function worldRoadSurfaceMaterial(road: Pick<MapGuide,'id'|'tags'>): 'brick-paver'|'cobblestone'|'compacted-earth' {
-  if(road.tags.includes('harbor-quay')) return 'cobblestone';
+  if(road.tags.includes('harbor-quay') || road.tags.includes('working-waterfront')) return 'cobblestone';
   return road.id.startsWith('town:')||road.tags.some(tag=>/street|settlement|town/i.test(tag))?'brick-paver':'compacted-earth';
 }
 
@@ -80,11 +81,12 @@ export function worldRoadSurfaceStyle(
 
 export function buildWorldWhiteboxOverlay(
   plan: WorldPlan,
-  sample: (x: number, z: number) => { height: number; waterLevel?: number | null }
+  sample: (x: number, z: number) => { height: number; waterLevel?: number | null },
+  showSemantic = plan.whitebox === true
 ): THREE.Group {
   const root = new THREE.Group();
   root.name = 'world-whitebox-overlay';
-  if (!plan.whitebox || !plan.featureGraph) return root;
+  if (!showSemantic || !plan.featureGraph) return root;
   const visibleHeight = (x: number, z: number) => {
     const surface = sample(x, z);
     return Math.max(surface.height, surface.waterLevel ?? surface.height) + 0.8;
@@ -113,7 +115,8 @@ export function buildWorldWhiteboxOverlay(
     outline.renderOrder = 18;
     root.add(outline);
   }
-  for (const path of plan.featureGraph.paths) {
+  // Construction already renders these paths as roads; avoid a second bright ribbon over the town.
+  for (const path of plan.whitebox ? plan.featureGraph.paths : []) {
     const waterPath = /river|water|canal/i.test(path.kind);
     const renderedRiver = waterPath && (plan.recipe.waterBodies ?? []).some(water => {
       if (water.type !== 'river' || water.region.kind !== 'path') return false;
@@ -309,7 +312,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   modelsRoot.name = 'modelsRoot';
   modelsRoot.userData.isModelRoot = true;
   root.add(modelsRoot);
-  const whiteboxOverlay = buildWorldWhiteboxOverlay(bundle.plan, sample);
+  const whiteboxOverlay = buildWorldWhiteboxOverlay(bundle.plan, sample,
+    bundle.plan.whitebox === true || Boolean(world.review && world.assets.length === 0));
   root.add(whiteboxOverlay);
 
   const assetsById = new Map((map.assets ?? []).map(asset => [asset.id, asset]));
@@ -319,6 +323,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   const buildings = globalBuildings(bundle);
   const roads = globalRoads(bundle);
   const roadPolylines = new Map(roads.map(road => [road.id, worldRoadPolyline(road)] as const));
+  const harborQuays = roads.flatMap(road => {
+    const extension = worldHarborQuayExtension(road, sample, bundle.plan.recipe.size);
+    return extension ? [{ id: road.id, ...extension }] : [];
+  });
   const manualObjectTrees = groupManualObjectTrees(map);
   const ecologyCache = new Map<string, EcologyInstance[]>();
   const exclusion = createWorldExclusion(bundle.plan, bundle.patches);
@@ -589,6 +597,15 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       terrainVisible: false,
       oceanCoast: false
     });
+    for (const quay of harborQuays.filter(item => pointEcologyKey(
+      (item.from[0] + item.to[0]) / 2, (item.from[1] + item.to[1]) / 2
+    ) === ecologyKey(chunk))) {
+      rendered.objectGroups.get(`world-harbor-quay:${quay.id}`)?.traverse(child => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          child.material.color.setHex(0x826b50);
+        }
+      });
+    }
     const publicBuildingIds = new Set(world.review?.plannedBuildings.filter(building => building.placed)
       .map(building => building.id) ?? []);
     const whiteboxes: StaticWhiteboxPlacement[] = [];
@@ -752,6 +769,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const objects = [
       ...tileBuildings.map(building => buildingObject(building, centerX, centerZ)),
       ...ecology.map(instance => ecologyObject(instance, centerX, centerZ)),
+      ...harborQuays.filter(item => pointEcologyKey(
+        (item.from[0] + item.to[0]) / 2, (item.from[1] + item.to[1]) / 2
+      ) === ecologyKey(chunk)).map(quay => harborQuayObject(quay, centerX, centerZ)),
       ...manualObjectsForTile(manualObjectTrees, tile, contentKeys, centerX, centerZ)
     ];
     const usedAssetIds = new Set(objects.flatMap(object => object.assetId ? [object.assetId] : []));
@@ -961,6 +981,23 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     entry.rendered.modelsRoot.position.set(centerX, 0, centerZ);
     modelsRoot.add(entry.rendered.modelsRoot);
     offsetWorldWaterBindings(entry.rendered.modelsRoot, centerX, centerZ);
+  }
+
+  function harborQuayObject(
+    quay: WorldHarborQuayExtension & { id: string }, centerX: number, centerZ: number
+  ): MapObject {
+    const dx = quay.to[0] - quay.from[0], dz = quay.to[1] - quay.from[1];
+    return {
+      id: `world-harbor-quay:${quay.id}`, name: '港口栈桥', parentId: null, assetId: null,
+      transform: {
+        position: [(quay.from[0] + quay.to[0]) / 2 - centerX, quay.height - 0.45,
+          (quay.from[1] + quay.to[1]) / 2 - centerZ],
+        rotation: [0, Math.atan2(dx, dz), 0], scale: [1, 1, 1],
+        size: [quay.width, 0.45, Math.hypot(dx, dz)]
+      },
+      heightMode: 'fixed', visible: true, locked: true,
+      behavior: { kind: 'static', locomotion: 'static' }
+    };
   }
 
   function setEntryWaterVisible(entry: TileEntry, visible: boolean): void {

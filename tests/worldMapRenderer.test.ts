@@ -189,6 +189,7 @@ describe('main editor streamed world renderer', () => {
 
   it('makes a validated harbor quay visually distinct without widening its safe footprint', () => {
     expect(worldRoadSurfaceMaterial({id:'town:harbor:landing',tags:['settlement','sea-landing','harbor-quay']})).toBe('cobblestone');
+    expect(worldRoadSurfaceMaterial({id:'town:harbor:waterfront',tags:['settlement','working-waterfront']})).toBe('cobblestone');
     expect(worldRoadSurfaceMaterial({id:'town:harbor:street',tags:['settlement','street']})).toBe('brick-paver');
   });
 
@@ -691,6 +692,58 @@ describe('main editor streamed world renderer', () => {
         }
       });
       expect(frames.reduce((count, frame) => count + frame.count, 0)).toBeGreaterThan(ecologyGroups.length);
+    } finally {
+      rendered.dispose();
+    }
+  }, 30_000);
+
+  it('renders a planned harbor landing as a walkable deck beyond the shoreline', async () => {
+    const map = createEmptyMap();
+    const previewBundle = structuredClone(smallBundle);
+    previewBundle.plan.recipe.heightScale = 0.02;
+    previewBundle.plan.roads.push({
+      id: 'harbor-landing', name: 'Harbor landing', points: [[30, 0], [56, 0]],
+      curve: 'polyline', closed: false, width: 5, tags: ['harbor-quay', 'sea-landing']
+    });
+    const sample = createPlannedWorldSampler(previewBundle.plan, previewBundle.patches);
+    map.world = { bundle: previewBundle, assets: [] };
+    map.box.size = [500, 4096, 500];
+    map.spawnPoints = [[56, sample(56, 0).height, 0]];
+
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      await waitFor(() => rendered.objectGroups.has('world-harbor-quay:harbor-landing'));
+      const deck = rendered.objectGroups.get('world-harbor-quay:harbor-landing')!;
+      expect(deck.getWorldPosition(new THREE.Vector3()).x).toBeCloseTo(63);
+      expect(deck.scale.z).toBeCloseTo(14);
+      const hit = rendered.getCollisionWorld?.()?.raycastFirst(
+        [68, 3, 0], [0, -1, 0], 10, new Set(['scene'])
+      );
+      expect(hit?.meshId).toContain('world-harbor-quay:harbor-landing');
+    } finally {
+      rendered.dispose();
+    }
+  }, 30_000);
+
+  it('keeps authored semantic anchors visible in an asset-free construction preview', async () => {
+    const map = createEmptyMap();
+    const previewBundle = structuredClone(smallBundle);
+    previewBundle.plan.featureGraph = {
+      regions: [{ id: 'bay', kind: 'harbor', name: 'Bay', center: [0, 0], radius: 20 }],
+      paths: [{ id: 'harbor-path', kind: 'local-road', name: 'Harbor path', points: [[0, 0], [10, 0]], width: 4 }],
+      anchors: [{ id: 'harbor-anchor', kind: 'harbor', position: [0, 0], regionId: 'bay' }],
+      relations: []
+    };
+    map.world = { bundle: previewBundle, assets: [], review: {
+      draftAssets: [], plannedBuildings: [], paidCallCount: 1, diagnostics: [], complete: true
+    } };
+    map.box.size = [500, 4096, 500];
+    map.spawnPoints = [[0, 0, 0]];
+
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      expect(rendered.group.getObjectByName('world-whitebox-anchor:harbor-anchor')).toBeInstanceOf(THREE.Mesh);
+      expect(rendered.group.getObjectByName('world-whitebox-path:harbor-path')).toBeUndefined();
     } finally {
       rendered.dispose();
     }

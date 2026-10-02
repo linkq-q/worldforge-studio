@@ -83,7 +83,10 @@ describe('whitebox world planning UI', () => {
     expect(source).toContain('移动路线');
     expect(source).toContain('兴趣点与探索顺序');
     expect(source).toContain('被水覆盖的锚点');
-    expect(source).toContain('worldMapSampler(world)');
+    expect(source).toContain('worldMapTerrainContext(world)');
+    expect(source).toContain('地形与水体');
+    expect(source).toContain('未按规划完整形成');
+    expect(source).toContain('空间关系');
     expect(source).toContain('const text = (value: string) => escapeHtml(value);');
     expect(source).toContain('escapeHtml(JSON.stringify(plan, null, 2))');
   });

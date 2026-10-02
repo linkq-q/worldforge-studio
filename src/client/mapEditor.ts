@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
 import type { WorldBundle, WorldPlan, WorldWhiteboxObservation } from '../shared/worldPlanning';
 import {
-  worldMapSampler,
+  worldMapTerrainContext,
   worldBuildingRole,
   type WorldAssetBinding,
   type WorldAssetProposal,
@@ -8774,7 +8774,7 @@ function renderWorldConstructionDetails(
 
 function renderSavedWorldWhiteboxDetails(world: NonNullable<EditableMap['world']>): string {
   const plan = world.bundle.plan;
-  if (!plan.whitebox) return '';
+  if (!plan.featureGraph) return '';
   const text = (value: string) => escapeHtml(value);
   const regions = new Map(plan.featureGraph?.regions.map((region) => [region.id, region]));
   const anchors = new Map(plan.featureGraph?.anchors.map((anchor) => [anchor.id, anchor]));
@@ -8790,14 +8790,22 @@ function renderSavedWorldWhiteboxDetails(world: NonNullable<EditableMap['world']
   const settlements = plan.settlementPlan?.settlements ?? [];
   const routes = plan.mobilityPlan?.routes ?? [];
   const exploration = plan.explorationPlan;
-  const sample = worldMapSampler(world);
+  const terrainContext = worldMapTerrainContext(world);
+  const sample = terrainContext.sample;
+  const preparedWaterIds = new Set(terrainContext.waterBodies.map(water => water.source.id));
+  const waterStatus = (plan.recipe.waterBodies ?? []).map(water => {
+    const issue = terrainContext.diagnostics.find(item => item.waterBodyId === water.id);
+    const status = issue ? `未按规划完整形成：${text(issue.message)}`
+      : preparedWaterIds.has(water.id) ? '已形成' : '未形成';
+    return `${text(water.id)} · ${text(water.type)} · ${status}`;
+  });
   const wetAnchors = (plan.featureGraph?.anchors ?? []).flatMap((anchor) => {
     const surface = sample(...anchor.position);
     return surface.waterLevel != null && surface.waterLevel > surface.height + 0.05
       ? [`${text(anchor.id)} (${(surface.waterLevel - surface.height).toFixed(1)} m)`] : [];
   });
   return `<details class="inspector-disclosure compact map-ai-composition-details">
-    <summary><span><b>已保存的白盒语义</b><small>${settlements.length} 个聚落角色 · ${routes.length} 条移动路线 · ${exploration?.pointsOfInterest.length ?? 0} 个兴趣点</small></span></summary>
+    <summary><span><b>${plan.whitebox ? '已保存的白盒语义' : '已保存的世界规划语义'}</b><small>${settlements.length} 个聚落角色 · ${routes.length} 条移动路线 · ${exploration?.pointsOfInterest.length ?? 0} 个兴趣点</small></span></summary>
     <div class="inspector-body asset-library-details">
       <p class="empty">红色锚点表示该处地形采样被水覆盖；这里只显示问题，不修改首稿。</p>
       <div><b>被水覆盖的锚点</b>${list(wetAnchors)}</div>
@@ -8805,6 +8813,10 @@ function renderSavedWorldWhiteboxDetails(world: NonNullable<EditableMap['world']
         ? `<p>${text(concept.premise)}</p><p>${text(concept.experience)}</p>${list(concept.themes.map(text))}`
         : '<p class="empty">无</p>'}</div>
       <div><b>聚落角色</b>${list(settlements.map((settlement) => `${text(settlement.id)} · ${anchorRegion(settlement.anchorId)} · ${text(settlement.role)}`))}</div>
+      <div><b>地形与水体</b>${list([
+        ...(plan.featureGraph?.regions ?? []).map(region => `${text(region.name)} (${text(region.id)}) · ${text(region.kind)}`),
+        ...waterStatus
+      ])}</div>
       <div><b>移动路线</b>${list(routes.map((route) => {
         const path = paths.get(route.pathId);
         const pathLabel = path ? `${text(path.name)} (${text(path.id)})` : text(route.pathId);
@@ -8817,6 +8829,8 @@ function renderSavedWorldWhiteboxDetails(world: NonNullable<EditableMap['world']
           return point ? `${text(id)} (${text(point.purpose)})` : text(id);
         }).join(' → ')}</p>` : '<p class="empty">无探索顺序</p>'}
       </div>
+      <div><b>空间关系</b>${list((plan.featureGraph?.relations ?? []).map(relation =>
+        `${text(relation.fromId)} → ${text(relation.toId)} · ${text(relation.kind)}`))}</div>
       <details><summary>完整 JSON</summary><pre>${escapeHtml(JSON.stringify(plan, null, 2))}</pre></details>
     </div>
   </details>`;
