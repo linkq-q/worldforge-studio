@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildOceanCoastField, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
+import { buildOceanCoastField, sampleCoastGrid, type CoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import {
   getMapPlayerMetrics,
   PLAYER_SPAWN_OBJECT_ID,
@@ -262,7 +262,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
   };
   let roadBodies = buildRoadMaterialBodies(map);
   modelsRoot.add(roadBodies);
-  let roadSurfaceOverlays = buildRoadSurfaceOverlays(map);
+  let roadSurfaceOverlays = buildRoadSurfaceOverlays(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, terrain.geometry);
   modelsRoot.add(roadSurfaceOverlays);
 
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
@@ -275,7 +275,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     modelsRoot.add(roadBodies);
     roadSurfaceOverlays.removeFromParent();
     disposeObject(roadSurfaceOverlays);
-    roadSurfaceOverlays = buildRoadSurfaceOverlays(next, terrainMaterialStyle);
+    roadSurfaceOverlays = buildRoadSurfaceOverlays(next, terrainMaterialStyle, terrain.geometry);
     modelsRoot.add(roadSurfaceOverlays);
   };
   let colorPalette: ColorPalette | null = null;
@@ -795,10 +795,25 @@ type RuntimeRoadZone = SceneVisualZone & {
   forceRoadOverlay?: boolean;
 };
 
-function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE): THREE.Group {
+function buildRoadSurfaceOverlays(
+  map: EditableMap,
+  style = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
+  terrainGeometry?: THREE.BufferGeometry
+): THREE.Group {
   const group = new THREE.Group();
   group.name = 'road-surface-overlays';
   let textures: ReturnType<typeof createBrickRoadOverlayTextures> | undefined;
+  const coast = terrainGeometry?.userData.oceanCoast as OceanCoastField | undefined;
+  const terrainGrid = coast ?? {
+    heights: map.terrain.heights,
+    width: map.terrain.resolutionX,
+    depth: map.terrain.resolutionZ,
+    minX: -map.box.size[0] / 2,
+    minZ: -map.box.size[2] / 2,
+    stepX: map.box.size[0] / (map.terrain.resolutionX - 1),
+    stepZ: map.box.size[2] / (map.terrain.resolutionZ - 1)
+  };
+  const terrainStep = Math.min(terrainGrid.stepX, terrainGrid.stepZ);
   for (const zone of map.visualSemantics.zones) {
     const runtime = zone as RuntimeRoadZone;
     const isBrick = zone.material === 'brick-paver';
@@ -806,7 +821,7 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
       || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
     if (isBrick) textures ??= createBrickRoadOverlayTextures(style);
     const points = zone.region.points;
-    const samples = roadOverlaySamples(points, Math.max(0.85, zone.region.width * 0.24));
+    const samples = roadOverlaySamples(points, Math.min(Math.max(0.85, zone.region.width * 0.24), terrainStep * 0.5));
     if (samples.length < 2) continue;
     const connected = roadConnectedEnds(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
     const capRadius = zone.region.width * 0.5;
@@ -842,7 +857,8 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
     const vertices: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
-    const crossSegments = 4;
+    const crossSegments = Math.min(32, Math.max(4,
+      Math.ceil(zone.region.width / Math.max(0.5, terrainStep * 0.5) / 2) * 2));
     for (let index = 0; index < overlaySamples.length; index += 1) {
       const sample = overlaySamples[index];
       for (let acrossIndex = 0; acrossIndex <= crossSegments; acrossIndex += 1) {
@@ -852,7 +868,7 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
         const z = sample.z + sample.tangentX * across;
         // Sample every cross-section vertex so the overlay follows sloped terrain
         // instead of floating from a single center-line height.
-        vertices.push(x, sampleTerrainHeight(map, x, z) + 0.025, z);
+        vertices.push(x, sampleRenderedTerrainHeight(terrainGrid, x, z) + 0.025, z);
         // World-space repeats keep pavers at 60 x 35 cm regardless of road width.
         const textureScale = style.roadTextureScale ?? 1;
         uvs.push((sample.distance + (runtime.roadDistanceOffset ?? 0)) / (2.4 * textureScale), across / (1.05 * textureScale));
@@ -869,7 +885,9 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
         }
       }
     }
+    liftRoadTrianglesAboveTerrain(vertices, indices, terrainGrid);
     const geometry = new THREE.BufferGeometry();
+    geometry.userData.roadCrossSectionSize = crossSegments + 1;
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
@@ -895,6 +913,48 @@ function buildRoadSurfaceOverlays(map: EditableMap, style = DEFAULT_RUNTIME_TERR
     group.add(mesh);
   }
   return group;
+}
+
+function sampleRenderedTerrainHeight(grid: CoastGrid, x: number, z: number): number {
+  const gx = THREE.MathUtils.clamp((x - grid.minX) / grid.stepX, 0, grid.width - 1);
+  const gz = THREE.MathUtils.clamp((z - grid.minZ) / grid.stepZ, 0, grid.depth - 1);
+  const ix = Math.min(grid.width - 2, Math.floor(gx));
+  const iz = Math.min(grid.depth - 2, Math.floor(gz));
+  const u = gx - ix;
+  const v = gz - iz;
+  const a = grid.heights[iz * grid.width + ix];
+  const b = grid.heights[iz * grid.width + ix + 1];
+  const c = grid.heights[(iz + 1) * grid.width + ix];
+  const d = grid.heights[(iz + 1) * grid.width + ix + 1];
+  // Match buildTerrainGeometry's alternating diagonals. Bilinear sampling
+  // can put the road below the visible triangle on an otherwise valid map.
+  if ((ix + iz) % 2 === 0) return u + v <= 1
+    ? a * (1 - u - v) + b * u + c * v
+    : b * (1 - v) + c * (1 - u) + d * (u + v - 1);
+  return u <= v
+    ? a * (1 - v) + c * (v - u) + d * u
+    : a * (1 - u) + b * (u - v) + d * v;
+}
+
+function liftRoadTrianglesAboveTerrain(vertices: number[], indices: number[], grid: CoastGrid): void {
+  const lifts = new Float32Array(vertices.length / 3);
+  const probes = [[0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5], [1 / 3, 1 / 3, 1 / 3]];
+  for (let index = 0; index < indices.length; index += 3) {
+    const a = indices[index], b = indices[index + 1], c = indices[index + 2];
+    let lift = 0;
+    for (const [wa, wb, wc] of probes) {
+      const x = vertices[a * 3] * wa + vertices[b * 3] * wb + vertices[c * 3] * wc;
+      const z = vertices[a * 3 + 2] * wa + vertices[b * 3 + 2] * wb + vertices[c * 3 + 2] * wc;
+      const roadY = vertices[a * 3 + 1] * wa + vertices[b * 3 + 1] * wb + vertices[c * 3 + 1] * wc;
+      lift = Math.max(lift, sampleRenderedTerrainHeight(grid, x, z) + 0.025 - roadY);
+    }
+    if (lift > 0) {
+      lifts[a] = Math.max(lifts[a], lift);
+      lifts[b] = Math.max(lifts[b], lift);
+      lifts[c] = Math.max(lifts[c], lift);
+    }
+  }
+  for (let index = 0; index < lifts.length; index += 1) vertices[index * 3 + 1] += lifts[index];
 }
 
 function createBrickRoadOverlayTextures(style: RuntimeTerrainMaterialStyle): { map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
@@ -987,13 +1047,17 @@ function replaceTerrainSkirt(
   if (previous) {
     previous.removeFromParent();
     previous.geometry.dispose();
+    if (previous.material instanceof THREE.Material && previous.material !== terrain.material) previous.material.dispose();
   }
   const geometry = buildTerrainSkirtGeometry(map, borderSides, borderDepth, surfaceWeight);
   if (!geometry) return;
-  const skirt = new THREE.Mesh(geometry, terrain.material);
+  const material = borderDepth === undefined ? terrain.material : new THREE.MeshStandardMaterial({
+    color: 0x8d8573, roughness: 1, side: THREE.DoubleSide
+  });
+  const skirt = new THREE.Mesh(geometry, material);
   skirt.name = 'terrain-skirt';
   skirt.castShadow = false;
-  skirt.receiveShadow = true;
+  skirt.receiveShadow = borderDepth === undefined;
   skirt.raycast = () => {};
   terrain.add(skirt);
 }
@@ -1885,17 +1949,19 @@ function buildTerrainSkirtGeometry(
   if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map, borderDepth, borderSides);
   else addMaskBorderSides(vertices, uvs, indices, map);
   if (!indices.length) return null;
-  const colors: number[] = [];
-  for (let index = 0; index < vertices.length; index += 3) {
-    colors.push(...terrainVertexColor(
-      map, vertices[index], vertices[index + 1], vertices[index + 2], undefined, undefined,
-      Boolean(surfaceWeight), surfaceWeight
-    ));
-  }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  if (borderDepth === undefined) {
+    const colors: number[] = [];
+    for (let index = 0; index < vertices.length; index += 3) {
+      colors.push(...terrainVertexColor(
+        map, vertices[index], vertices[index + 1], vertices[index + 2], undefined, undefined,
+        Boolean(surfaceWeight), surfaceWeight
+      ));
+    }
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  }
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;

@@ -148,10 +148,11 @@ it('keeps brick world dimensions independent of road width and scales terrain co
         const mesh = rendered.group.getObjectByName(`brick-road-surface:${name}`) as THREE.Mesh;
         const p = mesh.geometry.getAttribute('position');
         const uv = mesh.geometry.getAttribute('uv');
-        const row = Array.from({ length: p.count / 5 - 1 }, (_, index) => index * 5)
-          .find(index => p.getX(index) > -9 && p.getX(index + 5) < 9)!;
-        const metresPerU = (p.getX(row + 5) - p.getX(row)) / (uv.getX(row + 5) - uv.getX(row));
-        const metresPerV = Math.abs((p.getZ(row + 4) - p.getZ(row)) / (uv.getY(row + 4) - uv.getY(row)));
+        const crossSectionSize = mesh.geometry.userData.roadCrossSectionSize as number;
+        const row = Array.from({ length: p.count / crossSectionSize - 1 }, (_, index) => index * crossSectionSize)
+          .find(index => p.getX(index) > -9 && p.getX(index + crossSectionSize) < 9)!;
+        const metresPerU = (p.getX(row + crossSectionSize) - p.getX(row)) / (uv.getX(row + crossSectionSize) - uv.getX(row));
+        const metresPerV = Math.abs((p.getZ(row + crossSectionSize - 1) - p.getZ(row)) / (uv.getY(row + crossSectionSize - 1) - uv.getY(row)));
         // Four bricks per repeat along the road, three rows across it.
         expect(metresPerU / 4).toBeCloseTo(0.6 * roadTextureScale, 5);
         expect(metresPerV / 3).toBeCloseTo(0.35 * roadTextureScale, 5);
@@ -180,7 +181,7 @@ it('keeps a full-width cross-section at road bends instead of bridging past the 
   try {
     const mesh = rendered.group.getObjectByName('brick-road-surface:bent-road') as THREE.Mesh;
     const positions = mesh.geometry.getAttribute('position');
-    const crossSectionSize = 5;
+    const crossSectionSize = mesh.geometry.userData.roadCrossSectionSize as number;
     const cornerRow = Array.from({ length: positions.count / crossSectionSize }, (_, row) => row * crossSectionSize)
       .find((row) => {
         let centerX = 0, centerZ = 0;

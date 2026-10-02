@@ -390,7 +390,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     options.worldInitialView?.z ?? map.spawnPoints[0]?.[2] ?? 0,
     options.worldInitialView?.distance ?? 50
   );
-  await reconcile(initialRequest.x, initialRequest.z, initialRequest.distance, requestRevision, { terrain: 16, content: 1 });
+  // Start compact worlds with coarse tiles that cover the whole map. A small
+  // subset of the final fine tiles leaves real holes when the camera rotates.
+  await reconcile(initialRequest.x, initialRequest.z, initialRequest.distance, requestRevision, {
+    terrain: 16, content: 1, tileBudget: compactOcean ? 16 : undefined
+  });
   completionTimer = setTimeout(() => {
     completionTimer = null;
     if (!desiredRequest) requestReconcile(initialRequest.x, initialRequest.z, initialRequest.distance);
@@ -401,9 +405,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     focusZ: number,
     distance: number,
     revision: number,
-    limits?: { terrain: number; content: number }
+    limits?: { terrain: number; content: number; tileBudget?: number }
   ): Promise<boolean> {
-    const tiles = selectWorldTiles(bundle.plan.recipe.size, focusX, focusZ, distance, terrainTileBudget);
+    const tiles = selectWorldTiles(bundle.plan.recipe.size, focusX, focusZ, distance,
+      limits?.tileBudget ?? terrainTileBudget);
     const contentChunks = selectEcologyChunks(
       bundle.plan.recipe.size,
       focusX,
@@ -415,7 +420,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       ?? tiles.find(tile => tileContains(tile, focusX, focusZ));
     const desiredTerrain = new Map(tiles.map(tile => {
       const logicalKey = tileKey(tile);
-      const skirtSides = terrainSkirtSides(tile, tiles);
+      const skirtSides = terrainSkirtSides(tile, tiles, bundle.plan.recipe.size);
       const signature = `${logicalKey}|o${oceanOwner === tile ? 1 : 0}|s${skirtSides.join('.')}`;
       return [logicalKey, { tile, signature, ocean: oceanOwner === tile, skirtSides }] as const;
     }));
@@ -430,6 +435,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
         || chunkDistanceSquared(left, focusX, focusZ) - chunkDistanceSquared(right, focusX, focusZ));
     const missingTerrain = limits ? allMissingTerrain.slice(0, limits.terrain) : allMissingTerrain;
     const missingContent = limits ? allMissingContent.slice(0, limits.content) : allMissingContent;
+    // Keep the full coarse cover visible until every finer tile is ready.
+    const replaceCompactPreview = Boolean(compactOcean && !limits
+      && [...entries.keys()].some(key => !desiredTerrain.has(key)));
     pendingTiles = allMissingTerrain.length + allMissingContent.length;
     const builtTerrain = new Map<string, TileEntry>();
     const builtContent = new Map<string, ContentEntry>();
@@ -466,7 +474,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       results.forEach(result => {
         if (result.status === 'fulfilled') {
           if (!limits) setEntryWaterVisible(result.value[1], false);
-          mountEntry(result.value[1]);
+          if (!replaceCompactPreview) mountEntry(result.value[1]);
         }
       });
       await yieldWorldBuild(
@@ -531,7 +539,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     rebuildPublicIndexes();
     rebuildCollision();
     updateLightingBounds(focusX, focusZ);
-    if (!limits && compactOcean) compactOcean.visible = true;
+    if (compactOcean && (!limits || missingTerrain.length === allMissingTerrain.length)) compactOcean.visible = true;
     listeners.forEach(listener => listener());
     return true;
   }
@@ -548,6 +556,21 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const resolution = tile.size <= 256 ? FINE_TERRAIN_RESOLUTION : tile.size <= 2_048 ? 33 : 17;
     const sampled = sampleWorldTile(bundle.plan.recipe, tile, resolution, sample, false);
     if (compactOceanCoast) applyWorldOceanFloor(sampled.heights, tile, resolution, compactOceanCoast);
+    const worldHalf = bundle.plan.recipe.size / 2;
+    const north = Math.abs(tile.z + worldHalf) < 1e-6;
+    const south = Math.abs(tile.z + tile.size - worldHalf) < 1e-6;
+    const west = Math.abs(tile.x + worldHalf) < 1e-6;
+    const east = Math.abs(tile.x + tile.size - worldHalf) < 1e-6;
+    let edgeHeight = 0;
+    if (north || south || west || east) {
+      for (let index = 0; index < resolution; index += 1) {
+        if (north) edgeHeight = Math.max(edgeHeight, sampled.heights[index]);
+        if (south) edgeHeight = Math.max(edgeHeight, sampled.heights[(resolution - 1) * resolution + index]);
+        if (west) edgeHeight = Math.max(edgeHeight, sampled.heights[index * resolution]);
+        if (east) edgeHeight = Math.max(edgeHeight, sampled.heights[index * resolution + resolution - 1]);
+      }
+    }
+    const borderDepth = edgeHeight + 4;
     const sampledAt = performance.now();
     const tileMap = makeTerrainTileMap(tile, sampled.heights, includeOcean);
     const textureSize = tile.size <= 256 ? FINE_TERRAIN_TEXTURE_SIZE : tile.size <= 2_048 ? 64 : 32;
@@ -556,7 +579,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       editorHelpers: false,
       terrainTextureSize: textureSize,
       terrainBorderSides: skirtSides,
-      terrainBorderDepth: 4,
+      terrainBorderDepth: borderDepth,
       oceanCoast: false,
       waterOceanCoast: includeOcean,
       terrainOnly: true,
@@ -1401,9 +1424,14 @@ function pointEcologyKey(x: number, z: number): string { return `${Math.floor(x 
 function tileContains(tile: WorldTile, x: number, z: number): boolean {
   return x >= tile.x && x < tile.x + tile.size && z >= tile.z && z < tile.z + tile.size;
 }
-function terrainSkirtSides(tile: WorldTile, tiles: readonly WorldTile[]): TerrainBorderSide[] {
+function terrainSkirtSides(tile: WorldTile, tiles: readonly WorldTile[], worldSize: number): TerrainBorderSide[] {
   const result = new Set<TerrainBorderSide>();
   const epsilon = 1e-6;
+  const half = worldSize / 2;
+  if (Math.abs(tile.z + half) <= epsilon) result.add('north');
+  if (Math.abs(tile.z + tile.size - half) <= epsilon) result.add('south');
+  if (Math.abs(tile.x + half) <= epsilon) result.add('west');
+  if (Math.abs(tile.x + tile.size - half) <= epsilon) result.add('east');
   const overlaps = (a0: number, a1: number, b0: number, b1: number): boolean => Math.min(a1, b1) - Math.max(a0, b0) > epsilon;
   for (const neighbor of tiles) {
     if (neighbor === tile || neighbor.size <= tile.size) continue;

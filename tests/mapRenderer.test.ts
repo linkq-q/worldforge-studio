@@ -3,6 +3,7 @@ import { sampleCoastGrid, type OceanCoastField } from '../src/shared/oceanCoast'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEditableMapGroup,
+  buildNormalizedEditableMapGroupCore,
   buildStructuredWaterGroup,
   disposeStructuredWaterGroup,
   riverBankTransitionSamples,
@@ -1083,6 +1084,38 @@ describe('structured map water rendering', () => {
     expect(Math.max(...brickXs)).toBeGreaterThan(20);
     expect((brickSurface.material as THREE.MeshStandardMaterial).normalMap).toBeInstanceOf(THREE.CanvasTexture);
     rendered.dispose();
+  });
+
+  it('keeps a road overlay above the rendered terrain triangles on a saddle', async () => {
+    const map = applyMapOperations(createEmptyMap('saddle road', 'saddle-road', [8, 8, 8]), [{
+      type: 'terrain.surface', surface: 'soil', material: 'compacted-earth',
+      region: { kind: 'path', points: [[-3, 0], [3, 0]], width: 2 }, zoneId: 'saddle-road'
+    }]);
+    map.terrain = { resolutionX: 2, resolutionZ: 2, heights: [0, 4, 4, 0] };
+    const roadZone = map.visualSemantics.zones.find(zone => zone.id === 'saddle-road');
+    expect(roadZone).toBeDefined();
+    Object.assign(roadZone!, { forceRoadOverlay: true });
+    const rendered = await buildNormalizedEditableMapGroupCore(map, { oceanCoast: false });
+    try {
+      const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+      const road = rendered.group.getObjectByName('road-surface:saddle-road') as THREE.Mesh;
+      expect(road).toBeDefined();
+      rendered.group.updateMatrixWorld(true);
+      const ray = new THREE.Raycaster(new THREE.Vector3(0, 10, 0), new THREE.Vector3(0, -1, 0));
+      for (const x of [-1, -0.5, 0, 0.5, 1]) {
+        for (const z of [-0.5, 0, 0.5]) {
+          ray.ray.origin.set(x, 10, z);
+          const terrainY = ray.intersectObject(terrain)[0]?.point.y;
+          const roadY = ray.intersectObject(road)[0]?.point.y;
+          expect(roadY, `missing road at ${x},${z}`).toBeDefined();
+          expect(roadY!, `road clips at ${x},${z}`).toBeGreaterThan(terrainY! + 0.01);
+        }
+      }
+      ray.ray.origin.set(0, 10, 0);
+      expect(ray.intersectObject(terrain)[0]?.point.y).toBeCloseTo(4);
+    } finally {
+      rendered.dispose();
+    }
   });
 
   it('applies terrain recipes and snow to upward model surfaces', async () => {

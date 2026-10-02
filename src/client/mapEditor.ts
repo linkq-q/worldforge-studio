@@ -283,6 +283,9 @@ const MAX_HISTORY_STEPS = 50;
 const MAP_VISUAL_REVIEW_ENABLED = false;
 const VIEW_DIRECTIONS = {
   perspective: new THREE.Vector3(1, 0.72, 1),
+  northwest: new THREE.Vector3(-1, 0.72, -1),
+  northeast: new THREE.Vector3(1, 0.72, -1),
+  southwest: new THREE.Vector3(-1, 0.72, 1),
   top: new THREE.Vector3(0, 1, 0),
   front: new THREE.Vector3(0, 0, 1),
   right: new THREE.Vector3(1, 0, 0)
@@ -736,6 +739,9 @@ class MapEditor {
               <summary>视角</summary>
               <div class="toolbar-transfer-menu">
                 <button type="button" data-view="perspective">透视</button>
+                <button type="button" data-view="northwest">从西北看</button>
+                <button type="button" data-view="northeast">从东北看</button>
+                <button type="button" data-view="southwest">从西南看</button>
                 <button type="button" data-view="top">顶视图</button>
                 <button type="button" data-view="front">前视图</button>
                 <button type="button" data-view="right">右视图</button>
@@ -7704,7 +7710,10 @@ class MapEditor {
       ),
       VIEW_DIRECTIONS[view]
     );
-    this.setViewName(view === 'top' ? '顶视图' : view === 'front' ? '前视图' : view === 'right' ? '右视图' : '透视视图');
+    this.setViewName({
+      perspective: '透视视图', northwest: '从西北看', northeast: '从东北看',
+      southwest: '从西南看', top: '顶视图', front: '前视图', right: '右视图'
+    }[view]);
   }
 
   private setLightingReviewMode(mode: LightingReviewMode): void {

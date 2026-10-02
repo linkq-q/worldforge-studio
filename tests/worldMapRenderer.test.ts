@@ -422,13 +422,11 @@ describe('main editor streamed world renderer', () => {
     expect(worldTileSurfaceWeight(steep, tile, 10, 10, ['grass'])).toBeCloseTo(0.28);
   });
 
-  it('streams equal-LOD terrain and content progressively without skirts', async () => {
+  it('covers compact-world terrain before showing progressively streamed content', async () => {
     let paintYields = 0;
     let streamed: Awaited<ReturnType<typeof buildEditableMapGroup>> | undefined;
-    let sawProgressiveTerrain = false;
     let sawProgressiveContent = false;
-    let sawContentBeforeTerrainCoverage = false;
-    let sawDeferredOcean = false;
+    let sawUncoveredTerrain = false;
     const expectedTerrainTiles = selectWorldTiles(500, 0, 0, 400, 64).length;
     vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
       setTimeout(() => {
@@ -437,13 +435,13 @@ describe('main editor streamed world renderer', () => {
           const stats = streamed.getDebugStats().streaming!;
           const mounted = streamed.group.children.map(child => child.name);
           if (stats.pendingTiles > 0) {
-            const mountedTerrain = mounted.filter(name => name.startsWith('world-tile:')).length;
             const mountedContent = mounted.filter(name => name.startsWith('world-content:')).length;
-            sawProgressiveTerrain ||= mountedTerrain > stats.terrainTiles;
             sawProgressiveContent ||= mountedContent > stats.contentChunks;
-            sawContentBeforeTerrainCoverage ||= mountedContent > stats.contentChunks
-              && mountedTerrain < expectedTerrainTiles;
-            sawDeferredOcean ||= streamed.group.getObjectByName('water:world-ocean')?.parent?.visible === false;
+            const tileBounds = mounted.filter(name => name.startsWith('world-tile:'))
+              .map(name => name.slice('world-tile:'.length).split(':').map(Number));
+            sawUncoveredTerrain ||= [[-249, -249], [-249, 249], [249, -249], [249, 249]]
+              .some(([x, z]) => !tileBounds.some(([tileX, tileZ, size]) =>
+                x >= tileX && x < tileX + size && z >= tileZ && z < tileZ + size));
           }
         }
         callback(performance.now());
@@ -461,14 +459,32 @@ describe('main editor streamed world renderer', () => {
       rendered.group.traverse(object => {
         if (object.name === 'terrain' && object.visible) terrains.push(object as THREE.Mesh);
       });
+      // The coarse preview must cover the entire world before returning.
       expect(terrains).toHaveLength(16);
+      rendered.group.updateMatrixWorld(true);
+      const mountedTiles = rendered.group.children
+        .filter(child => child.name.startsWith('world-tile:'))
+        .map(child => child.name.slice('world-tile:'.length).split(':').map(Number)) as number[][];
+      for (const [x, z] of [[-249, -249], [-249, 249], [249, -249], [249, 249]]) {
+        expect(mountedTiles.some(([tileX, tileZ, size]) =>
+          x >= tileX && x < tileX + size && z >= tileZ && z < tileZ + size)).toBe(true);
+      }
+      const edgeSkirt = rendered.group.getObjectByName('world-tile:-250:-250:125')
+        ?.getObjectByName('terrain-skirt') as THREE.Mesh | undefined;
+      expect(edgeSkirt).toBeDefined();
+      const edgePositions = edgeSkirt!.geometry.getAttribute('position');
+      expect(Math.min(...Array.from({ length: edgePositions.count }, (_, index) => edgePositions.getY(index))))
+        .toBeLessThanOrEqual(-4);
+      const skirtMaterial = edgeSkirt!.material as THREE.MeshStandardMaterial;
+      expect(skirtMaterial.color.getHex()).toBe(0x8d8573);
+      expect(skirtMaterial.map).toBeNull();
       expect(terrains.every(terrain =>
         (terrain.material as THREE.MeshStandardMaterial).side === THREE.DoubleSide)).toBe(true);
       expect(terrains.every(terrain => (
         (terrain.material as THREE.MeshStandardMaterial).map?.image as HTMLCanvasElement
       ).width === 256)).toBe(true);
       const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
-      expect(ocean.parent?.visible).toBe(false);
+      expect(ocean.parent?.visible).toBe(true);
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
       expect(ocean.userData.waterOceanTerrain.mapSize[0]).toBeGreaterThanOrEqual(500);
       expect(ocean.userData.waterOceanTerrain.mapSize[1]).toBeGreaterThanOrEqual(500);
@@ -484,6 +500,7 @@ describe('main editor streamed world renderer', () => {
       rendered.update(1 / 60, camera, 1_000);
       await new Promise(resolve => setTimeout(resolve, 20));
       await waitFor(() => {
+        if (rendered.group.children.filter(child => child.name.startsWith('world-tile:')).length !== expectedTerrainTiles) return false;
         if (rendered.getDebugStats().streaming?.pendingTiles !== 0) return false;
         let visible = true;
         rendered.modelsRoot.traverse(object => {
@@ -492,11 +509,11 @@ describe('main editor streamed world renderer', () => {
         return visible;
       }, 1_000);
       expect(rendered.group.getObjectByName('water:world-ocean')).toBe(ocean);
+      expect(rendered.group.children.filter(child => child.name.startsWith('world-tile:')))
+        .toHaveLength(expectedTerrainTiles);
       expect(paintYields).toBeGreaterThanOrEqual(16);
-      expect(sawProgressiveTerrain).toBe(true);
       expect(sawProgressiveContent).toBe(true);
-      expect(sawContentBeforeTerrainCoverage).toBe(false);
-      expect(sawDeferredOcean).toBe(true);
+      expect(sawUncoveredTerrain).toBe(false);
       rendered.modelsRoot.traverse(object => {
         if (object.userData.isStructuredWaterRoot === true) expect(object.visible).toBe(true);
       });
@@ -524,7 +541,7 @@ describe('main editor streamed world renderer', () => {
         const normals = terrain.geometry.getAttribute('normal');
         for (let index = 0; index < positions.count; index += 1) {
           const x = positions.getX(index), z = positions.getZ(index);
-          if (Math.abs(Math.abs(x) - 31.25) > 1e-5 && Math.abs(Math.abs(z) - 31.25) > 1e-5) continue;
+          if (Math.abs(Math.abs(x) - 62.5) > 1e-5 && Math.abs(Math.abs(z) - 62.5) > 1e-5) continue;
           const world = terrain.localToWorld(new THREE.Vector3(x, positions.getY(index), z));
           const key = `${world.x.toFixed(4)}:${world.z.toFixed(4)}`;
           const normal = new THREE.Vector3().fromBufferAttribute(normals, index);
@@ -620,7 +637,7 @@ describe('main editor streamed world renderer', () => {
     } finally {
       rendered.dispose();
     }
-  }, 30_000);
+  }, 90_000);
 
   it('shows unbound public and ordinary buildings as distinct planning frames beside a partial asset pack', async () => {
     const map = createEmptyMap();
