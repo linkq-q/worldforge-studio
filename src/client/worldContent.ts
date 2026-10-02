@@ -191,7 +191,8 @@ function clipSegment(
 export function worldHarborQuayExtension(
   road: MapGuide, sample: (x: number, z: number) => WorldSample, worldSize: number
 ): WorldHarborQuayExtension | undefined {
-  if (road.closed || !road.tags.includes('harbor-quay') || road.points.length < 2) return undefined;
+  if (road.closed || !road.tags.some(tag => tag === 'harbor-quay' || tag === 'pier')
+    || road.points.length < 2) return undefined;
   const points=worldRoadPolyline(road),from=points.at(-1)!,previous=points.at(-2)!,dx=from[0]-previous[0],dz=from[1]-previous[1];
   const length=Math.hypot(dx,dz);if(length<1e-6)return undefined;
   const direction:[number,number]=[dx/length,dz/length],half=worldSize/2,step=2;

@@ -86,6 +86,8 @@ describe('continuous-world streaming client', () => {
     expect(extension.from).toEqual([8,0]);
     expect(extension.to[0]).toBeGreaterThanOrEqual(22);
     expect(coast(extension.to[0]).waterLevel).toBe(0);
+    expect(worldHarborQuayExtension({ ...quay, id: 'authored-pier', tags: ['world-route', 'pier'] },
+      (x)=>coast(x),500)).toEqual(extension);
     expect(worldHarborQuayExtension(street,(x)=>coast(x),500)).toBeUndefined();
     expect(worldHarborQuayExtension(quay,()=>flatSample(2),500)).toBeUndefined();
 
