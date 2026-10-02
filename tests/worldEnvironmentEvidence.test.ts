@@ -60,8 +60,39 @@ describe('world environment evidence', () => {
   it.each(waterCases)('distinguishes %s surface height from sampled ground height', (kind, recipe) => {
     const anchor = createWorldEnvironmentEvidence(plan(recipe, [['wet', [0, 0]]])).anchors[0];
     expect(anchor.water).toMatchObject({ kind, surfaceHeight: kind === 'sea' ? 0 : 10 });
+    expect(anchor.nearestWater).toMatchObject({
+      kind, id: kind === 'sea' ? null : kind === 'lake' ? 'still-water' : 'moving-water',
+      surfaceHeight: kind === 'sea' ? 0 : 10, distanceMeters: 0, direction: [0, 0]
+    });
     expect(anchor.water!.surfaceHeight).toBeGreaterThan(anchor.groundHeight);
     expect(anchor.water!.depthMeters).toBeCloseTo(anchor.water!.surfaceHeight - anchor.groundHeight, 3);
+  });
+
+  it('reports nearby sea for a dry shore anchor and no water beyond the bounded search', () => {
+    const recipe = waterCases[0][1];
+    const anchors = createWorldEnvironmentEvidence(plan(recipe, [
+      ['shore', [60, 0]], ['inland', [220, 0]]
+    ])).anchors;
+    const shore = anchors.find(anchor => anchor.id === 'shore')!;
+    const inland = anchors.find(anchor => anchor.id === 'inland')!;
+
+    expect(shore.water).toBeNull();
+    expect(shore.nearestWater).toMatchObject({ kind: 'sea', id: null, surfaceHeight: 0 });
+    expect(shore.nearestWater!.distanceMeters).toBeGreaterThan(0);
+    expect(shore.nearestWater!.distanceMeters).toBeLessThan(16);
+    expect(shore.nearestWater!.direction[0]).toBeLessThan(-0.9);
+    expect(inland.water).toBeNull();
+    expect(inland.nearestWater).toBeNull();
+  });
+
+  it('reports nearby authored lake identity and level from a dry anchor', () => {
+    const anchor = createWorldEnvironmentEvidence(plan(waterCases[1][1], [['lake-shore', [32, 0]]])).anchors[0];
+
+    expect(anchor.water).toBeNull();
+    expect(anchor.nearestWater).toMatchObject({ kind: 'lake', id: 'still-water', surfaceHeight: 10 });
+    expect(anchor.nearestWater!.distanceMeters).toBeGreaterThan(0);
+    expect(anchor.nearestWater!.distanceMeters).toBeLessThan(16);
+    expect(anchor.nearestWater!.direction[0]).toBeLessThan(-0.9);
   });
 
   it('returns an empty bounded collection when the plan has no semantic anchors', () => {

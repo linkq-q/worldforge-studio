@@ -17,6 +17,10 @@ export interface WorldAnchorEnvironmentSample {
   slopeDegrees: number;
   biome: WorldBiome;
   water: { kind: 'sea' | 'lake' | 'river'; id: string | null; surfaceHeight: number; depthMeters: number } | null;
+  nearestWater: {
+    kind: 'sea' | 'lake' | 'river'; id: string | null; surfaceHeight: number;
+    distanceMeters: number; direction: Point;
+  } | null;
   access: { routeId: string; pathId: string; distanceMeters: number; declaredConnection: boolean } | null;
 }
 
@@ -26,6 +30,58 @@ export interface WorldEnvironmentEvidence {
 }
 
 const rounded = (value: number) => Number(value.toFixed(3));
+const WATER_SEARCH_RADIUS = 160;
+const WATER_SEARCH_STEP = 12;
+const WATER_SEARCH_RAYS = 24;
+const WATER_DISTANCE_REFINEMENTS = 6;
+
+type WaterSurface = ReturnType<ReturnType<typeof createPlannedWorldSampler>>;
+type WaterTypes = Map<string, 'lake' | 'river'>;
+
+function waterReading(surface: WaterSurface, waterTypes: WaterTypes) {
+  return surface.waterLevel === null ? null : {
+    kind: surface.waterBodyId === null ? 'sea' as const : waterTypes.get(surface.waterBodyId)!,
+    id: surface.waterBodyId,
+    surfaceHeight: rounded(surface.waterLevel),
+    depthMeters: rounded(Math.max(0, surface.waterLevel - surface.height))
+  };
+}
+
+/** Fixed 24-ray, 160m probe; evidence may report null beyond that bounded context. */
+function nearestWater(sample: ReturnType<typeof createPlannedWorldSampler>, point: Point,
+  surface: WaterSurface, waterTypes: WaterTypes): WorldAnchorEnvironmentSample['nearestWater'] {
+  const here = waterReading(surface, waterTypes);
+  if (here) return { kind: here.kind, id: here.id, surfaceHeight: here.surfaceHeight,
+    distanceMeters: 0, direction: [0, 0] };
+  let previousRing = 0;
+  for (let ring = WATER_SEARCH_STEP; previousRing < WATER_SEARCH_RADIUS;
+    previousRing = ring, ring = Math.min(ring + WATER_SEARCH_STEP, WATER_SEARCH_RADIUS)) {
+    const candidates = [];
+    for (let ray = 0; ray < WATER_SEARCH_RAYS; ray++) {
+      const angle = ray * Math.PI * 2 / WATER_SEARCH_RAYS;
+      const direction: Point = [Math.cos(angle), Math.sin(angle)];
+      const wet = sample(point[0] + direction[0] * ring, point[1] + direction[1] * ring);
+      if (wet.waterLevel === null) continue;
+      let low = previousRing, high = ring;
+      for (let refinement = 0; refinement < WATER_DISTANCE_REFINEMENTS; refinement++) {
+        const middle = (low + high) / 2;
+        const value = sample(point[0] + direction[0] * middle, point[1] + direction[1] * middle);
+        if (value.waterLevel === null) low = middle;
+        else high = middle;
+      }
+      const refined = sample(point[0] + direction[0] * high, point[1] + direction[1] * high);
+      candidates.push({ distance: high, direction, surface: refined });
+    }
+    const nearest = candidates.sort((left, right) => left.distance - right.distance)[0];
+    if (nearest) {
+      const water = waterReading(nearest.surface, waterTypes)!;
+      return { kind: water.kind, id: water.id, surfaceHeight: water.surfaceHeight,
+        distanceMeters: rounded(nearest.distance),
+        direction: nearest.direction.map(rounded) as Point };
+    }
+  }
+  return null;
+}
 
 function pointSegmentDistance(point: Point, from: Point, to: Point): number {
   const dx = to[0] - from[0], dz = to[1] - from[1], lengthSquared = dx * dx + dz * dz;
@@ -63,12 +119,8 @@ export function createWorldEnvironmentEvidence(input: WorldPlan): WorldEnvironme
       groundHeight: rounded(surface.height),
       slopeDegrees: rounded(Math.atan(sampleWorldSlope(sample, ...anchor.position)) * 180 / Math.PI),
       biome: dominantBiome(surface),
-      water: surface.waterLevel === null ? null : {
-        kind: surface.waterBodyId === null ? 'sea' : waterTypes.get(surface.waterBodyId)!,
-        id: surface.waterBodyId,
-        surfaceHeight: rounded(surface.waterLevel),
-        depthMeters: rounded(Math.max(0, surface.waterLevel - surface.height))
-      },
+      water: waterReading(surface, waterTypes),
+      nearestWater: nearestWater(sample, anchor.position, surface, waterTypes),
       access: nearest ? { routeId: nearest.route.id, pathId: nearest.path.id,
         distanceMeters: rounded(nearest.distance), declaredConnection: nearest.declared } : null
     };
