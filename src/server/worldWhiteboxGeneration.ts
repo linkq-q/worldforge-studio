@@ -387,9 +387,13 @@ function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[
   }
   if (brush.mode === 'grade' && Array.isArray(brush.heights)
     && brush.heights.length >= 2 && brush.heights.length <= 64) {
+    const tAlias = (brush.heights as unknown[]).every(value => value && typeof value === 'object'
+      && !Array.isArray(value) && Object.keys(value).every(key => key === 't' || key === 'height')
+      && Object.hasOwn(value, 't') && Object.hasOwn(value, 'height'));
     const keyframes = (brush.heights as unknown[]).map(value => Array.isArray(value) && value.length === 2
       ? { position: value[0], height: value[1] }
-      : value) as Array<{ position?: unknown; distance?: unknown; height?: unknown }>;
+      : tAlias ? { position: (value as { t: unknown }).t, height: (value as { height: unknown }).height }
+        : value) as Array<{ position?: unknown; distance?: unknown; height?: unknown }>;
     const validHeights = keyframes.every(keyframe => keyframe && typeof keyframe === 'object'
       && !Array.isArray(keyframe) && Object.keys(keyframe).every(key => key === 'position' || key === 'height')
       && typeof keyframe.height === 'number' && Number.isFinite(keyframe.height)
@@ -446,7 +450,7 @@ function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[
         return a.height * (1 - weight) + b.height * weight;
       });
       normalized = { ...normalized, heights };
-      notes.push(`${path}.${positioned ? 'positioned' : fractionalDistance ? 'fractional_distance' : 'distance'}_grade_keyframes_to_samples`);
+      notes.push(`${path}.${tAlias ? 't' : positioned ? 'positioned' : fractionalDistance ? 'fractional_distance' : 'distance'}_grade_keyframes_to_samples`);
     }
   }
   return normalized;

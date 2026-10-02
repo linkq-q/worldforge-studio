@@ -690,6 +690,22 @@ describe('whitebox world generation', () => {
     }
   });
 
+  it('accepts normalized t keyframes as another generic grade position spelling', () => {
+    const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact',
+      constraints: [{ region: 'center', biome: 'ocean' }], terrainBrushes: [{ id: 'shore-grade', mode: 'grade',
+        region: { kind: 'path', points: [[-125, 12], [-54, 41]], width: 34 },
+        heights: [{ t: 0, height: 1.2 }, { t: 1, height: 0.7 }], strength: 0.45 }] } };
+    const result = parseWorldDryTerrainDraft(JSON.stringify(raw), request);
+    expect(result.rawTerrain).toEqual(raw.terrain);
+    const grade = result.recipe.terrainBrushes?.[0];
+    expect(grade?.mode).toBe('grade');
+    if (grade?.mode !== 'grade') throw new Error('expected_grade');
+    expect(grade.heights).toHaveLength(64);
+    expect(grade.heights[0]).toBe(1.2);
+    expect(grade.heights[63]).toBe(0.7);
+    expect(result.technicalNormalizations).toContain('terrainBrushes[0].t_grade_keyframes_to_samples');
+  });
+
   it('rejects metre grade keyframes with a mismatched, non-increasing or non-finite distance', () => {
     const terrain = (terrainBrushes: unknown[]) => ({ terrain: { version: 1, seed: 74, size: 500,
       reliefProfile: 'compact', constraints: [{ region: 'center', biome: 'desert' }], terrainBrushes } });
