@@ -98,6 +98,10 @@ export interface WorldTerrainEvidence {
   samples: Array<Array<[number, number]>>;
   /** Approximate 8m building sites per evidence cell (0..4); planning guidance, not validation. */
   buildingSiteScores: number[][];
+  /** Connected positive-score clusters, summarized so the planner need not infer settlement capacity from a raw matrix. */
+  buildableAreas: Array<{ id: number; landmassId: number; areaM2: number; buildingSiteScore: number;
+    center: [number, number]; bounds: [number, number, number, number];
+    nearestOcean?: { from: [number, number]; to: [number, number]; distanceM: number } }>;
   /** Approximate connected dry areas on the 25m evidence grid; 0 in landmassLabels means sea. */
   landmassLabels: number[][];
   landmasses: Array<{ id: number; areaM2: number; buildingSiteScore: number;
@@ -394,6 +398,8 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   }));
   const { landmassLabels, landmasses } = summarizeWorldLandmasses(heights, buildingSiteScores,
     [-bound, -bound], step);
+  const buildableAreas = summarizeWorldBuildableAreas(buildingSiteScores, landmassLabels,
+    [-bound, -bound], step);
   const shoreline = extractCoastLoops({ heights: heights.flat(), width: resolution, depth: resolution,
     minX: -bound, minZ: -bound, stepX: step, stepZ: step }, 0)
     .map(loop => loop.map(([x, z]): [number, number] => [Math.round(x * 10) / 10 || 0, Math.round(z * 10) / 10 || 0]));
@@ -416,8 +422,55 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   }
   const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
   return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
-    samples, buildingSiteScores, landmassLabels, landmasses, shoreline, boundaryCrossings,
+    samples, buildingSiteScores, buildableAreas, landmassLabels, landmasses, shoreline, boundaryCrossings,
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
+}
+
+/** Compact connected buildable clusters for planning guidance, never a placement gate. */
+export function summarizeWorldBuildableAreas(
+  scores: number[][], landmassLabels: number[][], origin: [number, number], step: number
+): WorldTerrainEvidence['buildableAreas'] {
+  const rows = scores.length, columns = scores[0]?.length ?? 0, visited = scores.map(row => row.map(() => false));
+  const components: Array<Array<[number, number]>> = [];
+  for (let z = 0; z < rows; z++) for (let x = 0; x < columns; x++) {
+    if (visited[z][x] || scores[z][x] <= 0 || !landmassLabels[z]?.[x]) continue;
+    const cells: Array<[number, number]> = [], queue: Array<[number, number]> = [[x, z]];
+    visited[z][x] = true;
+    for (let head = 0; head < queue.length; head++) {
+      const [cx, cz] = queue[head]; cells.push([cx, cz]);
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = cx + dx, nz = cz + dz;
+        if ((!dx && !dz) || nx < 0 || nz < 0 || nx >= columns || nz >= rows || visited[nz][nx]
+          || scores[nz][nx] <= 0 || landmassLabels[nz][nx] !== landmassLabels[z][x]) continue;
+        visited[nz][nx] = true; queue.push([nx, nz]);
+      }
+    }
+    components.push(cells);
+  }
+  const point = ([x, z]: [number, number]): [number, number] => [origin[0] + x * step, origin[1] + z * step];
+  const ocean = landmassLabels.flatMap((row, z) => row.flatMap((label, x) => label ? [] : [[x, z] as [number, number]]));
+  return components.map(cells => ({ cells,
+    score: cells.reduce((sum, [x, z]) => sum + scores[z][x], 0) }))
+    .sort((a, b) => b.score - a.score || b.cells.length - a.cells.length)
+    .slice(0, 12).map(({ cells, score }, index) => {
+      const total = Math.max(1, score), center: [number, number] = [
+        Math.round(cells.reduce((sum, [x, z]) => sum + point([x, z])[0] * scores[z][x], 0) / total * 10) / 10,
+        Math.round(cells.reduce((sum, [x, z]) => sum + point([x, z])[1] * scores[z][x], 0) / total * 10) / 10
+      ];
+      const world = cells.map(point), bounds: [number, number, number, number] = [
+        Math.min(...world.map(item => item[0])), Math.min(...world.map(item => item[1])),
+        Math.max(...world.map(item => item[0])), Math.max(...world.map(item => item[1]))
+      ];
+      let nearestOcean: WorldTerrainEvidence['buildableAreas'][number]['nearestOcean'];
+      for (const fromCell of cells) for (const toCell of ocean) {
+        const from = point(fromCell), to = point(toCell), distanceM = Math.round(Math.hypot(
+          from[0] - to[0], from[1] - to[1]) * 10) / 10;
+        if (!nearestOcean || distanceM < nearestOcean.distanceM) nearestOcean = { from, to, distanceM };
+      }
+      return { id: index + 1, landmassId: landmassLabels[cells[0][1]][cells[0][0]],
+        areaM2: cells.length * step * step, buildingSiteScore: score, center, bounds,
+        ...(nearestOcean ? { nearestOcean } : {}) };
+    });
 }
 
 /** Coarse connectivity for planning, never a rule that silently moves or rejects AI intent. */

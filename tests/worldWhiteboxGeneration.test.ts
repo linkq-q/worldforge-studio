@@ -307,9 +307,11 @@ describe('whitebox world generation', () => {
     expect(spatialInput.dryTerrain).toEqual(plan.recipe);
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
     expect(spatialInput.terrainEvidence.buildingSiteScores).toHaveLength(21);
+    expect(spatialInput.terrainEvidence.buildableAreas.length).toBeGreaterThan(0);
     expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
     expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.buildableAreas');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.landmassLabels');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("kind contains 'bridge'");
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Reserve connected dry, gently sloped land');
@@ -321,6 +323,13 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('A mouth-only grade cannot fix an inland drop');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Do not stack every district anchor');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coordinate values must be JSON numbers');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('heights:[12,6,2]');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Every walkable featureGraph path');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('pass through every anchor in connects');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coarsest scale that still preserves its defining physical relationships');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery'");
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("surface:'land'|'water'|'structure'");
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('rather than a fixed checklist');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
@@ -408,6 +417,9 @@ describe('whitebox world generation', () => {
       && row.every(score => Number.isInteger(score) && score >= 0 && score <= 4))).toBe(true);
     expect(evidence.buildingSiteScores.flat().some(score => score > 0)).toBe(true);
     expect(evidence.buildingSiteScores.flat().some(score => score === 0)).toBe(true);
+    expect(evidence.buildableAreas.length).toBeGreaterThan(0);
+    expect(evidence.buildableAreas.every(area => area.buildingSiteScore > 0
+      && area.bounds.every(value => Number.isFinite(value)))).toBe(true);
     expect(evidence.boundaryCrossings.length).toBeGreaterThan(0);
   });
 
@@ -855,6 +867,65 @@ describe('whitebox world generation', () => {
     }
   });
 
+  it('fits an edge town around its full authored district envelope and keeps district exits connected', () => {
+    const plan = unifiedDistrictPlan();
+    plan.id = 'edge-harbor-districts';
+    plan.featureGraph = {
+      regions: [
+        { id: 'harbor-region', kind: 'settlement', name: 'Harbor village', center: [156, 116], radius: 72 },
+        { id: 'civic-region', kind: 'district', name: 'Civic core', center: [151, 123], radius: 34 },
+        { id: 'working-region', kind: 'district', name: 'Working quay', center: [174, 105], radius: 38 },
+        { id: 'residential-region', kind: 'district', name: 'Harbor homes', center: [119, 145], radius: 54 },
+        { id: 'lake-region', kind: 'lake-shore', name: 'Lake shore', center: [20, 145], radius: 30 }
+      ],
+      paths: [
+        { id: 'harbor-lane', kind: 'street', name: 'Harbor lane', points: [[168, 108], [151, 123], [119, 145]], width: 4 },
+        { id: 'lake-road', kind: 'road', name: 'Lake road', points: [[119, 145], [70, 145], [20, 145]], width: 5 }
+      ],
+      anchors: [
+        { id: 'harbor-anchor', kind: 'harbor', position: [168, 108], regionId: 'harbor-region' },
+        { id: 'civic-anchor', kind: 'civic-center', position: [151, 123], regionId: 'civic-region' },
+        { id: 'working-anchor', kind: 'working-quay', position: [174, 105], regionId: 'working-region' },
+        { id: 'residential-anchor', kind: 'residential', position: [119, 145], regionId: 'residential-region' },
+        { id: 'lake-anchor', kind: 'lake', position: [20, 145], regionId: 'lake-region' }
+      ],
+      relations: []
+    };
+    plan.settlementPlan = { settlements: [{
+      id: 'edge-harbor', anchorId: 'harbor-anchor', role: 'working harbor village', population: 220,
+      districts: [
+        { anchorId: 'civic-anchor', kind: 'civic', density: 0.7 },
+        { anchorId: 'working-anchor', kind: 'working', density: 0.85 },
+        { anchorId: 'residential-anchor', kind: 'residential', density: 0.65 }
+      ]
+    }] };
+    plan.mobilityPlan = { routes: [
+      { id: 'harbor-route', pathId: 'harbor-lane', mode: 'walking',
+        connects: ['harbor-anchor', 'civic-anchor', 'residential-anchor'] },
+      { id: 'lake-route', pathId: 'lake-road', mode: 'walking', connects: ['residential-anchor', 'lake-anchor'] }
+    ] };
+    plan.explorationPlan = { pointsOfInterest: [], sequence: [] };
+    const expansion = constructionExpansion();
+    expansion.towns[0] = { ...expansion.towns[0], id: 'edge-harbor', population: 220 };
+
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(plan), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+    const town = result.plan.towns[0];
+
+    expect(town.center).toEqual([146.5, 121.5]);
+    expect(town.radius).toBe(81.5);
+    expect(town.districts?.every(district => Math.max(
+      Math.abs(district.offset[0]) + district.radius,
+      Math.abs(district.offset[1]) + district.radius
+    ) <= town.radius)).toBe(true);
+    expect(town.ports).toHaveLength(1);
+    expect(result.plan.roads.find(road => road.id === town.ports[0].guideId)?.tags).toContain('town-access');
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .not.toContain('settlement_districts_extend_beyond_core');
+  });
+
   it('keeps the in-map half of a district whose authored region crosses the world edge', () => {
     const source = unifiedDistrictPlan();
     source.featureGraph!.regions.push({ id: 'outer-region', kind: 'settlement_edge', name: 'Outer fields',
@@ -1025,6 +1096,15 @@ describe('whitebox world generation', () => {
     ]);
     expect(dryOnly.diagnostics.flatMap(item => item.planningIssues))
       .toContain('route_settlement_port_on_water:arrival-route:market-village');
+
+    const missedAnchor = buildablePlan();
+    missedAnchor.featureGraph!.paths[0].points = [[-120, 50], [120, 50]];
+    const missedAnchorResult = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(missedAnchor),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(missedAnchorResult.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('route_anchor_miss:arrival-route:village-anchor');
   });
 
   it('targets the sea when a planned harbor can reach sampled ocean shoreline', () => {
@@ -1092,6 +1172,26 @@ describe('whitebox world generation', () => {
       .toContain('maritime_settlement_no_accessible_ocean_shore');
   });
 
+  it('reports unsupported or mismatched visible site relationships without changing the raw plan', () => {
+    const source = buildablePlan();
+    source.featureGraph!.anchors.push(
+      { id: 'water-vehicle', kind: 'small-craft', position: [8, 8], regionId: 'village-region',
+        site: { role: 'vehicle', surface: 'water', dimensions: [3, 2, 8] } },
+      { id: 'raised-equipment', kind: 'loading-equipment', position: [12, 12], regionId: 'village-region',
+        site: { role: 'equipment', surface: 'structure', dimensions: [2, 3, 2] } }
+    );
+    const expansion = constructionExpansion();
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(source), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(result.plan.featureGraph).toEqual(validateWorldPlan(source).featureGraph);
+    expect(result.diagnostics.flatMap(item => item.planningIssues)).toEqual(expect.arrayContaining([
+      'site_surface_mismatch:water-vehicle:expected_water',
+      'site_structure_support_missing:raised-equipment'
+    ]));
+  });
+
   it('constructs the saved whitebox with one non-retrying GPT call and preserves every semantic coordinate', async () => {
     const whiteboxPlan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
@@ -1109,6 +1209,8 @@ describe('whitebox world generation', () => {
     expect(systemPrompt).toContain('publicBuildings:[{id,use,width,depth,height,assetKey?');
     expect(systemPrompt).toContain('visible whitebox footprint without spending an asset slot');
     expect(systemPrompt).toContain("role:'house'|'shop'|'workshop'|'tree'|'landmark'");
+    expect(systemPrompt).toContain("strategy:'single'|'assembly'");
+    expect(systemPrompt).toContain("Choose strategy:'assembly' when an approved building footprint benefits from connected reusable parts");
     expect(systemPrompt).toContain('Do not put width, depth, height or use directly on an asset object.');
     expect(mocks.generateModel).not.toHaveBeenCalled();
     expect(result.paidCallCount).toBe(1);
@@ -1372,12 +1474,14 @@ describe('whitebox world generation', () => {
     expect(result.assetSources?.map(asset => asset.id)).toEqual(['asset-1']);
   });
 
-  it('rejects assembly requests before any paid asset generation', async () => {
+  it('keeps an approved modular-building strategy in the construction preview', async () => {
     const expansion = constructionExpansion(1);
     expansion.assets[0].strategy = 'assembly';
     mocks.llmChat.mockResolvedValueOnce(JSON.stringify(expansion));
-    await expect(generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: true,
-      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore)).rejects.toThrow('world_whitebox_direct_asset_required');
+    const result = await generateWorld({ mode: 'construct-whitebox', whiteboxPlan: buildablePlan(), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0 }, {} as MapStore);
+    if (!('mode' in result) || result.mode !== 'construct-whitebox') throw new Error('expected_whitebox_construction_result');
+    expect(result.draft.assets[0]).toEqual(expect.objectContaining({ strategy: 'assembly' }));
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
 

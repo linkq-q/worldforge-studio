@@ -24,7 +24,17 @@ export interface WorldPlan {
 export interface WorldConcept { premise: string; themes: string[]; experience: string }
 export interface FeatureRegion { id: string; kind: string; name: string; center: Point; radius: number }
 export interface FeaturePath { id: string; kind: string; name: string; points: Point[]; curve?: MapGuideCurve; width: number }
-export interface FeatureAnchor { id: string; kind: string; position: Point; regionId: string }
+export type FeatureSiteRole = 'structure' | 'vehicle' | 'equipment' | 'furniture' | 'landmark' | 'scenery';
+export type FeatureSiteSurface = 'land' | 'water' | 'structure';
+export interface FeatureSite {
+  role: FeatureSiteRole;
+  surface: FeatureSiteSurface;
+  /** Visible whitebox size in [width, height, depth] metres. */
+  dimensions: [number, number, number];
+  /** Clockwise heading in radians around +Y. */
+  rotation?: number;
+}
+export interface FeatureAnchor { id: string; kind: string; position: Point; regionId: string; site?: FeatureSite }
 export interface FeatureRelation { fromId: string; toId: string; kind: string }
 export interface FeatureGraph {
   regions: FeatureRegion[];
@@ -408,10 +418,28 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     }).sort(byId);
     const anchors = list(value.anchors, 128, 'world_feature_anchor_quota').map(item => {
       const anchor = record(item, 'world_invalid_feature_anchor');
-      keys(anchor, ['id', 'kind', 'position', 'regionId'], 'world_unknown_feature_anchor_field');
+      keys(anchor, ['id', 'kind', 'position', 'regionId', 'site'], 'world_unknown_feature_anchor_field');
+      let site: FeatureSite | undefined;
+      if (anchor.site !== undefined) {
+        const value = record(anchor.site, 'world_invalid_feature_site');
+        keys(value, ['role', 'surface', 'dimensions', 'rotation'], 'world_unknown_feature_site_field');
+        if (!['structure', 'vehicle', 'equipment', 'furniture', 'landmark', 'scenery']
+          .includes(String(value.role))) fail('world_invalid_feature_site_role');
+        if (!['land', 'water', 'structure'].includes(String(value.surface))) fail('world_invalid_feature_site_surface');
+        if (!Array.isArray(value.dimensions) || value.dimensions.length !== 3) fail('world_invalid_feature_site_dimensions');
+        site = {
+          role: value.role as FeatureSiteRole,
+          surface: value.surface as FeatureSiteSurface,
+          dimensions: value.dimensions.map(item =>
+            number(item, 0.2, bound * 2, 'world_invalid_feature_site_dimensions')) as [number, number, number],
+          ...(value.rotation === undefined ? {} : {
+            rotation: number(value.rotation, -Math.PI, Math.PI, 'world_invalid_feature_site_rotation')
+          })
+        };
+      }
       return { id: safeId(anchor.id, 'world_invalid_feature_id'), kind: semanticText(anchor.kind, 'world_invalid_feature_kind'),
         position: point(anchor.position, bound, 'world_feature_outside'),
-        regionId: safeId(anchor.regionId, 'world_invalid_feature_anchor_region') };
+        regionId: safeId(anchor.regionId, 'world_invalid_feature_anchor_region'), ...(site ? { site } : {}) };
     }).sort(byId);
     const regionIds = new Set(regions.map(region => region.id));
     if (anchors.some(anchor => !regionIds.has(anchor.regionId))) fail('world_unknown_feature_anchor_region');

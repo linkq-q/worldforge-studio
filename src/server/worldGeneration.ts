@@ -1091,7 +1091,7 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   for(const asset of generationQueue) {
     if(!asset.existingAssetId) paidCallCount++;
     try {
-      assetSources.push(...await generateWorldAssets([asset],store,signal,{directOnly:true,maxNewAssets:1}));
+      assetSources.push(...await generateWorldAssets([asset],store,signal,{maxNewAssets:1}));
     } catch(error) {
       issue('world','asset_generation_failed:'+(error instanceof Error?error.message:String(error)));
       recordGenerationTrace('world.whitebox.construction.asset-error',{key:asset.key,error});
@@ -1142,7 +1142,7 @@ export async function generateApprovedWorldAssets(input: unknown, store: MapStor
   const scheduled=selectUsedWorldAssetRequests(assets,bundle.plan,bundle.patches);
   const newAssetCount=scheduled.filter(asset=>!asset.existingAssetId).length;
   if(newAssetCount>3) throw new Error('world_whitebox_asset_generation_limit');
-  const assetSources=await generateWorldAssets(scheduled,store,signal,{directOnly:true,maxNewAssets:3});
+  const assetSources=await generateWorldAssets(scheduled,store,signal,{maxNewAssets:3});
   return {mode:'generate-approved-world-assets' as const,assetSources,paidCallCount:newAssetCount,preview:true};
 }
 
