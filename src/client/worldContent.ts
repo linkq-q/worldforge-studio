@@ -140,7 +140,7 @@ export interface WorldBuildingCollider {
   id: string; x: number; z: number; width: number; depth: number; rotation: number;
 }
 export interface WorldHarborQuayExtension {
-  from: [number, number]; to: [number, number]; width: number; height: number;
+  from: [number, number]; to: [number, number]; points: [number, number][]; width: number; height: number;
 }
 export interface WorldBridgeDeck {
   from: [number, number]; to: [number, number]; width: number;
@@ -193,9 +193,30 @@ export function worldHarborQuayExtension(
 ): WorldHarborQuayExtension | undefined {
   if (road.closed || !road.tags.some(tag => tag === 'harbor-quay' || tag === 'pier')
     || road.points.length < 2) return undefined;
-  const points=worldRoadPolyline(road),from=points.at(-1)!,previous=points.at(-2)!,dx=from[0]-previous[0],dz=from[1]-previous[1];
+  const points=worldRoadPolyline(road),step=2,lift=worldSize<2000?.12:1.2;
+  const authored:[number,number][]=[[...points[0]]];
+  for(let index=1;index<points.length;index++) {
+    const a=points[index-1],b=points[index],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    const steps=Math.max(1,Math.ceil(length/step));
+    for(let part=1;part<=steps;part++) authored.push([
+      a[0]+(b[0]-a[0])*part/steps,a[1]+(b[1]-a[1])*part/steps
+    ]);
+  }
+  let firstWet=-1,lastWet=-1,authoredWaterLevel=-Infinity;
+  for(let index=0;index<authored.length;index++) {
+    const value=sample(...authored[index]),wet=value.waterLevel!==null&&value.waterLevel>value.height+.05;
+    if(wet) {
+      firstWet=firstWet<0?index:firstWet;lastWet=index;authoredWaterLevel=Math.max(authoredWaterLevel,value.waterLevel!);
+    } else if(firstWet>=0) break;
+  }
+  if(firstWet>0&&lastWet>=firstWet) {
+    const from=authored[firstWet-1],to=authored[lastWet],shore=sample(...from);
+    return {from:[...from],to:[...to],points:authored.slice(firstWet-1,lastWet+1),width:road.width,
+      height:Math.max(shore.height+lift,authoredWaterLevel+.55)};
+  }
+  const from=points.at(-1)!,previous=points.at(-2)!,dx=from[0]-previous[0],dz=from[1]-previous[1];
   const length=Math.hypot(dx,dz);if(length<1e-6)return undefined;
-  const direction:[number,number]=[dx/length,dz/length],half=worldSize/2,step=2;
+  const direction:[number,number]=[dx/length,dz/length],half=worldSize/2;
   const overWater=Math.max(8,road.width*1.5),maxReach=32+overWater;
   let firstWater:number|undefined,lastWater:[number,number]|undefined,waterLevel:number|undefined;
   for(let distance=step;distance<=maxReach;distance+=step) {
@@ -207,8 +228,9 @@ export function worldHarborQuayExtension(
     if(distance-firstWater>=overWater)break;
   }
   if(firstWater===undefined||!lastWater||waterLevel===undefined||Math.hypot(lastWater[0]-from[0],lastWater[1]-from[1])-firstWater<overWater-1e-6)return undefined;
-  const shore=sample(...from),lift=worldSize<2000?.12:1.2;
-  return {from:[...from],to:lastWater,width:road.width,height:Math.max(shore.height+lift,waterLevel+.55)};
+  const shore=sample(...from);
+  return {from:[...from],to:lastWater,points:[[...from],lastWater],width:road.width,
+    height:Math.max(shore.height+lift,waterLevel+.55)};
 }
 
 /** An explicitly planned bridge spans sampled water between two dry banks. */
@@ -243,11 +265,18 @@ function pointSegmentDistance(x:number,z:number,a:[number,number],b:[number,numb
   return Math.hypot(x-(a[0]+dx*t),z-(a[1]+dz*t));
 }
 
+function pointPolylineDistance(x:number,z:number,points:readonly [number,number][]):number {
+  let closest=Infinity;
+  for(let index=1;index<points.length;index++) closest=Math.min(closest,
+    pointSegmentDistance(x,z,points[index-1],points[index]));
+  return closest;
+}
+
 /** Uses the same deck surface for walking that the content renderer draws over the water. */
 export function sampleWorldQuaySurface(
   base:(x:number,z:number)=>WorldSample,extensions:readonly WorldHarborQuayExtension[],x:number,z:number
 ):WorldSample {
-  const value=base(x,z),deck=extensions.find(item=>pointSegmentDistance(x,z,item.from,item.to)<=item.width/2);
+  const value=base(x,z),deck=extensions.find(item=>pointPolylineDistance(x,z,item.points)<=item.width/2);
   return deck&&deck.height>value.height?{...value,height:deck.height}:value;
 }
 
@@ -261,7 +290,9 @@ export function buildWorldRoadChunk(
   const ordinary=new THREE.Color('#a78d67'),quay=new THREE.Color('#6b5038');
   for (const road of roads) {
     const extension=worldHarborQuayExtension(road,sample,worldSize);
-    const centerline=worldRoadPolyline(road),points=extension?[...centerline,extension.to]:centerline;
+    const centerline=worldRoadPolyline(road),tip=centerline.at(-1)!;
+    const points=extension&&Math.hypot(extension.to[0]-tip[0],extension.to[1]-tip[1])>1e-6
+      ?[...centerline,extension.to]:centerline;
     for (let i = 1; i < points.length; i++) {
       const pad = road.width / 2;
       const clipped = clipSegment(points[i - 1], points[i], minX - pad, minZ - pad, maxX + pad, maxZ + pad);
@@ -270,12 +301,13 @@ export function buildWorldRoadChunk(
       if (length < 1e-6) continue;
       const steps = Math.max(1, Math.ceil(length / spacing)), offsetX = (bz - az) / length * pad, offsetZ = (ax - bx) / length * pad;
       const start = positions.length / 3;
-      const deck=extension&&i===centerline.length?extension:undefined,color=extension?quay:ordinary;
+      const color=extension?quay:ordinary;
       for (let step = 0; step <= steps; step++) {
         const x = ax + (bx - ax) * step / steps, z = az + (bz - az) * step / steps;
         for (const sign of [-1, 1]) {
           const px = x + offsetX * sign, pz = z + offsetZ * sign;
-          positions.push(px,deck?.height??sample(px,pz).height+lift,pz);colors.push(color.r,color.g,color.b);
+          const deck=extension&&pointPolylineDistance(px,pz,extension.points)<=extension.width/2+.05;
+          positions.push(px,deck?extension.height:sample(px,pz).height+lift,pz);colors.push(color.r,color.g,color.b);
         }
         if (step) { const next = start + step * 2; indices.push(next - 2, next - 1, next, next, next - 1, next + 1); }
       }

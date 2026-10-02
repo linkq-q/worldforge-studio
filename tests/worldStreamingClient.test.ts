@@ -91,6 +91,21 @@ describe('continuous-world streaming client', () => {
     expect(worldHarborQuayExtension(street,(x)=>coast(x),500)).toBeUndefined();
     expect(worldHarborQuayExtension(quay,()=>flatSample(2),500)).toBeUndefined();
 
+    const authored:MapGuide={...quay,id:'authored-pier',points:[[0,0],[18,0],[24,0]],tags:['world-route','pier']};
+    const authoredDeck=worldHarborQuayExtension(authored,(x)=>coast(x),500)!;
+    expect(authoredDeck.from[0]).toBeLessThan(12);
+    expect(authoredDeck.to).toEqual([24,0]);
+    expect(authoredDeck.height).toBeCloseTo(2.12);
+    expect(sampleWorldQuaySurface((x)=>coast(x),[authoredDeck],18,0).height).toBeCloseTo(authoredDeck.height);
+    const authoredMesh=buildWorldRoadChunk([authored],{x:0,z:0},(x)=>coast(x),500).mesh!;
+    const authoredPositions=authoredMesh.geometry.getAttribute('position');
+    const wetVertices=Array.from({length:authoredPositions.count},(_,index)=>index)
+      .filter(index=>authoredPositions.getX(index)>=14);
+    expect(wetVertices.length).toBeGreaterThan(0);
+    expect(wetVertices.every(index=>Math.abs(authoredPositions.getY(index)-authoredDeck.height)<1e-5)).toBe(true);
+    authoredMesh.geometry.dispose();
+    (authoredMesh.material as THREE.Material).dispose();
+
     const built=buildWorldRoadChunk([quay,street],{x:0,z:0},(x)=>coast(x),500),positions=built.mesh!.geometry.getAttribute('position');
     const colors=built.mesh!.geometry.getAttribute('color');
     const tip=Array.from({length:positions.count},(_,index)=>index).sort((a,b)=>positions.getX(b)-positions.getX(a))[0];
