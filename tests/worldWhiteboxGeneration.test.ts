@@ -320,11 +320,14 @@ describe('whitebox world generation', () => {
       .toEqual(expect.objectContaining({ radius: 50, sampleSpacing: 8 }));
     expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
     expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
+    expect(Array.isArray(spatialInput.terrainEvidence.terrainFeatureProfiles)).toBe(true);
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.buildableAreas');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.settlementMinRadius');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('descriptive dry-terrain observations, not pass/fail labels');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.landmassLabels');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.terrainFeatureProfiles');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('does not infer drainage, a spill point or water connectivity');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("kind contains 'bridge'");
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Preserve enough usable terrain for requested places and activities');
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Terrain brushes execute in listed order');
@@ -551,6 +554,10 @@ describe('whitebox world generation', () => {
     expect(messages[0].content).toContain('targets are absolute world elevations in metres and can both cut and fill');
     expect(stagedInput.terrainEvidence.absoluteBrushObservations)
       .toEqual([expect.objectContaining({ id: 'observed-grade', mode: 'grade' })]);
+    expect(stagedInput.terrainEvidence.terrainFeatureProfiles)
+      .toEqual([expect.objectContaining({ id: 'observed-grade', mode: 'grade',
+        start: expect.any(Array), end: expect.any(Array), lowest: expect.any(Array),
+        samples: expect.any(Array) })]);
     expect(stagedInput.dryTerrain.terrainBrushes).toEqual(original.terrainBrushes);
     expect(source.recipe).toEqual(original);
     expect(mocks.llmChat).toHaveBeenCalledTimes(1);

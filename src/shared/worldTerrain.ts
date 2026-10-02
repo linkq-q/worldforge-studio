@@ -98,6 +98,20 @@ export interface WorldSettlementEnvelopeObservation {
   slopeRangeDegrees: [number, number];
   heightRangeM: [number, number];
 }
+export interface WorldTerrainFeatureProfile {
+  id: string;
+  mode: 'raise' | 'lower' | 'grade';
+  pathLengthM: number;
+  start: [number, number, number];
+  end: [number, number, number];
+  lowest: [number, number, number];
+  heightRangeM: [number, number];
+  /** Signed end minus start height; negative means the authored path descends in listed order. */
+  elevationChangeM: number;
+  downhillDirection: 'start-to-end' | 'end-to-start' | 'level';
+  /** Compact [x,z,height] observations sampled from the final dry terrain. */
+  samples: Array<[number, number, number]>;
+}
 export interface WorldTerrainEvidence {
   version: 1;
   resolution: 21;
@@ -124,6 +138,8 @@ export interface WorldTerrainEvidence {
   shoreline: Array<Array<[number, number]>>;
   /** Sea-level contour endpoints where an open coast reaches the sampled world boundary. */
   boundaryCrossings: Array<[number, number]>;
+  /** Compact final-terrain profiles for the most significant authored path brushes. */
+  terrainFeatureProfiles: WorldTerrainFeatureProfile[];
   heightRange: [number, number];
 }
 /** Sampled generator response for the current seed; this describes parameter units, not a target terrain. */
@@ -455,6 +471,68 @@ function observeWorldSettlementEnvelope(
   };
 }
 
+const WORLD_TERRAIN_FEATURE_PROFILE_SPACING = 5;
+const WORLD_TERRAIN_FEATURE_PROFILE_LIMIT = 8;
+const WORLD_TERRAIN_FEATURE_PROFILE_SAMPLE_LIMIT = 13;
+
+function sampleWorldTerrainPath(points: Array<[number, number]>, spacing: number): Array<[number, number]> {
+  const lengths = points.slice(1).map((point, index) =>
+    Math.hypot(point[0] - points[index][0], point[1] - points[index][1]));
+  const cumulative = [0];
+  for (const length of lengths) cumulative.push(cumulative.at(-1)! + length);
+  const pathLength = cumulative.at(-1)!;
+  const steps = Math.max(1, Math.ceil(pathLength / spacing));
+  return Array.from({ length: steps + 1 }, (_, index) => {
+    const distance = pathLength * index / steps;
+    let segment = 0;
+    while (segment < lengths.length - 1 && cumulative[segment + 1] < distance) segment++;
+    const length = lengths[segment] || 1;
+    const amount = (distance - cumulative[segment]) / length;
+    return [
+      mix(points[segment][0], points[segment + 1][0], amount),
+      mix(points[segment][1], points[segment + 1][1], amount)
+    ];
+  });
+}
+
+function compactWorldTerrainProfileSamples(
+  samples: Array<[number, number, number]>
+): Array<[number, number, number]> {
+  if (samples.length <= WORLD_TERRAIN_FEATURE_PROFILE_SAMPLE_LIMIT) return samples;
+  return Array.from({ length: WORLD_TERRAIN_FEATURE_PROFILE_SAMPLE_LIMIT }, (_, index) =>
+    samples[Math.round(index * (samples.length - 1) / (WORLD_TERRAIN_FEATURE_PROFILE_SAMPLE_LIMIT - 1))]);
+}
+
+/** Compact deterministic observations of authored path terrain in the final dry sampler. */
+export function createWorldTerrainFeatureProfiles(input: WorldRecipe): WorldTerrainFeatureProfile[] {
+  const recipe = validateWorldRecipe(input);
+  if (recipe.waterBodies?.length) throw new Error('world_terrain_evidence_requires_dry_recipe');
+  const sample = createWorldSampler(recipe), rounded = (value: number) => Math.round(value * 10) / 10 || 0;
+  return (recipe.terrainBrushes ?? []).flatMap(brush => {
+    if (brush.region.kind !== 'path'
+      || brush.mode !== 'raise' && brush.mode !== 'lower' && brush.mode !== 'grade') return [];
+    const path = sampleWorldTerrainPath(brush.region.points, WORLD_TERRAIN_FEATURE_PROFILE_SPACING);
+    const observed = path.map(([x, z]): [number, number, number] =>
+      [rounded(x), rounded(z), rounded(sample(x, z).height)]);
+    const heights = observed.map(point => point[2]), start = observed[0], end = observed.at(-1)!;
+    const minimum = Math.min(...heights), maximum = Math.max(...heights);
+    const lowest = observed[heights.indexOf(minimum)], elevationChangeM = rounded(end[2] - start[2]);
+    const authoredRange = brush.mode === 'grade' ? Math.max(...brush.heights) - Math.min(...brush.heights) : brush.amount;
+    const significance = Math.max(maximum - minimum, authoredRange);
+    if (significance < 1) return [];
+    return [{ underResolved: brush.region.width < recipe.size / 20, significance, profile: {
+      id: brush.id, mode: brush.mode, pathLengthM: rounded(path.slice(1).reduce((sum, point, index) =>
+        sum + Math.hypot(point[0] - path[index][0], point[1] - path[index][1]), 0)),
+      start, end, lowest, heightRangeM: [minimum, maximum] as [number, number], elevationChangeM,
+      downhillDirection: Math.abs(elevationChangeM) < 0.1 ? 'level' as const
+        : elevationChangeM < 0 ? 'start-to-end' as const : 'end-to-start' as const,
+      samples: compactWorldTerrainProfileSamples(observed)
+    } }];
+  }).sort((a, b) => Number(b.underResolved) - Number(a.underResolved)
+    || b.significance - a.significance || a.profile.id.localeCompare(b.profile.id))
+    .slice(0, WORLD_TERRAIN_FEATURE_PROFILE_LIMIT).map(item => item.profile);
+}
+
 /** Compact deterministic observations of an authored dry terrain recipe. */
 export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvidence {
   const recipe = validateWorldRecipe(input);
@@ -504,8 +582,10 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
     boundaryCrossing(bound, offset, heights[index].at(-1)!, bound, offset + step, heights[index + 1].at(-1)!);
   }
   const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
+  const terrainFeatureProfiles = createWorldTerrainFeatureProfiles(recipe);
   return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
     samples, buildingSiteScores, settlementMinRadius, buildableAreas, landmassLabels, landmasses, shoreline, boundaryCrossings,
+    terrainFeatureProfiles,
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
 }
 

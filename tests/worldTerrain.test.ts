@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWorldSampler, createWorldTerrainContext, createWorldTerrainGeneratorCalibration,
+import { createWorldSampler, createWorldTerrainContext, createWorldTerrainEvidence, createWorldTerrainGeneratorCalibration,
   diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
   summarizeWorldLandmasses,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
@@ -8,6 +8,40 @@ import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoun
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
+  it('profiles a narrow authored terrain path that the 25m evidence grid misses', () => {
+    const broadProfiles: NonNullable<WorldRecipe['terrainBrushes']> = Array.from({ length: 8 }, (_, index) => ({
+      id: `broad-profile-${index}`, mode: 'grade', region: { kind: 'path',
+        points: [[-220 + index * 55, -220], [-220 + index * 55, -170]], width: 30 },
+      heights: [40, 60 + index], feather: 0
+    }));
+    const recipe = validateWorldRecipe({ version: 1, seed: 2041110, size: 500,
+      reliefProfile: 'compact', constraints: [{ region: 'center', biome: 'grassland' }],
+      terrainBrushes: [{ id: 'level-ground', mode: 'flatten',
+        region: { kind: 'circle', center: [0, 0], radius: 350 }, height: 40, feather: 0 }, ...broadProfiles, {
+        id: 'narrow-notch', mode: 'grade', region: { kind: 'path',
+          points: [[12.5, -100], [12.5, 0], [12.5, 100]], width: 16 },
+        heights: [40, 28, 36], feather: 0
+      }]
+    });
+    const evidence = createWorldTerrainEvidence(recipe);
+    const profile = evidence.terrainFeatureProfiles.find(item => item.id === 'narrow-notch');
+    const westColumn = Math.round((0 - evidence.origin[0]) / evidence.step);
+    const eastColumn = Math.round((25 - evidence.origin[0]) / evidence.step);
+    const rows = [-100, -75, -50, -25, 0, 25, 50, 75, 100]
+      .map(z => Math.round((z - evidence.origin[1]) / evidence.step));
+
+    expect(profile).toEqual(expect.objectContaining({
+      mode: 'grade', start: [12.5, -100, 40], end: [12.5, 100, 36],
+      lowest: [12.5, 0, 28], heightRangeM: [28, 40], elevationChangeM: -4,
+      downhillDirection: 'start-to-end'
+    }));
+    expect(profile!.samples.length).toBeLessThanOrEqual(13);
+    expect(evidence.terrainFeatureProfiles).toHaveLength(8);
+    expect(rows.flatMap(row => [evidence.samples[row][westColumn][0], evidence.samples[row][eastColumn][0]])
+      .every(height => height * evidence.heightUnit === 40)).toBe(true);
+    expect(createWorldTerrainEvidence(recipe).terrainFeatureProfiles).toEqual(evidence.terrainFeatureProfiles);
+  });
+
   it('keeps a model-authored irregular riverbank within the supported unit interval', () => {
     const recipe = validateWorldRecipe({ version: 1, seed: 2041109, size: 500,
       reliefProfile: 'compact', constraints: [{ region: 'center', biome: 'grassland' }],
