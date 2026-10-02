@@ -380,7 +380,7 @@ function guide(input: unknown, bound: number): MapGuide {
 function semanticText(input: unknown, code: string): string {
   return text(input, code, 240);
 }
-function parseSemanticPlan(raw: Record<string, unknown>, bound: number): SemanticPlanFields {
+function parseSemanticPlan(raw: Record<string, unknown>, bound: number, externalRelationIds: readonly string[]): SemanticPlanFields {
   const result: SemanticPlanFields = {};
   if (raw.concept !== undefined) {
     const value = record(raw.concept, 'world_invalid_concept');
@@ -431,7 +431,7 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
           role: value.role as FeatureSiteRole,
           surface: value.surface as FeatureSiteSurface,
           dimensions: value.dimensions.map(item =>
-            number(item, 0.2, bound * 2, 'world_invalid_feature_site_dimensions')) as [number, number, number],
+            number(item, 0.05, bound * 2, 'world_invalid_feature_site_dimensions')) as [number, number, number],
           ...(value.rotation === undefined ? {} : {
             rotation: number(value.rotation, -Math.PI, Math.PI, 'world_invalid_feature_site_rotation')
           })
@@ -445,12 +445,13 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number): Semanti
     if (anchors.some(anchor => !regionIds.has(anchor.regionId))) fail('world_unknown_feature_anchor_region');
     const featureIds = [...regions, ...paths, ...anchors].map(feature => feature.id);
     unique(featureIds, 'world_duplicate_feature_id');
+    const relationTargetIds = new Set([...featureIds, ...externalRelationIds]);
     const relations = list(value.relations, 256, 'world_feature_relation_quota').map(item => {
       const relation = record(item, 'world_invalid_feature_relation');
       keys(relation, ['fromId', 'toId', 'kind'], 'world_unknown_feature_relation_field');
       const parsed = { fromId: safeId(relation.fromId, 'world_invalid_feature_relation'),
         toId: safeId(relation.toId, 'world_invalid_feature_relation'), kind: semanticText(relation.kind, 'world_invalid_feature_relation') };
-      if (!featureIds.includes(parsed.fromId) || !featureIds.includes(parsed.toId)) fail('world_unknown_feature_relation_target');
+      if (!relationTargetIds.has(parsed.fromId) || !relationTargetIds.has(parsed.toId)) fail('world_unknown_feature_relation_target');
       return parsed;
     }).sort((a, b) => `${a.fromId}\0${a.toId}\0${a.kind}`.localeCompare(`${b.fromId}\0${b.toId}\0${b.kind}`));
     result.featureGraph = { regions, paths, anchors, relations };
@@ -632,7 +633,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   const plan: WorldPlan = {
     version: 1, id: safeId(raw.id, 'world_invalid_plan_id'), revision,
     prompt: text(raw.prompt, 'world_invalid_prompt', 8000, true), recipe, ecology, towns, roads,
-    ...parseSemanticPlan(raw, bound)
+    ...parseSemanticPlan(raw, bound, recipe.waterBodies?.map(water => water.id) ?? [])
   };
   if (raw.whitebox !== undefined) {
     if (raw.whitebox !== true) fail('world_invalid_whitebox_marker');

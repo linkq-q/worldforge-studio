@@ -187,6 +187,8 @@ describe('hierarchical world planning contracts', () => {
   it('validates visible site intent on semantic anchors without requiring it on destinations', () => {
     const plan = fixture();
     Object.assign(plan, {
+      recipe: { ...plan.recipe, waterBodies: [{ id: 'harbor-water', type: 'lake',
+        region: { kind: 'circle', center: [220, 220], radius: 5 }, levels: [0], depth: 2 }] },
       featureGraph: {
         regions: [{ id: 'harbor', kind: 'harbor', name: 'Harbor', center: [0, 0], radius: 200 }],
         paths: [],
@@ -194,18 +196,25 @@ describe('hierarchical world planning contracts', () => {
           { id: 'town', kind: 'town-centre', position: [0, 40], regionId: 'harbor' },
           { id: 'tour-boat', kind: 'moored-tour-boat', position: [0, -20], regionId: 'harbor',
             site: { role: 'vehicle', surface: 'water', dimensions: [5, 3, 14], rotation: 1.25 } },
+          { id: 'courtyard', kind: 'courtyard-slab', position: [20, 40], regionId: 'harbor',
+            site: { role: 'structure', surface: 'land', dimensions: [12, 0.15, 10] } },
           { id: 'cathedral', kind: 'cathedral', position: [60, 40], regionId: 'harbor',
             site: { role: 'landmark', surface: 'land', dimensions: [42, 60, 120] } }
         ],
-        relations: []
+        relations: [{ fromId: 'courtyard', toId: 'harbor-water', kind: 'shore-access' }]
       }
     });
     const checked = validateWorldPlan(plan);
     expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'tour-boat')?.site).toEqual({
       role: 'vehicle', surface: 'water', dimensions: [5, 3, 14], rotation: 1.25
     });
+    expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'courtyard')?.site?.dimensions)
+      .toEqual([12, 0.15, 10]);
     expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'town')?.site).toBeUndefined();
     expect(checked.featureGraph?.anchors.find(anchor => anchor.id === 'cathedral')?.site?.dimensions).toEqual([42, 60, 120]);
+    expect(checked.featureGraph?.relations).toContainEqual({
+      fromId: 'courtyard', toId: 'harbor-water', kind: 'shore-access'
+    });
 
     const invalidRole = structuredClone(plan);
     invalidRole.featureGraph!.anchors.find(anchor => anchor.id === 'tour-boat')!.site!.role = 'building' as 'vehicle';
@@ -213,6 +222,11 @@ describe('hierarchical world planning contracts', () => {
     const invalidSize = structuredClone(plan);
     invalidSize.featureGraph!.anchors.find(anchor => anchor.id === 'tour-boat')!.site!.dimensions[2] = 0;
     expect(() => validateWorldPlan(invalidSize)).toThrow('world_invalid_feature_site_dimensions');
+    invalidSize.featureGraph!.anchors.find(anchor => anchor.id === 'tour-boat')!.site!.dimensions[2] = -0.1;
+    expect(() => validateWorldPlan(invalidSize)).toThrow('world_invalid_feature_site_dimensions');
+    const invalidRelation = structuredClone(plan);
+    invalidRelation.featureGraph!.relations[0].toId = 'missing-water';
+    expect(() => validateWorldPlan(invalidRelation)).toThrow('world_unknown_feature_relation_target');
   });
 
   it('reports executed POIs and deterministic path-network metrics without turning them into gates', () => {

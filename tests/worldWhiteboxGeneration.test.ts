@@ -377,6 +377,31 @@ describe('whitebox world generation', () => {
     expect(result.paidCallCount).toBe(3);
   });
 
+  it('continues captured terrain and spatial calls at construction without paying to plan either again', async () => {
+    const plan = buildablePlan();
+    plan.featureGraph!.anchors[0].site = {
+      role: 'structure', surface: 'land', dimensions: [12, 0.15, 10]
+    };
+    const resumeTerrainContent = dryTerrainResponse(plan);
+    const resumeSpatialContent = spatialPlanResponse(plan);
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+
+    const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 0,
+      resumeTerrainContent, resumeSpatialContent }, {} as MapStore);
+
+    if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
+    expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
+      .toEqual(['world.whitebox.construction']);
+    expect(mocks.llmChat.mock.calls[0][1]).toMatchObject({ maxAttempts: 1 });
+    expect(result.originalTerrainDraft).toEqual(plan.recipe);
+    expect(result.originalPlan).toEqual(JSON.parse(resumeSpatialContent).plan);
+    expect(result.finalPlan.featureGraph?.anchors[0].site?.dimensions).toEqual([12, 0.15, 10]);
+    expect(result.adjustment).toEqual({ decision: 'keep', applied: false, skipped: true,
+      reason: 'raw_first_call_preserved' });
+    expect(result.paidCallCount).toBe(3);
+  });
+
   it('honours a smaller complete-flow DeepSeek budget without a repair pass', async () => {
     const plan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
@@ -667,6 +692,10 @@ describe('whitebox world generation', () => {
       .rejects.toThrow('invalid_complete_world_generation_request');
     await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
       size: 500, generateAssets: false, repairAttempts: 1 }, {} as MapStore))
+      .rejects.toThrow('invalid_complete_world_generation_request');
+    await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 0,
+      resumeSpatialContent: spatialPlanResponse(plan) }, {} as MapStore))
       .rejects.toThrow('invalid_complete_world_generation_request');
     expect(mocks.llmChat).not.toHaveBeenCalled();
     expect(mocks.generateModel).not.toHaveBeenCalled();

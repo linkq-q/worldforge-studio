@@ -70,7 +70,7 @@ terrainEvidence.absoluteBrushObservations reports the actual cut, fill and steep
 Return those eight required plan fields and optional terrainRefinements and ecology. Do not return recipe, seed, size, constraints, heightScale, landforms, terrainBrushes, biomePatches, towns, roads, buildings or assets. The server preserves the dryTerrain base and appends your terrainRefinements in listed order before placing water and settlements. terrainEvidence is a deterministic 21 x 21 observation of that recipe: rows run north to south, columns west to east, origin and step are metres, and each samples value is [height,slope]. buildingSiteScores uses the same grid: each 0..4 score counts approximate dry, gentle 8m building sites sampled within that cell. terrainEvidence.buildableAreas summarizes connected positive-score cells with bounds, an approximate buildingSiteScore capacity and the nearest sampled ocean pair. Use these coarse areas to size and place requested uses; do not put a land-supported district over all-zero cells unless terrainRefinements in this same response make that district buildable. These scores are planning evidence, not a rejection gate, and later water or routes may reduce available sites. Multiply height by heightUnit to get metres and slope by slopeUnit to get degrees; heightRange also uses heightUnit. shoreline contains closed interpolated sea-level loops in metres, and boundaryCrossings lists open coast endpoints on the sampled world boundary. Use this evidence to choose actual support surfaces and plausible water and route paths, adding only local, bounded earthworks implied by the user's intent and observed terrain. terrainRefinements is an optional array of standard terrain brushes: {id,mode:'lower'|'raise',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width}|{kind:'circle',center:[x,z],radius},heights:[two or more scalar height keyframes such as heights:[12,6,2]],strength?,feather?}. heights contains elevations only, never [x,z] coordinate pairs. For a path grade, keyframes interpolate from the first to last point; for a circle grade, they interpolate radially from centre to rim. Keep broad landforms and the chosen coastline recognizable. These refinements are authored parts of the first plan, never automatic post-generation repair. Preserve unusual authored terrain and report one raw plan; do not critique, repair or offer alternatives.
 waterBodies may contain lakes {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or rivers {id,type:'river',surfaceMode:'terrain-fit',region:{kind:'path',points:[[x,z],...],width},widths?:[one width per path point],depth,waterfallAfterPointIndices?:[segment indices],shorelineSmoothness?,shorelineIrregularity?}. Terrain-fit rivers have no levels: the shared sampler derives their surface profile and carved bed from dry banks. Only engineered canals or fixed-height waterworks may use surfaceMode:'authored' with one level per point. A natural river must begin on dry inland terrain, follow sampled downhill ground with dry banks and stop at its first sea-level shoreline crossing. Ordinary reaches permit at most 0.08 slope and 4m extra cut; declare a waterfall segment only for an intended sharp drop. Check the entire proposed centerline against terrainEvidence. If a segment exceeds those hard limits, choose a physically coherent authored outcome consistent with the user's intent; do not assume a local refinement repairs a different segment. A dry world may intentionally have no fresh water.
 ecology may contain up to 8 habitat scatter rules: {id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome:'ocean'|'grassland'|'forest'|'desert'|'mountains'|'snow',density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?:[outerMin,preferredMin,preferredMax,outerMax]}. Use broad rules for widespread vegetation and bounded circle or path regions for distinctive groves, reeds or stony areas. Decide habitats from terrain, water, climate and settlement use; each rule is a batch placement intent and requires no 3D asset.
-concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId,site?:{role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery',surface:'land'|'water'|'structure',dimensions:[width,height,depth],rotation?:radians}}],relations:[{fromId,toId,kind}]}. Region radius is 1..250m. Every path has at least two distinct points. Use catmull-rom for naturally flowing roads or trails and polyline for engineered segments. Every anchor regionId and relation endpoint must exist. Place each anchor on the sampled support surface appropriate to its requested use and site.surface. Add site only when an anchor is also one concrete visible element whose size and support surface must survive into the whitebox; dimensions are [width,height,depth] metres and rotation is around +Y. Site anchors do not all need to be points of interest.
+concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId,site?:{role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery',surface:'land'|'water'|'structure',dimensions:[width,height,depth],rotation?:radians}}],relations:[{fromId,toId,kind}]}. Region radius is 1..250m. Every path has at least two distinct points. Use catmull-rom for naturally flowing roads or trails and polyline for engineered segments. Every anchor regionId must exist; relation endpoints must reference an existing feature or authored water body. Place each anchor on the sampled support surface appropriate to its requested use and site.surface. Add site only when an anchor is also one concrete visible element whose size and support surface must survive into the whitebox; dimensions are [width,height,depth] metres and rotation is around +Y. Site anchors do not all need to be points of interest.
 Represent an authored place at the coarsest scale that still preserves its defining physical relationships. When a visible element depends on terrain, water, access, support, or a neighboring element, keep that relationship explicit in the whitebox; derive the elements from the requested use and observed terrain rather than a fixed checklist.
 settlementPlan={settlements:[{id,anchorId,role,population?:integer,districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]}]}. One authored settlement is one settlement, not one settlement per district. District anchors describe its connected inhabited footprint. Infer population, extent, districts, density and street pattern from the user's wording and observed terrain; give each settlement enough sampled buildable area for that intent without filling the map, and carry its population into construction. Check the full extent of each district region, not just its anchor, and keep it within the -250..250 world bounds.
 mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...],construction?:{terrain:'follow'|'grade',maxGrade?:0.02..0.2}}]}. Every walkable featureGraph path that should survive construction needs one mobilityPlan route referencing its pathId; an unreferenced path remains observation-only and is not a constructed road. Each route path must pass through every anchor in connects, in travel order; its first and last points should meet the first and last connected anchors. When terrain is 'follow', omit maxGrade; only 'grade' may specify maxGrade. Trace routes across sampled terrain and compare slope and shoreline evidence along the whole path. Do not cross open water without an intentional crossing. Grade is only for modest dry-ground earthworks and cannot make an implausible mountain crossing or bridge. Choose route width from the requested use and surrounding scale.
@@ -916,8 +916,7 @@ export async function generateStagedWorldWhitebox(input: unknown, signal?: Abort
   return continueStagedWorldWhitebox(request, terrainContent, signal);
 }
 
-/** Resume the unchanged first terrain response after a schema/parser failure without paying to replan it. */
-export async function continueStagedWorldWhitebox(input: unknown, terrainContent: string, signal?: AbortSignal) {
+function prepareStagedWorldTerrain(input: unknown, terrainContent: string) {
   const request = validateWorldWhiteboxRequest(input);
   const terrain = parseWorldDryTerrainDraft(terrainContent, request);
   recordGenerationTrace('world.whitebox.terrain-plan', {
@@ -926,13 +925,14 @@ export async function continueStagedWorldWhitebox(input: unknown, terrainContent
   const terrainEvidence = { ...createWorldTerrainEvidence(terrain.recipe),
     absoluteBrushObservations: observeWorldAbsoluteTerrainBrushes(terrain.recipe) };
   recordGenerationTrace('world.whitebox.terrain-evidence', terrainEvidence);
-  const spatialContent = await llmChat([
-    { role: 'system', content: STAGED_SPATIAL_PROMPT },
-    { role: 'user', content: JSON.stringify({ prompt: request.prompt, seed: request.seed, size: request.size,
-      dryTerrain: terrain.recipe, terrainEvidence }) }
-  ], { provider: 'gpt', temperature: 0.45, maxTokens: 20_000, maxAttempts: 1,
-    traceStage: 'world.whitebox.spatial-plan', signal });
-  recordGenerationTrace('world.whitebox.spatial-raw', { content: spatialContent });
+  return { request, terrain, terrainEvidence };
+}
+
+function completeStagedWorldWhitebox(
+  prepared: ReturnType<typeof prepareStagedWorldTerrain>,
+  spatialContent: string
+) {
+  const { request, terrain, terrainEvidence } = prepared;
   const spatial = parseWorldWhiteboxSpatialPlan(spatialContent, request, terrain.recipe);
   recordGenerationTrace('world.whitebox.spatial-plan', spatial.plan);
   const first = executeWorldWhitebox(spatial.plan);
@@ -952,6 +952,29 @@ export async function continueStagedWorldWhitebox(input: unknown, terrainContent
     planningDiagnostics: { terrain: terrain.technicalNormalizations, spatial: spatial.technicalNormalizations },
     draft: { plan: spatial.plan, settlements: [], assets: [] }, diagnostics: [], assetSources: [],
     planningProvider: 'gpt', paidCallCount: 2, preview: true, mode: 'whitebox' as const };
+}
+
+/** Resume the unchanged first terrain response after a schema/parser failure without paying to replan it. */
+export async function continueStagedWorldWhitebox(input: unknown, terrainContent: string, signal?: AbortSignal) {
+  const prepared = prepareStagedWorldTerrain(input, terrainContent);
+  const { request, terrain, terrainEvidence } = prepared;
+  const spatialContent = await llmChat([
+    { role: 'system', content: STAGED_SPATIAL_PROMPT },
+    { role: 'user', content: JSON.stringify({ prompt: request.prompt, seed: request.seed, size: request.size,
+      dryTerrain: terrain.recipe, terrainEvidence }) }
+  ], { provider: 'gpt', temperature: 0.45, maxTokens: 20_000, maxAttempts: 1,
+    traceStage: 'world.whitebox.spatial-plan', signal });
+  recordGenerationTrace('world.whitebox.spatial-raw', { content: spatialContent });
+  return completeStagedWorldWhitebox(prepared, spatialContent);
+}
+
+/** Resume unchanged terrain and spatial responses after a parser fix, without paying to plan either stage again. */
+export function continueStagedWorldWhiteboxFromSpatial(
+  input: unknown,
+  terrainContent: string,
+  spatialContent: string
+) {
+  return completeStagedWorldWhitebox(prepareStagedWorldTerrain(input, terrainContent), spatialContent);
 }
 
 export async function generateWorldWhitebox(input: unknown, signal?: AbortSignal) {
