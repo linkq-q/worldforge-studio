@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorldSampler, createWorldTerrainContext, createWorldTerrainEvidence, createWorldTerrainGeneratorCalibration,
   diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
-  summarizeWorldLandmasses,
+  summarizeWorldBuildableAreas, summarizeWorldLandmasses,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
   WORLD_TERRAIN_FIT_RIVER_MAX_GRADE, type WorldRecipe } from '../src/shared/worldTerrain';
 import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoundaryDistance, waterBoundaryPoints } from '../src/shared/mapWater';
@@ -100,6 +100,20 @@ describe('continuous biome world experiment', () => {
       { id: 2, areaM2: 200, buildingSiteScore: 4, center: [50, 25],
         nearestMainland: { from: [50, 20], to: [20, 20], bankDistanceM: 30 } }
     ]);
+  });
+  it('counts a fully dry evidence grid as the map area without extending past its edges', () => {
+    const heights = Array.from({ length: 21 }, () => Array(21).fill(1));
+    const scores = heights.map(row => row.map(() => 4));
+    const evidence = summarizeWorldLandmasses(heights, scores, [-250, -250], 25);
+    const buildableAreas = summarizeWorldBuildableAreas(scores, evidence.landmassLabels, [-250, -250], 25);
+
+    expect(evidence.landmasses).toEqual([
+      { id: 1, areaM2: 250000, buildingSiteScore: 1764, center: [0, 0] }
+    ]);
+    expect(buildableAreas).toEqual([{
+      id: 1, landmassId: 1, areaM2: 250000, buildingSiteScore: 1764,
+      center: [0, 0], bounds: [-250, -250, 250, 250]
+    }]);
   });
   it('turns the requested sentence into explicit directional constraints', () => {
     expect(parseWorldPrompt('我希望西方是海洋，东方是沙漠').constraints).toEqual([

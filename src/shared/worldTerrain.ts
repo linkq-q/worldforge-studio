@@ -607,6 +607,9 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
 }
 
+const worldEvidenceSampleArea = (x: number, z: number, columns: number, rows: number, step: number) =>
+  step * step * (x === 0 || x === columns - 1 ? 0.5 : 1) * (z === 0 || z === rows - 1 ? 0.5 : 1);
+
 /** Compact connected buildable clusters for planning guidance, never a placement gate. */
 export function summarizeWorldBuildableAreas(
   scores: number[][], landmassLabels: number[][], origin: [number, number], step: number
@@ -649,7 +652,8 @@ export function summarizeWorldBuildableAreas(
         if (!nearestOcean || distanceM < nearestOcean.distanceM) nearestOcean = { from, to, distanceM };
       }
       return { id: index + 1, landmassId: landmassLabels[cells[0][1]][cells[0][0]],
-        areaM2: cells.length * step * step, buildingSiteScore: score, center, bounds,
+        areaM2: cells.reduce((sum, [x, z]) => sum + worldEvidenceSampleArea(x, z, columns, rows, step), 0),
+        buildingSiteScore: score, center, bounds,
         ...(nearestOcean ? { nearestOcean } : {}) };
     });
 }
@@ -703,7 +707,8 @@ export function summarizeWorldLandmasses(
         nearestMainland = { from, to, bankDistanceM };
       }
     }
-    return { id: index + 1, areaM2: cells.length * step * step,
+    return { id: index + 1,
+      areaM2: cells.reduce((sum, [x, z]) => sum + worldEvidenceSampleArea(x, z, columns, rows, step), 0),
       buildingSiteScore: cells.reduce((sum, [x, z]) => sum + (buildingSiteScores[z]?.[x] ?? 0), 0),
       center, ...(nearestMainland ? { nearestMainland } : {}) };
   });
