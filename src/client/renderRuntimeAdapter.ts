@@ -42,7 +42,15 @@ import {
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import { RenderFrameCoordinator, type RenderPrePassResources } from './renderFrameCoordinator';
 import { isNormalDepthPrePassMesh } from './renderPrePassPolicy';
-import { advanceUnderwaterBlend, bindUnderwaterDepth, configureUnderwaterPass } from './underwaterRuntime';
+import {
+  DEFAULT_UNDERWATER_WAVE_PROFILE,
+  advanceUnderwaterBlend,
+  bindUnderwaterDepth,
+  configureUnderwaterPass,
+  underwaterSurfaceLevel,
+  underwaterWaveProfileFromUniforms,
+  type UnderwaterWaveProfile
+} from './underwaterRuntime';
 import type { VolumetricLightRuntime } from './volumetricLightRuntime';
 import type {
   RuntimeColorGrade,
@@ -56,6 +64,7 @@ import type {
 } from '../shared/renderPlan';
 
 const NORMAL_PREPASS_LAYER = 29;
+const _waterWorldPosition = new THREE.Vector3();
 
 interface MaterialBaseline {
   material: THREE.Material;
@@ -100,6 +109,7 @@ export class RenderRuntimeAdapter {
   private underwaterMode: RuntimeUnderwaterStyle['mode'] = 'off';
   private underwaterBlend = 0;
   private underwaterWaterLevel = 0;
+  private underwaterWaveProfile: UnderwaterWaveProfile = { ...DEFAULT_UNDERWATER_WAVE_PROFILE };
   private underwaterPassActive = false;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
@@ -420,9 +430,17 @@ export class RenderRuntimeAdapter {
       this.resetUnderwaterState();
     } else {
       this.underwaterWaterLevel = waterLevel;
+      this.underwaterWaveProfile = this.resolveUnderwaterWaveProfile(waterLevel);
+      const movingWaterLevel = underwaterSurfaceLevel(
+        waterLevel,
+        this.camera.position.x,
+        this.camera.position.z,
+        elapsedSeconds,
+        this.underwaterWaveProfile
+      );
       this.underwaterBlend = advanceUnderwaterBlend(
         this.underwaterBlend,
-        waterLevel,
+        movingWaterLevel,
         this.camera.position.y,
         deltaTime
       );
@@ -854,7 +872,9 @@ export class RenderRuntimeAdapter {
         depthTexture,
         this.camera,
         this.underwaterWaterLevel,
-        this.underwaterBlend
+        this.underwaterBlend,
+        this.pendingElapsedSeconds,
+        this.underwaterWaveProfile
       );
     }
     if (this.curvaturePass.enabled) {
@@ -922,6 +942,19 @@ export class RenderRuntimeAdapter {
       }
       binding.surface.update(deltaTime, this.camera, binding.usesSceneDepth ? depthTexture : null);
     }
+  }
+
+  private resolveUnderwaterWaveProfile(waterLevel: number): UnderwaterWaveProfile {
+    let closest: WaterSurface | null = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    for (const binding of this.waterBindings ?? []) {
+      if (!(binding.surface instanceof WaterSurface)) continue;
+      const distance = Math.abs(binding.mesh.getWorldPosition(_waterWorldPosition).y - waterLevel);
+      if (distance >= closestDistance) continue;
+      closestDistance = distance;
+      closest = binding.surface;
+    }
+    return underwaterWaveProfileFromUniforms(closest?.material.uniforms);
   }
 
   private setUnderwaterPassActive(active: boolean): void {

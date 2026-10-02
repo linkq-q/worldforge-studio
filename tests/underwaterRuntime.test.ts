@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   advanceUnderwaterBlend,
   bindUnderwaterDepth,
-  cameraWaterSurfaceLevel
+  cameraWaterSurfaceLevel,
+  sampleUnderwaterWaveOffset,
+  underwaterSurfaceLevel,
+  type UnderwaterWaveProfile
 } from '../src/client/underwaterRuntime';
 import { createEmptyMap, type MapWaterBody } from '../src/shared/map';
 import type { WorldMapState } from '../src/shared/worldMapState';
@@ -18,6 +21,16 @@ const lake = (id: string, level: number, size = 6): MapWaterBody => ({
   width: size,
   points: [[-size, -size], [size, -size], [size, size], [-size, size]]
 });
+
+const waveProfile: UnderwaterWaveProfile = {
+  amplitude: 0.2,
+  scale: 1.1,
+  speed: 0.8,
+  primaryDirection: [1, 0],
+  secondaryDirection: [0, 1],
+  foamColor: '#ffffff',
+  edgeStrength: 0.8
+};
 
 describe('underwater runtime state', () => {
   it('selects the highest structured-water surface containing the camera', () => {
@@ -57,6 +70,16 @@ describe('underwater runtime state', () => {
     expect(leaving).toBeGreaterThan(0);
     expect(leaving).toBeLessThan(1);
     expect(advanceUnderwaterBlend(entering, null, 0, 1)).toBeCloseTo(0, 4);
+  });
+
+  it('moves the camera crossing height with the same bounded directional wave field', () => {
+    const atStart = sampleUnderwaterWaveOffset(2, -3, 0, waveProfile);
+    const later = sampleUnderwaterWaveOffset(2, -3, 1.5, waveProfile);
+
+    expect(later).not.toBeCloseTo(atStart, 5);
+    expect(Math.abs(atStart)).toBeLessThanOrEqual(waveProfile.amplitude);
+    expect(Math.abs(later)).toBeLessThanOrEqual(waveProfile.amplitude);
+    expect(underwaterSurfaceLevel(4, 2, -3, 1.5, waveProfile)).toBeCloseTo(4 + later, 6);
   });
 
   it('snaps zero-duration still frames to the current side of the waterline', () => {
@@ -102,17 +125,33 @@ describe('underwater runtime state', () => {
         uCameraPosition: { value: new THREE.Vector3() },
         uCameraFar: { value: 0 },
         uWaterLevel: { value: 0 },
-        uSubmersion: { value: 0 }
+        uSubmersion: { value: 0 },
+        uTime: { value: 0 },
+        uWaveHeight: { value: 0 },
+        uWaveScale: { value: 0 },
+        uWaveSpeed: { value: 0 },
+        uPrimaryWaveDirection: { value: new THREE.Vector2() },
+        uSecondaryWaveDirection: { value: new THREE.Vector2() },
+        uWaterlineColor: { value: new THREE.Color() },
+        uWaterlineStrength: { value: 0 }
       }
     };
 
-    bindUnderwaterDepth(pass, depth, camera, 1.5, 0.75);
+    bindUnderwaterDepth(pass, depth, camera, 1.5, 0.75, 2.25, waveProfile);
 
     expect(pass.uniforms.tDepth.value).toBe(depth);
     expect(pass.uniforms.uCameraFar.value).toBe(800);
     expect(pass.uniforms.uCameraPosition.value).toEqual(camera.position);
     expect(pass.uniforms.uWaterLevel.value).toBe(1.5);
     expect(pass.uniforms.uSubmersion.value).toBe(0.75);
+    expect(pass.uniforms.uTime.value).toBe(2.25);
+    expect(pass.uniforms.uWaveHeight.value).toBe(0.2);
+    expect(pass.uniforms.uWaveScale.value).toBe(1.1);
+    expect(pass.uniforms.uWaveSpeed.value).toBe(0.8);
+    expect(pass.uniforms.uPrimaryWaveDirection.value).toEqual(new THREE.Vector2(1, 0));
+    expect(pass.uniforms.uSecondaryWaveDirection.value).toEqual(new THREE.Vector2(0, 1));
+    expect((pass.uniforms.uWaterlineColor.value as THREE.Color).getHexString()).toBe('ffffff');
+    expect(pass.uniforms.uWaterlineStrength.value).toBe(0.8);
     expect(pass.uniforms.uProjectionMatrixInverse.value.equals(camera.projectionMatrixInverse)).toBe(true);
     expect(pass.uniforms.uCameraMatrixWorld.value.equals(camera.matrixWorld)).toBe(true);
     depth.dispose();

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WorldForge underwater visual review</title>
+  <style>
+    html,body{margin:0;height:100%;overflow:hidden;background:#071317;color:#e8fbff;font:14px/1.4 system-ui,sans-serif}
+    canvas{display:block;width:100%;height:100%}
+    .panel{position:fixed;z-index:2;top:16px;left:16px;padding:12px 14px;border:1px solid #92dfe34d;border-radius:12px;background:#071317d9;backdrop-filter:blur(12px);box-shadow:0 10px 30px #0008}
+    .title{font-weight:700;margin-bottom:8px}.status{color:#9dd9df;margin-top:8px;max-width:300px}
+    button{border:1px solid #83dce255;border-radius:8px;background:#13343a;color:#e8fbff;padding:7px 10px;margin-right:6px;cursor:pointer}
+    button.active{background:#2a7781;border-color:#c7fbff}
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="title">水下效果固定机位验收</div>
+    <div><button data-mode="above">水上</button><button data-mode="waterline" class="active">过水线</button><button data-mode="underwater">水下</button></div>
+    <div class="status" id="status">波浪驱动水线 · 断续亮边 · 浅水焦散 · 深度吸收</div>
+  </div>
+  <canvas id="view"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { RenderRuntimeAdapter } from '/src/client/renderRuntimeAdapter.ts';
+
+    const canvas=document.querySelector('#view');
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+    renderer.outputColorSpace=THREE.SRGBColorSpace;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.05;
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color('#b9d8d5');
+    const camera=new THREE.PerspectiveCamera(58,1,0.1,220);
+    const root=new THREE.Group();scene.add(root);
+    scene.add(new THREE.HemisphereLight(0xeaffff,0x183b35,2.3));
+    const sun=new THREE.DirectionalLight(0xfff2cc,3.2);sun.position.set(-10,18,8);scene.add(sun);
+
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(64,80,1,1),new THREE.MeshStandardMaterial({color:'#8a765a',roughness:.92}));
+    floor.rotation.x=-Math.PI/2;floor.position.set(0,-5,-20);root.add(floor);
+    const rockMaterial=new THREE.MeshStandardMaterial({color:'#53665d',roughness:.86});
+    for(let i=0;i<22;i++){
+      const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.45+(i%4)*.2,0),rockMaterial);
+      rock.position.set(Math.sin(i*2.4)*7+(i%3-1)*1.3,-4.55+(i%2)*.18,-3-i*2.7);
+      rock.scale.set(1.2,.65,1);root.add(rock);
+    }
+    const ruinMaterial=new THREE.MeshStandardMaterial({color:'#c9b692',roughness:.72});
+    for(const [x,z,h] of [[-5,-12,5],[4,-18,7],[-2,-27,9],[6,-38,12]]){
+      const column=new THREE.Mesh(new THREE.CylinderGeometry(.65,.85,h,8),ruinMaterial);
+      column.position.set(x,-5+h/2,z);root.add(column);
+    }
+    const coralColors=['#ef765d','#f3b65a','#9d6ee7','#e9d36b'];
+    for(let i=0;i<28;i++){
+      const coral=new THREE.Mesh(new THREE.ConeGeometry(.18+(i%3)*.08,.7+(i%4)*.22,6),new THREE.MeshStandardMaterial({color:coralColors[i%coralColors.length],roughness:.68}));
+      coral.position.set(Math.sin(i*4.3)*8,-4.5,-5-i*1.45);coral.rotation.z=(i%5-2)*.1;root.add(coral);
+    }
+    const fishMaterial=new THREE.MeshStandardMaterial({color:'#f7c95f',roughness:.42,metalness:.08});
+    for(let i=0;i<9;i++){
+      const fish=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),fishMaterial);
+      fish.scale.set(1.7,.7,.55);fish.position.set((i%3-1)*2.4,-.8-(i%3)*.65,-5-i*3.2);root.add(fish);
+    }
+
+    const adapter=new RenderRuntimeAdapter(renderer,scene,camera);
+    adapter.setSceneRoots(root,root);
+    adapter.applyUnderwater({mode:'clear',tint:'#19747d',visibilityDistance:35,scatterStrength:.72});
+    const modes={above:{y:2.2,targetY:-.8},waterline:{y:.015,targetY:-.5},underwater:{y:-1.8,targetY:-2.1}};
+    let mode=new URLSearchParams(location.search).get('mode')||'waterline';
+    if(!modes[mode])mode='waterline';
+    const fixedTime=Number(new URLSearchParams(location.search).get('time'));
+    let elapsed=Number.isFinite(fixedTime)?fixedTime:0;
+    let previous=performance.now();
+    function setMode(next){mode=next;document.querySelectorAll('button').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));}
+    document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
+    function resize(){const w=innerWidth,h=innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);adapter.setSize(w,h)}
+    addEventListener('resize',resize);resize();
+    function frame(now){
+      const delta=Math.min(.05,(now-previous)/1000);previous=now;if(!Number.isFinite(fixedTime))elapsed+=delta;
+      const view=modes[mode];camera.position.set(0,view.y,9);camera.lookAt(0,view.targetY,-18);camera.updateMatrixWorld();
+      adapter.tick(delta,elapsed,0);adapter.render();
+      window.result={ready:true,mode,time:elapsed};requestAnimationFrame(frame);
+    }
+    setMode(mode);requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

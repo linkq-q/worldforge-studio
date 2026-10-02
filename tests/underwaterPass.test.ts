@@ -14,14 +14,25 @@ describe('underwater post-process', () => {
     expect(absorption.x).toBeCloseTo(-Math.log(0.18) / 35, 6);
   });
 
-  it('uses scene depth and an analytic water-plane exit instead of tinting the whole frame uniformly', () => {
+  it('uses scene depth and a moving wave field instead of a flat screen-space waterline', () => {
     const pass = createUnderwaterPass();
     const shader = pass.material.fragmentShader;
 
     expect(shader).toContain('texture2D(tDepth, vUv)');
     expect(shader).toContain('uProjectionMatrixInverse');
     expect(shader).toContain('uCameraMatrixWorld');
-    expect(shader).toContain('(uWaterLevel - uCameraPosition.y) / verticalDelta');
+    expect(shader).toContain('float waterSurfaceHeight(vec2 worldXZ)');
+    expect(shader).toContain('uTime * uWaveSpeed');
+    expect(shader).toContain('float waterlineSlope');
+    expect(shader).toContain('uWaterlineColor');
+    expect(shader).toContain('waterlineEdge');
+    expect(shader).toContain('vec2 waterSurfaceSlope');
+    expect(shader).toContain('refractedUv');
+    expect(shader).toContain('float causticPattern');
+    expect(shader).toContain('waterlineHalo');
+    expect(shader).toContain('waterlineFoamShelf');
+    expect(shader).toContain('passActivation');
+    expect(shader).toContain('rippledWaterlineDelta');
     expect(shader).toContain('cameraUnderwater');
     expect(shader).toContain('sceneUnderwater');
     expect(shader).toContain('exp(-uAbsorption * max(waterDistance, 0.0))');
