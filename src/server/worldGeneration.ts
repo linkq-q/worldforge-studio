@@ -43,6 +43,7 @@ interface CompleteWorldGenerationRequest extends WorldGenerationRequest {
   assetGenerationLimit: number;
   resumeTerrainContent?: string;
   resumeSpatialContent?: string;
+  resumeConstructionContent?: string;
 }
 export interface WorldAssetRequest {
   key: string;
@@ -1006,7 +1007,12 @@ function normalizeExplicitBuildingAssetKeys(
   }) }));
 }
 
-async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal?: AbortSignal) {
+async function generateWorldFromWhitebox(
+  input: unknown,
+  store: MapStore,
+  signal?: AbortSignal,
+  resumeConstructionContent?: string
+) {
   const rawPlan=(input as {whiteboxPlan?:unknown})?.whiteboxPlan;
   const request=validateWorldWhiteboxConstructionRequest(input);
   const environmentEvidence=createWorldEnvironmentEvidence(request.whiteboxPlan);
@@ -1018,12 +1024,12 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
       visualSize:[bounds.max[0]-bounds.min[0],bounds.max[1]-bounds.min[1],bounds.max[2]-bounds.min[2]] as [number,number,number],
       ...(asset.libraryMetadata?{libraryMetadata:asset.libraryMetadata}:{})};
   }));
-  const content=await llmChat([
+  const content=resumeConstructionContent??await llmChat([
     {role:'system',content:WHITEBOX_CONSTRUCTION_PROMPT},
     {role:'user',content:JSON.stringify({whiteboxPlan:request.whiteboxPlan,environmentEvidence,assetGenerationLimit:request.assetGenerationLimit,
       generateAssets:request.generateAssets,...(reusableAssets.length?{reusableAssets}:{})})}
   ],{provider:'gpt',maxTokens:16000,temperature:.2,maxAttempts:1,traceStage:'world.whitebox.construction',signal});
-  recordGenerationTrace('world.whitebox.construction.raw',{content});
+  if(resumeConstructionContent===undefined) recordGenerationTrace('world.whitebox.construction.raw',{content});
   const materialized=materializeWorldWhiteboxConstruction(content,request);
   const diagnostics=new Map(materialized.diagnostics.map(item=>[item.townId,[...item.planningIssues]]));
   const issue=(townId:string,value:string)=>diagnostics.set(townId,[...diagnostics.get(townId)??[],value]);
@@ -1128,7 +1134,8 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   })));
   recordGenerationTrace('world.whitebox.construction.preview',{draft,diagnostics:resultDiagnostics,
     paidCallCount,assets:assetSources.map(asset=>({id:asset.id,assetId:asset.assetId,provider:asset.provider}))});
-  return {bundle,draft,plannedBuildings,diagnostics:resultDiagnostics,assetSources,originalPlan:structuredClone(rawPlan),
+  return {bundle,draft,plannedBuildings,diagnostics:resultDiagnostics,assetSources,
+    originalConstructionDraft:structuredClone(materialized.rawConstruction),originalPlan:structuredClone(rawPlan),
     planningProvider:'gpt' as const,assetProvider:'deepseek' as const,paidCallCount,preview:true,
     mode:'construct-whitebox' as const};
 }
@@ -1151,7 +1158,7 @@ export async function generateApprovedWorldAssets(input: unknown, store: MapStor
 }
 
 function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGenerationRequest {
-  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds','assetGenerationLimit','resumeTerrainContent','resumeSpatialContent'],
+  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds','assetGenerationLimit','resumeTerrainContent','resumeSpatialContent','resumeConstructionContent'],
     'invalid_complete_world_generation_request','world_unknown_complete_generation_request_field');
   const request=validateWorldGenerationRequest(raw);
   if(raw.mode!=='generate-complete'||request.size!==500||request.repairAttempts!==0
@@ -1161,13 +1168,17 @@ function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGe
       ||!raw.resumeTerrainContent.trim()||raw.resumeTerrainContent.length>100_000))
     ||(raw.resumeSpatialContent!==undefined&&(typeof raw.resumeSpatialContent!=='string'
       ||!raw.resumeSpatialContent.trim()||raw.resumeSpatialContent.length>100_000
-      ||raw.resumeTerrainContent===undefined))) {
+      ||raw.resumeTerrainContent===undefined))
+    ||(raw.resumeConstructionContent!==undefined&&(typeof raw.resumeConstructionContent!=='string'
+      ||!raw.resumeConstructionContent.trim()||raw.resumeConstructionContent.length>100_000
+      ||raw.resumeTerrainContent===undefined||raw.resumeSpatialContent===undefined))) {
     throw new Error('invalid_complete_world_generation_request');
   }
   return {...request,mode:'generate-complete',size:500,repairAttempts:0,
     assetGenerationLimit:raw.assetGenerationLimit===undefined?3:raw.assetGenerationLimit as number,
     ...(raw.resumeTerrainContent===undefined?{}:{resumeTerrainContent:raw.resumeTerrainContent as string}),
-    ...(raw.resumeSpatialContent===undefined?{}:{resumeSpatialContent:raw.resumeSpatialContent as string})};
+    ...(raw.resumeSpatialContent===undefined?{}:{resumeSpatialContent:raw.resumeSpatialContent as string}),
+    ...(raw.resumeConstructionContent===undefined?{}:{resumeConstructionContent:raw.resumeConstructionContent as string})};
 }
 
 async function generateCompleteWorld(input: unknown, store: MapStore, signal?: AbortSignal) {
@@ -1181,7 +1192,8 @@ async function generateCompleteWorld(input: unknown, store: MapStore, signal?: A
       : continueStagedWorldWhitebox(whiteboxRequest,request.resumeTerrainContent,signal));
   const construction=await generateWorldFromWhitebox({mode:'construct-whitebox',whiteboxPlan:whitebox.finalPlan,
     generateAssets:request.generateAssets!==false,assetGenerationLimit:request.assetGenerationLimit,repairAttempts:0,
-    ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})},store,signal);
+    ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})},store,signal,
+    request.resumeConstructionContent);
   return {...construction,mode:'generate-complete' as const,
     originalTerrainDraft:whitebox.originalTerrainDraft,terrainDraft:whitebox.terrainDraft,
     terrainEvidence:whitebox.terrainEvidence,planningDiagnostics:whitebox.planningDiagnostics,

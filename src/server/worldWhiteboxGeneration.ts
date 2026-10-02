@@ -43,6 +43,7 @@ export interface WorldWhiteboxConstructionTown {
 }
 
 export interface WorldWhiteboxConstructionMaterialization {
+  rawConstruction: unknown;
   plan: WorldPlan;
   towns: WorldWhiteboxConstructionTown[];
   settlements: Array<{ townId: string; options: {
@@ -530,9 +531,9 @@ function parseConstructionTown(value: unknown, settlementIds: Set<string>, issue
     return {
       id: constructionId(building.id, 'invalid_world_whitebox_public_building'),
       use: constructionText(building.use, 120, 'invalid_world_whitebox_public_building'),
-      width: constructionNumber(building.width, 1, 300, 'invalid_world_whitebox_public_building'),
-      depth: constructionNumber(building.depth, 1, 300, 'invalid_world_whitebox_public_building'),
-      height: constructionNumber(building.height, 1, 300, 'invalid_world_whitebox_public_building'),
+      width: constructionNumber(building.width, 0.05, 300, 'invalid_world_whitebox_public_building'),
+      depth: constructionNumber(building.depth, 0.05, 300, 'invalid_world_whitebox_public_building'),
+      height: constructionNumber(building.height, 0.05, 300, 'invalid_world_whitebox_public_building'),
       ...(building.assetKey === undefined ? {} : {
         assetKey: constructionId(building.assetKey, 'invalid_world_whitebox_public_building')
       }),
@@ -752,7 +753,8 @@ export function materializeWorldWhiteboxConstruction(
   for (const field of ['recipe', 'concept', 'featureGraph', 'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas'] as const) {
     if (JSON.stringify(plan[field]) !== JSON.stringify(source[field])) throw new Error(`world_whitebox_locked_field_changed:${field}`);
   }
-  return { plan, towns, settlements: towns.filter(town => plan.towns.some(item => item.id === town.id)).map(town => ({
+  return { rawConstruction: parsed, plan, towns,
+    settlements: towns.filter(town => plan.towns.some(item => item.id === town.id)).map(town => ({
     townId: town.id, options: { kind: town.kind, pattern: town.pattern, density: town.density,
       ...(town.waterfrontBias === undefined ? {} : { waterfrontBias: town.waterfrontBias }) }
   })), assets, diagnostics: [...diagnostics].map(([townId, planningIssues]) => ({ townId, planningIssues })) };

@@ -402,6 +402,28 @@ describe('whitebox world generation', () => {
     expect(result.paidCallCount).toBe(3);
   });
 
+  it('continues captured terrain, spatial, and construction calls without calling GPT again', async () => {
+    const plan = buildablePlan();
+    const resumeTerrainContent = dryTerrainResponse(plan);
+    const resumeSpatialContent = spatialPlanResponse(plan);
+    const expansion = constructionExpansion();
+    const resumeConstructionContent = JSON.stringify(expansion);
+
+    const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 0,
+      resumeTerrainContent, resumeSpatialContent, resumeConstructionContent }, {} as MapStore);
+
+    if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+    expect(mocks.generateModel).not.toHaveBeenCalled();
+    expect(result.originalTerrainDraft).toEqual(plan.recipe);
+    expect(result.originalPlan).toEqual(JSON.parse(resumeSpatialContent).plan);
+    expect(result.originalConstructionDraft).toEqual(expansion);
+    expect(result.paidCallCount).toBe(3);
+    expect(mocks.recordGenerationTrace.mock.calls.map(([type]) => type))
+      .not.toContain('world.whitebox.construction.raw');
+  });
+
   it('honours a smaller complete-flow DeepSeek budget without a repair pass', async () => {
     const plan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
@@ -697,6 +719,10 @@ describe('whitebox world generation', () => {
       size: 500, generateAssets: false, repairAttempts: 0,
       resumeSpatialContent: spatialPlanResponse(plan) }, {} as MapStore))
       .rejects.toThrow('invalid_complete_world_generation_request');
+    await expect(generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 0,
+      resumeConstructionContent: JSON.stringify(constructionExpansion()) }, {} as MapStore))
+      .rejects.toThrow('invalid_complete_world_generation_request');
     expect(mocks.llmChat).not.toHaveBeenCalled();
     expect(mocks.generateModel).not.toHaveBeenCalled();
   });
@@ -712,6 +738,27 @@ describe('whitebox world generation', () => {
       assetGenerationLimit: 0, repairAttempts: 0
     });
     expect(result.towns[0].publicBuildings).toHaveLength(7);
+  });
+
+  it('accepts thin positive public structures and rejects zero or negative dimensions', () => {
+    const expansion = constructionExpansion();
+    expansion.towns[0].publicBuildings = [{ id: 'drawing-platform', use: 'water access',
+      width: 3, depth: 4, height: 0.4, siting: 'waterfront' }];
+    const constructionRequest = { mode: 'construct-whitebox' as const,
+      whiteboxPlan: validateWorldPlan(buildablePlan()), generateAssets: false,
+      assetGenerationLimit: 0, repairAttempts: 0 as const };
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), constructionRequest);
+    expect(result.towns[0].publicBuildings[0]).toMatchObject({
+      id: 'drawing-platform', width: 3, depth: 4, height: 0.4
+    });
+    expect(result.rawConstruction).toEqual(expansion);
+
+    for (const dimension of ['width', 'depth', 'height'] as const) for (const invalid of [0, -0.1]) {
+      const rejected = structuredClone(expansion);
+      rejected.towns[0].publicBuildings[0][dimension] = invalid;
+      expect(() => materializeWorldWhiteboxConstruction(JSON.stringify(rejected), constructionRequest))
+        .toThrow('invalid_world_whitebox_public_building');
+    }
   });
 
   it('keeps authored habitat rules in a whitebox when no model asset slots are available', () => {
