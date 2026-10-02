@@ -87,6 +87,17 @@ export interface WorldSample {
   waterBodyId: string | null;
 }
 export type WorldSampler = (x: number, z: number) => WorldSample;
+export interface WorldSettlementEnvelopeObservation {
+  center: [number, number];
+  radius: number;
+  sampleSpacing: 8;
+  sampleCount: number;
+  inBoundsFraction: number;
+  dryFraction: number;
+  buildingSiteCount: number;
+  slopeRangeDegrees: [number, number];
+  heightRangeM: [number, number];
+}
 export interface WorldTerrainEvidence {
   version: 1;
   resolution: 21;
@@ -98,9 +109,12 @@ export interface WorldTerrainEvidence {
   samples: Array<Array<[number, number]>>;
   /** Approximate 8m building sites per evidence cell (0..4); planning guidance, not validation. */
   buildingSiteScores: number[][];
+  /** Minimum radius later construction will use for a settlement envelope. */
+  settlementMinRadius: number;
   /** Connected positive-score clusters, summarized so the planner need not infer settlement capacity from a raw matrix. */
   buildableAreas: Array<{ id: number; landmassId: number; areaM2: number; buildingSiteScore: number;
     center: [number, number]; bounds: [number, number, number, number];
+    settlementEnvelope: WorldSettlementEnvelopeObservation;
     nearestOcean?: { from: [number, number]; to: [number, number]; distanceM: number } }>;
   /** Approximate connected dry areas on the 25m evidence grid; 0 in landmassLabels means sea. */
   landmassLabels: number[][];
@@ -396,6 +410,51 @@ export function createWorldTerrainGeneratorCalibration(seed: number, size: numbe
     profiles: WORLD_BIOMES.map(biome => ({ biome, scale0_1: quantiles(biome, 0.1), scale1: quantiles(biome, 1) })) };
 }
 
+export function worldSettlementMinimumRadius(size: number): number {
+  return Math.min(100, size / 10);
+}
+
+function isWorldBuildingSite(sample: WorldSampler, x: number, z: number, bound: number): boolean {
+  if (Math.abs(x) + 4 > bound || Math.abs(z) + 4 > bound) return false;
+  const heights = [[0, 0], [-4, -4], [-4, 4], [4, -4], [4, 4]]
+    .map(([ox, oz]) => sample(x + ox, z + oz).height);
+  return heights.every(height => height > 0)
+    && Math.max(...heights) - Math.min(...heights) <= 1.5
+    && sampleWorldSlope(sample, x, z) <= 0.2;
+}
+
+function observeWorldSettlementEnvelope(
+  sample: WorldSampler,
+  center: [number, number],
+  radius: number,
+  bound: number
+): WorldSettlementEnvelopeObservation {
+  const sampleSpacing = 8 as const, steps = Math.ceil(radius / sampleSpacing);
+  let sampleCount = 0, inBoundsCount = 0, dryCount = 0, buildingSiteCount = 0;
+  const heights: number[] = [], slopes: number[] = [];
+  for (let z = -steps; z <= steps; z++) for (let x = -steps; x <= steps; x++) {
+    const px = center[0] + x * sampleSpacing, pz = center[1] + z * sampleSpacing;
+    if (Math.hypot(px - center[0], pz - center[1]) > radius) continue;
+    sampleCount++;
+    if (Math.abs(px) > bound || Math.abs(pz) > bound) continue;
+    inBoundsCount++;
+    const height = sample(px, pz).height;
+    heights.push(height);
+    slopes.push(Math.atan(sampleWorldSlope(sample, px, pz)) * 180 / Math.PI);
+    if (height > 0) dryCount++;
+    if (isWorldBuildingSite(sample, px, pz, bound)) buildingSiteCount++;
+  }
+  const rounded = (value: number) => Math.round(value * 10) / 10;
+  return {
+    center: [...center], radius, sampleSpacing, sampleCount,
+    inBoundsFraction: Math.round(inBoundsCount / Math.max(1, sampleCount) * 1000) / 1000,
+    dryFraction: Math.round(dryCount / Math.max(1, sampleCount) * 1000) / 1000,
+    buildingSiteCount,
+    slopeRangeDegrees: slopes.length ? [rounded(Math.min(...slopes)), rounded(Math.max(...slopes))] : [0, 0],
+    heightRangeM: heights.length ? [rounded(Math.min(...heights)), rounded(Math.max(...heights))] : [0, 0]
+  };
+}
+
 /** Compact deterministic observations of an authored dry terrain recipe. */
 export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvidence {
   const recipe = validateWorldRecipe(input);
@@ -414,19 +473,16 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
     for (const dx of [-step / 4, step / 4]) for (const dz of [-step / 4, step / 4]) {
       const cx = px + dx, cz = pz + dz;
       if (Math.abs(cx) + 4 > bound || Math.abs(cz) + 4 > bound) continue;
-      const probes = [[0, 0], [-4, -4], [-4, 4], [4, -4], [4, 4]]
-        .map(([ox, oz]) => [cx + ox, cz + oz] as const);
-      const siteHeights = probes.map(([sx, sz]) => sample(sx, sz).height);
-      if (siteHeights.every(height => height > 0)
-        && Math.max(...siteHeights) - Math.min(...siteHeights) <= 1.5
-        && sampleWorldSlope(sample, cx, cz) <= 0.2) score++;
+      if (isWorldBuildingSite(sample, cx, cz, bound)) score++;
     }
     return score;
   }));
   const { landmassLabels, landmasses } = summarizeWorldLandmasses(heights, buildingSiteScores,
     [-bound, -bound], step);
+  const settlementMinRadius = worldSettlementMinimumRadius(recipe.size);
   const buildableAreas = summarizeWorldBuildableAreas(buildingSiteScores, landmassLabels,
-    [-bound, -bound], step);
+    [-bound, -bound], step).map(area => ({ ...area,
+      settlementEnvelope: observeWorldSettlementEnvelope(sample, area.center, settlementMinRadius, bound) }));
   const shoreline = extractCoastLoops({ heights: heights.flat(), width: resolution, depth: resolution,
     minX: -bound, minZ: -bound, stepX: step, stepZ: step }, 0)
     .map(loop => loop.map(([x, z]): [number, number] => [Math.round(x * 10) / 10 || 0, Math.round(z * 10) / 10 || 0]));
@@ -449,14 +505,14 @@ export function createWorldTerrainEvidence(input: WorldRecipe): WorldTerrainEvid
   }
   const quantizedHeights = samples.flatMap(row => row.map(([height]) => height));
   return { version: 1, resolution, origin: [-bound, -bound], step, heightUnit: 0.1, slopeUnit: 1,
-    samples, buildingSiteScores, buildableAreas, landmassLabels, landmasses, shoreline, boundaryCrossings,
+    samples, buildingSiteScores, settlementMinRadius, buildableAreas, landmassLabels, landmasses, shoreline, boundaryCrossings,
     heightRange: [Math.min(...quantizedHeights), Math.max(...quantizedHeights)] };
 }
 
 /** Compact connected buildable clusters for planning guidance, never a placement gate. */
 export function summarizeWorldBuildableAreas(
   scores: number[][], landmassLabels: number[][], origin: [number, number], step: number
-): WorldTerrainEvidence['buildableAreas'] {
+): Array<Omit<WorldTerrainEvidence['buildableAreas'][number], 'settlementEnvelope'>> {
   const rows = scores.length, columns = scores[0]?.length ?? 0, visited = scores.map(row => row.map(() => false));
   const components: Array<Array<[number, number]>> = [];
   for (let z = 0; z < rows; z++) for (let x = 0; x < columns; x++) {

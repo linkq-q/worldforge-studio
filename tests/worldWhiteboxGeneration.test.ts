@@ -8,7 +8,8 @@ import { executeWorldWhitebox, generateWorldWhitebox,
 import type { MapStore } from '../src/server/mapStore';
 import { validateTownPatch, validateWorldPlan, worldPlanKey, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
 import { generateWorldSettlement } from '../src/shared/worldSettlement';
-import { createWorldSampler, createWorldTerrainEvidence, validateWorldRecipe, type WorldRecipe } from '../src/shared/worldTerrain';
+import { createWorldSampler, createWorldTerrainEvidence, validateWorldRecipe, worldSettlementMinimumRadius,
+  type WorldRecipe } from '../src/shared/worldTerrain';
 
 const mocks = vi.hoisted(() => ({ llmChat: vi.fn(), generateModel: vi.fn(), recordGenerationTrace: vi.fn() }));
 vi.mock('../src/server/modelApi', async importOriginal => ({
@@ -312,12 +313,17 @@ describe('whitebox world generation', () => {
     const spatialInput = JSON.parse(mocks.llmChat.mock.calls[1][0][1].content);
     expect(spatialInput.dryTerrain).toEqual(plan.recipe);
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
+    expect(spatialInput.terrainEvidence.settlementMinRadius).toBe(50);
     expect(spatialInput.terrainEvidence.buildingSiteScores).toHaveLength(21);
     expect(spatialInput.terrainEvidence.buildableAreas.length).toBeGreaterThan(0);
+    expect(spatialInput.terrainEvidence.buildableAreas[0].settlementEnvelope)
+      .toEqual(expect.objectContaining({ radius: 50, sampleSpacing: 8 }));
     expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
     expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.buildableAreas');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.settlementMinRadius');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('descriptive dry-terrain observations, not pass/fail labels');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.landmassLabels');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("kind contains 'bridge'");
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Preserve enough usable terrain for requested places and activities');
@@ -476,7 +482,31 @@ describe('whitebox world generation', () => {
     expect(evidence.buildableAreas.length).toBeGreaterThan(0);
     expect(evidence.buildableAreas.every(area => area.buildingSiteScore > 0
       && area.bounds.every(value => Number.isFinite(value)))).toBe(true);
+    expect(evidence.settlementMinRadius).toBe(worldSettlementMinimumRadius(plan.recipe.size));
+    expect(evidence.buildableAreas.every(area => {
+      const observation = area.settlementEnvelope;
+      return observation.radius === evidence.settlementMinRadius && observation.sampleSpacing === 8
+        && observation.sampleCount > 0 && observation.inBoundsFraction >= 0 && observation.inBoundsFraction <= 1
+        && observation.dryFraction >= 0 && observation.dryFraction <= observation.inBoundsFraction
+        && observation.buildingSiteCount >= 0 && observation.buildingSiteCount <= observation.sampleCount
+        && observation.slopeRangeDegrees[0] <= observation.slopeRangeDegrees[1]
+        && observation.heightRangeM[0] <= observation.heightRangeM[1]
+        && !('safe' in observation) && !('buildable' in observation);
+    })).toBe(true);
     expect(evidence.boundaryCrossings.length).toBeGreaterThan(0);
+  });
+
+  it('uses the same exposed minimum settlement envelope in later construction', () => {
+    const plan = buildablePlan();
+    plan.featureGraph!.regions[0].radius = 20;
+    const evidence = createWorldTerrainEvidence(plan.recipe);
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(plan), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+
+    expect(evidence.settlementMinRadius).toBe(50);
+    expect(result.plan.towns[0].radius).toBe(evidence.settlementMinRadius);
   });
 
   it('observes the actual cut and slope around absolute brushes without changing the dry recipe', () => {
