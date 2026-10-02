@@ -334,6 +334,8 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("Infer population, extent, districts, density and street pattern from the user's wording");
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Ordinary reaches permit at most 0.08 slope and 4m extra cut');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Check the full extent of each district region');
+    expect(mocks.llmChat.mock.calls[1][0][0].content)
+      .toContain('Any settlement area that needs ordinary or public construction must appear in districts');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coordinate values must be JSON numbers');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('heights:[12,6,2]');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Every walkable featureGraph path');
@@ -1417,6 +1419,32 @@ describe('whitebox world generation', () => {
       mode: 'construct-whitebox', whiteboxPlan, generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
     });
     expect(result.plan.towns[0].targetWaterBodyId).toBe('sea');
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .not.toContain('maritime_settlement_no_accessible_ocean_shore');
+  });
+
+  it('targets the sea when an authored settlement district reaches sampled ocean shoreline', () => {
+    const plan = harborPlan();
+    plan.featureGraph!.regions.push({ id: 'inland-core', kind: 'settlement', name: 'Inland core',
+      center: [170, 60], radius: 40 });
+    plan.featureGraph!.anchors.push({ id: 'inland-centre', kind: 'town-centre',
+      position: [170, 60], regionId: 'inland-core' });
+    plan.featureGraph!.anchors.push({ id: 'district-support', kind: 'working-yard',
+      position: [-60, 60], regionId: 'harbor-region' });
+    plan.mobilityPlan!.routes[0].connects = ['dock-anchor', 'district-support'];
+    plan.settlementPlan!.settlements[0] = { id: 'port-town', anchorId: 'inland-centre',
+      role: 'one port town with a separate working district',
+      districts: [{ anchorId: 'dock-anchor', kind: 'working', density: 0.6 }] };
+    const expansion = constructionExpansion();
+    expansion.towns[0].id = 'port-town';
+
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(plan),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+
+    expect(result.plan.towns[0].targetWaterBodyId).toBe('sea');
+    expect(result.plan.roads.find(road => road.id === 'harbor-route')?.tags).toContain('local_street');
     expect(result.diagnostics.flatMap(item => item.planningIssues))
       .not.toContain('maritime_settlement_no_accessible_ocean_shore');
   });

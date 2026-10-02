@@ -74,7 +74,7 @@ waterBodies may contain lakes {id,type:'lake',region:{kind:'circle',center:[x,z]
 ecology may contain up to 8 habitat scatter rules: {id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome:'ocean'|'grassland'|'forest'|'desert'|'mountains'|'snow',density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?:[outerMin,preferredMin,preferredMax,outerMax]}. Use broad rules for widespread vegetation and bounded circle or path regions for distinctive groves, reeds or stony areas. Decide habitats from terrain, water, climate and settlement use; each rule is a batch placement intent and requires no 3D asset.
 concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId,site?:{role:'structure'|'vehicle'|'equipment'|'furniture'|'landmark'|'scenery',surface:'land'|'water'|'structure',dimensions:[width,height,depth],rotation?:radians}}],relations:[{fromId,toId,kind}]}. Region radius is 1..250m. Every path has at least two distinct points. Use catmull-rom for naturally flowing roads or trails and polyline for engineered segments. Every anchor regionId must exist; relation endpoints must reference an existing feature or authored water body. Place each anchor on the sampled support surface appropriate to its requested use and site.surface. Add site only when an anchor is also one concrete visible element whose size and support surface must survive into the whitebox; dimensions are [width,height,depth] metres and rotation is around +Y. Site anchors do not all need to be points of interest.
 Represent an authored place at the coarsest scale that still preserves its defining physical relationships. When a visible element depends on terrain, water, access, support, or a neighboring element, keep that relationship explicit in the whitebox; derive the elements from the requested use and observed terrain rather than a fixed checklist.
-settlementPlan={settlements:[{id,anchorId,role,population?:integer,districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]}]}. One authored settlement is one settlement, not one settlement per district. District anchors describe its connected inhabited footprint. Infer population, extent, districts, density and street pattern from the user's wording and observed terrain; give each settlement enough sampled buildable area for that intent without filling the map, and carry its population into construction. Check the full extent of each district region, not just its anchor, and keep it within the -250..250 world bounds.
+settlementPlan={settlements:[{id,anchorId,role,population?:integer,districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]}]}. One authored settlement is one settlement, not one settlement per district. District anchors describe its connected inhabited footprint. Any settlement area that needs ordinary or public construction must appear in districts; feature regions, paths, anchors and relations alone do not create settlement construction area. Infer population, extent, districts, density and street pattern from the user's wording and observed terrain; give each settlement enough sampled buildable area for that intent without filling the map, and carry its population into construction. Check the full extent of each district region, not just its anchor, and keep it within the -250..250 world bounds.
 mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...],construction?:{terrain:'follow'|'grade',maxGrade?:0.02..0.2}}]}. Every walkable featureGraph path that should survive construction needs one mobilityPlan route referencing its pathId; an unreferenced path remains observation-only and is not a constructed road. Each route path must pass through every anchor in connects, in travel order; its first and last points should meet the first and last connected anchors. When terrain is 'follow', omit maxGrade; only 'grade' may specify maxGrade. Trace routes across sampled terrain and compare slope and shoreline evidence along the whole path. Do not cross open water without an intentional crossing. Grade is only for modest dry-ground earthworks and cannot make an implausible mountain crossing or bridge. Choose route width from the requested use and surrounding scale.
 explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; intentionalEmptyAreas=[{id,regionId,purpose}]. Sequence is a representative journey. Leave deliberate quiet areas. All ids are unique within their semantic collection and every reference must exist.`;
 
@@ -604,11 +604,18 @@ export function materializeWorldWhiteboxConstruction(
   const paths = new Map(graph.paths.map(path => [path.id, path]));
   const settlementAnchorSets = new Map(source.settlementPlan!.settlements.map(settlement => [settlement.id,
     new Set([settlement.anchorId, ...(settlement.districts ?? []).map(district => district.anchorId)])]));
+  const settlementRegions = new Map(source.settlementPlan!.settlements.map(settlement => [settlement.id,
+    [settlement.anchorId, ...(settlement.districts ?? []).map(district => district.anchorId)]
+      .map(anchorId => regions.get(anchors.get(anchorId)!.regionId)!)]));
   const internalRouteIds = new Set(source.mobilityPlan!.routes.filter(route =>
     route.connects.length >= 2 && source.settlementPlan!.settlements.some(settlement => {
       if (settlement.districts === undefined) return false;
       const settlementAnchors = settlementAnchorSets.get(settlement.id)!;
-      return route.connects.every(anchorId => settlementAnchors.has(anchorId));
+      const footprints = settlementRegions.get(settlement.id)!;
+      return route.connects.every(anchorId => settlementAnchors.has(anchorId) || footprints.some(region => {
+        const position = anchors.get(anchorId)!.position;
+        return Math.hypot(position[0] - region.center[0], position[1] - region.center[1]) <= region.radius;
+      }));
     })).map(route => route.id));
   const sample = createWorldSampler(source.recipe);
   const minimumRadius = worldSettlementMinimumRadius(source.recipe.size);
@@ -682,7 +689,8 @@ export function materializeWorldWhiteboxConstruction(
     const maritimeHarbor = MARITIME_HARBOR_TERM.test(harborDescription);
     const harborRegion = nearbyHarbor ? regions.get(nearbyHarbor.regionId) : undefined;
     const targetWaterBodyId = maritimeHarbor && (
-      hasAccessibleOceanShore(sample, center, radius)
+      [{ position: center, radius }, ...authoredDistricts].some(footprint =>
+        hasAccessibleOceanShore(sample, footprint.position, footprint.radius))
       || (nearbyHarbor !== undefined && hasAccessibleOceanShore(sample,
         nearbyHarbor.position, Math.max(radius, harborRegion?.radius ?? 0)))
     ) ? 'sea' : undefined;
