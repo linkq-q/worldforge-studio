@@ -57,8 +57,8 @@ Use this WorldPlan schema exactly: plan={version:1,id,revision:1,prompt,whitebox
 concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius must be 1..250 metres; path width 0.1..256 metres; every path needs at least two distinct numeric points. A missing curve means polyline for backward compatibility. Choose catmull-rom explicitly for a naturally flowing road or trail, and polyline for deliberately straight engineered segments. Use region for large spatial areas, path for an actual route/watercourse/shore movement, anchor for meaningful destinations or a settlement centre, and relation for why features belong together. Every anchor regionId refers to a region. Relation endpoints refer to feature ids. Place harbour and lookout anchors on appropriate dry or shoreline terrain, never underwater. For a working harbour, place its anchor on dry low ground several metres inland and keep a connected, gently sloped shore-working terrace at least one public-building footprint deep; avoid a single deep negative bay landform against raised coastal terrain. Trace routes over plausible ground; do not let a road cross open or deep water without an intentionally authored crossing. settlementPlan={settlements:[{id,anchorId,role,districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]}]}. The district anchors must reference existing featureGraph anchors whose regions cover the actual working, civic, housing and edge footprint; connect them with internal streets. A settlement is one distinct inhabited destination, never one district: if the user asks for one town, return exactly one settlement for it, linked to one town-centre anchor, and describe its working, civic, residential and edge districts plus density transition together in that settlement's role. Reserve extra settlements for genuinely separate destinations such as another village, hamlet or remote camp. Districts of one town may occupy distinct connected featureGraph regions with supporting anchors and relations, but do not promote them to separate settlementPlan entries. Show the whole inhabited footprint of a requested town, not just its centre: allocate connected, terrain-fitting regions for working, civic, residential and edge uses as appropriate, with streets and paths that allow outward growth. Give a town enough buildable area for ordinary homes and a few public services appropriate to its scale; a village is a sparser settlement, while a camp is only a small stop. Let the extent respond to the usable coast, valley, slopes, routes and requested population instead of filling the whole map or compressing all life into one marker. Leave contiguous dry plots beside, rather than inside, road junctions for civic buildings such as markets and schools; avoid converging several wide through-routes inside one small public-building district. mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...],construction?:{terrain:'follow'|'grade',maxGrade?:0.02..0.2}}]}. When terrain is 'follow', omit maxGrade; only 'grade' may specify maxGrade; road types and walking trails may differ. For a dry route that needs modest earthworks, choose grade and a suitable maxGrade (around 0.12 for carts or 0.18 for footpaths); the shared tool keeps cuts/fills within 1.5m and reports infeasible routes without changing the plan. Follow leaves the ground as authored. Do not use grade to cross water: plan an intentional bridge or a dry detour. Keep ordinary routes human-scale relative to nearby buildings: walking trails roughly 1.5–3m, local lanes 3–5m, main roads 5–8m; a wider boulevard needs a clear civic or freight purpose and space for buildings around it. A bridge should be purposeful where water crossings need it. explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; sequence is a representative player journey, not every possible destination. intentionalEmptyAreas=[{id,regionId,purpose}]. All ids are unique within their respective semantic collection. Every reference must exist. The graph is broad and editable, not a semantic grid or a fixed biome menu. The whitebox renders existing primitives only. Return no screenshots or render instructions.`;
 
 const DRY_TERRAIN_PROMPT = `Author only the dry terrain for one playable 500 x 500 metre world from the user's description. Return one JSON object {"terrain":{...}} and nothing else. This is the first observational planning stage: do not place water bodies, settlements, routes, feature graphs, points of interest, ecology, buildings or assets. Shape coherent land, coasts, valleys, ridges and potential drainage corridors that a later planner can observe instead of guessing elevations.
-Use this exact terrain schema: terrain={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}],optional heightScale,landforms,terrainBrushes,biomePatches}. Copy seed exactly. Never return waterBodies. Valid broad constraint regions are west/east/north/south/northwest/northeast/southwest/southeast/center; biomes are ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; north is negative Z, south is positive Z, west is negative X; sea level is 0. Ocean is dry terrain below 0, not a circular lake. Shape land and coastline with broad constraints and landforms instead of a flat plate.
-For this 500 metre world, usually keep global heightScale around 0.08..0.15 so coasts and future routes remain traversable. A compact island with strong ocean constraints may use about 0.02..0.04. Use local landforms for exceptional mountains or volcanoes instead of exaggerating the whole terrain. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},amount,feather?}, {id,mode:'crater',region:{kind:'circle',center:[x,z],radius},depth,rimHeight,feather?}, {id,mode:'flatten',region,height,strength?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width}|{kind:'circle',center:[x,z],radius},heights:[two or more height keyframes],strength?}. Use crater for a volcanic crater; size its rim as a believable part of the enclosing summit, leaving enough slopes and access around it for the requested play experience. Bounded path brushes may define ridges or drainage valleys, but do not pre-grade settlement roads that have not been planned.
+Use this exact terrain schema: terrain={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}],optional heightScale,landforms,terrainBrushes,biomePatches}. Copy seed exactly. Never return waterBodies. Valid broad constraint regions are west/east/north/south/northwest/northeast/southwest/southeast/center; biomes are ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; north is negative Z, south is positive Z, west is negative X; sea level is 0. Ocean is dry terrain below 0, not a circular lake. Shape land and coastline with broad constraints and landforms instead of a flat plate. For each named landform, infer its characteristic cross-section, relief, drainage and connection to surrounding water, then make those relationships legible at this map scale. Keep distinctive slopes and valleys where the user asked for them; place usable terraces where settlements need them.
+Choose global heightScale from the requested relief and traversability; a low-relief island and a high-relief mainland should not be flattened to the same profile. Use local landforms for exceptional peaks, basins or ridges instead of exaggerating the whole terrain. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},amount,feather?}, {id,mode:'crater',region:{kind:'circle',center:[x,z],radius},depth,rimHeight,feather?}, {id,mode:'flatten',region,height,strength?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width}|{kind:'circle',center:[x,z],radius},heights:[two or more height keyframes],strength?}. Bounded local brushes may refine terrain, but do not pre-grade settlement roads that have not been planned.
 Reserve connected dry, gently sloped land for every requested settlement before shaping nearby mountains and water. A named working town needs room for several streets, dozens of ordinary homes, civic buildings and its livelihood at the shore or valley edge; a tiny isolated terrace would turn it into a hamlet. Keep the distinctive terrain elsewhere rather than shrinking the settlement intent. For a seaport, reserve a continuous low coastal shelf directly connected to the main landmass: the working waterfront should descend gently to sea level, with enough dry frontage for streets and public buildings. Do not make the port a raised, isolated 6–10m plateau surrounded by sea or steep sand banks. Terrain brushes execute in listed order. Shape the bay inlet and drainage cuts before any small settlement grading; prefer the naturally buildable terrain and use a broad feathered grade at modest strength only where needed. A full-strength flatten brush over a large settlement erases the coastline and creates abrupt edges.
 biomePatches entries are {id,region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},biome,feather?}. Every patch needs a unique id and a bounded shape. Feather is a transition distance in world metres, normally 8..24m. Return the raw terrain decision once; do not critique, repair or offer alternatives.`;
 
@@ -310,20 +310,60 @@ export function parseWorldDryTerrainDraft(content: string, request: WorldWhitebo
   const rawTerrain = exact(response.terrain,
     ['version', 'seed', 'size', 'reliefProfile', 'heightScale', 'constraints', 'landforms', 'terrainBrushes', 'biomePatches'],
     'invalid_world_dry_terrain', 'world_unknown_dry_terrain_field');
-  const recipe = validateWorldRecipe(rawTerrain as unknown as WorldRecipe);
+  const technicalNormalizations: string[] = [];
+  const normalizedTerrain = { ...rawTerrain, terrainBrushes: Array.isArray(rawTerrain.terrainBrushes)
+    ? rawTerrain.terrainBrushes.map((brush, index) => normalizeModelTerrainBrush(
+      brush, `terrainBrushes[${index}]`, technicalNormalizations))
+    : rawTerrain.terrainBrushes };
+  const recipe = validateWorldRecipe(normalizedTerrain as WorldRecipe);
   if (recipe.seed !== request.seed || recipe.size !== request.size || recipe.waterBodies !== undefined) {
     throw new Error('world_dry_terrain_request_mismatch');
   }
   const regions = recipe.constraints.map(item => item.region);
   recipe.constraints.sort((a, b) => a.region.localeCompare(b.region));
-  const technicalNormalizations = regions.some((region, index) => region !== recipe.constraints[index].region)
-    ? ['constraint_order'] : [];
+  if (regions.some((region, index) => region !== recipe.constraints[index].region)) {
+    technicalNormalizations.push('constraint_order');
+  }
   if (Array.isArray(rawTerrain.landforms)) rawTerrain.landforms.forEach((value, index) => {
     if (value && typeof value === 'object' && typeof (value as { radius?: unknown }).radius === 'number') {
       technicalNormalizations.push(`landforms[${index}].scalar_radius_to_pair`);
     }
   });
   return { rawTerrain: response.terrain, recipe, technicalNormalizations };
+}
+
+function normalizeModelTerrainBrush(value: unknown, path: string, notes: string[]): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const brush = value as Record<string, unknown>;
+  let normalized = brush;
+  if (brush.mode === 'lower' && typeof brush.amount === 'number'
+    && Number.isFinite(brush.amount) && brush.amount < 0 && brush.amount >= -1000) {
+    normalized = { ...normalized, amount: -brush.amount };
+    notes.push(`${path}.negative_lower_amount_to_magnitude`);
+  }
+  if (brush.mode === 'grade' && Array.isArray(brush.heights)
+    && brush.heights.length >= 2 && brush.heights.length <= 64) {
+    const keyframes = brush.heights as Array<{ position?: unknown; height?: unknown }>;
+    const valid = keyframes.every((keyframe, index) => keyframe && typeof keyframe === 'object'
+      && !Array.isArray(keyframe) && Object.keys(keyframe).every(key => key === 'position' || key === 'height')
+      && typeof keyframe.position === 'number' && Number.isFinite(keyframe.position)
+      && typeof keyframe.height === 'number' && Number.isFinite(keyframe.height)
+      && keyframe.height >= -1000 && keyframe.height <= 5000
+      && (index === 0 || keyframe.position > (keyframes[index - 1].position as number)));
+    if (valid && keyframes[0].position === 0 && keyframes.at(-1)?.position === 1) {
+      const heights = Array.from({ length: 64 }, (_, index) => {
+        const t = index / 63;
+        const end = keyframes.findIndex(keyframe => (keyframe.position as number) >= t);
+        if (end <= 0) return keyframes[0].height as number;
+        const a = keyframes[end - 1], b = keyframes[end];
+        const weight = (t - (a.position as number)) / ((b.position as number) - (a.position as number));
+        return (a.height as number) * (1 - weight) + (b.height as number) * weight;
+      });
+      normalized = { ...normalized, heights };
+      notes.push(`${path}.positioned_grade_keyframes_to_samples`);
+    }
+  }
+  return normalized;
 }
 
 export function parseWorldWhiteboxSpatialPlan(
@@ -348,9 +388,10 @@ export function parseWorldWhiteboxSpatialPlan(
   let revisedRecipe = recipe;
   for (const [index, brush] of ((raw.terrainRefinements ?? []) as unknown[]).entries()) {
     try {
+      const normalizedBrush = normalizeModelTerrainBrush(brush, `terrainRefinements[${index}]`, technicalNormalizations);
       revisedRecipe = validateWorldRecipe({ ...recipe,
-        terrainBrushes: [...(recipe.terrainBrushes ?? []), ...terrainRefinements, brush as WorldTerrainBrush] });
-      terrainRefinements.push(brush as WorldTerrainBrush);
+        terrainBrushes: [...(recipe.terrainBrushes ?? []), ...terrainRefinements, normalizedBrush as WorldTerrainBrush] });
+      terrainRefinements.push(normalizedBrush as WorldTerrainBrush);
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
       if (!['invalid_world_terrain_brush', 'invalid_world_terrain_region', 'invalid_world_terrain_id']

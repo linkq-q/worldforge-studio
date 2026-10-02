@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { auditWorldWhiteboxSettlementConstruction, generateApprovedWorldAssets, generateWorld, type WorldAssetRequest } from '../src/server/worldGeneration';
 import { executeWorldWhitebox, generateWorldWhitebox,
-  hasAccessibleOceanShore, materializeWorldWhiteboxConstruction, parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
+  hasAccessibleOceanShore, materializeWorldWhiteboxConstruction, parseWorldDryTerrainDraft,
+  parseWorldWhiteboxInitialPlan, parseWorldWhiteboxSpatialPlan,
   validateWorldWhiteboxConstructionRequest, validateWorldWhiteboxRequest } from '../src/server/worldWhiteboxGeneration';
 import type { MapStore } from '../src/server/mapStore';
 import { validateTownPatch, validateWorldPlan, worldPlanKey, type TownPatch, type WorldPlan } from '../src/shared/worldPlanning';
@@ -347,6 +348,22 @@ describe('whitebox world generation', () => {
     expect(result.paidCallCount).toBe(3);
   });
 
+  it('continues a captured terrain first call after a parser fix without calling GPT for terrain again', async () => {
+    const plan = buildablePlan();
+    const resumeTerrainContent = dryTerrainResponse(plan);
+    mocks.llmChat.mockResolvedValueOnce(spatialPlanResponse(plan))
+      .mockResolvedValueOnce(JSON.stringify(constructionExpansion()));
+
+    const result = await generateWorld({ mode: 'generate-complete', prompt: plan.prompt, seed: plan.recipe.seed,
+      size: 500, generateAssets: false, repairAttempts: 0, resumeTerrainContent }, {} as MapStore);
+
+    if (!('mode' in result) || result.mode !== 'generate-complete') throw new Error('expected_complete_world_result');
+    expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
+      .toEqual(['world.whitebox.spatial-plan', 'world.whitebox.construction']);
+    expect(result.originalTerrainDraft).toEqual(plan.recipe);
+    expect(result.paidCallCount).toBe(3);
+  });
+
   it('honours a smaller complete-flow DeepSeek budget without a repair pass', async () => {
     const plan = buildablePlan();
     mocks.llmChat.mockResolvedValueOnce(dryTerrainResponse(plan))
@@ -428,6 +445,30 @@ describe('whitebox world generation', () => {
     expect(result.rawPlan).toEqual(JSON.parse(spatialPlanResponse(source)).plan);
     expect(() => parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source, { recipe: dryRecipe }), request, dryRecipe))
       .toThrow('world_unknown_staged_spatial_field:recipe');
+  });
+
+  it('loads a first-call lower brush and positioned grade without changing the raw terrain trace', () => {
+    const raw = { terrain: { version: 1, seed: 74, size: 500, reliefProfile: 'compact',
+      constraints: [{ region: 'west', biome: 'ocean' }, { region: 'center', biome: 'mountains' }],
+      terrainBrushes: [
+        { id: 'fjord-floor', mode: 'lower', region: { kind: 'path', points: [[-240, 0], [0, 20]], width: 58 },
+          amount: -18, feather: 24 },
+        { id: 'valley-grade', mode: 'grade', region: { kind: 'path', points: [[0, 20], [200, 60]], width: 30 },
+          heights: [{ position: 0, height: 3 }, { position: 0.45, height: 2 }, { position: 1, height: 0.5 }],
+          strength: 0.65 }
+      ] } };
+    const result = parseWorldDryTerrainDraft(JSON.stringify(raw), request);
+    expect(result.rawTerrain).toEqual(raw.terrain);
+    expect(result.recipe.terrainBrushes?.[0]).toMatchObject({ mode: 'lower', amount: 18 });
+    const grade = result.recipe.terrainBrushes?.[1];
+    expect(grade?.mode).toBe('grade');
+    if (grade?.mode !== 'grade') throw new Error('expected_grade');
+    expect(grade.heights).toHaveLength(64);
+    expect(grade.heights[0]).toBe(3);
+    expect(grade.heights[63]).toBe(0.5);
+    expect(grade.heights[28]).toBeCloseTo(2, 1);
+    expect(result.technicalNormalizations).toContain('terrainBrushes[0].negative_lower_amount_to_magnitude');
+    expect(result.technicalNormalizations).toContain('terrainBrushes[1].positioned_grade_keyframes_to_samples');
   });
 
   it('keeps authored local terrain refinements in the first spatial plan', () => {

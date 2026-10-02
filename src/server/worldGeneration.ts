@@ -19,7 +19,8 @@ import { generateMapCodeSuggestion } from './mapCodePlanner';
 import { createMapAssetGenerator } from './mapAssetGenerator';
 import { recordGenerationTrace } from './generationTrace';
 import { buildWorldArchitecturePrompt, WORLD_ARCHITECTURE_PROMPT_MAX_CHARS } from './worldArchitecturePrompt';
-import { generateStagedWorldWhitebox, generateWorldWhitebox, materializeWorldWhiteboxConstruction, validateWorldWhiteboxConstructionRequest,
+import { continueStagedWorldWhitebox, generateStagedWorldWhitebox, generateWorldWhitebox,
+  materializeWorldWhiteboxConstruction, validateWorldWhiteboxConstructionRequest,
   WHITEBOX_CONSTRUCTION_PROMPT, type WorldWhiteboxConstructionRequest,
   type WorldWhiteboxConstructionTown } from './worldWhiteboxGeneration';
 import { selectUsedWorldAssetRequests } from './worldAssetScheduling';
@@ -38,6 +39,7 @@ interface CompleteWorldGenerationRequest extends WorldGenerationRequest {
   size: 500;
   repairAttempts: 0;
   assetGenerationLimit: number;
+  resumeTerrainContent?: string;
 }
 export interface WorldAssetRequest {
   key: string;
@@ -1145,22 +1147,28 @@ export async function generateApprovedWorldAssets(input: unknown, store: MapStor
 }
 
 function validateCompleteWorldGenerationRequest(input: unknown): CompleteWorldGenerationRequest {
-  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds','assetGenerationLimit'],
+  const raw=exactRecord(input,['mode','prompt','seed','size','generateAssets','repairAttempts','reusableAssetIds','assetGenerationLimit','resumeTerrainContent'],
     'invalid_complete_world_generation_request','world_unknown_complete_generation_request_field');
   const request=validateWorldGenerationRequest(raw);
   if(raw.mode!=='generate-complete'||request.size!==500||request.repairAttempts!==0
     ||(raw.assetGenerationLimit!==undefined&&(!Number.isInteger(raw.assetGenerationLimit)
-      ||(raw.assetGenerationLimit as number)<0||(raw.assetGenerationLimit as number)>3))) {
+      ||(raw.assetGenerationLimit as number)<0||(raw.assetGenerationLimit as number)>3))
+    ||(raw.resumeTerrainContent!==undefined&&(typeof raw.resumeTerrainContent!=='string'
+      ||!raw.resumeTerrainContent.trim()||raw.resumeTerrainContent.length>100_000))) {
     throw new Error('invalid_complete_world_generation_request');
   }
   return {...request,mode:'generate-complete',size:500,repairAttempts:0,
-    assetGenerationLimit:raw.assetGenerationLimit===undefined?3:raw.assetGenerationLimit as number};
+    assetGenerationLimit:raw.assetGenerationLimit===undefined?3:raw.assetGenerationLimit as number,
+    ...(raw.resumeTerrainContent===undefined?{}:{resumeTerrainContent:raw.resumeTerrainContent as string})};
 }
 
 async function generateCompleteWorld(input: unknown, store: MapStore, signal?: AbortSignal) {
   const request=validateCompleteWorldGenerationRequest(input);
-  const whitebox=await generateStagedWorldWhitebox({mode:'whitebox',prompt:request.prompt,seed:request.seed,size:500,
-    generateAssets:false,repairAttempts:0},signal);
+  const whiteboxRequest={mode:'whitebox',prompt:request.prompt,seed:request.seed,size:500,
+    generateAssets:false,repairAttempts:0};
+  const whitebox=await (request.resumeTerrainContent===undefined
+    ? generateStagedWorldWhitebox(whiteboxRequest,signal)
+    : continueStagedWorldWhitebox(whiteboxRequest,request.resumeTerrainContent,signal));
   const construction=await generateWorldFromWhitebox({mode:'construct-whitebox',whiteboxPlan:whitebox.finalPlan,
     generateAssets:request.generateAssets!==false,assetGenerationLimit:request.assetGenerationLimit,repairAttempts:0,
     ...(request.reusableAssetIds?.length?{reusableAssetIds:request.reusableAssetIds}:{})},store,signal);
