@@ -70,7 +70,7 @@ Return those eight required plan fields and optional terrainRefinements. Do not 
 waterBodies may contain lakes {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or rivers {id,type:'river',surfaceMode:'terrain-fit',region:{kind:'path',points:[[x,z],...],width},widths?:[one width per path point],depth,waterfallAfterPointIndices?:[segment indices],shorelineSmoothness?,shorelineIrregularity?}. Terrain-fit rivers have no levels: the shared sampler derives their surface profile and carved bed from dry banks. Only engineered canals or fixed-height waterworks may use surfaceMode:'authored' with one level per point. A natural river must begin on dry inland terrain, follow a sampled downhill valley with dry banks, and stop at its first sea-level shoreline crossing. Ordinary reaches permit at most 0.08 slope and 4m extra cut; declare a waterfall segment only for an intended sharp drop. Check the entire proposed centerline against terrainEvidence, including the first inland descent: a 25m evidence interval dropping more than about 2m already exceeds an ordinary reach. A mouth-only grade cannot fix an inland drop. Re-route through gentler ground, grade the full short transition from above its break, or intentionally declare a waterfall segment. Trace natural centerlines with bends appropriate to their valleys instead of drawing a straight chord across high ground. A dry world may intentionally have no fresh water.
 concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius is 1..250m. Every path has at least two distinct points. Use catmull-rom for naturally flowing roads or trails and polyline for engineered segments. Every anchor regionId and relation endpoint must exist. Place settlement, harbour and lookout anchors on sampled dry ground with suitable slope. A working harbour anchor belongs on dry low ground inland of the shoreline with a connected shore-working terrace.
 settlementPlan={settlements:[{id,anchorId,role,population?:integer,districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]}]}. One town is one settlement, not one settlement per district. District anchors describe the connected inhabited footprint. Give settlements enough sampled buildable area for homes and public uses without filling the map. Estimate each settlement's resident population now, while placing its districts and local streets against the sampled buildable area; carry that count into construction. A working town with daily public services normally needs dozens of households (roughly 150 or more residents); about 40 people would be a hamlet, unless the user explicitly asks for one. Do not downgrade a named town to fit a tiny chosen region: move or reshape connected districts across the best sampled buildable terrain. Do not stack every district anchor inside one small core while labeling broad overlapping regions as separate neighborhoods. For a service-bearing town of roughly 150–250 residents, let at least one housing or edge anchor reach the outer connected buildable land, with district radii that express distinct usable frontage; keep the streets walkable between them. A village can be smaller and sparser, but still needs connected streets and ordinary homes. Check the full extent of each district region, not just its anchor: keep the town centre far enough from the -250..250 map boundary that its working, civic, residential and edge districts all fit with room for local streets. If a coast-facing district needs more space than one anchor allows, move the centre inland or reshape the districts to follow the sampled dry coast rather than leaving a district outside the map.
-mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...],construction?:{terrain:'follow'|'grade',maxGrade?:0.02..0.2}}]}. Every walkable featureGraph path that should survive construction, including streets, quays, piers and trails, needs one mobilityPlan route referencing its pathId; an unreferenced path remains observation-only and is not a constructed road. When terrain is 'follow', omit maxGrade; only 'grade' may specify maxGrade. Trace routes across sampled terrain; compare slope and shoreline evidence along the whole path. Do not cross open water without an intentional crossing. Grade is only for modest dry-ground earthworks and cannot make an implausible mountain crossing or bridge. Walking trails are roughly 1.5–3m wide, local lanes 3–5m and main roads 5–8m unless a larger route has a clear purpose.
+mobilityPlan={routes:[{id,pathId,mode,connects:[anchorId,...],construction?:{terrain:'follow'|'grade',maxGrade?:0.02..0.2}}]}. Every walkable featureGraph path that should survive construction, including streets, quays, piers and trails, needs one mobilityPlan route referencing its pathId; an unreferenced path remains observation-only and is not a constructed road. Each route path must pass through every anchor in connects, in travel order; its first and last points should meet the first and last connected anchors, including a deliberate water landing endpoint. When terrain is 'follow', omit maxGrade; only 'grade' may specify maxGrade. Trace routes across sampled terrain; compare slope and shoreline evidence along the whole path. Do not cross open water without an intentional crossing. Grade is only for modest dry-ground earthworks and cannot make an implausible mountain crossing or bridge. Walking trails are roughly 1.5–3m wide, local lanes 3–5m and main roads 5–8m unless a larger route has a clear purpose.
 explorationPlan={pointsOfInterest:[{id,anchorId,purpose}],sequence:[poiId,...]}; intentionalEmptyAreas=[{id,regionId,purpose}]. Sequence is a representative journey. Leave deliberate quiet areas. All ids are unique within their semantic collection and every reference must exist.`;
 
 export const WHITEBOX_CONSTRUCTION_PROMPT = `Expand one already-approved WorldForge whitebox into deterministic construction inputs. Return JSON only:
@@ -121,6 +121,18 @@ function pointAtRouteDistance(points: Point[], target: number): Point {
     traversed += length;
   }
   return [...points.at(-1)!] as Point;
+}
+
+function distanceToRoute(point: Point, points: Point[]): number {
+  let closest = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < points.length; index += 1) {
+    const a = points[index - 1], b = points[index];
+    const dx = b[0] - a[0], dz = b[1] - a[1], lengthSquared = dx * dx + dz * dz;
+    const t = lengthSquared ? Math.max(0, Math.min(1,
+      ((point[0] - a[0]) * dx + (point[1] - a[1]) * dz) / lengthSquared)) : 0;
+    closest = Math.min(closest, Math.hypot(point[0] - (a[0] + dx * t), point[1] - (a[1] + dz * t)));
+  }
+  return closest;
 }
 
 function nearestRouteBoundaryPoints(points: Point[], center: Point, radius: number): Array<{ point: Point; outside: Point }> {
@@ -610,6 +622,11 @@ export function materializeWorldWhiteboxConstruction(
   }
   const roads = [...source.mobilityPlan!.routes.map(route => {
     const path = paths.get(route.pathId)!;
+    const centerline = worldFeaturePathPolyline(path);
+    const anchorTolerance = Math.max(12, Math.min(24, path.width));
+    for (const anchorId of route.connects) if (distanceToRoute(anchors.get(anchorId)!.position, centerline) > anchorTolerance) {
+      issue('world', `route_anchor_miss:${route.id}:${anchorId}`);
+    }
     const width = Math.min(64, Math.max(2, path.width));
     if (width !== path.width) issue('world', `route_width_bounded:${route.id}`);
     return { id: route.id, name: path.name, points: path.points.map(point => [...point] as Point),

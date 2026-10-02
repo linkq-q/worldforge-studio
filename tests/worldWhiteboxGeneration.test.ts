@@ -324,6 +324,7 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coordinate values must be JSON numbers');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('heights:[12,6,2]');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Every walkable featureGraph path');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('pass through every anchor in connects');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
@@ -1050,6 +1051,15 @@ describe('whitebox world generation', () => {
     ]);
     expect(dryOnly.diagnostics.flatMap(item => item.planningIssues))
       .toContain('route_settlement_port_on_water:arrival-route:market-village');
+
+    const missedAnchor = buildablePlan();
+    missedAnchor.featureGraph!.paths[0].points = [[-120, 50], [120, 50]];
+    const missedAnchorResult = materializeWorldWhiteboxConstruction(JSON.stringify(constructionExpansion()), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(missedAnchor),
+      generateAssets: false, assetGenerationLimit: 3, repairAttempts: 0
+    });
+    expect(missedAnchorResult.diagnostics.flatMap(item => item.planningIssues))
+      .toContain('route_anchor_miss:arrival-route:village-anchor');
   });
 
   it('targets the sea when a planned harbor can reach sampled ocean shoreline', () => {
