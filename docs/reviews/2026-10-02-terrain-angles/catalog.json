@@ -358,5 +358,61 @@
     "provenance": "raw",
     "aestheticStatus": "rejected",
     "originPlanGroup": "delta-paid-first-2041103"
+  },
+  {
+    "id": "map-f23fb9f4-fc54-4c25",
+    "name": "2026-10-02 沙丘盆地与绿洲商道 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "desert-oasis-2041104"
+  },
+  {
+    "id": "map-736b0ea7-cb7f-4e66",
+    "name": "2026-10-02 冰斗高山与冰碛湖 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "glacial-cirque-2041105"
+  },
+  {
+    "id": "map-5312b0bf-15cb-4538",
+    "name": "2026-10-02 台地峡谷与阶地聚落 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "canyon-mesa-2041106"
+  },
+  {
+    "id": "map-7f514170-d2eb-472b",
+    "name": "2026-10-02 喀斯特洼地与石灰岩峰 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "karst-basin-2041107"
+  },
+  {
+    "id": "map-edc8d003-9d61-4250",
+    "name": "2026-10-02 潮汐群岛与跨海通路 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "tidal-islands-2041108"
+  },
+  {
+    "id": "map-e65a063b-0b19-4508",
+    "name": "2026-10-02 红树林河口与高地村落 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "mangrove-estuary-2041109"
+  },
+  {
+    "id": "map-4604ecbc-a481-432c",
+    "name": "2026-10-02 恶地侵蚀沟与天然石拱 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "badlands-arch-2041110"
   }
 ]
