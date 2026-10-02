@@ -426,6 +426,14 @@ describe('world settlement growth', () => {
       kind: 'village', pattern: 'organic', seed: 17, density: 0.55, waterfrontBias: 0
     });
     expect(patch.buildings.filter(building => building.x > 105 && building.use === 'home').length).toBeGreaterThanOrEqual(2);
+    const central = patch.buildings.find(building => Math.abs(building.x) < 35 && Math.abs(building.z) < 35);
+    expect(central).toBeDefined();
+    const withLandmark = generateWorldSettlement(plan, town.id, flat, {
+      kind: 'village', pattern: 'organic', seed: 17, density: 0.55, waterfrontBias: 0,
+      landmarks: [{ ...central!, id: 'village-school', use: 'school' }]
+    });
+    expect(withLandmark.buildings.filter(building => building.x > 105 && building.use === 'home').length)
+      .toBeGreaterThanOrEqual(2);
     expectStreetFacingBuildings(patch);
     expect(validateTownPatch(plan, patch)).toEqual(patch);
   });

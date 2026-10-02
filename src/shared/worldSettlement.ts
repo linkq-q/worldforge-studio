@@ -106,7 +106,8 @@ export function generateWorldSettlement(
   plan: WorldPlan,
   townId: string,
   sample: WorldSettlementSampler,
-  options: WorldSettlementOptions
+  options: WorldSettlementOptions,
+  growDistrictStreets = true
 ): TownPatch {
   if (typeof sample !== 'function') throw new Error('world_settlement_invalid_sampler');
   const task = createTownTasks(plan).find(candidate => candidate.town.id === townId);
@@ -288,7 +289,7 @@ export function generateWorldSettlement(
 
   let buildings = placeBuildings(plan, town, streets, layout, selected, sample, settings, random);
   const districts = town.districts?.filter(district => district.density > 0) ?? [];
-  if (districts.length && !settings.landmarks.length) {
+  if (districts.length && growDistrictStreets) {
     const totalDensity = districts.reduce((sum, district) => sum + district.density, 0);
     const assignedDistrict = (building: TownBuilding) => districts.filter(district =>
       distance([building.x, building.z], district.offset) <= district.radius)
@@ -414,7 +415,8 @@ export function createWorldSettlementLandmarkLayout(
     if(index===ordered.length) {
       if(attempts++>=LANDMARK_LAYOUT_ATTEMPT_LIMIT) {searchLimited=true;return;}
       try {
-        const candidate={landmarks:[...landmarks],patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks})};
+        const candidate={landmarks:[...landmarks],patch:generateWorldSettlement(plan,townId,sample,
+          {...options,landmarks},false)};
         feasible++;
         if(!best||preferLandmarkLayout(candidate,best)) best=candidate;
       } catch(error) {failures[index-1].add(error instanceof Error?error.message:String(error));}
@@ -436,7 +438,8 @@ export function createWorldSettlementLandmarkLayout(
     throw new Error(`world_settlement_no_landmark_site:${requirement.id}:${[...failures[index]].join('|')}`);
   }
   const byId=new Map(best.landmarks.map(landmark=>[landmark.id,landmark]));
-  return {landmarks:requirements.map(requirement=>byId.get(requirement.id)!),patch:best.patch};
+  return {landmarks:requirements.map(requirement=>byId.get(requirement.id)!),
+    patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks:best.landmarks})};
 }
 
 /** Keeps the best feasible subset found by one bounded deterministic layout search. */
@@ -481,7 +484,7 @@ export function createWorldSettlementPartialLandmarkLayout(
       if(landmarks.length<best.landmarks.length) return;
       if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {searchLimited=true;return;}
       try {
-        const patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks});
+        const patch=generateWorldSettlement(plan,townId,sample,{...options,landmarks},false);
         const candidate={landmarks:[...landmarks],patch};
         if(preferLandmarkLayout(candidate,best)) best=candidate;
       } catch { /* Keep searching other sites and landmark subsets. */ }
@@ -509,7 +512,8 @@ export function createWorldSettlementPartialLandmarkLayout(
       if(attempts++>=PARTIAL_LANDMARK_LAYOUT_ATTEMPT_LIMIT) {fallbackLimited=true;break fallback;}
       if(searchSteps++>=PARTIAL_LANDMARK_CONFIGURATION_LIMIT) {fallbackLimited=true;break fallback;}
       try {
-        const layout={landmarks:[candidate],patch:generateWorldSettlement(plan,townId,sample,{...options,landmarks:[candidate]})};
+        const layout={landmarks:[candidate],patch:generateWorldSettlement(plan,townId,sample,
+          {...options,landmarks:[candidate]},false)};
         if(preferLandmarkLayout(layout,best)) best=layout;
       } catch { /* Keep the base settlement when no bounded singleton fallback succeeds. */ }
     }
@@ -518,7 +522,8 @@ export function createWorldSettlementPartialLandmarkLayout(
   const byId=new Map(best.landmarks.map(landmark=>[landmark.id,landmark]));
   const entriesById=new Map(entries.map(entry=>[entry.requirement.id,entry]));
   return {
-    landmarks:requirements.flatMap(requirement=>byId.get(requirement.id)??[]),patch:best.patch,
+    landmarks:requirements.flatMap(requirement=>byId.get(requirement.id)??[]),
+    patch:best.landmarks.length ? generateWorldSettlement(plan,townId,sample,{...options,landmarks:best.landmarks}) : best.patch,
     unrealized:requirements.filter(requirement=>!byId.has(requirement.id)).map(requirement=>({
       id:requirement.id,
       reason:entriesById.get(requirement.id)!.sites.length
@@ -663,7 +668,7 @@ export function resolveWorldSettlementLandmarks(
     for(const point of unique.values()) {
       const candidate={...authored,x:point[0],z:point[1]};
       try {
-        next=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[...landmarks,candidate]});
+        next=generateWorldSettlement(plan,townId,sample,{...options,landmarks:[...landmarks,candidate]},false);
         resolved=candidate;break;
       } catch(error) {const message=error instanceof Error?error.message:String(error);failures.add(message);if(point===preferred) reason=message;}
     }
