@@ -37,10 +37,11 @@ describe('render-plan water ownership', () => {
     ocean.userData.materialTags = ['water', 'ocean'];
     ocean.userData.waterBodyId = 'ocean';
     ocean.userData.waterBodyType = 'ocean';
+    ocean.geometry.userData.oceanLod = { nearHalfSize: 128, nearSpacing: 4 };
     ocean.userData.waterShore = { texture: shoreTexture, center: [0, 0], size: 4096 };
     ocean.userData.waterOceanTerrain = {
       texture: terrainTexture,
-      terrainSize: [1, 1], mapSize: [500, 500], center: [0, 0],
+      terrainSize: [1, 1], mapSize: [96, 96], center: [0, 0],
       level: 0, apronWidth: 18, sinkTarget: -3, splashPoints: []
     };
     modelsRoot.add(ocean);
@@ -56,6 +57,8 @@ describe('render-plan water ownership', () => {
     expect(material.uniforms.uUseWaterNormalMaps.value).toBe(true);
     expect(material.uniforms.uHighlightIntensity.value).toBeCloseTo(0.06);
     expect(material.uniforms.uWaveHeight.value).toBeCloseTo(0.04);
+    expect(material.uniforms.uOceanWaveGeometryFadeStart.value).toBe(112);
+    expect(material.uniforms.uOceanWaveGeometryFadeEnd.value).toBe(128);
     expect(material.uniforms.uUseShallowWaterHeight.value).toBe(false);
     adapter.addRainRipple('ocean', 0, 0, 0.5);
     expect(material.uniforms.uUseShallowWaterHeight.value).toBe(false);

@@ -45,7 +45,11 @@ The replacement is one indexed geometry and one draw call composed of three alig
 | Mid | 512 m | 16 m | transition water |
 | Far | 2048 m | 64 m | horizon coverage |
 
-Ring boundaries share the same world coordinates, so the shader displacement remains continuous. For larger maps the three extents scale together and always keep the playable map inside the near ring. This is a map-centered adaptation of Unreal's near-dense/far-coarse water mesh; it is deliberately simpler than a camera-following quadtree because WorldForge maps are centered and bounded.
+For larger maps the three extents scale together and always keep the playable map inside the near ring. The medium and far spacing cannot represent the authored Gerstner wavelengths without aliasing, so macro vertex displacement fades radially to zero over the last two to four near-ring cells. Fragment normal maps, highlights, and reflections continue animating across every ring. The normal finite difference deliberately reuses the centre vertex's LOD fade for both neighbour samples; differentiating the fade envelope itself produced a false circular ridge even though the wave surface was continuous.
+
+Ocean optical depth now comes from the continuous ocean terrain field everywhere rather than switching to the bounded lake/river depth texture inside its square footprint. Visual depth saturates at the deep-water target, and sampling outside an already padded coast field can only preserve or lower its floor, never raise it. Together these rules prevent the map storage boundary and the deep-floor apron from appearing as rectangular color blocks or trenches in high top-down views.
+
+This is a map-centered adaptation of Unreal's near-dense/far-coarse water mesh; it is deliberately simpler than a camera-following quadtree because WorldForge maps are centered and bounded.
 
 Geometry cost changed from 37,249 vertices / 73,728 triangles to 12,675 vertices / 23,552 triangles. The higher-quality near field therefore costs less geometry overall.
 
@@ -82,6 +86,8 @@ The local solver was also measured in the original play mode on the same pond an
 The run-to-run variation is larger than any measured solver cost, so these numbers support only a bounded conclusion: no FPS regression was measurable on this machine, and activation adds neither a draw call nor geometry. An active surface uploads 4 KiB of height data at 30 Hz and keeps three 4 KiB CPU arrays (12 KiB total). The active/sleep browser screenshots show the local ring trail disappearing after the three-second timeout. The same pre-existing HDRI 404 was present and no WebGL shader error occurred.
 
 Parameter-boundary runs used the same browser/GPU and ten-second capture. A calm profile (`strength=0.15`, `scale=0.5`, `sharpness=0.7`) measured 164.0 FPS. A maximum public-control stress profile (`strength=1.5`, `scale=4`, `sharpness=4`) measured 164.9 FPS with the same 67 draw calls and 398,050 scene triangles; two time-separated screenshots showed motion without foldover or LOD cracks. A separate five-run V8 microbenchmark measured the active `32 x 32` solver step at a 0.00384 ms median and the inactive early-out at 0.000022 ms median. These synthetic CPU numbers explain the bounded cost but are not a substitute for browser profiling on lower-end hardware.
+
+A later fixed camera trajectory crossed near shore, low angle, close zoom, panning, opposite azimuth, and the far top-down view, followed by 20 seconds of continuous orbit. The final build sampled 3,301 frames at 165.0 FPS average, 6.7 ms p95 frame time, and 9.4 ms worst frame time. The high view was important: it exposed and then verified removal of the bounded-depth square, under-sampled coarse-ring bands, the false LOD-envelope normal ridge, and the pre-padded ocean-floor boundary. No shader or page error occurred; only the same pre-existing HDRI 404 remained.
 
 ## Deliberate boundaries
 

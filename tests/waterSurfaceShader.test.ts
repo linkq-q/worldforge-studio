@@ -60,6 +60,11 @@ describe('WaterSurface shader', () => {
     expect(shader).toContain('smoothstep(-oceanWaveDepthRange(), -0.025, ground)');
     expect(shader).toContain('waveOffset.xz *= lateralDamp;');
     expect(shader).toContain('texture2D(tShallowWaterHeight');
+    expect(shader).toContain('waveOffset *= oceanWaveFade');
+    expect(shader).toContain('computeDisplacedPosition(position + vec3(eps, 0.0, 0.0), oceanWaveFade)');
+    expect(surface.material.fragmentShader).toContain('bool hasStructuredWaterDepth = hasTerrainDepth || uUseOceanTerrain');
+    expect(surface.material.fragmentShader).toContain('min(max(oceanWaterDepth, 0.0), max(uOceanLevel - uOceanTerrainSinkTarget, 0.001))');
+    expect(shader).toContain('min(edgeHeight, uOceanTerrainSinkTarget)');
     expect(shader).toContain('shallowWaterHeight * smoothstep(0.025, 0.2, waterDepth)');
     expect(shader).toContain('cross(displacedZ - displaced, displacedX - displaced)');
     expect(shader.match(/displacement \+= gerstnerWave\(/g)).toHaveLength(3);

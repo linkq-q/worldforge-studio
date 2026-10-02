@@ -740,6 +740,22 @@ export class RenderRuntimeAdapter {
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
           const splash = syncWaterSurfaceOcean(surface, ocean);
+          const oceanLod = mesh.geometry.userData.oceanLod as {
+            nearHalfSize?: number;
+            nearSpacing?: number;
+          } | undefined;
+          const nearHalfSize = Number(oceanLod?.nearHalfSize);
+          const nearSpacing = Number(oceanLod?.nearSpacing);
+          if (Number.isFinite(nearHalfSize) && nearHalfSize > 0
+            && Number.isFinite(nearSpacing) && nearSpacing > 0) {
+            const mapHalfSize = Math.max(ocean.mapSize[0], ocean.mapSize[1]) * 0.5;
+            const fadeStart = Math.min(
+              Math.max(mapHalfSize + 8, nearHalfSize - nearSpacing * 4),
+              nearHalfSize - nearSpacing * 2
+            );
+            surface.material.uniforms.uOceanWaveGeometryFadeStart.value = Math.max(0, fadeStart);
+            surface.material.uniforms.uOceanWaveGeometryFadeEnd.value = nearHalfSize;
+          }
           if (splash) mesh.add(splash);
           surface.material.transparent = true;
           surface.material.forceSinglePass = true;

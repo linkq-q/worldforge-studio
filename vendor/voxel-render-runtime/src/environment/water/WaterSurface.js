@@ -51,6 +51,8 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform float uOceanLevel;
   uniform float uOceanTerrainApronWidth;
   uniform float uOceanTerrainSinkTarget;
+  uniform float uOceanWaveGeometryFadeStart;
+  uniform float uOceanWaveGeometryFadeEnd;
 
   float sampleOceanTerrainHeight(vec2 worldXZ) {
     vec2 safeMapSize = max(uOceanMapSize, vec2(0.0001));
@@ -70,7 +72,10 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
       float edgeHeight = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
       float distanceOutside = length((grid - clampedGrid) * safeMapSize / terrainSpan);
       float t = smoothstep(0.0, max(uOceanTerrainApronWidth, 0.001), distanceOutside);
-      return mix(edgeHeight, uOceanTerrainSinkTarget, t);
+      // New coast fields already contain a deep padded floor. Extending the
+      // finite texture must never raise that floor back toward sinkTarget,
+      // otherwise its square edge appears as a bright/dark trench on the sea.
+      return mix(edgeHeight, min(edgeHeight, uOceanTerrainSinkTarget), t);
     }
     if (mod(cell.x + cell.y, 2.0) < 0.5) {
       if (f.x + f.y <= 1.0) return h00 + (h10 - h00) * f.x + (h01 - h00) * f.y;
@@ -79,6 +84,7 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
     if (f.x <= f.y) return h00 + (h11 - h01) * f.x + (h01 - h00) * f.y;
     return h00 + (h10 - h00) * f.x + (h11 - h10) * f.y;
   }
+
 `;
 
 const OCEAN_SWASH_GLSL = /* glsl */ `
@@ -124,6 +130,15 @@ const OCEAN_SWASH_GLSL = /* glsl */ `
     float swash = mix(oceanSwashTrough(p), oceanSwashCrest(p), push);
     float shore = smoothstep(-oceanWaveDepthRange(), -0.025, ground);
     return mix(openWave * 1.3, swash, shore);
+  }
+
+  float oceanWaveGeometryFade(vec2 worldXZ) {
+    float distanceFromMapCenter = length(worldXZ - uOceanMapCenter);
+    return 1.0 - smoothstep(
+      uOceanWaveGeometryFadeStart,
+      max(uOceanWaveGeometryFadeEnd, uOceanWaveGeometryFadeStart + 0.001),
+      distanceFromMapCenter
+    );
   }
 `;
 
@@ -409,13 +424,17 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return waveLine * shoreRangeMask * breakup * uShoreWaveCrestHeight;
   }
 
-  vec3 computeDisplacedPosition(vec3 localPosition) {
+  vec3 computeDisplacedPosition(vec3 localPosition, float oceanWaveFade) {
     vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
     float shallowWaterHeight = sampleShallowWaterHeight(worldBase.xz);
     vec3 waveOffset = uUseDirectionalWaves && !uUseRiverFlow
       ? computeDirectionalWaveDisplacement(worldBase.xz)
       : vec3(0.0, computeVertexWaveHeight(worldBase.xz), 0.0);
     if (uUseOceanTerrain && uShoreWaveEnabled) {
+      // Medium/far ocean rings are intentionally too coarse for vertex waves.
+      // Fade macro geometry radially before the first seam; fragment normals,
+      // reflection and highlights continue animating over the full ocean.
+      waveOffset *= oceanWaveFade;
       float ground = sampleOceanTerrainHeight(worldBase.xz);
       float waterDepth = max(uOceanLevel - ground, 0.0);
       float lateralDamp = smoothstep(0.025, oceanWaveDepthRange(), waterDepth);
@@ -431,13 +450,17 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   }
 
   void main() {
-    vec3 displaced = computeDisplacedPosition(position);
+    vec3 baseWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+    float oceanWaveFade = uUseOceanTerrain ? oceanWaveGeometryFade(baseWorldPosition.xz) : 1.0;
+    vec3 displaced = computeDisplacedPosition(position, oceanWaveFade);
     float waveH = displaced.y - position.y;
 
     // The displaced tangents include Gerstner's lateral orbital motion.
+    // Reuse the centre fade for neighbour samples: differentiating the LOD
+    // envelope would create a false circular ridge at the transition band.
     float eps = 0.1;
-    vec3 displacedX = computeDisplacedPosition(position + vec3(eps, 0.0, 0.0));
-    vec3 displacedZ = computeDisplacedPosition(position + vec3(0.0, 0.0, eps));
+    vec3 displacedX = computeDisplacedPosition(position + vec3(eps, 0.0, 0.0), oceanWaveFade);
+    vec3 displacedZ = computeDisplacedPosition(position + vec3(0.0, 0.0, eps), oceanWaveFade);
     vec3 waveNormal = normalize(cross(displacedZ - displaced, displacedX - displaced));
     // Keep authored river slope while adding the local wave perturbation.
     vec3 perturbedNormal = normalize(normal + (waveNormal - vec3(0.0, 1.0, 0.0)) * normal.y);
@@ -881,6 +904,14 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       depthDiff = 0.0;
       hasDepth = 0.0;
     }
+    // Lakes/rivers use a bounded depth texture, while oceans have a terrain
+    // height field that remains continuous beyond that texture's square edge.
+    // Use one structured column depth for color and lighting so the texture
+    // bounds never appear as a rectangular seam on the open ocean.
+    bool hasStructuredWaterDepth = hasTerrainDepth || uUseOceanTerrain;
+    float structuredWaterDepth = uUseOceanTerrain
+      ? min(max(oceanWaterDepth, 0.0), max(uOceanLevel - uOceanTerrainSinkTarget, 0.001))
+      : terrainWaterDepth;
 
     // === ShoreDistance 采样（v2 局部水域稳定岸线，camera-independent） ===
     float shoreDist = 1.0;
@@ -1128,7 +1159,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     if (uUseShoreDistance) {
       colorFactor = shoreDist;
     }
-    if (hasTerrainDepth) colorFactor = 1.0 - exp(-terrainWaterDepth * uDepthStrength * 0.35);
+    if (hasStructuredWaterDepth) colorFactor = 1.0 - exp(-structuredWaterDepth * uDepthStrength * 0.35);
     if (uUseCartoonBands) {
       if (uWaterMode < 0.5) {
         // Cartoon：完整色阶量化
@@ -1149,15 +1180,17 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       absorb = uHasDepthTexture
         ? 1.0 - exp(-depthDiff * uRealisticAbsorptionStrength)
         : (uUseShoreDistance ? shoreDist : 0.0);
-      if (hasTerrainDepth) absorb = 1.0 - exp(-terrainWaterDepth * uRealisticAbsorptionStrength * 0.4);
+      if (hasStructuredWaterDepth) {
+        absorb = 1.0 - exp(-structuredWaterDepth * uRealisticAbsorptionStrength * 0.4);
+      }
       waterColor = mix(waterColor, uDepthColor, absorb * uRealisticDepthTintStrength);
     }
 
     float viewDistance = length(cameraPosition - vWorldPosition);
     float absorption = 0.0;
     if (uWaterMode > 0.5 && uUseWaterAbsorption) {
-      absorption = hasTerrainDepth
-        ? 1.0 - exp(-terrainWaterDepth * uAbsorptionStrength * 0.35)
+      absorption = hasStructuredWaterDepth
+        ? 1.0 - exp(-structuredWaterDepth * uAbsorptionStrength * 0.35)
         : computeWaterAbsorptionFactor(vWorldPosition, viewDistance, depthDiff, shoreDist);
       vec3 absorptionTint = mix(uShallowTint, uDeepTint, absorption);
       waterColor = mix(waterColor, absorptionTint, absorption * uAbsorptionTintStrength);
@@ -1204,7 +1237,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         detailNormalWorld = normalize(baseNormal + vec3(detailSlope.x, 0.0, detailSlope.y) * baseNormal.y * uWaveNormalBlend);
       }
       float detailStrength = uWaterNormalStrength;
-      if (hasTerrainDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
+      if (hasStructuredWaterDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
         // Broad, slowly advecting wind patches break up uniform lake roughness.
         // Keep a nonzero lower bound so calm patches never turn into flat mirrors.
         float windPatch = noise2D(waterUv * 0.09 + dirA * uTime * uWaterNormalSpeedA * 0.25);
@@ -1838,6 +1871,8 @@ export class WaterSurface {
         uOceanLevel: { value: 0 },
         uOceanTerrainApronWidth: { value: 1 },
         uOceanTerrainSinkTarget: { value: -3 },
+        uOceanWaveGeometryFadeStart: { value: 1e6 },
+        uOceanWaveGeometryFadeEnd: { value: 1e6 + 1 },
 
         // === v3: Water Mode (0=cartoon, 1=realistic, 2=hybrid) ===
         uWaterMode: { value: Math.max(0, WATER_MODE_NAMES.indexOf(opts.waterMode)) },
