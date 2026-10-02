@@ -11,6 +11,8 @@ const UnderwaterShader = {
     uCameraFar: { value: 1000 },
     uWaterLevel: { value: 0 },
     uSubmersion: { value: 0 },
+    uTime: { value: 0 },
+    uCausticStrength: { value: 0.12 },
     uAbsorption: { value: new THREE.Vector3() },
     uScatterColor: { value: new THREE.Color('#19747d') },
     uScatterStrength: { value: 0.72 }
@@ -34,6 +36,8 @@ const UnderwaterShader = {
     uniform float uCameraFar;
     uniform float uWaterLevel;
     uniform float uSubmersion;
+    uniform float uTime;
+    uniform float uCausticStrength;
     uniform vec3 uAbsorption;
     uniform vec3 uScatterColor;
     uniform float uScatterStrength;
@@ -67,6 +71,15 @@ const UnderwaterShader = {
       vec3 transmission = exp(-uAbsorption * max(waterDistance, 0.0));
       vec3 scattered = inColor.rgb * transmission
         + uScatterColor * (1.0 - transmission) * uScatterStrength;
+      if (sceneUnderwater && depthSample < 0.9999) {
+        float waterDepth = max(uWaterLevel - scenePosition.y, 0.0);
+        vec2 causticPosition = scenePosition.xz * 1.4;
+        float causticA = sin(causticPosition.x + causticPosition.y * 0.73 + uTime * 0.65);
+        float causticB = sin(causticPosition.x * -0.62 + causticPosition.y * 1.17 - uTime * 0.52);
+        float causticPattern = pow(clamp(1.0 - abs(causticA + causticB), 0.0, 1.0), 4.0);
+        float caustic = causticPattern * exp(-waterDepth * 0.18) * uCausticStrength;
+        scattered += vec3(0.38, 0.72, 0.82) * caustic;
+      }
       gl_FragColor = vec4(mix(inColor.rgb, scattered, uSubmersion), inColor.a);
     }
   `

@@ -27,6 +27,11 @@ export interface OceanCoastField extends CoastGrid {
 
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
 
+export function mapOceanCoast(map: EditableMap): OceanCoastField | null {
+  const oceans = map.waterBodies.filter((water) => water.type === 'ocean');
+  return oceans.length ? buildOceanCoastField(map, Math.max(...oceans.map((water) => water.level))) : null;
+}
+
 export function buildOceanCoastField(map: EditableMap, level: number): OceanCoastField {
   const terrain = map.terrain;
   const flatAtOceanLevel = terrain.heights.every((height) => Math.abs(height - level) <= 0.02);

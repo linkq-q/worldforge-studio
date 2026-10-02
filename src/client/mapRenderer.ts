@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildOceanCoastField, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
+import { mapOceanCoast, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import {
   getMapPlayerMetrics,
   PLAYER_SPAWN_OBJECT_ID,
@@ -1506,11 +1506,6 @@ function buildOceanGeometry(map: EditableMap): THREE.BufferGeometry {
   const geometry = new THREE.PlaneGeometry(size, size, 192, 192);
   geometry.rotateX(-Math.PI / 2);
   return geometry;
-}
-
-function mapOceanCoast(map: EditableMap): OceanCoastField | null {
-  const oceans = map.waterBodies.filter(water => water.type === 'ocean');
-  return oceans.length ? buildOceanCoastField(map, Math.max(...oceans.map(water => water.level))) : null;
 }
 
 function createOceanTerrainBinding(map: EditableMap, water: MapWaterBody, field: OceanCoastField): OceanTerrainBinding {

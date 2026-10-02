@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import { absorptionFromTransmittance } from '@voxel-studio/render-runtime/postprocess';
 import { describe, expect, it } from 'vitest';
 import {
   advanceUnderwaterBlend,
   bindUnderwaterDepth,
-  cameraWaterSurfaceLevel
+  cameraWaterSurfaceLevel,
+  configureUnderwaterPass
 } from '../src/client/underwaterRuntime';
 import { createEmptyMap, type MapWaterBody } from '../src/shared/map';
 import type { WorldMapState } from '../src/shared/worldMapState';
@@ -36,6 +38,18 @@ describe('underwater runtime state', () => {
     }];
 
     expect(cameraWaterSurfaceLevel(map, 0, 0)).toBeCloseTo(2, 5);
+  });
+
+  it('uses the render-derived ocean continuation beyond the authored terrain edge', () => {
+    const map = createEmptyMap('ocean continuation', 'ocean-continuation', [48, 16, 48]);
+    map.terrain.heights.fill(2);
+    map.waterBodies = [{
+      id: 'ocean', name: 'ocean', type: 'ocean', level: 0, depth: 8, width: 1,
+      points: [[-24, -24], [24, -24], [24, 24], [-24, 24]]
+    }];
+
+    expect(cameraWaterSurfaceLevel(map, 0, 0)).toBeNull();
+    expect(cameraWaterSurfaceLevel(map, 30, 0)).toBe(0);
   });
 
   it('uses the persisted world sampler when a world map has no local water bodies', () => {
@@ -72,20 +86,51 @@ describe('underwater runtime state', () => {
         uCameraPosition: { value: new THREE.Vector3() },
         uCameraFar: { value: 0 },
         uWaterLevel: { value: 0 },
-        uSubmersion: { value: 0 }
+        uSubmersion: { value: 0 },
+        uTime: { value: 0 }
       }
     };
 
-    bindUnderwaterDepth(pass, depth, camera, 1.5, 0.75);
+    bindUnderwaterDepth(pass, depth, camera, 1.5, 0.75, 2.5);
 
     expect(pass.uniforms.tDepth.value).toBe(depth);
     expect(pass.uniforms.uCameraFar.value).toBe(800);
     expect(pass.uniforms.uCameraPosition.value).toEqual(camera.position);
     expect(pass.uniforms.uWaterLevel.value).toBe(1.5);
     expect(pass.uniforms.uSubmersion.value).toBe(0.75);
+    expect(pass.uniforms.uTime.value).toBe(2.5);
     expect(pass.uniforms.uProjectionMatrixInverse.value.equals(camera.projectionMatrixInverse)).toBe(true);
     expect(pass.uniforms.uCameraMatrixWorld.value.equals(camera.matrixWorld)).toBe(true);
     depth.dispose();
+  });
+
+  it('configures clear and coastal absorption, scatter, and caustic strength', () => {
+    const pass = {
+      uniforms: {
+        uAbsorption: { value: new THREE.Vector3() },
+        uScatterColor: { value: new THREE.Color() },
+        uScatterStrength: { value: 0 },
+        uCausticStrength: { value: 0 }
+      }
+    };
+
+    configureUnderwaterPass(pass, {
+      mode: 'clear', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72
+    });
+    expect(pass.uniforms.uAbsorption.value).toEqual(
+      absorptionFromTransmittance(new THREE.Color(0x2e8cb8), 35)
+    );
+    expect(pass.uniforms.uScatterColor.value.getHexString()).toBe('19747d');
+    expect(pass.uniforms.uScatterStrength.value).toBe(0.72);
+    expect(pass.uniforms.uCausticStrength.value).toBe(0.12);
+
+    configureUnderwaterPass(pass, {
+      mode: 'coastal', tint: '#305f63', visibilityDistance: 18, scatterStrength: 0.8
+    });
+    expect(pass.uniforms.uAbsorption.value).toEqual(
+      absorptionFromTransmittance(new THREE.Color(0x146185), 18)
+    );
+    expect(pass.uniforms.uCausticStrength.value).toBe(0.08);
   });
 });
 
