@@ -38,7 +38,7 @@ export function waterBoundaryPoints(water: MapWaterBody): Array<[number, number]
   let points = cleanPoints(water.points);
   for (let round = 0; round < rounds; round += 1) points = chaikinClosed(points);
   points = capPoints(points);
-  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 0.6);
+  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 1);
   if (irregularity <= 0) return points;
   const center = points.reduce(
     (sum, point) => [sum[0] + point[0], sum[1] + point[1]] as [number, number],
@@ -68,7 +68,7 @@ export function riverPathSamples(water: MapWaterBody): RiverPathSample[] {
   const rounds = smoothness >= 0.7 ? 2 : smoothness > 0 ? 1 : 0;
   for (let round = 0; round < rounds; round += 1) samples = chaikinOpen(samples);
   samples = capRiverSamples(samples);
-  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 0.6);
+  const irregularity = clamp(water.shorelineIrregularity ?? 0, 0, 1);
   if (irregularity <= 0 || samples.length < 3) return samples;
   return perturbRiverSamples(samples, water.seed ?? 0, irregularity);
 }

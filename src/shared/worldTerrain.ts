@@ -358,7 +358,7 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
         || !Number.isFinite(raw.depth) || raw.depth < 0.1 || raw.depth > 500
         || raw.type === 'lake' && shape.kind !== 'circle' || raw.type === 'river' && shape.kind !== 'path'
         || raw.shorelineSmoothness !== undefined && (!Number.isFinite(raw.shorelineSmoothness) || raw.shorelineSmoothness < 0 || raw.shorelineSmoothness > 1)
-        || raw.shorelineIrregularity !== undefined && (!Number.isFinite(raw.shorelineIrregularity) || raw.shorelineIrregularity < 0 || raw.shorelineIrregularity > 0.6)
+        || raw.shorelineIrregularity !== undefined && (!Number.isFinite(raw.shorelineIrregularity) || raw.shorelineIrregularity < 0 || raw.shorelineIrregularity > 1)
         || raw.shorelineProfile !== undefined && raw.shorelineProfile !== 'steep' && raw.shorelineProfile !== 'gentle'
         || raw.seed !== undefined && (!Number.isInteger(raw.seed) || raw.seed < 0 || raw.seed > 0xffffffff)) throw new Error('invalid_world_water_body');
       const id = safeId(raw.id);

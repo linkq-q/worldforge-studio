@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, sampleTerrainHeight, type MapWaterBody } from '../src/shared/map';
+import { createEmptyMap, normalizeMap, sampleTerrainHeight, type MapWaterBody } from '../src/shared/map';
 import {
   carveWaterBasinInPlace,
   distanceToWater,
@@ -67,6 +67,10 @@ describe('structured water geometry', () => {
     expect(riverPathSamples({ ...river, seed: 18 })).not.toEqual(natural);
     expect(Math.max(...natural.map((sample) => Math.abs(sample.point[1])))).toBeGreaterThan(0.25);
     expect(Math.min(...natural.slice(1, -1).map(sample => sample.width))).toBeLessThan(11);
+    const moreIrregular = { ...river, shorelineIrregularity: 0.65 };
+    expect(riverPathSamples(moreIrregular)).not.toEqual(riverPathSamples({ ...river, shorelineIrregularity: 0.6 }));
+    expect(normalizeMap({ ...createEmptyMap('river', 'river-irregularity'), waterBodies: [moreIrregular] })
+      .waterBodies[0].shorelineIrregularity).toBe(0.65);
 
     const straightEdges = riverEdgePairs({ ...river, shorelineIrregularity: 0 });
     const naturalEdges = riverEdgePairs(river);

@@ -8,6 +8,17 @@ import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoun
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
+  it('keeps a model-authored irregular riverbank within the supported unit interval', () => {
+    const recipe = validateWorldRecipe({ version: 1, seed: 2041109, size: 500,
+      reliefProfile: 'compact', constraints: [{ region: 'center', biome: 'grassland' }],
+      waterBodies: [{ id: 'tidal-river', type: 'river', surfaceMode: 'terrain-fit',
+        region: { kind: 'path', points: [[-50, -150], [0, 0], [60, 130]], width: 30 },
+        depth: 2.2, shorelineIrregularity: 0.65 }] });
+    expect(recipe.waterBodies?.[0].shorelineIrregularity).toBe(0.65);
+    expect(() => validateWorldRecipe({ ...recipe, waterBodies: [{ ...recipe.waterBodies![0],
+      shorelineIrregularity: 1.01 }] })).toThrow('invalid_world_water_body');
+  });
+
   it('shows the metre-scale relief implied by heightScale before the model plans terrain', () => {
     const evidence = createWorldTerrainGeneratorCalibration(2041104, 500);
     expect(evidence.reference).toBe('uniform_biome_without_landforms');
