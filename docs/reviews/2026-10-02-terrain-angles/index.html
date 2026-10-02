@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>WorldForge 地形四向复查 · 2026-10-02</title>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.55 system-ui, sans-serif; background: #101b20; color: #e5e9e5; }
+    body { max-width: 1100px; margin: auto; padding: 28px 22px 80px; }
+    h1 { font-size: 1.8rem; margin: 0 0 12px; }
+    h2 { font-size: 1.3rem; margin: 0 0 5px; }
+    p { margin: 8px 0; }
+    a { color: #8bdbc3; }
+    .lead { color: #b8c8c7; max-width: 78ch; }
+    .case { border: 1px solid #365056; border-radius: 12px; background: #17252a; padding: 18px; margin: 24px 0; }
+    .status { color: #a9bdb8; font-size: .9rem; }
+    .finding { border-left: 3px solid #d4a45e; padding-left: 11px; margin: 13px 0; }
+    .views { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    button { background: #263b40; color: inherit; border: 1px solid #537077; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+    button[aria-pressed="true"] { background: #27746b; border-color: #74cabb; }
+    .rotate { margin-left: 8px; }
+    .live-view { border: 1px solid #4f716f; border-radius: 12px; background: #132126; padding: 18px; margin: 24px 0; }
+    .live-view[hidden] { display: none; }
+    .live-view header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .live-view h2 { margin: 0; }
+    .live-view iframe { display: block; width: 100%; height: min(78vh, 760px); border: 1px solid #496067; border-radius: 6px; background: #0b1114; }
+    .archive { border-top: 1px solid #365056; margin-top: 36px; padding-top: 28px; }
+    .archive-group { margin-top: 24px; }
+    .archive-group h3 { color: #c8d7d4; font-size: 1rem; margin: 0 0 10px; }
+    .archive-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .archive-item { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; border: 1px solid #365056; border-radius: 8px; background: #17252a; padding: 12px; }
+    .archive-item strong { display: block; font-size: .95rem; }
+    .archive-meta { color: #9fb2ae; display: block; font-size: .78rem; margin-top: 5px; overflow-wrap: anywhere; }
+    .archive-actions { display: flex; align-items: center; gap: 10px; font-size: .86rem; }
+    .aesthetic-rejected { color: #e6ad7a; }
+    .aesthetic-unreviewed { color: #a9bdb8; }
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: auto; border: 1px solid #496067; border-radius: 5px; }
+    figcaption { color: #a9bdb8; font-size: .9rem; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>地形四向复查</h1>
+  <p class="lead">以下截图均来自 WorldForge 原版编辑器，等待 64 块地形全部加载、待载入归零后拍摄。切换四个固定斜角便于比较；点击“在页内旋转”会按需载入一个原版编辑器，切换案例时仍只保留这一个实时视图。截图保留了 AI 首版地形，没有为单个样例重雕。</p>
+
+  <section class="live-view" id="live-view" hidden aria-live="polite">
+    <header>
+      <h2 id="live-title">原版编辑器</h2>
+      <button type="button" id="close-live">关闭实时视图</button>
+    </header>
+    <div id="live-frame"></div>
+  </section>
+
+  <!-- 新增案例：复制一个 .case 区块，填写 data-name、data-map-id、标题、说明和四张同名前缀截图。 -->
+  <section class="case" data-name="fjord" data-map-id="map-ee3f922a-76ab-4b18">
+    <h2>峡湾与渔猎驿站</h2>
+    <p class="status">旧测试地图 · 地形 64 块 / 待载入 0 · <a href="http://127.0.0.1:8818/?map=map-ee3f922a-76ab-4b18">打开原版地图</a></p>
+    <p class="finding">未达标：海水入口与河流有区分，但整体是一片低缓地形加孤立山包，缺少峡湾应有的高陡谷壁与宽谷底。东北角和西北角也能看到地图外缘的有限边界切面。</p>
+    <div class="views"></div><figure><img src="fjord-southeast.png" alt="峡湾从东南看"><figcaption></figcaption></figure>
+  </section>
+
+  <section class="case" data-name="snow-caldera" data-map-id="map-62bf27cf-ccd1-4824">
+    <h2>雪山火山口</h2>
+    <p class="status">旧测试地图 · 地形 64 块 / 待载入 0 · <a href="http://127.0.0.1:8818/?map=map-62bf27cf-ccd1-4824">打开原版地图</a></p>
+    <p class="finding">火山口和雪坡可辨认。四个方向的地表连续，没有加载空洞；靠近世界边界时仍能看到明显的直切外缘。</p>
+    <div class="views"></div><figure><img src="snow-caldera-southeast.png" alt="雪山火山口从东南看"><figcaption></figcaption></figure>
+  </section>
+
+  <section class="case" data-name="river-delta" data-map-id="map-5b52ca10-170a-40c1">
+    <h2>河口三角洲</h2>
+    <p class="status">旧测试地图 · 地形 64 块 / 待载入 0 · <a href="http://127.0.0.1:8818/?map=map-5b52ca10-170a-40c1">打开原版地图</a></p>
+    <p class="finding">河谷到海口的方向清楚，但河面在远视角仍像亮色带，岸坡和滩地的体积感弱；外缘也有直切面。</p>
+    <div class="views"></div><figure><img src="river-delta-southeast.png" alt="河口三角洲从东南看"><figcaption></figcaption></figure>
+  </section>
+
+  <section class="case" data-name="volcano-harbor" data-map-id="map-2cd446a3-6197-470b">
+    <h2>火山岛与港湾</h2>
+    <p class="status">旧测试地图 · 地形 64 块 / 待载入 0 · <a href="http://127.0.0.1:8818/?map=map-2cd446a3-6197-470b">打开原版地图</a></p>
+    <p class="finding">火山口、林地与岸线能辨认，背面也没有地形网格消失；岛体仍显得小，港口城镇和岸线的关系需要单独继续审查。</p>
+    <div class="views"></div><figure><img src="volcano-harbor-southeast.png" alt="火山岛从东南看"><figcaption></figcaption></figure>
+  </section>
+
+  <section class="case" data-name="fjord-first" data-map-id="map-24fc5d7a-e6f7-4a65">
+    <h2>付费首版 · 峡湾</h2>
+    <p class="status">GPT 首轮规划 · 地形 64 块 / 待载入 0 · 建筑 24 / 植物 590 · <a href="http://127.0.0.1:8818/?map=map-24fc5d7a-e6f7-4a65">打开原版地图</a></p>
+    <p class="finding">北侧高地、雪线和深水入口已经可辨认，四向检查没有发现整片蓝色缺面。南侧仍像一块平坦平台，港湾与山壁之间的尺度关系偏弱；海平面与地形厚度交界还有一条亮色细线。植物白盒标记过密，遮住了部分地貌。</p>
+    <div class="views"></div><figure><img src="fjord-first-southeast.png" alt="付费首版峡湾从东南看"><figcaption></figcaption></figure>
+  </section>
+
+  <section class="case" data-name="delta-first" data-map-id="map-d9ebf543-c0c0-464e">
+    <h2>付费首版 · 河口三角洲</h2>
+    <p class="status">GPT 首轮规划 · 地形 64 块 / 待载入 0 · 建筑 8 / 植物 0 · <a href="http://127.0.0.1:8818/?map=map-d9ebf543-c0c0-464e">打开原版地图</a></p>
+    <p class="finding">未达标：绝对高度笔刷把低平三角洲切成陡峭干沟，几条河流因高程不连贯被截短或省略；渔村远离可靠海岸，只有 8 栋建筑且没有植被。此图保留原始首轮结果。曾试过强行保留完整实体河道，产生<a href="delta-after-river-northeast.png">更深的黑色沟槽</a>，已撤回该渲染行为。</p>
+    <div class="views"></div><figure><img src="delta-first-southeast.png" alt="付费首版河口三角洲从东南看"><figcaption></figcaption></figure>
+  </section>
+
+  <section class="archive" aria-labelledby="archive-title">
+    <h2 id="archive-title">其余连续世界地形归档</h2>
+    <p class="lead">归档起点为 2026-09-30 00:00 HKT。下列 39 张地图与上方 6 张四向卡片合计 45 张，bundle 均已能被原版编辑器读取；这只表示结构落地，不表示审美达标。“审美未验收”也不代表通过。点击“在页内旋转”会复用页首唯一的实时视图。</p>
+
+    <div class="archive-group">
+      <h3>原始规划 / 首稿（raw）</h3>
+      <ul class="archive-list">
+        <li class="archive-item"><div><strong>warm-bay-6103301 · 连续世界</strong><span class="archive-meta">map-3e724e64-eed8-4e90 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-3e724e64-eed8-4e90" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-3e724e64-eed8-4e90" data-map-name="warm-bay-6103301 · 连续世界">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>warm-coast-fishing-village · 连续世界</strong><span class="archive-meta">map-d04ff2b4-a4a2-4e13 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-d04ff2b4-a4a2-4e13" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-d04ff2b4-a4a2-4e13" data-map-name="warm-coast-fishing-village · 连续世界">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>warm-walking-island · 连续世界</strong><span class="archive-meta">map-648732a7-2c4f-48e7 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-648732a7-2c4f-48e7" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-648732a7-2c4f-48e7" data-map-name="warm-walking-island · 连续世界">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>warm-walkable-harbor-island · 连续世界</strong><span class="archive-meta">map-ee291011-3135-41bd · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-ee291011-3135-41bd" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-ee291011-3135-41bd" data-map-name="warm-walkable-harbor-island · 连续世界">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>warm-island-141421 · 连续世界</strong><span class="archive-meta">map-8f99d533-13f7-4cb3 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-8f99d533-13f7-4cb3" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-8f99d533-13f7-4cb3" data-map-name="warm-island-141421 · 连续世界">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>Whitebox Volcano Bay · one-call iteration</strong><span class="archive-meta">map-79bc224e-0d80-4e99 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-79bc224e-0d80-4e99" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-79bc224e-0d80-4e99" data-map-name="Whitebox Volcano Bay · one-call iteration">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>Whitebox River Delta · one-call iteration</strong><span class="archive-meta">map-08cb4276-682e-4ae9 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-08cb4276-682e-4ae9" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-08cb4276-682e-4ae9" data-map-name="Whitebox River Delta · one-call iteration">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>Volcanic Bay | raw volcano-second</strong><span class="archive-meta">map-cb1a7194-377c-4488 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-cb1a7194-377c-4488" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-cb1a7194-377c-4488" data-map-name="Volcanic Bay | raw volcano-second">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>World construction | raw delta-first</strong><span class="archive-meta">map-c220691e-97a4-4241 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-c220691e-97a4-4241" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-c220691e-97a4-4241" data-map-name="World construction | raw delta-first">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>World construction | raw hawaii-complete</strong><span class="archive-meta">map-90654956-a882-4d89 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-90654956-a882-4d89" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-90654956-a882-4d89" data-map-name="World construction | raw hawaii-complete">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | raw paid Hawaii first call, 2026-10-01</strong><span class="archive-meta">map-881c1406-607a-480e · 500×4096×500 · <span class="aesthetic-rejected">审美未达标</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-881c1406-607a-480e" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-881c1406-607a-480e" data-map-name="QA | raw paid Hawaii first call, 2026-10-01">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | v3 paid GPT first-call result (unrepaired)</strong><span class="archive-meta">map-a3b6dfe2-1891-4642 · 500×4096×500 · <span class="aesthetic-rejected">审美未达标</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-a3b6dfe2-1891-4642" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-a3b6dfe2-1891-4642" data-map-name="QA | v3 paid GPT first-call result (unrepaired)">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>2026-10-02 火山渔港首稿灰盒审阅</strong><span class="archive-meta">map-e3f7915d-66e6-4873 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-e3f7915d-66e6-4873" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-e3f7915d-66e6-4873" data-map-name="2026-10-02 火山渔港首稿灰盒审阅">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>2026-10-02 新首稿火山渔港白盒（240人规划）</strong><span class="archive-meta">map-6e9cebbf-683f-49ba · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-6e9cebbf-683f-49ba" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-6e9cebbf-683f-49ba" data-map-name="2026-10-02 新首稿火山渔港白盒（240人规划）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>2026-10-02 火山渔港首稿白盒（220人规划）</strong><span class="archive-meta">map-1d01b0df-1d5d-4cba · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-1d01b0df-1d5d-4cba" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-1d01b0df-1d5d-4cba" data-map-name="2026-10-02 火山渔港首稿白盒（220人规划）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>2026-10-02 更新后火山渔港首稿白盒（190人规划）</strong><span class="archive-meta">map-b094d9c8-c5e9-4bc3 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-b094d9c8-c5e9-4bc3" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-b094d9c8-c5e9-4bc3" data-map-name="2026-10-02 更新后火山渔港首稿白盒（190人规划）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>2026-10-02 区街更新后火山渔港首稿白盒（180人规划）</strong><span class="archive-meta">map-e89d4f44-7c8a-41f2 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-e89d4f44-7c8a-41f2" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-e89d4f44-7c8a-41f2" data-map-name="2026-10-02 区街更新后火山渔港首稿白盒（180人规划）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>2026-10-02 港湾·火山·湖泊原始规划白盒</strong><span class="archive-meta">map-382dc22a-b4e2-4957 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-382dc22a-b4e2-4957" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-382dc22a-b4e2-4957" data-map-name="2026-10-02 港湾·火山·湖泊原始规划白盒">在页内旋转</button></div></li>
+      </ul>
+    </div>
+
+    <div class="archive-group">
+      <h3>首轮响应部分恢复（partial-recovery）</h3>
+      <ul class="archive-list">
+        <li class="archive-item"><div><strong>QA | v2 GPT first result, local layout replay; n</strong><span class="archive-meta">map-169627e4-22c9-4e62 · 500×4096×500 · <span class="aesthetic-rejected">审美未达标</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-169627e4-22c9-4e62" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-169627e4-22c9-4e62" data-map-name="QA | v2 GPT first result, local layout replay; n">在页内旋转</button></div></li>
+      </ul>
+    </div>
+
+    <div class="archive-group">
+      <h3>本地算法重放（local-replay）</h3>
+      <ul class="archive-list">
+        <li class="archive-item"><div><strong>Whitebox Volcano Bay Acceptance</strong><span class="archive-meta">map-805f2cee-68a0-4894 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-805f2cee-68a0-4894" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-805f2cee-68a0-4894" data-map-name="Whitebox Volcano Bay Acceptance">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>Volcanic Bay | raw volcano-second-algorithm-prev</strong><span class="archive-meta">map-13e8e0d3-b272-4722 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-13e8e0d3-b272-4722" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-13e8e0d3-b272-4722" data-map-name="Volcanic Bay | raw volcano-second-algorithm-prev">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | crater brush on Hawaiian raw layout</strong><span class="archive-meta">map-76cbc21a-bcf2-4b83 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-76cbc21a-bcf2-4b83" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-76cbc21a-bcf2-4b83" data-map-name="QA | crater brush on Hawaiian raw layout">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | Hawaiian saved-plan port algorithm replay</strong><span class="archive-meta">map-47ce3105-ca78-471c · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-47ce3105-ca78-471c" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-47ce3105-ca78-471c" data-map-name="QA | Hawaiian saved-plan port algorithm replay">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | saved GPT construction, new port algorithm</strong><span class="archive-meta">map-9d1a91f1-4dc2-43c9 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-9d1a91f1-4dc2-43c9" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-9d1a91f1-4dc2-43c9" data-map-name="QA | saved GPT construction, new port algorithm">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | saved GPT construction, honest waterfront</strong><span class="archive-meta">map-0f85368c-8b82-4ec8 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-0f85368c-8b82-4ec8" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-0f85368c-8b82-4ec8" data-map-name="QA | saved GPT construction, honest waterfront">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | saved GPT construction, honest waterfront</strong><span class="archive-meta">map-3ee11747-4689-4874 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-3ee11747-4689-4874" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-3ee11747-4689-4874" data-map-name="QA | saved GPT construction, honest waterfront">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | saved GPT construction, honest waterfront</strong><span class="archive-meta">map-b9866a37-be98-40b7 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-b9866a37-be98-40b7" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-b9866a37-be98-40b7" data-map-name="QA | saved GPT construction, honest waterfront">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>QA | same raw GPT, local road geometry replay</strong><span class="archive-meta">map-48028d47-c146-481d · 500×4096×500 · <span class="aesthetic-rejected">审美未达标</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-48028d47-c146-481d" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-48028d47-c146-481d" data-map-name="QA | same raw GPT, local road geometry replay">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>街边坡度审查：同一首稿 18 栋对比</strong><span class="archive-meta">map-dc4bdeae-2c7c-4e2d · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-dc4bdeae-2c7c-4e2d" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-dc4bdeae-2c7c-4e2d" data-map-name="街边坡度审查：同一首稿 18 栋对比">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>道路延伸审查：同一首稿 39 栋对比</strong><span class="archive-meta">map-05d23c29-9912-4934 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-05d23c29-9912-4934" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-05d23c29-9912-4934" data-map-name="道路延伸审查：同一首稿 39 栋对比">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>通用道路修复：原始首稿39栋白盒</strong><span class="archive-meta">map-eda64126-5485-421c · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-eda64126-5485-421c" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-eda64126-5485-421c" data-map-name="通用道路修复：原始首稿39栋白盒">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>同一 GPT 首稿 · 平缓笔刷本地重放</strong><span class="archive-meta">map-ea94457c-34a8-4e38 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-ea94457c-34a8-4e38" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-ea94457c-34a8-4e38" data-map-name="同一 GPT 首稿 · 平缓笔刷本地重放">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>同一 GPT 首稿 · 港口锚点与海岸对齐</strong><span class="archive-meta">map-64c47cbb-ba05-498f · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-64c47cbb-ba05-498f" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-64c47cbb-ba05-498f" data-map-name="同一 GPT 首稿 · 港口锚点与海岸对齐">在页内旋转</button></div></li>
+      </ul>
+    </div>
+
+    <div class="archive-group">
+      <h3>本地 fixture 导入（fixture）</h3>
+      <ul class="archive-list">
+        <li class="archive-item"><div><strong>oasis-coast · 连续世界（导入）</strong><span class="archive-meta">map-12865523-2153-46c5 · 1600×4096×1600 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-12865523-2153-46c5" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-12865523-2153-46c5" data-map-name="oasis-coast · 连续世界（导入）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>harbor-neighborhood-500 · 连续世界（导入）</strong><span class="archive-meta">map-2453584d-fa63-401f · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-2453584d-fa63-401f" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-2453584d-fa63-401f" data-map-name="harbor-neighborhood-500 · 连续世界（导入）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>harbor-neighborhood-500 · 连续世界（导入）</strong><span class="archive-meta">map-29ded51e-15bb-4c29 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-29ded51e-15bb-4c29" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-29ded51e-15bb-4c29" data-map-name="harbor-neighborhood-500 · 连续世界（导入）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>warm-bay-6103301 · 连续世界（导入）</strong><span class="archive-meta">map-7c9be021-841d-4502 · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-7c9be021-841d-4502" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-7c9be021-841d-4502" data-map-name="warm-bay-6103301 · 连续世界（导入）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>harbor-neighborhood-500 · 连续世界（导入）</strong><span class="archive-meta">map-b41aa8ea-c714-4e1e · 500×4096×500 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-b41aa8ea-c714-4e1e" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-b41aa8ea-c714-4e1e" data-map-name="harbor-neighborhood-500 · 连续世界（导入）">在页内旋转</button></div></li>
+        <li class="archive-item"><div><strong>snow-caldera-coast · 连续世界（导入）</strong><span class="archive-meta">map-bbdac533-a8ac-408b · 2400×4096×2400 · <span class="aesthetic-unreviewed">审美未验收</span></span></div><div class="archive-actions"><a href="http://127.0.0.1:8818/?map=map-bbdac533-a8ac-408b" target="_blank" rel="noopener">打开原版地图</a><button type="button" class="archive-rotate" data-map-id="map-bbdac533-a8ac-408b" data-map-name="snow-caldera-coast · 连续世界（导入）">在页内旋转</button></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <script>
+    const views = [['southeast', '东南'], ['northeast', '东北'], ['northwest', '西北'], ['southwest', '西南']];
+    const liveView = document.querySelector('#live-view');
+    const liveTitle = document.querySelector('#live-title');
+    const liveFrame = document.querySelector('#live-frame');
+    const closeLive = document.querySelector('#close-live');
+    const rotateButtons = () => document.querySelectorAll('.rotate, .archive-rotate');
+
+    const closeLiveView = () => {
+      liveFrame.replaceChildren();
+      liveView.hidden = true;
+      for (const button of rotateButtons()) button.setAttribute('aria-pressed', 'false');
+    };
+
+    const openLiveView = (mapId, title, activeButton) => {
+      const frame = document.createElement('iframe');
+      frame.title = `${title} · WorldForge 原版编辑器`;
+      frame.src = `http://127.0.0.1:8818/?map=${encodeURIComponent(mapId)}`;
+      frame.loading = 'lazy';
+      frame.allowFullscreen = true;
+      liveFrame.replaceChildren(frame);
+      liveTitle.textContent = `${title} · 可旋转原版地图`;
+      liveView.hidden = false;
+      for (const button of rotateButtons()) button.setAttribute('aria-pressed', String(button === activeButton));
+      liveView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    closeLive.onclick = closeLiveView;
+
+    for (const card of document.querySelectorAll('.case')) {
+      const image = card.querySelector('img');
+      const caption = card.querySelector('figcaption');
+      const controls = card.querySelector('.views');
+      const title = card.querySelector('h2').textContent;
+      const rotate = document.createElement('button');
+
+      rotate.type = 'button';
+      rotate.className = 'rotate';
+      rotate.textContent = '在页内旋转';
+      rotate.setAttribute('aria-pressed', 'false');
+      rotate.onclick = () => openLiveView(card.dataset.mapId, title, rotate);
+      card.querySelector('.status').append(rotate);
+
+      for (const [id, label] of views) {
+        const button = document.createElement('button');
+        button.textContent = `从${label}看`;
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(id === 'southeast'));
+        button.onclick = () => {
+          image.src = `${card.dataset.name}-${id}.png`;
+          image.alt = `${card.querySelector('h2').textContent}从${label}看`;
+          caption.textContent = `原版编辑器 · 从${label}看`;
+          for (const other of controls.children) other.setAttribute('aria-pressed', String(other === button));
+        };
+        controls.append(button);
+      }
+      caption.textContent = '原版编辑器 · 从东南看';
+    }
+
+    for (const button of document.querySelectorAll('.archive-rotate')) {
+      button.setAttribute('aria-pressed', 'false');
+      button.onclick = () => openLiveView(button.dataset.mapId, button.dataset.mapName, button);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,362 @@
+[
+  {
+    "id": "map-3e724e64-eed8-4e90",
+    "name": "warm-bay-6103301 · 连续世界",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "warm-bay-6103301-20260930"
+  },
+  {
+    "id": "map-d04ff2b4-a4a2-4e13",
+    "name": "warm-coast-fishing-village · 连续世界",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "warm-coast-fishing-village-20260930"
+  },
+  {
+    "id": "map-648732a7-2c4f-48e7",
+    "name": "warm-walking-island · 连续世界",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "warm-walking-island-20260930"
+  },
+  {
+    "id": "map-ee291011-3135-41bd",
+    "name": "warm-walkable-harbor-island · 连续世界",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "warm-walkable-harbor-island-20260930"
+  },
+  {
+    "id": "map-8f99d533-13f7-4cb3",
+    "name": "warm-island-141421 · 连续世界",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "warm-island-141421-20260930"
+  },
+  {
+    "id": "map-805f2cee-68a0-4894",
+    "name": "Whitebox Volcano Bay Acceptance",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-island-bay-20260930"
+  },
+  {
+    "id": "map-79bc224e-0d80-4e99",
+    "name": "Whitebox Volcano Bay · one-call iteration",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "emberhook-bay-one-call-20260930"
+  },
+  {
+    "id": "map-08cb4276-682e-4ae9",
+    "name": "Whitebox River Delta · one-call iteration",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "westbank-tidal-commons-one-call-20260930"
+  },
+  {
+    "id": "map-5b52ca10-170a-40c1",
+    "name": "Whitebox River Delta · raw GPT river review",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "shelterbank-delta-20261001"
+  },
+  {
+    "id": "map-cb1a7194-377c-4488",
+    "name": "Volcanic Bay | raw volcano-second",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "emberhook-bay-volcano-second"
+  },
+  {
+    "id": "map-13e8e0d3-b272-4722",
+    "name": "Volcanic Bay | raw volcano-second-algorithm-prev",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "emberhook-bay-volcano-second"
+  },
+  {
+    "id": "map-c220691e-97a4-4241",
+    "name": "World construction | raw delta-first",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "shelterbank-delta-20261001"
+  },
+  {
+    "id": "map-90654956-a882-4d89",
+    "name": "World construction | raw hawaii-complete",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-76cbc21a-bcf2-4b83",
+    "name": "QA | crater brush on Hawaiian raw layout",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-47ce3105-ca78-471c",
+    "name": "QA | Hawaiian saved-plan port algorithm replay",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-9d1a91f1-4dc2-43c9",
+    "name": "QA | saved GPT construction, new port algorithm",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-0f85368c-8b82-4ec8",
+    "name": "QA | saved GPT construction, honest waterfront",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-3ee11747-4689-4874",
+    "name": "QA | saved GPT construction, honest waterfront",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-b9866a37-be98-40b7",
+    "name": "QA | saved GPT construction, honest waterfront",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "hawaii-complete-20261001"
+  },
+  {
+    "id": "map-881c1406-607a-480e",
+    "name": "QA | raw paid Hawaii first call, 2026-10-01",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "hawaii-paid-v1-20261001"
+  },
+  {
+    "id": "map-48028d47-c146-481d",
+    "name": "QA | same raw GPT, local road geometry replay",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "hawaii-paid-v1-20261001"
+  },
+  {
+    "id": "map-169627e4-22c9-4e62",
+    "name": "QA | v2 GPT first result, local layout replay; n",
+    "size": [500, 4096, 500],
+    "provenance": "partial-recovery",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "hawaii-paid-v2-20261001"
+  },
+  {
+    "id": "map-a3b6dfe2-1891-4642",
+    "name": "QA | v3 paid GPT first-call result (unrepaired)",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "hawaii-paid-v3-20261001"
+  },
+  {
+    "id": "map-e3f7915d-66e6-4873",
+    "name": "2026-10-02 火山渔港首稿灰盒审阅",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-harbour-first-20261002"
+  },
+  {
+    "id": "map-dc4bdeae-2c7c-4e2d",
+    "name": "街边坡度审查：同一首稿 18 栋对比",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-harbour-first-20261002"
+  },
+  {
+    "id": "map-05d23c29-9912-4934",
+    "name": "道路延伸审查：同一首稿 39 栋对比",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-harbour-first-20261002"
+  },
+  {
+    "id": "map-eda64126-5485-421c",
+    "name": "通用道路修复：原始首稿39栋白盒",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-harbour-first-20261002"
+  },
+  {
+    "id": "map-6e9cebbf-683f-49ba",
+    "name": "2026-10-02 新首稿火山渔港白盒（240人规划）",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-island-240-20261002"
+  },
+  {
+    "id": "map-1d01b0df-1d5d-4cba",
+    "name": "2026-10-02 火山渔港首稿白盒（220人规划）",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-coast-first-20261002"
+  },
+  {
+    "id": "map-ea94457c-34a8-4e38",
+    "name": "同一 GPT 首稿 · 平缓笔刷本地重放",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-coast-first-20261002"
+  },
+  {
+    "id": "map-64c47cbb-ba05-498f",
+    "name": "同一 GPT 首稿 · 港口锚点与海岸对齐",
+    "size": [500, 4096, 500],
+    "provenance": "local-replay",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "volcanic-coast-first-20261002"
+  },
+  {
+    "id": "map-b094d9c8-c5e9-4bc3",
+    "name": "2026-10-02 更新后火山渔港首稿白盒（190人规划）",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "post-harbor-first-20261002"
+  },
+  {
+    "id": "map-e89d4f44-7c8a-41f2",
+    "name": "2026-10-02 区街更新后火山渔港首稿白盒（180人规划）",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "post-district-first-20261002"
+  },
+  {
+    "id": "map-382dc22a-b4e2-4957",
+    "name": "2026-10-02 港湾·火山·湖泊原始规划白盒",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "harbor-lake-volcano-v1-20261002"
+  },
+  {
+    "id": "map-2cd446a3-6197-470b",
+    "name": "2026-10-02 港村·火山·湖泊首次响应白盒 v2",
+    "size": [500, 4096, 500],
+    "provenance": "partial-recovery",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "harbor-lake-volcano-v2-20261002"
+  },
+  {
+    "id": "map-12865523-2153-46c5",
+    "name": "oasis-coast · 连续世界（导入）",
+    "size": [1600, 4096, 1600],
+    "provenance": "fixture",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "fixture-oasis-coast-2309"
+  },
+  {
+    "id": "map-2453584d-fa63-401f",
+    "name": "harbor-neighborhood-500 · 连续世界（导入）",
+    "size": [500, 4096, 500],
+    "provenance": "fixture",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "fixture-harbor-neighborhood-9012903"
+  },
+  {
+    "id": "map-29ded51e-15bb-4c29",
+    "name": "harbor-neighborhood-500 · 连续世界（导入）",
+    "size": [500, 4096, 500],
+    "provenance": "fixture",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "fixture-harbor-neighborhood-9012903"
+  },
+  {
+    "id": "map-62bf27cf-ccd1-4824",
+    "name": "snow-caldera-500 · 连续世界（导入）",
+    "size": [500, 4096, 500],
+    "provenance": "fixture",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "fixture-snow-caldera-500-9012902"
+  },
+  {
+    "id": "map-7c9be021-841d-4502",
+    "name": "warm-bay-6103301 · 连续世界（导入）",
+    "size": [500, 4096, 500],
+    "provenance": "fixture",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "warm-bay-6103301-20260930"
+  },
+  {
+    "id": "map-b41aa8ea-c714-4e1e",
+    "name": "harbor-neighborhood-500 · 连续世界（导入）",
+    "size": [500, 4096, 500],
+    "provenance": "fixture",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "fixture-harbor-neighborhood-9012903"
+  },
+  {
+    "id": "map-bbdac533-a8ac-408b",
+    "name": "snow-caldera-coast · 连续世界（导入）",
+    "size": [2400, 4096, 2400],
+    "provenance": "fixture",
+    "aestheticStatus": "unreviewed",
+    "originPlanGroup": "fixture-snow-caldera-coast-9012902"
+  },
+  {
+    "id": "map-ee3f922a-76ab-4b18",
+    "name": "峡湾河口 · GPT 首出白盒实验",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "fjord-waystation-experiment-2041102"
+  },
+  {
+    "id": "map-24fc5d7a-e6f7-4a65",
+    "name": "2026-10-02 峡湾地形复测 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "fjord-paid-first-2041102"
+  },
+  {
+    "id": "map-d9ebf543-c0c0-464e",
+    "name": "2026-10-02 河口三角洲与潮汐湿地 · GPT 原始首版",
+    "size": [500, 4096, 500],
+    "provenance": "raw",
+    "aestheticStatus": "rejected",
+    "originPlanGroup": "delta-paid-first-2041103"
+  }
+]
