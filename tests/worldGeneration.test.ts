@@ -140,6 +140,30 @@ describe('world generation compiler', () => {
     expect(parseWorldIntentDraft(intent,request).plan.prompt).toBe(request.prompt);
   });
 
+  it('keeps a first-call tree-height intent when GPT puts metres in ecology scale', () => {
+    const intent=rawSoloIntent() as any;
+    intent.plan.ecology=[{id:'ridge-pines',kind:'pine',biome:'forest',density:.6,spacing:10,
+      maxSlope:35,scale:[4,13]}];
+    const parsed=parseWorldIntentDraft(intent,request);
+    expect(parsed.plan.ecology[0].scale).toEqual([.5,1.625]);
+    expect(intent.plan.ecology[0].scale).toEqual([4,13]);
+    expect(mocks.recordGenerationTrace).toHaveBeenCalledWith('world.intent-ecology-height-interpreted',
+      {id:'ridge-pines',kind:'pine',metres:[4,13],scale:[.5,1.625]});
+    intent.plan.ecology[0].scale=[4,100];
+    expect(() => parseWorldIntentDraft(intent,request)).toThrow('invalid_ecology_rule');
+  });
+
+  it('resumes a preserved first-call intent without paying for that planning stage again', async () => {
+    const rawIntent=rawSoloIntent() as any;
+    rawIntent.plan.ecology=[{id:'ridge-pines',kind:'pine',biome:'forest',density:.6,spacing:10,
+      maxSlope:35,scale:[4,13]}];
+    const {layout}=soloLayout();
+    mocks.llmChat.mockResolvedValueOnce(JSON.stringify(layout));
+    const result=await generateWorld({...request,mode:'resume-intent',rawIntent,repairAttempts:0},{} as MapStore);
+    expect(mocks.llmChat.mock.calls.map(call=>(call[1] as {traceStage:string}).traceStage)).toEqual(['world.layout']);
+    expect(result.bundle.plan.ecology[0].scale).toEqual([.5,1.625]);
+  });
+
   it('keeps a circular landform and treats a one-town loop as a local street request', () => {
     const intent=rawSoloIntent() as any;
     intent.plan.recipe.landforms=[{center:[0,0],radius:90,height:8}];
