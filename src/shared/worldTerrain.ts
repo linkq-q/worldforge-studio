@@ -112,6 +112,15 @@ export interface WorldTerrainEvidence {
   boundaryCrossings: Array<[number, number]>;
   heightRange: [number, number];
 }
+/** Sampled generator response for the current seed; this describes parameter units, not a target terrain. */
+export interface WorldTerrainGeneratorCalibration {
+  seed: number;
+  size: number;
+  reference: 'uniform_biome_without_landforms';
+  quantiles: 'p10_p50_p90_metres';
+  profiles: Array<{ biome: WorldBiome; scale0_1: [number, number, number];
+    scale1: [number, number, number] }>;
+}
 export interface WorldTile { x: number; z: number; size: number }
 export interface WorldTileData {
   heights: Float32Array;
@@ -367,6 +376,24 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
     });
   }
   return recipe;
+}
+
+/** Give the planner real metre-scale samples before it chooses a dimensionless heightScale. */
+export function createWorldTerrainGeneratorCalibration(seed: number, size: number): WorldTerrainGeneratorCalibration {
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff || !Number.isFinite(size)
+    || size < WORLD_MIN_SIZE || size > 64000) throw new Error('invalid_world_generator_calibration');
+  const regions = Object.keys(WORLD_REGIONS) as WorldRegion[];
+  const quantiles = (biome: WorldBiome, heightScale: number): [number, number, number] => {
+    const sample = createWorldSampler({ version: 1, seed, size, reliefProfile: 'compact', heightScale,
+      constraints: regions.map(region => ({ region, biome })) });
+    const bound = size / 2;
+    const heights = Array.from({ length: 9 }, (_, row) => Array.from({ length: 9 }, (_, column) =>
+      sample(-bound + column * size / 8, -bound + row * size / 8).height)).flat().sort((a, b) => a - b);
+    return ([0.1, 0.5, 0.9] as const).map(position =>
+      Math.round(heights[Math.round(position * (heights.length - 1))] * 10) / 10) as [number, number, number];
+  };
+  return { seed, size, reference: 'uniform_biome_without_landforms', quantiles: 'p10_p50_p90_metres',
+    profiles: WORLD_BIOMES.map(biome => ({ biome, scale0_1: quantiles(biome, 0.1), scale1: quantiles(biome, 1) })) };
 }
 
 /** Compact deterministic observations of an authored dry terrain recipe. */

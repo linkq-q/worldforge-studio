@@ -304,6 +304,11 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls.map(([, options]) => options.traceStage))
       .toEqual(['world.whitebox.terrain-plan', 'world.whitebox.spatial-plan', 'world.whitebox.construction']);
     expect(mocks.llmChat.mock.calls.every(([, options]) => options.provider === 'gpt' && options.maxAttempts === 1)).toBe(true);
+    const terrainInput = JSON.parse(mocks.llmChat.mock.calls[0][0][1].content);
+    expect(terrainInput.generatorCalibration).toMatchObject({ seed: plan.recipe.seed, size: 500,
+      quantiles: 'p10_p50_p90_metres' });
+    expect(terrainInput.generatorCalibration.profiles.find((profile: { biome: string }) => profile.biome === 'desert'))
+      .toHaveProperty('scale1');
     const spatialInput = JSON.parse(mocks.llmChat.mock.calls[1][0][1].content);
     expect(spatialInput.dryTerrain).toEqual(plan.recipe);
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });

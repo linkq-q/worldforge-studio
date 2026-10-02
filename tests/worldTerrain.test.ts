@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createWorldSampler, createWorldTerrainContext, diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
+import { createWorldSampler, createWorldTerrainContext, createWorldTerrainGeneratorCalibration,
+  diagnoseWorldRiverSurfaceAboveBank, dominantBiome, parseWorldPrompt, sampleWorldSlope,
   summarizeWorldLandmasses,
   sampleWorldTile, selectWorldTiles, validateWorldRecipe, worldFreshWaterDistance, WORLD_BIOMES,
   WORLD_TERRAIN_FIT_RIVER_MAX_GRADE, type WorldRecipe } from '../src/shared/worldTerrain';
@@ -7,6 +8,15 @@ import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoun
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
+  it('shows the metre-scale relief implied by heightScale before the model plans terrain', () => {
+    const evidence = createWorldTerrainGeneratorCalibration(2041104, 500);
+    expect(evidence.reference).toBe('uniform_biome_without_landforms');
+    expect(evidence.profiles).toHaveLength(WORLD_BIOMES.length);
+    const desert = evidence.profiles.find(profile => profile.biome === 'desert')!;
+    expect(desert.scale1[2] - desert.scale1[0]).toBeGreaterThan(desert.scale0_1[2] - desert.scale0_1[0]);
+    expect(desert.scale1[2]).toBeGreaterThan(100);
+    expect(createWorldTerrainGeneratorCalibration(2041104, 500)).toEqual(evidence);
+  });
   it('exposes detached buildable land and its nearest mainland banks to the planner', () => {
     const heights = [
       [-1, -1, -1, -1, -1, -1, -1],
