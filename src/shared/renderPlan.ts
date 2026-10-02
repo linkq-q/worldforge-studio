@@ -197,6 +197,7 @@ export interface RuntimeUnderwaterStyle {
   tint: string;
   visibilityDistance: number;
   scatterStrength: number;
+  causticStrength: number;
 }
 
 export interface RuntimeGrassStyle {
@@ -513,7 +514,8 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       mode: { type: 'enum', values: ['off', 'clear', 'coastal'], default: 'off' },
       tint: { type: 'color', default: '#19747d' },
       visibilityDistance: { type: 'number', min: 5, max: 120, default: 35 },
-      scatterStrength: { type: 'number', min: 0, max: 1, default: 0.72 }
+      scatterStrength: { type: 'number', min: 0, max: 1, default: 0.72 },
+      causticStrength: { type: 'number', min: 0, max: 1, default: 0.22 }
     }
   },
   {
@@ -967,7 +969,8 @@ export function compileRuntimeUnderwater(plan: RenderPlan): RuntimeUnderwaterSty
     mode,
     tint: stringValue(params.tint) ?? (mode === 'coastal' ? '#176f69' : '#19747d'),
     visibilityDistance: numericValue(params.visibilityDistance) ?? (mode === 'coastal' ? 22 : 35),
-    scatterStrength: numericValue(params.scatterStrength) ?? (mode === 'coastal' ? 0.78 : 0.72)
+    scatterStrength: numericValue(params.scatterStrength) ?? (mode === 'coastal' ? 0.78 : 0.72),
+    causticStrength: numericValue(params.causticStrength) ?? (mode === 'coastal' ? 0.26 : 0.22)
   };
 }
 

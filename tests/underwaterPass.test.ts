@@ -25,6 +25,8 @@ describe('underwater post-process', () => {
     expect(shader).toContain('cameraUnderwater');
     expect(shader).toContain('sceneUnderwater');
     expect(shader).toContain('exp(-uAbsorption * max(waterDistance, 0.0))');
+    expect(shader).toContain('causticPattern(scenePosition.xz, uTime)');
+    expect(shader).toContain('depthSample < 0.9999 && sceneUnderwater');
     expect(shader).not.toContain('texture2D(tDiffuse, vUv +');
 
     pass.dispose();

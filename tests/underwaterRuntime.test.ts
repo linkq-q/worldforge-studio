@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   advanceUnderwaterBlend,
   bindUnderwaterDepth,
-  cameraWaterSurfaceLevel
+  cameraWaterSurfaceLevel,
+  configureUnderwaterPass
 } from '../src/client/underwaterRuntime';
 import { createEmptyMap, type MapWaterBody } from '../src/shared/map';
 import type { WorldMapState } from '../src/shared/worldMapState';
@@ -64,6 +65,27 @@ describe('underwater runtime state', () => {
     expect(advanceUnderwaterBlend(1, 0, 1, 0)).toBe(0);
   });
 
+  it('binds the configured caustic strength without adding another pass', () => {
+    const pass = {
+      uniforms: {
+        uAbsorption: { value: new THREE.Vector3() },
+        uScatterColor: { value: new THREE.Color() },
+        uScatterStrength: { value: 0 },
+        uCausticStrength: { value: 0 }
+      }
+    };
+
+    configureUnderwaterPass(pass, {
+      mode: 'clear',
+      tint: '#19747d',
+      visibilityDistance: 35,
+      scatterStrength: 0.72,
+      causticStrength: 0.31
+    });
+
+    expect(pass.uniforms.uCausticStrength.value).toBe(0.31);
+  });
+
   it('clears stale blend and water level when a map or water footprint is left', () => {
     const setPassEnabled = vi.fn();
     const adapter = Object.assign(Object.create(RenderRuntimeAdapter.prototype), {
@@ -102,17 +124,19 @@ describe('underwater runtime state', () => {
         uCameraPosition: { value: new THREE.Vector3() },
         uCameraFar: { value: 0 },
         uWaterLevel: { value: 0 },
-        uSubmersion: { value: 0 }
+        uSubmersion: { value: 0 },
+        uTime: { value: 0 }
       }
     };
 
-    bindUnderwaterDepth(pass, depth, camera, 1.5, 0.75);
+    bindUnderwaterDepth(pass, depth, camera, 1.5, 0.75, 12.5);
 
     expect(pass.uniforms.tDepth.value).toBe(depth);
     expect(pass.uniforms.uCameraFar.value).toBe(800);
     expect(pass.uniforms.uCameraPosition.value).toEqual(camera.position);
     expect(pass.uniforms.uWaterLevel.value).toBe(1.5);
     expect(pass.uniforms.uSubmersion.value).toBe(0.75);
+    expect(pass.uniforms.uTime.value).toBe(12.5);
     expect(pass.uniforms.uProjectionMatrixInverse.value.equals(camera.projectionMatrixInverse)).toBe(true);
     expect(pass.uniforms.uCameraMatrixWorld.value.equals(camera.matrixWorld)).toBe(true);
     depth.dispose();

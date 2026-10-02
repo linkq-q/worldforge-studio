@@ -154,6 +154,7 @@ describe('developer render controls', () => {
     const scheme = BUILTIN_RENDER_SCHEMES[0]!;
 
     expect(renderDeveloperCapability(underwater, scheme, [])).toContain('清澈水下');
+    expect(renderDeveloperCapability(underwater, scheme, [])).toContain('焦散强度');
     expect(renderDeveloperCapability(weather, scheme, [])).toContain('晴朗');
     expect(renderDeveloperCapability(weather, scheme, [])).not.toContain('清澈水下');
   });

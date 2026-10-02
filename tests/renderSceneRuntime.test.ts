@@ -214,7 +214,7 @@ describe('applyRenderScheme', () => {
         baseSchemeId: PLAIN_SCHEME.id,
         modules: [{
           id: 'runtime.underwater',
-          params: { mode: 'clear', visibilityDistance: 42, tint: '#19747d', scatterStrength: 0.7 }
+          params: { mode: 'clear', visibilityDistance: 42, tint: '#19747d', scatterStrength: 0.7, causticStrength: 0.25 }
         }]
       }
     });
@@ -222,7 +222,7 @@ describe('applyRenderScheme', () => {
     applyRenderScheme(targets, scheme);
 
     expect(adapter.applyUnderwater).toHaveBeenCalledWith({
-      mode: 'clear', visibilityDistance: 42, tint: '#19747d', scatterStrength: 0.7
+      mode: 'clear', visibilityDistance: 42, tint: '#19747d', scatterStrength: 0.7, causticStrength: 0.25
     });
   });
 

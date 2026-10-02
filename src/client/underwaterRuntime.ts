@@ -42,6 +42,7 @@ export function configureUnderwaterPass(pass: UnderwaterPassLike, style: Runtime
   (pass.uniforms.uAbsorption.value as THREE.Vector3).copy(absorptionFromTransmittance(transmission, distance));
   (pass.uniforms.uScatterColor.value as THREE.Color).set(style.tint);
   pass.uniforms.uScatterStrength.value = style.scatterStrength;
+  pass.uniforms.uCausticStrength.value = style.causticStrength;
 }
 
 export function bindUnderwaterDepth(
@@ -49,7 +50,8 @@ export function bindUnderwaterDepth(
   depthTexture: THREE.DepthTexture,
   camera: THREE.PerspectiveCamera,
   waterLevel: number,
-  submersion: number
+  submersion: number,
+  elapsedSeconds = 0
 ): void {
   pass.uniforms.tDepth.value = depthTexture;
   (pass.uniforms.uProjectionMatrixInverse.value as THREE.Matrix4).copy(camera.projectionMatrixInverse);
@@ -58,6 +60,7 @@ export function bindUnderwaterDepth(
   pass.uniforms.uCameraFar.value = camera.far;
   pass.uniforms.uWaterLevel.value = waterLevel;
   pass.uniforms.uSubmersion.value = submersion;
+  pass.uniforms.uTime.value = elapsedSeconds;
 }
 
 function smoothstep(min: number, max: number, value: number): number {

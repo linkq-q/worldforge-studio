@@ -854,7 +854,8 @@ export class RenderRuntimeAdapter {
         depthTexture,
         this.camera,
         this.underwaterWaterLevel,
-        this.underwaterBlend
+        this.underwaterBlend,
+        this.pendingElapsedSeconds
       );
     }
     if (this.curvaturePass.enabled) {

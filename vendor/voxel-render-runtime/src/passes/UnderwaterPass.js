@@ -11,9 +11,11 @@ const UnderwaterShader = {
     uCameraFar: { value: 1000 },
     uWaterLevel: { value: 0 },
     uSubmersion: { value: 0 },
+    uTime: { value: 0 },
     uAbsorption: { value: new THREE.Vector3() },
     uScatterColor: { value: new THREE.Color('#19747d') },
-    uScatterStrength: { value: 0.72 }
+    uScatterStrength: { value: 0.72 },
+    uCausticStrength: { value: 0.22 }
   },
 
   vertexShader: /* glsl */`
@@ -34,9 +36,11 @@ const UnderwaterShader = {
     uniform float uCameraFar;
     uniform float uWaterLevel;
     uniform float uSubmersion;
+    uniform float uTime;
     uniform vec3 uAbsorption;
     uniform vec3 uScatterColor;
     uniform float uScatterStrength;
+    uniform float uCausticStrength;
     varying vec2 vUv;
 
     vec3 worldPositionAtDepth(float depthSample) {
@@ -44,6 +48,15 @@ const UnderwaterShader = {
       vec4 view = uProjectionMatrixInverse * clip;
       view /= max(view.w, 0.00001);
       return (uCameraMatrixWorld * view).xyz;
+    }
+
+    float causticPattern(vec2 worldXZ, float time) {
+      vec2 p = worldXZ * 0.42;
+      float waveA = sin(p.x * 1.7 + time * 1.05) + sin(p.y * 1.3 - time * 0.83);
+      float waveB = sin((p.x + p.y) * 1.15 - time * 0.62)
+        + sin((p.x - p.y) * 0.92 + time * 0.74);
+      float ridge = 1.0 - min(abs(waveA), abs(waveB)) * 0.7;
+      return pow(clamp(ridge, 0.0, 1.0), 5.0);
     }
 
     void main() {
@@ -67,6 +80,13 @@ const UnderwaterShader = {
       vec3 transmission = exp(-uAbsorption * max(waterDistance, 0.0));
       vec3 scattered = inColor.rgb * transmission
         + uScatterColor * (1.0 - transmission) * uScatterStrength;
+      if (depthSample < 0.9999 && sceneUnderwater) {
+        float surfaceDepth = max(uWaterLevel - scenePosition.y, 0.0);
+        float caustic = causticPattern(scenePosition.xz, uTime)
+          * exp(-surfaceDepth * 0.11)
+          * transmission.g;
+        scattered += vec3(0.38, 0.72, 0.62) * caustic * uCausticStrength;
+      }
       gl_FragColor = vec4(mix(inColor.rgb, scattered, uSubmersion), inColor.a);
     }
   `

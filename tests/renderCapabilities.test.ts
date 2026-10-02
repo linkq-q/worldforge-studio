@@ -184,7 +184,7 @@ describe('RenderPlan V2 capabilities', () => {
         },
         {
           id: 'runtime.underwater',
-          params: { mode: 'coastal', tint: '#176f69', visibilityDistance: 24, scatterStrength: 0.65 }
+          params: { mode: 'coastal', tint: '#176f69', visibilityDistance: 24, scatterStrength: 0.65, causticStrength: 0.3 }
         }
       ]
     });
@@ -223,7 +223,7 @@ describe('RenderPlan V2 capabilities', () => {
       depthOfField: 'off'
     });
     expect(compileRuntimeUnderwater(plan)).toEqual({
-      mode: 'coastal', tint: '#176f69', visibilityDistance: 24, scatterStrength: 0.65
+      mode: 'coastal', tint: '#176f69', visibilityDistance: 24, scatterStrength: 0.65, causticStrength: 0.3
     });
   });
 
@@ -235,7 +235,7 @@ describe('RenderPlan V2 capabilities', () => {
     expect(compileRuntimeUnderwater(normalizeRenderPlan({
       version: 2, baseSchemeId: 'render-natural-day', modules: []
     }))).toEqual({
-      mode: 'off', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72
+      mode: 'off', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72, causticStrength: 0.22
     });
     expect(() => normalizeRenderPlan({
       version: 2,
