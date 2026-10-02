@@ -331,7 +331,10 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("surface:'land'|'water'|'structure'");
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('rather than a fixed checklist');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
-    expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
+    const constructionInput = JSON.parse(mocks.llmChat.mock.calls[2][0][1].content);
+    expect(constructionInput.whiteboxPlan).toEqual(result.initialPlan);
+    expect(constructionInput.environmentEvidence).toMatchObject({ version: 1, anchors: expect.any(Array) });
+    expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('ground height, slope, water surface');
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
     expect(mocks.generateModel.mock.calls.every(([, options]) => options.providers?.join() === 'deepseek')).toBe(true);
     expect(result.paidCallCount).toBe(6);

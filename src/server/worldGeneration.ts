@@ -24,6 +24,7 @@ import { continueStagedWorldWhitebox, generateStagedWorldWhitebox, generateWorld
   WHITEBOX_CONSTRUCTION_PROMPT, type WorldWhiteboxConstructionRequest,
   type WorldWhiteboxConstructionTown } from './worldWhiteboxGeneration';
 import { selectUsedWorldAssetRequests } from './worldAssetScheduling';
+import { createWorldEnvironmentEvidence } from '../shared/worldEnvironmentEvidence';
 import type { MapStore } from './mapStore';
 
 export interface WorldGenerationRequest {
@@ -1006,6 +1007,7 @@ function normalizeExplicitBuildingAssetKeys(
 async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal?: AbortSignal) {
   const rawPlan=(input as {whiteboxPlan?:unknown})?.whiteboxPlan;
   const request=validateWorldWhiteboxConstructionRequest(input);
+  const environmentEvidence=createWorldEnvironmentEvidence(request.whiteboxPlan);
   const reusableAssets=await Promise.all((request.reusableAssetIds??[]).map(async id=>{
     const asset=await store.loadAsset(id).catch(()=>null);
     if(!asset) throw new Error('unknown_reusable_world_asset:'+id);
@@ -1016,7 +1018,7 @@ async function generateWorldFromWhitebox(input: unknown, store: MapStore, signal
   }));
   const content=await llmChat([
     {role:'system',content:WHITEBOX_CONSTRUCTION_PROMPT},
-    {role:'user',content:JSON.stringify({whiteboxPlan:request.whiteboxPlan,assetGenerationLimit:request.assetGenerationLimit,
+    {role:'user',content:JSON.stringify({whiteboxPlan:request.whiteboxPlan,environmentEvidence,assetGenerationLimit:request.assetGenerationLimit,
       generateAssets:request.generateAssets,...(reusableAssets.length?{reusableAssets}:{})})}
   ],{provider:'gpt',maxTokens:16000,temperature:.2,maxAttempts:1,traceStage:'world.whitebox.construction',signal});
   recordGenerationTrace('world.whitebox.construction.raw',{content});

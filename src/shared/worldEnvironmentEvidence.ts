@@ -1,0 +1,75 @@
+import {
+  createPlannedWorldSampler,
+  validateWorldPlan,
+  worldFeaturePathPolyline,
+  type FeaturePath,
+  type Point,
+  type WorldPlan
+} from './worldPlanning';
+import { dominantBiome, sampleWorldSlope, type WorldBiome } from './worldTerrain';
+
+export interface WorldAnchorEnvironmentSample {
+  id: string;
+  kind: string;
+  regionId: string;
+  position: Point;
+  groundHeight: number;
+  slopeDegrees: number;
+  biome: WorldBiome;
+  water: { kind: 'sea' | 'lake' | 'river'; id: string | null; surfaceHeight: number } | null;
+  access: { routeId: string; pathId: string; distanceMeters: number; declaredConnection: boolean } | null;
+}
+
+export interface WorldEnvironmentEvidence {
+  version: 1;
+  anchors: WorldAnchorEnvironmentSample[];
+}
+
+const rounded = (value: number) => Number(value.toFixed(3));
+
+function pointSegmentDistance(point: Point, from: Point, to: Point): number {
+  const dx = to[0] - from[0], dz = to[1] - from[1], lengthSquared = dx * dx + dz * dz;
+  const amount = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1,
+    ((point[0] - from[0]) * dx + (point[1] - from[1]) * dz) / lengthSquared));
+  return Math.hypot(point[0] - from[0] - dx * amount, point[1] - from[1] - dz * amount);
+}
+
+function distanceToPath(point: Point, path: FeaturePath): number {
+  const points = worldFeaturePathPolyline(path);
+  return Math.max(0, points.slice(1).reduce((closest, to, index) =>
+    Math.min(closest, pointSegmentDistance(point, points[index], to)), Infinity) - path.width / 2);
+}
+
+/** Compact deterministic scene evidence only; it never scores, rejects, moves, or repairs authored intent. */
+export function createWorldEnvironmentEvidence(input: WorldPlan): WorldEnvironmentEvidence {
+  const plan = validateWorldPlan(input), sample = createPlannedWorldSampler(plan);
+  const graph = plan.featureGraph;
+  if (!graph) return { version: 1, anchors: [] };
+  const paths = new Map(graph.paths.map(path => [path.id, path]));
+  const routes = (plan.mobilityPlan?.routes ?? []).flatMap(route => {
+    const path = paths.get(route.pathId);
+    return path ? [{ route, path }] : [];
+  });
+  const waterTypes = new Map((plan.recipe.waterBodies ?? []).map(water => [water.id, water.type]));
+  return { version: 1, anchors: graph.anchors.map(anchor => {
+    const surface = sample(...anchor.position);
+    const candidates = routes.map(({ route, path }) => ({ route, path,
+      distance: distanceToPath(anchor.position, path), declared: route.connects.includes(anchor.id) }));
+    const accessible = candidates.filter(candidate => candidate.declared);
+    const nearest = (accessible.length ? accessible : candidates)
+      .sort((left, right) => left.distance - right.distance || left.route.id.localeCompare(right.route.id))[0];
+    return {
+      id: anchor.id, kind: anchor.kind, regionId: anchor.regionId, position: [...anchor.position],
+      groundHeight: rounded(surface.height),
+      slopeDegrees: rounded(Math.atan(sampleWorldSlope(sample, ...anchor.position)) * 180 / Math.PI),
+      biome: dominantBiome(surface),
+      water: surface.waterLevel === null ? null : {
+        kind: surface.waterBodyId === null ? 'sea' : waterTypes.get(surface.waterBodyId)!,
+        id: surface.waterBodyId,
+        surfaceHeight: rounded(surface.waterLevel)
+      },
+      access: nearest ? { routeId: nearest.route.id, pathId: nearest.path.id,
+        distanceMeters: rounded(nearest.distance), declaredConnection: nearest.declared } : null
+    };
+  }) };
+}
