@@ -61,6 +61,7 @@ describe('world environment evidence', () => {
     const anchor = createWorldEnvironmentEvidence(plan(recipe, [['wet', [0, 0]]])).anchors[0];
     expect(anchor.water).toMatchObject({ kind, surfaceHeight: kind === 'sea' ? 0 : 10 });
     expect(anchor.water!.surfaceHeight).toBeGreaterThan(anchor.groundHeight);
+    expect(anchor.water!.depthMeters).toBeCloseTo(anchor.water!.surfaceHeight - anchor.groundHeight, 3);
   });
 
   it('returns an empty bounded collection when the plan has no semantic anchors', () => {

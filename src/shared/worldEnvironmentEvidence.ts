@@ -16,7 +16,7 @@ export interface WorldAnchorEnvironmentSample {
   groundHeight: number;
   slopeDegrees: number;
   biome: WorldBiome;
-  water: { kind: 'sea' | 'lake' | 'river'; id: string | null; surfaceHeight: number } | null;
+  water: { kind: 'sea' | 'lake' | 'river'; id: string | null; surfaceHeight: number; depthMeters: number } | null;
   access: { routeId: string; pathId: string; distanceMeters: number; declaredConnection: boolean } | null;
 }
 
@@ -66,7 +66,8 @@ export function createWorldEnvironmentEvidence(input: WorldPlan): WorldEnvironme
       water: surface.waterLevel === null ? null : {
         kind: surface.waterBodyId === null ? 'sea' : waterTypes.get(surface.waterBodyId)!,
         id: surface.waterBodyId,
-        surfaceHeight: rounded(surface.waterLevel)
+        surfaceHeight: rounded(surface.waterLevel),
+        depthMeters: rounded(Math.max(0, surface.waterLevel - surface.height))
       },
       access: nearest ? { routeId: nearest.route.id, pathId: nearest.path.id,
         distanceMeters: rounded(nearest.distance), declaredConnection: nearest.declared } : null
