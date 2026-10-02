@@ -939,6 +939,29 @@ function solveTerrainFitRiverProfile(
   return { levels };
 }
 
+function solveTerrainFitRiverFromInlet(
+  samples: readonly RiverPathSample[],
+  caps: readonly number[],
+  waterfalls: ReadonlySet<number>,
+  inletLevel: number
+): { levels: number[] } | null {
+  if (inletLevel > caps[0] + WORLD_TERRAIN_FIT_RIVER_BANK_CLEARANCE
+    || caps[0] - inletLevel > WORLD_TERRAIN_FIT_RIVER_MAX_EXTRA_CUT + 0.000001) return null;
+  const levels = [inletLevel];
+  for (let index = 1; index < samples.length; index += 1) {
+    const level = Math.min(levels[index - 1], caps[index]);
+    const distance = Math.hypot(
+      samples[index].point[0] - samples[index - 1].point[0],
+      samples[index].point[1] - samples[index - 1].point[1]
+    );
+    if ((!waterfalls.has(index - 1)
+      && levels[index - 1] - level > distance * WORLD_TERRAIN_FIT_RIVER_MAX_GRADE + 0.000001)
+      || caps[index] - level > WORLD_TERRAIN_FIT_RIVER_MAX_EXTRA_CUT + 0.000001) return null;
+    levels.push(level);
+  }
+  return { levels };
+}
+
 function trimRiverBeforeRegion(
   samples: readonly RiverPathSample[],
   region: WorldTerrainRegion
@@ -1031,23 +1054,30 @@ function prepareTerrainFitRiver(
 ): MapWaterBody | null {
   let mapWater = materializeRiverSamples(authored, riverPathSamples(authored));
   const sourceRegion = source.region as Extract<WorldTerrainRegion, { kind: 'path' }>;
-  const sourceConnected = worldWaterEndpointConnected(waters, waterIndex, sourceRegion.points[0]);
+  const sourceConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points[0]);
   const outletConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points.at(-1)!);
   mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt,
-    [sourceConnected, Boolean(outletConnection)], true, diagnostics);
+    [Boolean(sourceConnection), Boolean(outletConnection)], true, diagnostics);
   let samples = riverPathSamples(mapWater);
+  if (outletConnection) samples = trimRiverBeforeRegion(samples, outletConnection.region);
+  if (samples.length < 2) return null;
+  mapWater = materializeRiverSamples(mapWater, samples);
   const waterfalls = terrainFitWaterfallSegments(source, mapWater);
   const oceanMouth = (mapWater.levels?.at(-1) ?? 0) < 0;
+  const inletLevel = connectedWaterLevel(sourceConnection, sourceRegion.points[0]);
   const outletLevel = connectedWaterLevel(outletConnection, sourceRegion.points.at(-1)!);
   const caps = terrainFitRiverCaps(mapWater, terrainHeightAt);
-  const solution = solveTerrainFitRiverProfile(samples, caps, waterfalls, outletLevel, oceanMouth);
+  const solution = inletLevel !== undefined && outletLevel === undefined && !oceanMouth
+    ? solveTerrainFitRiverFromInlet(samples, caps, waterfalls, inletLevel)
+      ?? solveTerrainFitRiverProfile(samples, caps, waterfalls, outletLevel, oceanMouth)
+    : solveTerrainFitRiverProfile(samples, caps, waterfalls, outletLevel, oceanMouth);
   if ('levels' in solution) {
-    return materializeRiverSamples(mapWater,
-      samples.map((sample, index) => ({ ...sample, point: [...sample.point], level: solution.levels[index] })));
+    let fitted = samples.map((sample, index) => ({ ...sample, point: [...sample.point] as [number, number], level: solution.levels[index] }));
+    if (sourceConnection) fitted = trimRiverBeforeRegion([...fitted].reverse(), sourceConnection.region).reverse();
+    return fitted.length >= 2 ? materializeRiverSamples(mapWater, fitted) : null;
   }
 
-  if (outletConnection) samples = trimRiverBeforeRegion(samples, outletConnection.region);
-  else if (oceanMouth) samples = trimRiverBeforeOcean(samples, terrainHeightAt);
+  if (oceanMouth) samples = trimRiverBeforeOcean(samples, terrainHeightAt);
   const fallback = fallbackTerrainFitRiver(samples, source.depth, terrainHeightAt, waterfalls);
   const fallbackKind: WorldRiverProfileInfeasibleDiagnostic['fallback'] = !fallback
     ? 'omitted'
@@ -1058,7 +1088,11 @@ function prepareTerrainFitRiver(
     position: [...failedPoint], fallback: fallbackKind,
     message: `${source.id}: ${solution.reason}; fallback=${fallbackKind}.`
   });
-  return fallback ? materializeRiverSamples(mapWater, fallback.samples) : null;
+  if (!fallback) return null;
+  const fitted = sourceConnection
+    ? trimRiverBeforeRegion([...fallback.samples].reverse(), sourceConnection.region).reverse()
+    : fallback.samples;
+  return fitted.length >= 2 ? materializeRiverSamples(mapWater, fitted) : null;
 }
 
 function prepareValidatedWorldWaterBodies(
@@ -1463,7 +1497,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
     }
     const terrainHeightBeforeWater = height;
     let waterLevel: number | null = null, waterBodyId: string | null = null, freshWaterDistance = Infinity;
-    let freshWaterWeight = 0;
+    let freshWaterWeight = 0, terrainFitBankFloor = -Infinity;
     for (const prepared of waterBodies) {
       const water = prepared.mapWater;
       const river = water.type === 'river' ? sampleRiverProfile(x, z, prepared.riverSamples) : null;
@@ -1492,8 +1526,14 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
       if (!inside) {
         // Reuse the editor's outer bank profile. Carving only the inside of a
         // water polygon creates a vertical wall exactly at its boundary.
-        if (height > level && boundaryDistance < outerBankWidth) {
-          height = mix(height, waterShoreProfile(level, height, boundaryDistance, outerBankWidth), mouthBlend);
+        const terrainFitRiver = prepared.source.type === 'river'
+          && prepared.source.surfaceMode === 'terrain-fit';
+        const bankSourceHeight = terrainFitRiver ? terrainHeightBeforeWater : height;
+        if (bankSourceHeight > level && boundaryDistance < outerBankWidth) {
+          const bankHeight = mix(bankSourceHeight,
+            waterShoreProfile(level, bankSourceHeight, boundaryDistance, outerBankWidth), mouthBlend);
+          if (terrainFitRiver) terrainFitBankFloor = Math.max(terrainFitBankFloor, bankHeight);
+          else height = bankHeight;
         }
         continue;
       }
@@ -1515,6 +1555,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         waterBodyId = prepared.source.id;
       }
     }
+    height = Math.max(height, terrainFitBankFloor);
     if (terrainHeightBeforeWater < 0 && (waterLevel === null || waterLevel <= 0)) {
       waterLevel = 0;
       waterBodyId = null;
@@ -1612,10 +1653,9 @@ export function diagnoseWorldRiverSurfaceAboveBank(
           bank[1] + dz / length * WORLD_RIVER_BANK_DIAGNOSTIC_OUTSET
         ];
         const terrain = context.sample(...samplePosition);
-        // The river bed and its submerged ocean-mouth cap cannot expose a hovering ribbon.
-        const coveredByOcean = terrain.waterBodyId === null && terrain.waterLevel !== null
-          && terrain.waterLevel >= edge.level;
-        if (terrain.waterBodyId === river.source.id || coveredByOcean) continue;
+        // The river bed and an equal or higher receiving surface cannot expose a hovering ribbon.
+        const coveredByWater = terrain.waterLevel !== null && terrain.waterLevel >= edge.level;
+        if (terrain.waterBodyId === river.source.id || coveredByWater) continue;
         sampleCount += 1;
         const hoverHeight = edge.level - terrain.height;
         if (hoverHeight <= WORLD_RIVER_BANK_DIAGNOSTIC_THRESHOLD) continue;

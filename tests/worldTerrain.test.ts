@@ -441,6 +441,37 @@ describe('composable world terrain operations', () => {
     expect(() => validateWorldRecipe(badWaterfall as unknown as WorldRecipe)).toThrow('invalid_world_waterfall_segment');
   });
 
+  it('joins terrain-fit rivers to a connected lake at its boundary and surface level', () => {
+    const context = createWorldTerrainContext({
+      version: 1, seed: 4083, size: 500, reliefProfile: 'compact', heightScale: 0.02,
+      constraints: [{ region: 'center', biome: 'grassland' }],
+      terrainBrushes: [{
+        id: 'flat-basin', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 180 },
+        height: 20, feather: 0
+      }],
+      waterBodies: [{
+        id: 'connected-lake', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 20 },
+        levels: [16], depth: 3, shorelineSmoothness: 0, shorelineIrregularity: 0
+      }, {
+        id: 'lake-inlet', type: 'river', surfaceMode: 'terrain-fit',
+        region: { kind: 'path', points: [[-100, 0], [0, 0]], width: 8 },
+        depth: 1, shorelineSmoothness: 0, shorelineIrregularity: 0
+      }, {
+        id: 'lake-outlet', type: 'river', surfaceMode: 'terrain-fit',
+        region: { kind: 'path', points: [[0, 0], [100, 0]], width: 8 },
+        depth: 1, shorelineSmoothness: 0, shorelineIrregularity: 0
+      }]
+    });
+    const inlet = context.waterBodies[1].riverSamples;
+    const outlet = context.waterBodies[2].riverSamples;
+
+    expect(inlet.at(-1)!.point[0]).toBeLessThan(0);
+    expect(inlet.at(-1)!.level).toBeCloseTo(16, 5);
+    expect(outlet[0].point[0]).toBeGreaterThan(0);
+    expect(outlet[0].level).toBeCloseTo(16, 5);
+    expect(diagnoseWorldRiverSurfaceAboveBank(context)).toEqual([]);
+  });
+
   it('derives a continuous downhill terrain-fit river into the implicit ocean within the ordinary grade budget', () => {
     const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
       id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-150, 0], [150, 0]], width: 180 },
