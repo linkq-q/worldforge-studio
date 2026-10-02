@@ -631,6 +631,7 @@ export class RenderRuntimeAdapter {
         const waveStrength = style?.waveStrength ?? recipe.waveStrength;
         const waveSpeed = style?.waveSpeed ?? recipe.waveSpeed;
         const foamStrength = style?.foamStrength ?? recipe.foamStrength;
+        const waveHeightScale = mesh.userData.waterBodyType === 'ocean' ? 0.2 : 0.12;
         const waveDirection = style?.waveDirection === undefined
           ? undefined
           : THREE.MathUtils.degToRad(style.waveDirection);
@@ -644,7 +645,7 @@ export class RenderRuntimeAdapter {
           uShallowColor: `#${shallowColor.getHexString()}`,
           uDepthColor: `#${depthColor.getHexString()}`,
           uFoamColor: style?.foamColor,
-          uWaveHeight: waveStrength * 0.12,
+          uWaveHeight: waveStrength * waveHeightScale,
           uWaveSpeed: waveSpeed,
           uWaveScale: style?.waveScale,
           uShoreFoamStrength: foamStrength,

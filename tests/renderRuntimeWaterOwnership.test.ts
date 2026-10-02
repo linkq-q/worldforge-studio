@@ -54,6 +54,7 @@ describe('render-plan water ownership', () => {
     const material = ocean.material as unknown as THREE.ShaderMaterial;
     expect(material.uniforms.uUseWaterNormalMaps.value).toBe(true);
     expect(material.uniforms.uHighlightIntensity.value).toBeCloseTo(0.06);
+    expect(material.uniforms.uWaveHeight.value).toBeCloseTo(0.04);
 
     material.dispose();
     originalMaterial.dispose();

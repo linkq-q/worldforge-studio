@@ -30,9 +30,33 @@ describe('WaterSurface shader', () => {
   it('retains sloped geometry normals and advects river patterns downstream', () => {
     const surface = new WaterSurface(new THREE.Scene(), {} as THREE.WebGLRenderer, new THREE.Group(), {size:1,segments:1});
     expect(surface.material.uniforms.uUseRiverFlow.value).toBe(false);
-    expect(surface.material.vertexShader).toContain('normalize(normal + vec3((waveH - dx) / eps');
+    expect(surface.material.vertexShader).toContain(
+      'normal + (waveNormal - vec3(0.0, 1.0, 0.0)) * normal.y'
+    );
     expect(surface.material.fragmentShader).toContain('uUseRiverFlow ? vRiverFlow : uFlowDirection');
     expect(surface.material.fragmentShader).toContain('uUseRiverFlow ? -1.0 : 1.0');
+    surface.dispose();
+  });
+
+  it('uses a bounded four-wave Gerstner sum for cheap fluid-like ocean motion', () => {
+    const surface = new WaterSurface(
+      new THREE.Scene(),
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+    const shader = surface.material.vertexShader;
+
+    expect(shader).toContain('float angularFrequency = sqrt(9.81 * k);');
+    expect(shader).toContain('float scaleMultiplier = max(uWaveScale, 0.05) / 1.3;');
+    expect(shader).toContain('uLargeWaveScale * scaleMultiplier');
+    expect(shader).toContain('return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);');
+    expect(shader).toContain('uUseDirectionalWaves && !uUseRiverFlow');
+    expect(shader).toContain('waveOffset.xz *= lateralDamp;');
+    expect(shader).toContain('cross(displacedZ - displaced, displacedX - displaced)');
+    expect(shader.match(/displacement \+= gerstnerWave\(/g)).toHaveLength(3);
+    expect(shader).not.toContain('float directionalWavePhase(');
+
     surface.dispose();
   });
 
@@ -131,7 +155,9 @@ describe('WaterSurface shader', () => {
     expect(surface.material.uniforms.uUseOceanTerrain.value).toBe(true);
     expect(surface.material.uniforms.uOceanTerrainApronWidth.value).toBe(18);
     expect(surface.material.vertexShader).toContain('uniform float uShoreWaveStrength;');
-    expect(surface.material.vertexShader).toContain('return computeOceanSwashHeight(worldBase.xz, waveH);');
+    expect(surface.material.vertexShader).toContain(
+      'waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y);'
+    );
     expect(surface.material.fragmentShader).toContain('if (oceanWaterDepth <= 0.025) discard;');
     expect(surface.material.fragmentShader).toContain('shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))');
     expect(surface.material.fragmentShader).toContain('foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);');

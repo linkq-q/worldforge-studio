@@ -1501,10 +1501,68 @@ function buildWaterGridGeometry(shore: WaterShoreBinding, waters: readonly MapWa
   return geometry;
 }
 
+function appendOceanLodRing(
+  positions: number[],
+  normals: number[],
+  uvs: number[],
+  indices: number[],
+  halfSize: number,
+  innerHalfSize: number,
+  farHalfSize: number,
+  segments = 64
+): void {
+  const firstVertex = positions.length / 3;
+  const step = halfSize * 2 / segments;
+  for (let row = 0; row <= segments; row += 1) {
+    const z = -halfSize + row * step;
+    for (let column = 0; column <= segments; column += 1) {
+      const x = -halfSize + column * step;
+      positions.push(x, 0, z);
+      normals.push(0, 1, 0);
+      uvs.push(x / (farHalfSize * 2) + 0.5, 0.5 - z / (farHalfSize * 2));
+    }
+  }
+  const stride = segments + 1;
+  for (let row = 0; row < segments; row += 1) {
+    const z = -halfSize + (row + 0.5) * step;
+    for (let column = 0; column < segments; column += 1) {
+      const x = -halfSize + (column + 0.5) * step;
+      if (innerHalfSize > 0 && Math.abs(x) < innerHalfSize && Math.abs(z) < innerHalfSize) continue;
+      const a = firstVertex + row * stride + column;
+      const b = a + 1;
+      const c = a + stride;
+      const d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+}
+
 function buildOceanGeometry(map: EditableMap): THREE.BufferGeometry {
-  const size = Math.max(4096, Math.max(map.box.size[0], map.box.size[2]) * 16);
-  const geometry = new THREE.PlaneGeometry(size, size, 192, 192);
-  geometry.rotateX(-Math.PI / 2);
+  const mapExtent = Math.max(map.box.size[0], map.box.size[2]);
+  const nearHalfSize = Math.max(128, Math.ceil((mapExtent / 2 + 32) / 16) * 16);
+  const midHalfSize = nearHalfSize * 4;
+  const farHalfSize = nearHalfSize * 16;
+  const positions: number[] = [];
+  const normals: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  appendOceanLodRing(positions, normals, uvs, indices, nearHalfSize, 0, farHalfSize);
+  appendOceanLodRing(positions, normals, uvs, indices, midHalfSize, nearHalfSize, farHalfSize);
+  appendOceanLodRing(positions, normals, uvs, indices, farHalfSize, midHalfSize, farHalfSize);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+  geometry.userData.oceanLod = {
+    ringCount: 3,
+    nearHalfSize,
+    farHalfSize,
+    nearSpacing: nearHalfSize / 32,
+    vertexCount: positions.length / 3,
+    triangleCount: indices.length / 3
+  };
   return geometry;
 }
 

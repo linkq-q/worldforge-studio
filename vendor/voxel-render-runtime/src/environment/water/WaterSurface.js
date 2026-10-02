@@ -151,6 +151,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   uniform float uWaveCrossDamping;
   uniform float uWaveSpacingVariation;
   uniform float uWaveSpacingScale;
+  uniform bool uUseRiverFlow;
   uniform sampler2D tShoreDistance;
   uniform bool uUseShoreDistance;
   uniform bool uInvertShoreDistance;
@@ -216,97 +217,90 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return lenSq > 0.000001 ? normalize(direction) : normalize(fallback);
   }
 
-  float directionalWavePhase(
+  vec3 gerstnerWave(
     vec2 position,
     vec2 direction,
-    float scale,
+    float waveNumber,
     float speed,
-    float stretch
+    float amplitude,
+    float steepness,
+    float phaseOffset
   ) {
     vec2 dir = normalizeDirection(direction, vec2(1.0, 0.25));
-    vec2 tangent = vec2(-dir.y, dir.x);
-    float ridgeStretch = max(stretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
-    float along = dot(position, dir) * scale;
-    float across = dot(position, tangent) * scale / ridgeStretch;
-    float seed = dot(dir, vec2(19.17, 47.23)) + scale * 7.31;
-    float spacingNoise = noise2D(vec2(along, across) * uWaveSpacingScale + vec2(seed, -seed * 0.37));
-    float phaseWarp = (spacingNoise - 0.5) * 2.0 * uWaveSpacingVariation;
-    return along + phaseWarp
-      + sin((across + phaseWarp * 0.25) * 0.65) * 0.25 * (1.0 - uWaveCrossDamping)
-      + uTime * speed;
+    float k = max(abs(waveNumber), 0.001);
+    // Deep-water dispersion: long waves travel faster than short waves.
+    float angularFrequency = sqrt(9.81 * k);
+    float phase = dot(position, dir) * k
+      + uTime * angularFrequency * speed * uWaveSpeed * 0.45
+      + phaseOffset;
+    float s = sin(phase);
+    float c = cos(phase);
+    float lateral = amplitude * steepness * c;
+    return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);
   }
 
-  float directionalWaveLayer(
-    vec2 position,
-    vec2 direction,
-    float scale,
-    float speed,
-    float stretch,
-    float sharpness
-  ) {
-    float phase = directionalWavePhase(position, direction, scale, speed, stretch);
-    float w = exp(sin(phase) - 1.0);
-    w = (w - uWaveCenter) * uWaveAmplitudeBoost;
-    w = sign(w) * pow(abs(w), max(sharpness, 0.001));
-    return w;
-  }
-
-  float computeDirectionalDetailHeight(vec2 worldXZ) {
-    vec2 detailDir = normalizeDirection(uPrimaryWaveDirection + uSecondaryWaveDirection, vec2(0.6, 1.0));
-    return directionalWaveLayer(
-      worldXZ,
-      detailDir,
-      uDetailWaveScale,
-      uDetailWaveSpeed,
-      max(uLargeWaveStretch * 0.25, 0.25),
-      0.8
+  vec3 computeDirectionalWaveDisplacement(vec2 worldXZ) {
+    float spread = clamp(uDirectionalWaveBlend, 0.0, 1.0);
+    // Keep the existing global wave-scale control meaningful for the new spectrum.
+    // Render plans use 1.3 as the neutral value, so authored component scales retain
+    // their current look while lower/higher values lengthen/shorten every wavelength.
+    float scaleMultiplier = max(uWaveScale, 0.05) / 1.3;
+    float crestControl = smoothstep(0.5, 4.0, uWaveRidgeSharpness);
+    float choppiness = crestControl * mix(0.35, 0.82, clamp(uWaveCrestStretch / 4.0, 0.0, 1.0));
+    vec2 midDirection = normalizeDirection(
+      uPrimaryWaveDirection + uSecondaryWaveDirection * 0.35,
+      vec2(1.0, 0.0)
     );
-  }
+    vec2 detailDirection = normalizeDirection(
+      uPrimaryWaveDirection - uSecondaryWaveDirection * 0.45,
+      vec2(0.6, 1.0)
+    );
 
-  float computeDirectionalWaveHeight(vec2 worldXZ) {
-    float randomOctave = getwavesVertex(worldXZ * uWaveScale);
-
-    float largeA = directionalWaveLayer(
+    vec3 displacement = gerstnerWave(
       worldXZ,
       uPrimaryWaveDirection,
-      uLargeWaveScale,
+      uLargeWaveScale * scaleMultiplier,
       uLargeWaveSpeed,
-      uLargeWaveStretch,
-      uWaveRidgeSharpness
-    ) * uLargeWaveStrength;
-
-    float largeB = directionalWaveLayer(
+      uWaveHeight * uLargeWaveStrength * 0.62,
+      choppiness,
+      0.0
+    );
+    displacement += gerstnerWave(
       worldXZ,
       uSecondaryWaveDirection,
-      uSecondaryWaveScale,
+      uSecondaryWaveScale * scaleMultiplier,
       uSecondaryWaveSpeed,
-      uLargeWaveStretch * 0.75,
-      max(uWaveRidgeSharpness * 0.85, 0.5)
-    ) * uSecondaryWaveStrength;
-
-    float mid = directionalWaveLayer(
+      uWaveHeight * uSecondaryWaveStrength * 0.34 * spread,
+      choppiness * 0.82,
+      1.73 + uWaveSpacingVariation * 0.31
+    );
+    displacement += gerstnerWave(
       worldXZ,
-      normalizeDirection(uPrimaryWaveDirection + uSecondaryWaveDirection * 0.35, vec2(1.0, 0.0)),
-      uMidWaveScale,
+      midDirection,
+      uMidWaveScale * scaleMultiplier,
       uMidWaveSpeed,
-      max(uLargeWaveStretch * 0.55, 0.5),
-      1.0
-    ) * uMidWaveStrength;
-
-    float detail = computeDirectionalDetailHeight(worldXZ) * uDetailWaveStrength;
-    float directional = largeA + largeB + mid + detail * 0.2;
-    return mix(randomOctave, directional, clamp(uDirectionalWaveBlend, 0.0, 1.0));
+      uWaveHeight * uMidWaveStrength * 0.24 * spread,
+      choppiness * 0.68,
+      3.91 + uWaveSpacingVariation * 0.47
+    );
+    displacement += gerstnerWave(
+      worldXZ,
+      detailDirection,
+      uDetailWaveScale * scaleMultiplier,
+      uDetailWaveSpeed,
+      uWaveHeight * uDetailWaveStrength * 0.1 * spread,
+      choppiness * 0.45,
+      5.37 + uWaveSpacingVariation * 0.73
+    );
+    return displacement;
   }
 
   float computeVertexWaveHeight(vec2 localXZ) {
-    float h;
-    if (uUseDirectionalWaves) {
-      h = computeDirectionalWaveHeight(localXZ);
-    } else {
-      float waveRaw = getwavesVertex(localXZ * uWaveScale);
-      h = (waveRaw - uWaveCenter) * uWaveAmplitudeBoost;
+    if (uUseDirectionalWaves && !uUseRiverFlow) {
+      return computeDirectionalWaveDisplacement(localXZ).y;
     }
-    return h * uWaveHeight;
+    float waveRaw = getwavesVertex(localXZ * uWaveScale);
+    return (waveRaw - uWaveCenter) * uWaveAmplitudeBoost * uWaveHeight;
   }
 
   ${OCEAN_SWASH_GLSL}
@@ -357,26 +351,36 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return waveLine * shoreRangeMask * breakup * uShoreWaveCrestHeight;
   }
 
-  float computeDisplacedWaveHeight(vec2 localXZ, vec3 localPosition) {
-    float waveH = computeVertexWaveHeight(localXZ);
+  vec3 computeDisplacedPosition(vec3 localPosition) {
+    vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
+    vec3 waveOffset = uUseDirectionalWaves && !uUseRiverFlow
+      ? computeDirectionalWaveDisplacement(worldBase.xz)
+      : vec3(0.0, computeVertexWaveHeight(worldBase.xz), 0.0);
     if (uUseOceanTerrain && uShoreWaveEnabled) {
-      vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
-      return computeOceanSwashHeight(worldBase.xz, waveH);
+      float ground = sampleOceanTerrainHeight(worldBase.xz);
+      float waterDepth = max(uOceanLevel - ground, 0.0);
+      float lateralDamp = smoothstep(0.08, max(0.45, uShoreWaveRange * 3.1), waterDepth);
+      waveOffset.xz *= lateralDamp;
+      waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y);
+      return localPosition + waveOffset;
     }
     float damp = computeShoreDamp(localPosition);
-    return waveH * damp + uSurfaceLift * damp + computeShoreWaveCrestHeight(localPosition);
+    waveOffset *= damp;
+    waveOffset.y += uSurfaceLift * damp + computeShoreWaveCrestHeight(localPosition);
+    return localPosition + waveOffset;
   }
 
   void main() {
-    float waveH = computeDisplacedWaveHeight(position.xz, position);
-    vec3 displaced = position + vec3(0.0, waveH, 0.0);
+    vec3 displaced = computeDisplacedPosition(position);
+    float waveH = displaced.y - position.y;
 
-    // Neighbor sampling keeps the existing displaced vertex normal chain.
+    // The displaced tangents include Gerstner's lateral orbital motion.
     float eps = 0.1;
-    float dx = computeDisplacedWaveHeight(vec2(position.x + eps, position.z), vec3(position.x + eps, position.y, position.z));
-    float dz = computeDisplacedWaveHeight(vec2(position.x, position.z + eps), vec3(position.x, position.y, position.z + eps));
-    // Keep the authored river slope; wave derivatives are only a perturbation.
-    vec3 perturbedNormal = normalize(normal + vec3((waveH - dx) / eps, 0.0, (waveH - dz) / eps) * normal.y);
+    vec3 displacedX = computeDisplacedPosition(position + vec3(eps, 0.0, 0.0));
+    vec3 displacedZ = computeDisplacedPosition(position + vec3(0.0, 0.0, eps));
+    vec3 waveNormal = normalize(cross(displacedZ - displaced, displacedX - displaced));
+    // Keep authored river slope while adding the local wave perturbation.
+    vec3 perturbedNormal = normalize(normal + (waveNormal - vec3(0.0, 1.0, 0.0)) * normal.y);
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
     vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);

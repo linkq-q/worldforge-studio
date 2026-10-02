@@ -19,6 +19,26 @@ function dispose(mesh: THREE.Mesh): void {
   mesh.userData.waterShore.texture.dispose();mesh.userData.waterShore.depthTexture?.dispose();
 }
 describe('water wave sampling',()=>{
+  it('concentrates the ocean vertex budget near the playable map with three nested LOD rings',()=>{
+    const map=createEmptyMap('ocean lod','ocean-lod',[96,16,96]);
+    map.waterBodies=[{...lake,id:'ocean',name:'ocean',type:'ocean',level:0,depth:8,
+      points:[[-48,-48],[48,-48],[48,48],[-48,48]]}];
+    const mesh=buildStructuredWaterGroup(map).children[0] as THREE.Mesh;
+    try {
+      const lod=mesh.geometry.userData.oceanLod as {
+        ringCount:number;nearHalfSize:number;farHalfSize:number;nearSpacing:number;
+        vertexCount:number;triangleCount:number;
+      };
+      expect(lod).toMatchObject({ringCount:3,nearHalfSize:128,farHalfSize:2048,nearSpacing:4});
+      expect(lod.vertexCount).toBeLessThan(13_000);
+      expect(lod.triangleCount).toBeLessThan(24_000);
+      expect(mesh.geometry.getAttribute('position').count).toBe(lod.vertexCount);
+      expect(mesh.geometry.index!.count/3).toBe(lod.triangleCount);
+      mesh.geometry.computeBoundingBox();
+      expect(mesh.geometry.boundingBox!.min.x).toBe(-2048);
+      expect(mesh.geometry.boundingBox!.max.x).toBe(2048);
+    } finally {dispose(mesh);}
+  });
   it.each(['outdoor','indoor'] as const)('samples the lake interior independently of its four bank vertices (%s)',sceneMode=>{
     const map=createEmptyMap();map.sceneMode=sceneMode;map.waterBodies=[lake];
     const mesh=buildStructuredWaterGroup(map).children[0] as THREE.Mesh;
