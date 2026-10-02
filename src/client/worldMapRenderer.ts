@@ -1501,6 +1501,8 @@ export function worldTileSurfaceWeight(
         interpolateTileBiome(data, x0, z0, x1, z1, tx, tz, BIOME_CHANNEL.forest)
           * (1 - steepRock * 0.72) * (1 - Math.max(freshWaterCover, freshWaterBank * 0.32))
       );
+    } else if (tag === 'soil') {
+      weight = Math.max(weight, freshWaterShore * 0.75);
     } else if (tag === 'water') {
       weight = Math.max(weight, ocean, freshWater);
     } else if (tag === 'lowland') {
