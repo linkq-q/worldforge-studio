@@ -53,9 +53,15 @@ describe('WaterSurface shader', () => {
     expect(shader).toContain('return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);');
     expect(shader).toContain('uUseDirectionalWaves && !uUseRiverFlow');
     expect(shader).toContain('waveOffset.xz *= lateralDamp;');
+    expect(shader).toContain('texture2D(tShallowWaterHeight');
+    expect(shader).toContain('shallowWaterHeight * smoothstep(0.025, 0.2, waterDepth)');
     expect(shader).toContain('cross(displacedZ - displaced, displacedX - displaced)');
     expect(shader.match(/displacement \+= gerstnerWave\(/g)).toHaveLength(3);
     expect(shader).not.toContain('float directionalWavePhase(');
+    expect(surface.material.fragmentShader).toContain('vec2 sampleShallowWaterSlope(vec2 worldXZ)');
+    expect(surface.material.fragmentShader).toContain(
+      'vec3 shallowWaterNormal = vec3(shallowWaterSlope.x, 0.0, shallowWaterSlope.y) * 1.4;'
+    );
 
     surface.dispose();
   });
@@ -156,7 +162,7 @@ describe('WaterSurface shader', () => {
     expect(surface.material.uniforms.uOceanTerrainApronWidth.value).toBe(18);
     expect(surface.material.vertexShader).toContain('uniform float uShoreWaveStrength;');
     expect(surface.material.vertexShader).toContain(
-      'waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y);'
+      'waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y)'
     );
     expect(surface.material.fragmentShader).toContain('if (oceanWaterDepth <= 0.025) discard;');
     expect(surface.material.fragmentShader).toContain('shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))');

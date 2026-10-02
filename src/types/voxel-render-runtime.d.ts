@@ -399,6 +399,7 @@ declare module '@voxel-studio/render-runtime/environment' {
       points: Array<number[] | import('three').Vector2>
     ): import('three').Points | null;
     clearOceanShoreSplash(): void;
+    addShallowWaterImpulse(x: number, z: number, strength?: number, radius?: number): boolean;
     pinRippleDecalPoint(x: number, z: number): number;
     updatePinnedRipplePoint(id: number, x: number, z: number): void;
     unpinRippleDecalPoint(id: number): void;

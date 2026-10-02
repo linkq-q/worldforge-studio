@@ -20,6 +20,11 @@ import {
   RING_STRIPE_GLSL as WATER_RING_STRIPE_GLSL,
 } from './chunks.js';
 
+const SHALLOW_WATER_RESOLUTION = 32;
+const SHALLOW_WATER_DOMAIN_SIZE = 16;
+const SHALLOW_WATER_FIXED_STEP = 1 / 30;
+const SHALLOW_WATER_ACTIVE_SECONDS = 3;
+
 const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform sampler2D tOceanTerrain;
   uniform bool uUseOceanTerrain;
@@ -152,6 +157,10 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   uniform float uWaveSpacingVariation;
   uniform float uWaveSpacingScale;
   uniform bool uUseRiverFlow;
+  uniform sampler2D tShallowWaterHeight;
+  uniform bool uUseShallowWaterHeight;
+  uniform vec2 uShallowWaterCenter;
+  uniform float uShallowWaterSize;
   uniform sampler2D tShoreDistance;
   uniform bool uUseShoreDistance;
   uniform bool uInvertShoreDistance;
@@ -237,6 +246,13 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     float c = cos(phase);
     float lateral = amplitude * steepness * c;
     return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);
+  }
+
+  float sampleShallowWaterHeight(vec2 worldXZ) {
+    if (!uUseShallowWaterHeight) return 0.0;
+    vec2 uv = (worldXZ - uShallowWaterCenter) / max(uShallowWaterSize, 0.001) + 0.5;
+    vec2 edgeFade = 1.0 - smoothstep(vec2(0.42), vec2(0.5), abs(uv - 0.5));
+    return texture2D(tShallowWaterHeight, clamp(uv, vec2(0.0), vec2(1.0))).r * edgeFade.x * edgeFade.y;
   }
 
   vec3 computeDirectionalWaveDisplacement(vec2 worldXZ) {
@@ -353,6 +369,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
 
   vec3 computeDisplacedPosition(vec3 localPosition) {
     vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
+    float shallowWaterHeight = sampleShallowWaterHeight(worldBase.xz);
     vec3 waveOffset = uUseDirectionalWaves && !uUseRiverFlow
       ? computeDirectionalWaveDisplacement(worldBase.xz)
       : vec3(0.0, computeVertexWaveHeight(worldBase.xz), 0.0);
@@ -361,12 +378,13 @@ const WATER_VERTEX_SHADER = /* glsl */ `
       float waterDepth = max(uOceanLevel - ground, 0.0);
       float lateralDamp = smoothstep(0.08, max(0.45, uShoreWaveRange * 3.1), waterDepth);
       waveOffset.xz *= lateralDamp;
-      waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y);
+      waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y)
+        + shallowWaterHeight * smoothstep(0.025, 0.2, waterDepth);
       return localPosition + waveOffset;
     }
     float damp = computeShoreDamp(localPosition);
     waveOffset *= damp;
-    waveOffset.y += uSurfaceLift * damp + computeShoreWaveCrestHeight(localPosition);
+    waveOffset.y += (uSurfaceLift + shallowWaterHeight) * damp + computeShoreWaveCrestHeight(localPosition);
     return localPosition + waveOffset;
   }
 
@@ -652,6 +670,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform bool uHasTerrainWaterDepth;
   uniform sampler2D tWaterNormalA;
   uniform sampler2D tWaterNormalB;
+  uniform sampler2D tShallowWaterHeight;
+  uniform bool uUseShallowWaterHeight;
+  uniform vec2 uShallowWaterCenter;
+  uniform float uShallowWaterSize;
   uniform bool uUseWaterNormalMaps;
   uniform float uWaterNormalStrength;
   uniform float uWaterNormalScaleA;
@@ -774,6 +796,19 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     vec2 slope = mix(a.xy / max(a.z, 0.001), b.xy / max(b.z, 0.001), weight);
     slope *= inversesqrt(weight * weight + (1.0 - weight) * (1.0 - weight));
     return normalize(vec3(slope, 1.0));
+  }
+
+  vec2 sampleShallowWaterSlope(vec2 worldXZ) {
+    if (!uUseShallowWaterHeight) return vec2(0.0);
+    vec2 uv = (worldXZ - uShallowWaterCenter) / max(uShallowWaterSize, 0.001) + 0.5;
+    vec2 edgeFade = 1.0 - smoothstep(vec2(0.42), vec2(0.5), abs(uv - 0.5));
+    float texel = 1.0 / ${SHALLOW_WATER_RESOLUTION}.0;
+    float cellSize = uShallowWaterSize / ${SHALLOW_WATER_RESOLUTION - 1}.0;
+    float left = texture2D(tShallowWaterHeight, clamp(uv - vec2(texel, 0.0), vec2(0.0), vec2(1.0))).r;
+    float right = texture2D(tShallowWaterHeight, clamp(uv + vec2(texel, 0.0), vec2(0.0), vec2(1.0))).r;
+    float back = texture2D(tShallowWaterHeight, clamp(uv - vec2(0.0, texel), vec2(0.0), vec2(1.0))).r;
+    float front = texture2D(tShallowWaterHeight, clamp(uv + vec2(0.0, texel), vec2(0.0), vec2(1.0))).r;
+    return vec2(left - right, back - front) / max(2.0 * cellSize, 0.001) * edgeFade.x * edgeFade.y;
   }
 
   float computeWaterAbsorptionFactor(vec3 worldPos, float viewDistance, float depthDiff, float shoreDist) {
@@ -1160,6 +1195,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       finalWaterNormal = normalize(mix(baseNormal, detailNormalWorld, detailStrength));
     }
     vec3 normalForHighlight = (uWaterMode > 0.5 && uUseWaterNormalMaps) ? finalWaterNormal : baseNormal;
+    // The simulation grid is denser than most water meshes. Sampling its
+    // gradient per fragment preserves the ripple silhouette without adding
+    // geometry or another simulation pass.
+    vec2 shallowWaterSlope = sampleShallowWaterSlope(vWorldPosition.xz);
+    vec3 shallowWaterNormal = vec3(shallowWaterSlope.x, 0.0, shallowWaterSlope.y) * 1.4;
+    finalWaterNormal = normalize(finalWaterNormal + shallowWaterNormal);
+    normalForHighlight = normalize(normalForHighlight + shallowWaterNormal);
     // 6c+：ripple decal 法线扰动，同时喂给主法线与高光法线——卡通/写实两种模式都要反光
     // （rippleSlope 已在上方 foam 段算好；未启用时为 0，法线不变）
     if (uRippleDecalEnabled) {
@@ -1736,6 +1778,13 @@ export class WaterSurface {
         uRippleDecalAttenuation: { value: 1.5 },
         uRippleDecalFadeStart: { value: 0.55 },
 
+        // Bounded local height-field simulation. It remains disabled until a
+        // gameplay interaction explicitly injects an impulse.
+        tShallowWaterHeight: { value: null },
+        uUseShallowWaterHeight: { value: false },
+        uShallowWaterCenter: { value: new THREE.Vector2() },
+        uShallowWaterSize: { value: SHALLOW_WATER_DOMAIN_SIZE },
+
         uWaterDebugMode: { value: 0 },
 
         // === v2: ShoreDistance / Local Water Body 稳定岸线 ===
@@ -1927,6 +1976,16 @@ export class WaterSurface {
     this.material.uniforms.tShoreDistance.value = this._defaultShoreDistanceTex;
     this.material.uniforms.tOceanTerrain.value = this._defaultShoreDistanceTex;
 
+    this._defaultShallowWaterTex = new THREE.DataTexture(
+      new Float32Array([0]), 1, 1, THREE.RedFormat, THREE.FloatType
+    );
+    this._defaultShallowWaterTex.wrapS = this._defaultShallowWaterTex.wrapT = THREE.ClampToEdgeWrapping;
+    this._defaultShallowWaterTex.minFilter = THREE.LinearFilter;
+    this._defaultShallowWaterTex.magFilter = THREE.LinearFilter;
+    this._defaultShallowWaterTex.generateMipmaps = false;
+    this._defaultShallowWaterTex.needsUpdate = true;
+    this.material.uniforms.tShallowWaterHeight.value = this._defaultShallowWaterTex;
+
     // v3 Step 3: 创建1×1默认法线纹理（RGB=128,128,255 → unpackNormalMap 后为 (0,0,1)，即"朝上"中性法线）
     // 用 RepeatWrapping（而非 ClampToEdge），保证用户上传贴图前 scale/speed 变化时 sampler 行为一致、不报错
     this._defaultNormalTex = new THREE.DataTexture(
@@ -1984,6 +2043,7 @@ export class WaterSurface {
     const uniforms = this.material.uniforms;
 
     uniforms.uTime.value += deltaTime;
+    this._updateShallowWater(deltaTime);
     this._expireRippleDecals();
     uniforms.uCameraNear.value = camera.near;
     uniforms.uCameraFar.value = camera.far;
@@ -2256,6 +2316,133 @@ export class WaterSurface {
       direction: [u.uFlowDirection.value.x, u.uFlowDirection.value.y],
       speed: u.uFlowSpeed.value,
     };
+  }
+
+  _createShallowWaterSimulation(x, z) {
+    const count = SHALLOW_WATER_RESOLUTION * SHALLOW_WATER_RESOLUTION;
+    const current = new Float32Array(count);
+    const texture = new THREE.DataTexture(
+      current,
+      SHALLOW_WATER_RESOLUTION,
+      SHALLOW_WATER_RESOLUTION,
+      THREE.RedFormat,
+      THREE.FloatType
+    );
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    this._shallowWater = {
+      current,
+      previous: new Float32Array(count),
+      next: new Float32Array(count),
+      texture,
+      center: new THREE.Vector2(x, z),
+      accumulator: 0,
+      activeUntil: 0,
+    };
+    const u = this.material.uniforms;
+    u.tShallowWaterHeight.value = texture;
+    u.uShallowWaterCenter.value.set(x, z);
+    u.uShallowWaterSize.value = SHALLOW_WATER_DOMAIN_SIZE;
+    return this._shallowWater;
+  }
+
+  _resetShallowWaterSimulation(simulation, x, z) {
+    simulation.current.fill(0);
+    simulation.previous.fill(0);
+    simulation.next.fill(0);
+    simulation.center.set(x, z);
+    simulation.accumulator = 0;
+    simulation.texture.image.data = simulation.current;
+    simulation.texture.needsUpdate = true;
+    this.material.uniforms.uShallowWaterCenter.value.set(x, z);
+  }
+
+  /**
+   * Inject one bounded gameplay disturbance into a lazily allocated 32x32
+   * height field. Rain keeps using the cheaper analytic ripple path.
+   */
+  addShallowWaterImpulse(x, z, strength = 0.08, radius = 0.8) {
+    x = Number(x);
+    z = Number(z);
+    strength = Number(strength);
+    radius = Number(radius);
+    if (![x, z, strength, radius].every(Number.isFinite) || radius <= 0 || strength === 0) return false;
+    const simulation = this._shallowWater || this._createShallowWaterSimulation(x, z);
+    const recenterDistance = SHALLOW_WATER_DOMAIN_SIZE * 0.3;
+    if (Math.abs(x - simulation.center.x) > recenterDistance
+      || Math.abs(z - simulation.center.y) > recenterDistance) {
+      this._resetShallowWaterSimulation(simulation, x, z);
+    }
+    const resolution = SHALLOW_WATER_RESOLUTION;
+    const cellSize = SHALLOW_WATER_DOMAIN_SIZE / (resolution - 1);
+    const centerX = (x - simulation.center.x) / cellSize + (resolution - 1) * 0.5;
+    const centerZ = (z - simulation.center.y) / cellSize + (resolution - 1) * 0.5;
+    const radiusCells = Math.max(1, radius / cellSize);
+    const minX = Math.max(1, Math.floor(centerX - radiusCells));
+    const maxX = Math.min(resolution - 2, Math.ceil(centerX + radiusCells));
+    const minZ = Math.max(1, Math.floor(centerZ - radiusCells));
+    const maxZ = Math.min(resolution - 2, Math.ceil(centerZ + radiusCells));
+    for (let row = minZ; row <= maxZ; row += 1) {
+      for (let column = minX; column <= maxX; column += 1) {
+        const distance = Math.hypot(column - centerX, row - centerZ) / radiusCells;
+        if (distance >= 1) continue;
+        const falloff = Math.cos(distance * Math.PI * 0.5) ** 2;
+        const index = row * resolution + column;
+        const impulse = strength * falloff;
+        simulation.current[index] = THREE.MathUtils.clamp(simulation.current[index] + impulse, -0.25, 0.25);
+        simulation.previous[index] = THREE.MathUtils.clamp(simulation.previous[index] + impulse * 0.45, -0.25, 0.25);
+      }
+    }
+    simulation.activeUntil = this.material.uniforms.uTime.value + SHALLOW_WATER_ACTIVE_SECONDS;
+    simulation.texture.image.data = simulation.current;
+    simulation.texture.needsUpdate = true;
+    this.material.uniforms.uUseShallowWaterHeight.value = true;
+    return true;
+  }
+
+  _updateShallowWater(deltaTime) {
+    const simulation = this._shallowWater;
+    if (!simulation || !this.material.uniforms.uUseShallowWaterHeight.value) return;
+    if (this.material.uniforms.uTime.value >= simulation.activeUntil) {
+      this._resetShallowWaterSimulation(simulation, simulation.center.x, simulation.center.y);
+      this.material.uniforms.uUseShallowWaterHeight.value = false;
+      return;
+    }
+    simulation.accumulator += Math.min(0.1, Math.max(0, Number(deltaTime) || 0));
+    let steps = 0;
+    while (simulation.accumulator >= SHALLOW_WATER_FIXED_STEP && steps < 3) {
+      const resolution = SHALLOW_WATER_RESOLUTION;
+      simulation.next.fill(0);
+      for (let row = 1; row < resolution - 1; row += 1) {
+        for (let column = 1; column < resolution - 1; column += 1) {
+          const index = row * resolution + column;
+          const current = simulation.current[index];
+          const laplacian = simulation.current[index - 1] + simulation.current[index + 1]
+            + simulation.current[index - resolution] + simulation.current[index + resolution]
+            - current * 4;
+          const edgeDistance = Math.min(column, row, resolution - 1 - column, resolution - 1 - row);
+          const edgeAbsorption = Math.min(1, edgeDistance / 3);
+          simulation.next[index] = THREE.MathUtils.clamp(
+            (current * 2 - simulation.previous[index] + laplacian * 0.18) * 0.985 * edgeAbsorption,
+            -0.25,
+            0.25
+          );
+        }
+      }
+      const oldPrevious = simulation.previous;
+      simulation.previous = simulation.current;
+      simulation.current = simulation.next;
+      simulation.next = oldPrevious;
+      simulation.accumulator -= SHALLOW_WATER_FIXED_STEP;
+      steps += 1;
+    }
+    if (steps > 0) {
+      simulation.texture.image.data = simulation.current;
+      simulation.texture.needsUpdate = true;
+    }
   }
 
   /**
@@ -3102,6 +3289,10 @@ export class WaterSurface {
 
   dispose() {
     this.clearOceanShoreSplash();
+    if (this._shallowWater) {
+      this._shallowWater.texture.dispose();
+      this._shallowWater = null;
+    }
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh.geometry.dispose();
@@ -3116,6 +3307,10 @@ export class WaterSurface {
     if (this._defaultShoreDistanceTex) {
       this._defaultShoreDistanceTex.dispose();
       this._defaultShoreDistanceTex = null;
+    }
+    if (this._defaultShallowWaterTex) {
+      this._defaultShallowWaterTex.dispose();
+      this._defaultShallowWaterTex = null;
     }
     if (this._defaultNormalTex) {
       this._defaultNormalTex.dispose();

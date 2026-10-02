@@ -74,6 +74,7 @@ interface WaterBinding {
 type InteractiveWaterSurface = WaterSurface & {
   setRippleDecalParams(params: Record<string, unknown>): void;
   addRippleDecalPoint(x: number, z: number): number;
+  addShallowWaterImpulse(x: number, z: number, strength?: number, radius?: number): boolean;
 };
 
 export class RenderRuntimeAdapter {
@@ -336,7 +337,7 @@ export class RenderRuntimeAdapter {
       strength: 0.7,
       lifetime: 1.25,
       normalStrength: 0.42
-    });
+    }, true);
   }
 
   addRainRipple(waterBodyId: string, x: number, z: number, elapsedSeconds: number): void {
@@ -357,9 +358,11 @@ export class RenderRuntimeAdapter {
     z: number,
     elapsedSeconds: number,
     cooldown: number,
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
+    simulateShallowWater = false
   ): void {
-    const last = this.waterInteractionAt.get(waterBodyId) ?? -Infinity;
+    const interactionKey = `${waterBodyId}:${simulateShallowWater ? 'interaction' : 'rain'}`;
+    const last = this.waterInteractionAt.get(interactionKey) ?? -Infinity;
     if (elapsedSeconds - last < cooldown) return;
     const binding = this.waterBindings.find((candidate) => (
       candidate.mesh.userData.waterBodyId === waterBodyId
@@ -373,7 +376,8 @@ export class RenderRuntimeAdapter {
       ...params
     });
     surface.addRippleDecalPoint(x, z);
-    this.waterInteractionAt.set(waterBodyId, elapsedSeconds);
+    if (simulateShallowWater) surface.addShallowWaterImpulse(x, z, 0.08, 0.9);
+    this.waterInteractionAt.set(interactionKey, elapsedSeconds);
   }
 
   applyScopedCapabilities(

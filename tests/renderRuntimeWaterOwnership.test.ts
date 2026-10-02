@@ -35,6 +35,7 @@ describe('render-plan water ownership', () => {
     const shoreTexture = new THREE.DataTexture(new Uint8Array([255]), 1, 1, THREE.RedFormat);
     const terrainTexture = new THREE.DataTexture(new Float32Array([0]), 1, 1, THREE.RedFormat, THREE.FloatType);
     ocean.userData.materialTags = ['water', 'ocean'];
+    ocean.userData.waterBodyId = 'ocean';
     ocean.userData.waterBodyType = 'ocean';
     ocean.userData.waterShore = { texture: shoreTexture, center: [0, 0], size: 4096 };
     ocean.userData.waterOceanTerrain = {
@@ -46,7 +47,7 @@ describe('render-plan water ownership', () => {
     const adapter = Object.create(RenderRuntimeAdapter.prototype) as RenderRuntimeAdapter;
     Object.assign(adapter as unknown as Record<string, unknown>, {
       renderer: {}, scene, camera, modelsRoot, waterBindings: [], waterDetailTexture: null,
-      waterSceneCapture: null, waterEnvironmentMap: null
+      waterSceneCapture: null, waterEnvironmentMap: null, waterInteractionAt: new Map()
     });
 
     (adapter as unknown as { applyWaterStyles(styles: []): void }).applyWaterStyles([]);
@@ -55,6 +56,13 @@ describe('render-plan water ownership', () => {
     expect(material.uniforms.uUseWaterNormalMaps.value).toBe(true);
     expect(material.uniforms.uHighlightIntensity.value).toBeCloseTo(0.06);
     expect(material.uniforms.uWaveHeight.value).toBeCloseTo(0.04);
+    expect(material.uniforms.uUseShallowWaterHeight.value).toBe(false);
+    adapter.addRainRipple('ocean', 0, 0, 0.5);
+    expect(material.uniforms.uUseShallowWaterHeight.value).toBe(false);
+    // Rain and gameplay use independent cooldowns; frequent rain must not
+    // suppress the bounded height-field wake.
+    adapter.addWaterInteraction('ocean', 0, 0, 0.55);
+    expect(material.uniforms.uUseShallowWaterHeight.value).toBe(true);
 
     material.dispose();
     originalMaterial.dispose();
