@@ -306,9 +306,11 @@ describe('whitebox world generation', () => {
     expect(spatialInput.dryTerrain).toEqual(plan.recipe);
     expect(spatialInput.terrainEvidence).toMatchObject({ resolution: 21, heightUnit: 0.1, slopeUnit: 1 });
     expect(spatialInput.terrainEvidence.buildingSiteScores).toHaveLength(21);
+    expect(spatialInput.terrainEvidence.buildableAreas.length).toBeGreaterThan(0);
     expect(spatialInput.terrainEvidence.landmassLabels).toHaveLength(21);
     expect(spatialInput.terrainEvidence.landmasses.length).toBeGreaterThan(0);
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('buildingSiteScores');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.buildableAreas');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('terrainEvidence.landmassLabels');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain("kind contains 'bridge'");
     expect(mocks.llmChat.mock.calls[0][0][0].content).toContain('Reserve connected dry, gently sloped land');
@@ -320,6 +322,8 @@ describe('whitebox world generation', () => {
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('A mouth-only grade cannot fix an inland drop');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Do not stack every district anchor');
     expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('coordinate values must be JSON numbers');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('heights:[12,6,2]');
+    expect(mocks.llmChat.mock.calls[1][0][0].content).toContain('Every walkable featureGraph path');
     expect(mocks.llmChat.mock.calls[2][0][0].content).toContain('do not rename a biome-specific asset');
     expect(JSON.parse(mocks.llmChat.mock.calls[2][0][1].content).whiteboxPlan).toEqual(result.initialPlan);
     expect(mocks.generateModel).toHaveBeenCalledTimes(3);
@@ -391,6 +395,9 @@ describe('whitebox world generation', () => {
       && row.every(score => Number.isInteger(score) && score >= 0 && score <= 4))).toBe(true);
     expect(evidence.buildingSiteScores.flat().some(score => score > 0)).toBe(true);
     expect(evidence.buildingSiteScores.flat().some(score => score === 0)).toBe(true);
+    expect(evidence.buildableAreas.length).toBeGreaterThan(0);
+    expect(evidence.buildableAreas.every(area => area.buildingSiteScore > 0
+      && area.bounds.every(value => Number.isFinite(value)))).toBe(true);
     expect(evidence.boundaryCrossings.length).toBeGreaterThan(0);
   });
 
@@ -812,6 +819,65 @@ describe('whitebox world generation', () => {
         building.x - district.offset[0], building.z - district.offset[1]
       ) <= district.radius)).toBe(true);
     }
+  });
+
+  it('fits an edge town around its full authored district envelope and keeps district exits connected', () => {
+    const plan = unifiedDistrictPlan();
+    plan.id = 'edge-harbor-districts';
+    plan.featureGraph = {
+      regions: [
+        { id: 'harbor-region', kind: 'settlement', name: 'Harbor village', center: [156, 116], radius: 72 },
+        { id: 'civic-region', kind: 'district', name: 'Civic core', center: [151, 123], radius: 34 },
+        { id: 'working-region', kind: 'district', name: 'Working quay', center: [174, 105], radius: 38 },
+        { id: 'residential-region', kind: 'district', name: 'Harbor homes', center: [119, 145], radius: 54 },
+        { id: 'lake-region', kind: 'lake-shore', name: 'Lake shore', center: [20, 145], radius: 30 }
+      ],
+      paths: [
+        { id: 'harbor-lane', kind: 'street', name: 'Harbor lane', points: [[168, 108], [151, 123], [119, 145]], width: 4 },
+        { id: 'lake-road', kind: 'road', name: 'Lake road', points: [[119, 145], [70, 145], [20, 145]], width: 5 }
+      ],
+      anchors: [
+        { id: 'harbor-anchor', kind: 'harbor', position: [168, 108], regionId: 'harbor-region' },
+        { id: 'civic-anchor', kind: 'civic-center', position: [151, 123], regionId: 'civic-region' },
+        { id: 'working-anchor', kind: 'working-quay', position: [174, 105], regionId: 'working-region' },
+        { id: 'residential-anchor', kind: 'residential', position: [119, 145], regionId: 'residential-region' },
+        { id: 'lake-anchor', kind: 'lake', position: [20, 145], regionId: 'lake-region' }
+      ],
+      relations: []
+    };
+    plan.settlementPlan = { settlements: [{
+      id: 'edge-harbor', anchorId: 'harbor-anchor', role: 'working harbor village', population: 220,
+      districts: [
+        { anchorId: 'civic-anchor', kind: 'civic', density: 0.7 },
+        { anchorId: 'working-anchor', kind: 'working', density: 0.85 },
+        { anchorId: 'residential-anchor', kind: 'residential', density: 0.65 }
+      ]
+    }] };
+    plan.mobilityPlan = { routes: [
+      { id: 'harbor-route', pathId: 'harbor-lane', mode: 'walking',
+        connects: ['harbor-anchor', 'civic-anchor', 'residential-anchor'] },
+      { id: 'lake-route', pathId: 'lake-road', mode: 'walking', connects: ['residential-anchor', 'lake-anchor'] }
+    ] };
+    plan.explorationPlan = { pointsOfInterest: [], sequence: [] };
+    const expansion = constructionExpansion();
+    expansion.towns[0] = { ...expansion.towns[0], id: 'edge-harbor', population: 220 };
+
+    const result = materializeWorldWhiteboxConstruction(JSON.stringify(expansion), {
+      mode: 'construct-whitebox', whiteboxPlan: validateWorldPlan(plan), generateAssets: false,
+      assetGenerationLimit: 3, repairAttempts: 0
+    });
+    const town = result.plan.towns[0];
+
+    expect(town.center).toEqual([146.5, 121.5]);
+    expect(town.radius).toBe(81.5);
+    expect(town.districts?.every(district => Math.max(
+      Math.abs(district.offset[0]) + district.radius,
+      Math.abs(district.offset[1]) + district.radius
+    ) <= town.radius)).toBe(true);
+    expect(town.ports).toHaveLength(1);
+    expect(result.plan.roads.find(road => road.id === town.ports[0].guideId)?.tags).toContain('town-access');
+    expect(result.diagnostics.flatMap(item => item.planningIssues))
+      .not.toContain('settlement_districts_extend_beyond_core');
   });
 
   it('keeps the in-map half of a district whose authored region crosses the world edge', () => {
