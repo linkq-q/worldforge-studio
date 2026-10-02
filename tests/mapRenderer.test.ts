@@ -976,10 +976,13 @@ describe('structured map water rendering', () => {
     const shader = {
       uniforms: {},
       vertexShader: '#include <common>\n#include <begin_vertex>',
-      fragmentShader: '#include <common>\n#include <map_fragment>'
+      fragmentShader: '#include <common>\n#include <map_fragment>\n#include <normal_fragment_maps>'
     } as unknown as THREE.WebGLProgramParametersWithUniforms;
     (terrain.material as THREE.MeshStandardMaterial).onBeforeCompile(shader, {} as THREE.WebGLRenderer);
     expect(shader.fragmentShader).toContain('terrainSandRipple');
+    expect(shader.fragmentShader).toContain('terrainTriplanarNoise');
+    expect(shader.fragmentShader).toContain('terrainRockMask = terrainRockSlope * (1.0 - terrainSandMask)');
+    expect(shader.fragmentShader).toContain('terrainRockBumpedNormal');
     rendered.dispose();
   });
 

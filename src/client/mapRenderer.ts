@@ -1073,11 +1073,41 @@ function installTerrainSandShader(
         uniform vec2 uTerrainMapSize;
         uniform float uTerrainOceanLevel;
         varying vec3 vTerrainWorldNormal;
+        float terrainRockHash(vec2 point) {
+          vec3 value = fract(vec3(point.xyx) * 0.1031);
+          value += dot(value, value.yzx + 33.33);
+          return fract((value.x + value.y) * value.z);
+        }
+        float terrainRockNoise(vec2 point) {
+          vec2 cell = floor(point);
+          vec2 local = fract(point);
+          vec2 blend = local * local * (3.0 - 2.0 * local);
+          return mix(mix(terrainRockHash(cell), terrainRockHash(cell + vec2(1.0, 0.0)), blend.x),
+            mix(terrainRockHash(cell + vec2(0.0, 1.0)), terrainRockHash(cell + vec2(1.0)), blend.x), blend.y);
+        }
+        float terrainTriplanarNoise(vec3 worldPosition, vec3 worldNormal, float scale) {
+          vec3 weights = pow(abs(normalize(worldNormal)), vec3(4.0));
+          weights /= weights.x + weights.y + weights.z + 0.00001;
+          return terrainRockNoise(worldPosition.zy * scale) * weights.x
+            + terrainRockNoise(worldPosition.xz * scale) * weights.y
+            + terrainRockNoise(worldPosition.xy * scale) * weights.z;
+        }
       `)
       .replace('#include <map_fragment>', `#include <map_fragment>
         vec3 nativeSnow = texture2D(uTerrainSnowSurface, vTerrainSandPosition.xz / uTerrainMapSize + 0.5).rgb;
         float nativeSnowMask = nativeSnow.r * smoothstep(0.05, 0.25, normalize(vTerrainWorldNormal).y);
         float terrainSandMask = texture2D(uTerrainSandSurface, vTerrainSandPosition.xz / uTerrainMapSize + 0.5).r;
+        vec3 terrainRockNormal = normalize(vTerrainWorldNormal);
+        float terrainRockSlope = smoothstep(0.28, 0.62, 1.0 - abs(terrainRockNormal.y));
+        float terrainRockMask = terrainRockSlope * (1.0 - terrainSandMask) * (1.0 - nativeSnow.r);
+        float terrainRockMacro = terrainTriplanarNoise(vTerrainSandWorldPosition, terrainRockNormal, 0.055);
+        float terrainRockFine = terrainTriplanarNoise(vTerrainSandWorldPosition + terrainRockMacro * 3.0,
+          terrainRockNormal, 0.22);
+        float terrainRockFissure = smoothstep(0.68, 0.9, abs(terrainRockFine - terrainRockMacro));
+        float terrainRockRelief = terrainRockFine * 0.7 + terrainRockMacro * 0.3 - terrainRockFissure * 0.45;
+        diffuseColor.rgb *= 1.0 + terrainRockMask * ((terrainRockRelief - 0.42) * 0.16);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.88, 0.91, 0.93),
+          terrainRockMask * terrainRockFissure * 0.28);
         float terrainFlowWave = sin(dot(vTerrainSandWorldPosition.xz, vec2(0.72, 0.38)) * 3.2 - uTerrainSandTime * 1.7) * 0.58;
         terrainFlowWave += sin(dot(vTerrainSandWorldPosition.xz, vec2(-0.31, 0.95)) * 5.1 - uTerrainSandTime * 1.15) * 0.42;
         float terrainSandFlow = smoothstep(0.08, 0.82, terrainFlowWave) * terrainSandMask * uTerrainSandStrength;
@@ -1116,6 +1146,13 @@ function installTerrainSandShader(
         float terrainSnowSlope = smoothstep(0.42, 0.78, normalize(vTerrainWorldNormal).y);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.91, 0.95, 0.98), terrainSnowSlope * uTerrainSnowCover);
       `)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        #ifdef USE_BUMPMAP
+          vec3 terrainRockBumpedNormal = perturbNormalArb(-vViewPosition, normal,
+            vec2(dFdx(terrainRockRelief), dFdy(terrainRockRelief)) * 0.28, faceDirection);
+          normal = normalize(mix(normal, terrainRockBumpedNormal, terrainRockMask * uTerrainDetailStrength));
+        #endif
+      `)
       .replace('#include <color_fragment>', `#include <color_fragment>
         vec3 snowAlbedo = mix(vec3(0.76, 0.84, 0.92), vec3(0.93, 0.96, 0.99), nativeSnow.g);
         #ifdef USE_MAP
@@ -1139,7 +1176,7 @@ function installTerrainSandShader(
       `);
     syncTerrainSandShader(state);
   };
-  material.customProgramCacheKey = () => 'worldforge-terrain-sand-snow-v5';
+  material.customProgramCacheKey = () => 'worldforge-terrain-sand-snow-rock-v6';
   return state;
 }
 
