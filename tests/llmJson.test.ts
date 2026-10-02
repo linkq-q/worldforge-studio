@@ -19,4 +19,12 @@ describe('LLM JSON extraction', () => {
     expect(() => parseLlmJsonObject('{"plan":', 'invalid_render_ai_json'))
       .toThrow('invalid_render_ai_json');
   });
+
+  it('closes only missing outer containers while preserving every JSON value', () => {
+    expect(parseLlmJsonObject('{"plan":{"roads":[]}', 'invalid')).toEqual({ plan: { roads: [] } });
+    expect(() => parseLlmJsonObject('{"plan":{"road":"unfin', 'invalid'))
+      .toThrow('invalid');
+    expect(() => parseLlmJsonObject('{"plan":{"x":thirty}', 'invalid'))
+      .toThrow('invalid');
+  });
 });

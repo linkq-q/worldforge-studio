@@ -34,7 +34,7 @@ export type WorldTerrainBrush =
   | (WorldTerrainBrushBase & { mode: 'lower'; amount: number })
   | (WorldTerrainBrushBase & { mode: 'crater'; region: Extract<WorldTerrainRegion, { kind: 'circle' }>; depth: number; rimHeight: number })
   | (WorldTerrainBrushBase & { mode: 'flatten'; height: number; strength?: number })
-  | (WorldTerrainBrushBase & { mode: 'grade'; region: Extract<WorldTerrainRegion, { kind: 'path' }>; heights: number[]; strength?: number });
+  | (WorldTerrainBrushBase & { mode: 'grade'; heights: number[]; strength?: number });
 interface WorldWaterBodyBase {
   id: string;
   region: WorldTerrainRegion;
@@ -238,11 +238,14 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
   if (input.landforms !== undefined) {
     if (!Array.isArray(input.landforms) || input.landforms.length > 16) throw new Error('invalid_world_landform');
     recipe.landforms = input.landforms.map(form => {
-      if (!form || !Array.isArray(form.center) || form.center.length !== 2 || !Array.isArray(form.radius) || form.radius.length !== 2
+      const suppliedRadius: unknown = form?.radius;
+      const radius = typeof suppliedRadius === 'number'
+        ? [suppliedRadius, suppliedRadius] : suppliedRadius;
+      if (!form || !Array.isArray(form.center) || form.center.length !== 2 || !Array.isArray(radius) || radius.length !== 2
         || !form.center.every(n => Number.isFinite(n) && Math.abs(n) <= input.size / 2)
-        || !form.radius.every(n => Number.isFinite(n) && n >= 10 && n <= input.size)
+        || !radius.every(n => Number.isFinite(n) && n >= 10 && n <= input.size)
         || !Number.isFinite(form.height) || Math.abs(form.height) > 500) throw new Error('invalid_world_landform');
-      return { center: [...form.center], radius: [...form.radius], height: form.height };
+      return { center: [...form.center], radius: [radius[0], radius[1]] as [number, number], height: form.height };
     });
   }
   const ids = new Set<string>();
@@ -291,8 +294,9 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
           || raw.strength !== undefined && (!Number.isFinite(raw.strength) || raw.strength < 0 || raw.strength > 1)) throw new Error('invalid_world_terrain_brush');
         return { ...common, mode: raw.mode, height: raw.height, strength: raw.strength };
       }
-      if (raw.mode === 'grade' && common.region.kind === 'path' && Array.isArray(raw.heights)
-        && raw.heights.length === common.region.points.length && raw.heights.every(n => Number.isFinite(n) && n >= -1000 && n <= 5000)
+      if (raw.mode === 'grade' && Array.isArray(raw.heights)
+        && raw.heights.length >= 2 && raw.heights.length <= 64
+        && raw.heights.every(n => Number.isFinite(n) && n >= -1000 && n <= 5000)
         && (raw.strength === undefined || Number.isFinite(raw.strength) && raw.strength >= 0 && raw.strength <= 1)) {
         return { ...common, mode: raw.mode, region: common.region, heights: [...raw.heights], strength: raw.strength };
       }
@@ -493,7 +497,8 @@ function pathSample(points: Array<[number, number]>, x: number, z: number): { di
 function regionSample(region: WorldTerrainRegion, x: number, z: number): { inside: boolean; edge: number; t: number } {
   if (region.kind === 'circle') {
     const distance = Math.hypot(x - region.center[0], z - region.center[1]);
-    return { inside: distance <= region.radius, edge: region.radius - distance, t: 0 };
+    return { inside: distance <= region.radius, edge: region.radius - distance,
+      t: distance / region.radius };
   }
   const result = pathSample(region.points, x, z), halfWidth = region.width / 2;
   return { inside: result.distance <= halfWidth, edge: halfWidth - result.distance, t: result.t };

@@ -119,7 +119,7 @@ describe('hierarchical world planning contracts', () => {
     const plan=constructedRoutePlan({points:[[-40,0],[0,30],[40,0]],heights:[10,13,16],curve:'catmull-rom'});
     const construction=deriveWorldRouteConstruction(plan),brush=construction.terrainBrushes[0];
     expect(brush.mode).toBe('grade');
-    if(brush.mode!=='grade')throw new Error('expected_grade');
+    if(brush.mode!=='grade'||brush.region.kind!=='path')throw new Error('expected_path_grade');
     expect(brush.region.points.length).toBeGreaterThan(plan.featureGraph!.paths[0].points.length);
     expect(brush.region.points.length).toBeLessThanOrEqual(64);
     const distanceToSegment=(point:[number,number],a:[number,number],b:[number,number])=>{

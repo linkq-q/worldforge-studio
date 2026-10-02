@@ -156,6 +156,8 @@ describe('local continuous landforms',()=>{
     expect(shaped(0,61)).toEqual(base(0,61));
     expect(Math.abs(shaped(79.999,0).height-base(79.999,0).height)).toBeLessThan(1e-8);
     expect(validateWorldRecipe(recipe)).toEqual(recipe);
+    expect(validateWorldRecipe({...recipe,landforms:[{...recipe.landforms[0],radius:80 as never}]}).landforms?.[0].radius)
+      .toEqual([80,80]);
     expect(()=>validateWorldRecipe({...recipe,landforms:[{...recipe.landforms[0],radius:[0,60]}]})).toThrow('invalid_world_landform');
     expect(()=>validateWorldRecipe({...recipe,landforms:Array(17).fill(recipe.landforms[0])})).toThrow('invalid_world_landform');
   });
@@ -197,6 +199,23 @@ describe('composable world terrain operations', () => {
     expect(sample(100, 0).height).toBeCloseTo(end, 10);
     expect(sample(0, 50)).toEqual(base(0, 50));
     expect(sampleWorldSlope(sample, 50, 0)).toBeCloseTo(0.1, 2);
+  });
+
+  it('keeps sparse path grades and radial lake-bank grades from a first terrain plan', () => {
+    const recipe = validateWorldRecipe({ ...original, terrainBrushes: [
+      { id: 'coastal-lowlands', mode: 'grade', region: { kind: 'path',
+        points: [[-120, 0], [-80, 0], [-40, 0], [0, 0], [40, 0], [80, 0], [120, 0]], width: 12 },
+      heights: [2, 1.5, 1, 1.5, 2], strength: 1, feather: 0 },
+      { id: 'lake-bank', mode: 'grade', region: { kind: 'circle', center: [0, 80], radius: 50 },
+        heights: [2, 1, 0], strength: 1, feather: 0 }
+    ] });
+    const sample = createWorldSampler(recipe);
+    expect(sample(-120, 0).height).toBeCloseTo(2, 8);
+    expect(sample(0, 0).height).toBeCloseTo(1, 8);
+    expect(sample(120, 0).height).toBeCloseTo(2, 8);
+    expect(sample(0, 80).height).toBeCloseTo(2, 8);
+    expect(sample(25, 80).height).toBeCloseTo(1, 8);
+    expect(sample(50, 80).height).toBeCloseTo(0, 8);
   });
 
   it('carves finite water, exposes tile water levels and applies local biome patches', () => {

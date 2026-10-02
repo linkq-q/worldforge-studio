@@ -9,6 +9,7 @@ import {
 } from '../shared/worldPlanning';
 import { llmChat, type ChatMessage } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
+import { parseLlmJsonObject } from './llmJson';
 
 export interface WorldWhiteboxRequest {
   mode: 'whitebox';
@@ -57,7 +58,7 @@ concept={premise:string,themes:string[],experience:string}. featureGraph={region
 
 const DRY_TERRAIN_PROMPT = `Author only the dry terrain for one playable 500 x 500 metre world from the user's description. Return one JSON object {"terrain":{...}} and nothing else. This is the first observational planning stage: do not place water bodies, settlements, routes, feature graphs, points of interest, ecology, buildings or assets. Shape coherent land, coasts, valleys, ridges and potential drainage corridors that a later planner can observe instead of guessing elevations.
 Use this exact terrain schema: terrain={version:1,seed,size:500,reliefProfile:'compact',constraints:[{region,biome}],optional heightScale,landforms,terrainBrushes,biomePatches}. Copy seed exactly. Never return waterBodies. Valid broad constraint regions are west/east/north/south/northwest/northeast/southwest/southeast/center; biomes are ocean/grassland/forest/desert/mountains/snow. World coordinates are centred: X and Z each -250..250; north is negative Z, south is positive Z, west is negative X; sea level is 0. Ocean is dry terrain below 0, not a circular lake. Shape land and coastline with broad constraints and landforms instead of a flat plate.
-For this 500 metre world, usually keep global heightScale around 0.08..0.15 so coasts and future routes remain traversable. A compact island with strong ocean constraints may use about 0.02..0.04. Use local landforms for exceptional mountains or volcanoes instead of exaggerating the whole terrain. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},amount,feather?}, {id,mode:'crater',region:{kind:'circle',center:[x,z],radius},depth,rimHeight,feather?}, {id,mode:'flatten',region,height,strength?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width},heights,strength?}. Use crater for a volcanic crater; size its rim as a believable part of the enclosing summit, leaving enough slopes and access around it for the requested play experience. Bounded path brushes may define ridges or drainage valleys, but do not pre-grade settlement roads that have not been planned.
+For this 500 metre world, usually keep global heightScale around 0.08..0.15 so coasts and future routes remain traversable. A compact island with strong ocean constraints may use about 0.02..0.04. Use local landforms for exceptional mountains or volcanoes instead of exaggerating the whole terrain. A landform is {center:[x,z],radius:[rx,rz],height}. A local brush is {id,mode:'raise'|'lower',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},amount,feather?}, {id,mode:'crater',region:{kind:'circle',center:[x,z],radius},depth,rimHeight,feather?}, {id,mode:'flatten',region,height,strength?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width}|{kind:'circle',center:[x,z],radius},heights:[two or more height keyframes],strength?}. Use crater for a volcanic crater; size its rim as a believable part of the enclosing summit, leaving enough slopes and access around it for the requested play experience. Bounded path brushes may define ridges or drainage valleys, but do not pre-grade settlement roads that have not been planned.
 Reserve connected dry, gently sloped land for every requested settlement before shaping nearby mountains and water. A named working town needs room for several streets, dozens of ordinary homes, civic buildings and its livelihood at the shore or valley edge; a tiny isolated terrace would turn it into a hamlet. Keep the distinctive terrain elsewhere rather than shrinking the settlement intent. For a seaport, reserve a continuous low coastal shelf directly connected to the main landmass: the working waterfront should descend gently to sea level, with enough dry frontage for streets and public buildings. Do not make the port a raised, isolated 6–10m plateau surrounded by sea or steep sand banks. Terrain brushes execute in listed order. Shape the bay inlet and drainage cuts before any small settlement grading; prefer the naturally buildable terrain and use a broad feathered grade at modest strength only where needed. A full-strength flatten brush over a large settlement erases the coastline and creates abrupt edges.
 biomePatches entries are {id,region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width},biome,feather?}. Every patch needs a unique id and a bounded shape. Feather is a transition distance in world metres, normally 8..24m. Return the raw terrain decision once; do not critique, repair or offer alternatives.`;
 
@@ -65,7 +66,7 @@ const STAGED_SPATIAL_PROMPT = `Plan the water and complete editable whitebox sem
 For an explicitly requested port, locate the continuous, buildable sea-level shoreline in terrainEvidence before choosing the settlement centre. Place the working district on that shore and keep the civic and residential districts on connected dry land. The shore must support real waterfront public-building footprints and a land-to-water landing, not merely a harbor label or a distant water view. If a proposed shoreline is too steep or separated from the main landmass, choose another sampled coast; do not create an isolated high terrace with a late flatten or grade brush. A harbor terrace several metres above sea level needs a long, walkable descent and cannot by itself serve as a quay.
 terrainEvidence.landmassLabels marks connected dry evidence cells (0 is sea, 1 is the largest island), and landmasses reports each area's approximate size, buildable score and nearest sampled mainland banks. These are coarse observations, not hard rejection gates. Before finalizing a settlement, identify its landmass and how people reach the other destinations. If a busy village is on a detached island across a short sheltered channel, consider a purposeful walkable bridge; across a long exposed gap, consider a ferry and landing, or choose a connected town site. A bridge must be an explicit featureGraph path whose kind contains 'bridge', with a roughly straight polyline from one dry bank to the other and a mobility route using it; ordinary roads must not cross water. Check both bank elevations and reserve approach space, not just the narrowest water gap.
 {"plan":{"id":"world-id","terrainRefinements":[],"waterBodies":[],"concept":{},"featureGraph":{},"settlementPlan":{},"mobilityPlan":{},"explorationPlan":{},"intentionalEmptyAreas":[]}}.
-Return those eight required plan fields and optional terrainRefinements. Do not return recipe, seed, size, constraints, heightScale, landforms, terrainBrushes, biomePatches, ecology, towns, roads, buildings or assets. The server preserves the dryTerrain base and appends your terrainRefinements in listed order before placing water and settlements. terrainEvidence is a deterministic 21 x 21 observation of that recipe: rows run north to south, columns west to east, origin and step are metres, and each samples value is [height,slope]. buildingSiteScores uses the same grid: each 0..4 score counts approximate dry, gentle 8m building sites sampled within that cell. Use connected areas with multiple positive cells for inhabited districts and public-building frontage; a single dry anchor or a steep region outline is not enough. These scores are planning evidence, not a rejection gate, and later water or roads may reduce available sites. Multiply height by heightUnit to get metres and slope by slopeUnit to get degrees; heightRange also uses heightUnit. shoreline contains closed interpolated sea-level loops in metres, and boundaryCrossings lists open coast endpoints on the sampled world boundary. Use the evidence to choose actual dry, low-slope anchors and plausible downhill water and route paths. Use this evidence to choose connected sites and to plan only local, bounded earthworks where a river mouth, harbor work area or essential access cannot fit the dry land. terrainRefinements is an optional array of standard terrain brushes: {id,mode:'lower'|'raise',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width},heights:[one number per point],strength?,feather?}. Keep broad landforms and the chosen coastline recognizable; let a refined river descend into its first sea outlet and keep the harbor terrace above sea level. These are authored parts of your first plan, never automatic post-generation repair. Preserve unusual authored terrain and report one raw plan; do not critique, repair or offer alternatives.
+Return those eight required plan fields and optional terrainRefinements. Do not return recipe, seed, size, constraints, heightScale, landforms, terrainBrushes, biomePatches, ecology, towns, roads, buildings or assets. The server preserves the dryTerrain base and appends your terrainRefinements in listed order before placing water and settlements. terrainEvidence is a deterministic 21 x 21 observation of that recipe: rows run north to south, columns west to east, origin and step are metres, and each samples value is [height,slope]. buildingSiteScores uses the same grid: each 0..4 score counts approximate dry, gentle 8m building sites sampled within that cell. Use connected areas with multiple positive cells for inhabited districts and public-building frontage; a single dry anchor or a steep region outline is not enough. These scores are planning evidence, not a rejection gate, and later water or roads may reduce available sites. Multiply height by heightUnit to get metres and slope by slopeUnit to get degrees; heightRange also uses heightUnit. shoreline contains closed interpolated sea-level loops in metres, and boundaryCrossings lists open coast endpoints on the sampled world boundary. Use the evidence to choose actual dry, low-slope anchors and plausible downhill water and route paths. Use this evidence to choose connected sites and to plan only local, bounded earthworks where a river mouth, harbor work area or essential access cannot fit the dry land. terrainRefinements is an optional array of standard terrain brushes: {id,mode:'lower'|'raise',region,amount,feather?}, {id,mode:'flatten',region,height,strength?,feather?}, or {id,mode:'grade',region:{kind:'path',points:[[x,z],...],width}|{kind:'circle',center:[x,z],radius},heights:[two or more height keyframes],strength?,feather?}. For a path grade, keyframes interpolate from the first to last point; for a circle grade, they interpolate radially from centre to rim. Keep broad landforms and the chosen coastline recognizable; let a refined river descend into its first sea outlet and keep the harbor terrace above sea level. These are authored parts of your first plan, never automatic post-generation repair. Preserve unusual authored terrain and report one raw plan; do not critique, repair or offer alternatives.
 waterBodies may contain lakes {id,type:'lake',region:{kind:'circle',center:[x,z],radius},levels:[height],depth,shorelineSmoothness?,shorelineIrregularity?} or rivers {id,type:'river',surfaceMode:'terrain-fit',region:{kind:'path',points:[[x,z],...],width},widths?:[one width per path point],depth,waterfallAfterPointIndices?:[segment indices],shorelineSmoothness?,shorelineIrregularity?}. Terrain-fit rivers have no levels: the shared sampler derives their surface profile and carved bed from dry banks. Only engineered canals or fixed-height waterworks may use surfaceMode:'authored' with one level per point. A natural river must begin on dry inland terrain, follow a sampled downhill valley with dry banks, and stop at its first sea-level shoreline crossing. Ordinary reaches permit at most 0.08 slope and 4m extra cut; declare a waterfall segment only for an intended sharp drop. Check the entire proposed centerline against terrainEvidence, including the first inland descent: a 25m evidence interval dropping more than about 2m already exceeds an ordinary reach. A mouth-only grade cannot fix an inland drop. Re-route through gentler ground, grade the full short transition from above its break, or intentionally declare a waterfall segment. Trace natural centerlines with bends appropriate to their valleys instead of drawing a straight chord across high ground. A dry world may intentionally have no fresh water.
 concept={premise:string,themes:string[],experience:string}. featureGraph={regions:[{id,kind,name,center:[x,z],radius}],paths:[{id,kind,name,points:[[x,z],...],curve?:'polyline'|'catmull-rom',width}],anchors:[{id,kind,position:[x,z],regionId}],relations:[{fromId,toId,kind}]}. Region radius is 1..250m. Every path has at least two distinct points. Use catmull-rom for naturally flowing roads or trails and polyline for engineered segments. Every anchor regionId and relation endpoint must exist. Place settlement, harbour and lookout anchors on sampled dry ground with suitable slope. A working harbour anchor belongs on dry low ground inland of the shoreline with a connected shore-working terrace.
 settlementPlan={settlements:[{id,anchorId,role,population?:integer,districts?:[{anchorId,kind:'working'|'civic'|'residential'|'edge',density:0..1}]}]}. One town is one settlement, not one settlement per district. District anchors describe the connected inhabited footprint. Give settlements enough sampled buildable area for homes and public uses without filling the map. Estimate each settlement's resident population now, while placing its districts and local streets against the sampled buildable area; carry that count into construction. A working town with daily public services normally needs dozens of households (roughly 150 or more residents); about 40 people would be a hamlet, unless the user explicitly asks for one. Do not downgrade a named town to fit a tiny chosen region: move or reshape connected districts across the best sampled buildable terrain. Do not stack every district anchor inside one small core while labeling broad overlapping regions as separate neighborhoods. For a service-bearing town of roughly 150–250 residents, let at least one housing or edge anchor reach the outer connected buildable land, with district radii that express distinct usable frontage; keep the streets walkable between them. A village can be smaller and sparser, but still needs connected streets and ordinary homes. Check the full extent of each district region, not just its anchor: keep the town centre far enough from the -250..250 map boundary that its working, civic, residential and edge districts all fit with room for local streets. If a coast-facing district needs more space than one anchor allows, move the centre inland or reshape the districts to follow the sampled dry coast rather than leaving a district outside the map.
@@ -235,13 +236,18 @@ export function validateWorldWhiteboxConstructionRequest(input: unknown): WorldW
 export function parseWorldWhiteboxInitialPlan(content: string, request: WorldWhiteboxRequest): {
   rawPlan: unknown; plan: WorldPlan; technicalNormalizations: string[]
 } {
-  const response = object(JSON.parse(content), 'invalid_world_whitebox_response');
+  const response = parseLlmJsonObject(content, 'invalid_world_whitebox_response');
   if (Object.keys(response).length !== 1 || !('plan' in response)) throw new Error('invalid_world_whitebox_response');
   const raw = object(response.plan, 'invalid_world_whitebox_plan');
   if (raw.whitebox !== true || raw.revision !== 1) throw new Error('invalid_world_whitebox_plan');
   const recipe = object(raw.recipe, 'invalid_world_whitebox_recipe');
   if (recipe.seed !== request.seed || recipe.size !== request.size) throw new Error('world_whitebox_request_mismatch');
   const technicalNormalizations = raw.prompt === request.prompt ? [] : ['request_prompt_echo'];
+  if (Array.isArray(recipe.landforms)) recipe.landforms.forEach((value, index) => {
+    if (value && typeof value === 'object' && typeof (value as { radius?: unknown }).radius === 'number') {
+      technicalNormalizations.push(`landforms[${index}].scalar_radius_to_pair`);
+    }
+  });
   if (raw.prompt !== request.prompt) recordGenerationTrace('world.whitebox.request-echo-normalized', {
     received: raw.prompt, expected: request.prompt
   });
@@ -299,7 +305,7 @@ export function parseWorldWhiteboxInitialPlan(content: string, request: WorldWhi
 export function parseWorldDryTerrainDraft(content: string, request: WorldWhiteboxRequest): {
   rawTerrain: unknown; recipe: WorldRecipe; technicalNormalizations: string[]
 } {
-  const response = exact(JSON.parse(content), ['terrain'], 'invalid_world_dry_terrain_response',
+  const response = exact(parseLlmJsonObject(content, 'invalid_world_dry_terrain_response'), ['terrain'], 'invalid_world_dry_terrain_response',
     'world_unknown_dry_terrain_response_field');
   const rawTerrain = exact(response.terrain,
     ['version', 'seed', 'size', 'reliefProfile', 'heightScale', 'constraints', 'landforms', 'terrainBrushes', 'biomePatches'],
@@ -312,6 +318,11 @@ export function parseWorldDryTerrainDraft(content: string, request: WorldWhitebo
   recipe.constraints.sort((a, b) => a.region.localeCompare(b.region));
   const technicalNormalizations = regions.some((region, index) => region !== recipe.constraints[index].region)
     ? ['constraint_order'] : [];
+  if (Array.isArray(rawTerrain.landforms)) rawTerrain.landforms.forEach((value, index) => {
+    if (value && typeof value === 'object' && typeof (value as { radius?: unknown }).radius === 'number') {
+      technicalNormalizations.push(`landforms[${index}].scalar_radius_to_pair`);
+    }
+  });
   return { rawTerrain: response.terrain, recipe, technicalNormalizations };
 }
 
@@ -323,7 +334,7 @@ export function parseWorldWhiteboxSpatialPlan(
   const recipe = validateWorldRecipe(dryTerrain);
   if (recipe.waterBodies !== undefined) throw new Error('world_staged_spatial_requires_dry_terrain');
   recipe.constraints.sort((a, b) => a.region.localeCompare(b.region));
-  const response = exact(JSON.parse(content), ['plan'], 'invalid_world_staged_spatial_response',
+  const response = exact(parseLlmJsonObject(content, 'invalid_world_staged_spatial_response'), ['plan'], 'invalid_world_staged_spatial_response',
     'world_unknown_staged_spatial_response_field');
   const raw = exact(response.plan,
     ['id', 'terrainRefinements', 'waterBodies', 'concept', 'featureGraph', 'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas'],
@@ -332,10 +343,21 @@ export function parseWorldWhiteboxSpatialPlan(
   if (raw.terrainRefinements !== undefined && !Array.isArray(raw.terrainRefinements)) {
     throw new Error('invalid_world_staged_spatial_refinements');
   }
-  const terrainRefinements = (raw.terrainRefinements ?? []) as WorldTerrainBrush[];
-  const revisedRecipe = validateWorldRecipe({ ...recipe,
-    ...(terrainRefinements.length ? { terrainBrushes: [...(recipe.terrainBrushes ?? []), ...terrainRefinements] } : {}) });
   const technicalNormalizations: string[] = [];
+  const terrainRefinements: WorldTerrainBrush[] = [];
+  let revisedRecipe = recipe;
+  for (const [index, brush] of ((raw.terrainRefinements ?? []) as unknown[]).entries()) {
+    try {
+      revisedRecipe = validateWorldRecipe({ ...recipe,
+        terrainBrushes: [...(recipe.terrainBrushes ?? []), ...terrainRefinements, brush as WorldTerrainBrush] });
+      terrainRefinements.push(brush as WorldTerrainBrush);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (!['invalid_world_terrain_brush', 'invalid_world_terrain_region', 'invalid_world_terrain_id']
+        .includes(code)) throw error;
+      technicalNormalizations.push(`terrainRefinements[${index}].${code}_skipped`);
+    }
+  }
   const mobility = raw.mobilityPlan && typeof raw.mobilityPlan === 'object' && !Array.isArray(raw.mobilityPlan)
     ? raw.mobilityPlan as Record<string, unknown> : null;
   const mobilityPlan = mobility && Array.isArray(mobility.routes) ? { ...mobility, routes: mobility.routes.map((value, index) => {
@@ -420,8 +442,7 @@ export function materializeWorldWhiteboxConstruction(
   content: string,
   request: WorldWhiteboxConstructionRequest
 ): WorldWhiteboxConstructionMaterialization {
-  let parsed: unknown;
-  try { parsed = JSON.parse(content); } catch { throw new Error('invalid_world_whitebox_construction_response'); }
+  const parsed = parseLlmJsonObject(content, 'invalid_world_whitebox_construction_response');
   const root = exact(parsed, ['towns', 'ecology', 'assets'], 'invalid_world_whitebox_construction_response',
     'world_unknown_whitebox_construction_field');
   if (!Array.isArray(root.towns) || !Array.isArray(root.assets)) throw new Error('invalid_world_whitebox_construction_response');
@@ -658,6 +679,12 @@ export async function generateStagedWorldWhitebox(input: unknown, signal?: Abort
   ], { provider: 'gpt', temperature: 0.55, maxTokens: 10_000, maxAttempts: 1,
     traceStage: 'world.whitebox.terrain-plan', signal });
   recordGenerationTrace('world.whitebox.terrain-raw', { content: terrainContent });
+  return continueStagedWorldWhitebox(request, terrainContent, signal);
+}
+
+/** Resume the unchanged first terrain response after a schema/parser failure without paying to replan it. */
+export async function continueStagedWorldWhitebox(input: unknown, terrainContent: string, signal?: AbortSignal) {
+  const request = validateWorldWhiteboxRequest(input);
   const terrain = parseWorldDryTerrainDraft(terrainContent, request);
   recordGenerationTrace('world.whitebox.terrain-plan', {
     recipe: terrain.recipe, technicalNormalizations: terrain.technicalNormalizations

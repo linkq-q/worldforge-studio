@@ -443,6 +443,23 @@ describe('whitebox world generation', () => {
     expect((result.rawPlan as { terrainRefinements: unknown[] }).terrainRefinements).toEqual([refinement]);
   });
 
+  it('keeps the raw plan and valid refinements when one optional brush has unusable heights', () => {
+    const source = originalPlan();
+    const dryRecipe = validateWorldRecipe(source.recipe);
+    const valid = { id: 'shore-pad', mode: 'flatten' as const,
+      region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 12 }, height: 2 };
+    const invalid = { id: 'shore-descent', mode: 'grade',
+      region: { kind: 'path', points: [[0, 0], [10, 0]], width: 8 },
+      heights: [[2, 1], [0, 0]] };
+    const result = parseWorldWhiteboxSpatialPlan(spatialPlanResponse(source,
+      { terrainRefinements: [valid, invalid] }), request, dryRecipe);
+    expect(result.plan.recipe.terrainBrushes).toEqual([expect.objectContaining(valid)]);
+    expect((result.rawPlan as { terrainRefinements: unknown[] }).terrainRefinements)
+      .toEqual([valid, invalid]);
+    expect(result.technicalNormalizations)
+      .toContain('terrainRefinements[1].invalid_world_terrain_brush_skipped');
+  });
+
   it('retains settlement population in the spatial whitebox and rejects invalid counts', () => {
     const source = originalPlan();
     source.settlementPlan!.settlements[0].population = 240;
