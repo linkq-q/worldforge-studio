@@ -28,6 +28,7 @@ const PARAMETER_LABELS: Record<string, string> = {
   rootColor: '草根颜色',
   tipColor: '草尖颜色',
   visibilityDistance: '可视距离（米）',
+  scatterStrength: '散射强度',
   paletteVariation: '调色板变化',
   bladeHeight: '叶片高度',
   bladeWidth: '叶片宽度',
@@ -184,6 +185,8 @@ const OPTION_LABELS: Record<string, string> = {
   'clear-river': '清澈河流',
   stylized: '风格化',
   stormy: '风暴水面',
+  clear: '晴朗',
+  coastal: '近岸水下',
   natural: '自然',
   autumn: '秋季',
   winter: '冬季',
@@ -374,7 +377,7 @@ function renderDeveloperPolicyRow(
         <div class="developer-enum-access">
           ${(['ai', 'developer'] as const).map((side) => `
             <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>${rule.values.map((value) => `
-              <label><input type="checkbox" data-policy-enum-value="${escapeHtml(value)}" data-policy-side="${side}" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${(entry[side].values ?? []).includes(value) ? 'checked' : ''} ${side === 'ai' && capability.developerOnly ? 'disabled' : ''} />${optionLabel(value)}</label>
+              <label><input type="checkbox" data-policy-enum-value="${escapeHtml(value)}" data-policy-side="${side}" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${(entry[side].values ?? []).includes(value) ? 'checked' : ''} ${side === 'ai' && capability.developerOnly ? 'disabled' : ''} />${optionLabel(value, capability.id, parameter)}</label>
             `).join('')}</span>
           `).join('')}
         </div>
@@ -463,7 +466,7 @@ function renderDeveloperPresetInput(
     return `<label><span>${parameterLabel(parameter)}</span><select ${identity}>${options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option || '不使用 HDRI')}</option>`).join('')}</select></label>${hdriFiles.length ? '' : '<p class="empty">把 .exr 放进 data/map-editor/hdri 后重新打开面板。</p>'}`;
   }
   if (rule.type === 'enum') {
-    return `<label><span>${parameterLabel(parameter)}</span><select ${identity}>${rule.values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${optionLabel(option)}</option>`).join('')}</select></label>`;
+    return `<label><span>${parameterLabel(parameter)}</span><select ${identity}>${rule.values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${optionLabel(option, moduleId, parameter)}</option>`).join('')}</select></label>`;
   }
   if (rule.type === 'color') {
     return `<label><span>${parameterLabel(parameter)}</span><input type="color" ${identity} value="${escapeHtml(String(value || '#ffffff'))}" /></label>`;
@@ -519,8 +522,11 @@ function parameterLabel(parameter: string): string {
   return escapeHtml(PARAMETER_LABELS[parameter] ?? parameter);
 }
 
-function optionLabel(option: string): string {
-  return escapeHtml(OPTION_LABELS[option] ?? option);
+function optionLabel(option: string, moduleId?: string, parameter?: string): string {
+  const scoped = moduleId === 'runtime.underwater' && parameter === 'mode' && option === 'clear'
+    ? '清澈水下'
+    : undefined;
+  return escapeHtml(scoped ?? OPTION_LABELS[option] ?? option);
 }
 
 function escapeHtml(value: string): string {

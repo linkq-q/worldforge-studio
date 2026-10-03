@@ -19,6 +19,7 @@ export type RenderModuleId =
   | 'runtime.presentation-style'
   | 'runtime.color-grade'
   | 'runtime.water-style'
+  | 'runtime.underwater'
   | 'runtime.grass-style'
   | 'runtime.material-theme'
   | 'runtime.light-rig'
@@ -189,6 +190,13 @@ export interface RuntimeWaterStyle {
   shoreWaveBreakup?: number;
   environmentReflectionStrength?: number;
   environmentReflectionExposure?: number;
+}
+
+export interface RuntimeUnderwaterStyle {
+  mode: 'off' | 'clear' | 'coastal';
+  tint: string;
+  visibilityDistance: number;
+  scatterStrength: number;
 }
 
 export interface RuntimeGrassStyle {
@@ -492,6 +500,20 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       shoreWaveBreakup: { type: 'number', min: 0, max: 0.8, default: 0.39 },
       environmentReflectionStrength: { type: 'number', min: 0, max: 1, default: 0.22 },
       environmentReflectionExposure: { type: 'number', min: 0.1, max: 1.5, default: 0.5 }
+    }
+  },
+  {
+    id: 'runtime.underwater',
+    label: '水下视效',
+    priority: 'P2',
+    developerOnly: true,
+    availability: 'ready',
+    availabilityNote: '结构化水体内的相机视效；首版按相机所在处的水面高度作水平面近似，默认关闭。',
+    params: {
+      mode: { type: 'enum', values: ['off', 'clear', 'coastal'], default: 'off' },
+      tint: { type: 'color', default: '#19747d' },
+      visibilityDistance: { type: 'number', min: 5, max: 120, default: 35 },
+      scatterStrength: { type: 'number', min: 0, max: 1, default: 0.72 }
     }
   },
   {
@@ -936,6 +958,17 @@ export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[]
       environmentReflectionStrength: numericValue(item.params.environmentReflectionStrength),
       environmentReflectionExposure: numericValue(item.params.environmentReflectionExposure)
     }));
+}
+
+export function compileRuntimeUnderwater(plan: RenderPlan): RuntimeUnderwaterStyle {
+  const params = plan.modules.find((item) => item.id === 'runtime.underwater')?.params ?? {};
+  const mode = enumValue(params.mode, ['off', 'clear', 'coastal'], 'off');
+  return {
+    mode,
+    tint: stringValue(params.tint) ?? (mode === 'coastal' ? '#176f69' : '#19747d'),
+    visibilityDistance: numericValue(params.visibilityDistance) ?? (mode === 'coastal' ? 22 : 35),
+    scatterStrength: numericValue(params.scatterStrength) ?? (mode === 'coastal' ? 0.78 : 0.72)
+  };
 }
 
 export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {

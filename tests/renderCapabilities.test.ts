@@ -9,6 +9,7 @@ import {
   compileRuntimeMaterialThemes,
   compileRuntimePostQuality,
   compileRuntimeTerrainMaterialStyle,
+  compileRuntimeUnderwater,
   compileRuntimeVolumetricLight,
   compileRuntimeWaterStyles,
   compileRenderPlan,
@@ -180,6 +181,10 @@ describe('RenderPlan V2 capabilities', () => {
         {
           id: 'runtime.post-quality',
           params: { bloom: 'soft', ssao: 'soft', depthOfField: 'off' }
+        },
+        {
+          id: 'runtime.underwater',
+          params: { mode: 'coastal', tint: '#176f69', visibilityDistance: 24, scatterStrength: 0.65 }
         }
       ]
     });
@@ -217,6 +222,26 @@ describe('RenderPlan V2 capabilities', () => {
       ssao: 'soft',
       depthOfField: 'off'
     });
+    expect(compileRuntimeUnderwater(plan)).toEqual({
+      mode: 'coastal', tint: '#176f69', visibilityDistance: 24, scatterStrength: 0.65
+    });
+  });
+
+  it('keeps the underwater capability developer-only while defaulting it off', () => {
+    const defaults = createDefaultRenderAccessPolicy();
+    expect(defaults.parameters.find((entry) => (
+      entry.moduleId === 'runtime.underwater' && entry.parameter === 'mode'
+    ))).toMatchObject({ ai: { enabled: false }, developer: { enabled: true } });
+    expect(compileRuntimeUnderwater(normalizeRenderPlan({
+      version: 2, baseSchemeId: 'render-natural-day', modules: []
+    }))).toEqual({
+      mode: 'off', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72
+    });
+    expect(() => normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'runtime.underwater', params: { mode: 'clear' } }]
+    }, ['render-natural-day'], defaults, 'ai')).toThrow('render_module_forbidden:runtime.underwater');
   });
 
   it('compiles an HDRI sky for developers and blocks the AI from picking a texture', () => {

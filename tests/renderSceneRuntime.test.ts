@@ -21,6 +21,7 @@ function createTargets() {
     applyPresentation: vi.fn(),
     applyColorGrade: vi.fn(),
     applyPostQuality: vi.fn(),
+    applyUnderwater: vi.fn(),
     applyDistanceFog: vi.fn(),
     applyScopedCapabilities: vi.fn()
   };
@@ -86,6 +87,7 @@ describe('applyRenderScheme', () => {
     expect(adapter.applyPostQuality)
       .toHaveBeenLastCalledWith({ bloom: 'off', ssao: 'off', depthOfField: 'off' });
     expect(adapter.applyDistanceFog).toHaveBeenLastCalledWith('#111719', 0);
+    expect(adapter.applyUnderwater).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'off' }));
     expect(adapter.applyScopedCapabilities).toHaveBeenLastCalledWith([], [], []);
     expect(targets.sunLight.intensity).toBe(2.5);
     // The styled pass applied a sky; clearing the scheme has to take it back off.
@@ -200,6 +202,28 @@ describe('applyRenderScheme', () => {
     });
     // A scheme without a plan must not leave a previous panorama on the dome.
     expect(hdriSky.clear).toHaveBeenCalled();
+  });
+
+  it('applies a saved developer underwater capability without changing builtin schemes', () => {
+    const { targets, adapter } = createTargets();
+    const scheme = createRenderScheme({
+      name: 'underwater review',
+      settings: PLAIN_SCHEME.settings,
+      renderPlan: {
+        version: 2,
+        baseSchemeId: PLAIN_SCHEME.id,
+        modules: [{
+          id: 'runtime.underwater',
+          params: { mode: 'clear', visibilityDistance: 42, tint: '#19747d', scatterStrength: 0.7 }
+        }]
+      }
+    });
+
+    applyRenderScheme(targets, scheme);
+
+    expect(adapter.applyUnderwater).toHaveBeenCalledWith({
+      mode: 'clear', visibilityDistance: 42, tint: '#19747d', scatterStrength: 0.7
+    });
   });
 
   it('keeps a legacy plan\'s HDRI after discarding removed streak settings', () => {
@@ -388,6 +412,7 @@ describe('rain water ripples', () => {
       adapter: {
         addRainRipple,
         getContentVisibilityDistance: () => 100,
+        isUnderwaterEnabled: () => false,
         tick: vi.fn(),
         render: vi.fn()
       },

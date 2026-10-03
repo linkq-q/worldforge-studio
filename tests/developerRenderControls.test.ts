@@ -146,4 +146,15 @@ describe('developer render controls', () => {
     expect(html).toContain('value="0.012"');
     expect(html).not.toContain('在此预设中启用');
   });
+
+  it('keeps the shared clear enum localized by capability', () => {
+    const underwater = RENDER_CAPABILITIES.find((entry) => entry.id === 'runtime.underwater');
+    const weather = RENDER_CAPABILITIES.find((entry) => entry.id === 'runtime.weather');
+    if (!underwater || !weather) throw new Error('missing underwater or weather capability');
+    const scheme = BUILTIN_RENDER_SCHEMES[0]!;
+
+    expect(renderDeveloperCapability(underwater, scheme, [])).toContain('清澈水下');
+    expect(renderDeveloperCapability(weather, scheme, [])).toContain('晴朗');
+    expect(renderDeveloperCapability(weather, scheme, [])).not.toContain('清澈水下');
+  });
 });

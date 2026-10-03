@@ -14,4 +14,5 @@ export * from './passes/SelectiveBloomPass.js';
 export * from './passes/SharedSSAOPass.js';
 export * from './passes/SketchHatchPass.js';
 export * from './passes/ToneMapPass.js';
+export * from './passes/UnderwaterPass.js';
 export * from './shaders/CurvatureEdgePass.js';
