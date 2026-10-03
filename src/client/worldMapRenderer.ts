@@ -27,6 +27,7 @@ import type { MapGuide } from '../shared/mapGuide';
 import type { MapGrassLayer } from '../shared/mapGrass';
 import { buildOceanCoastField, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import type { PaletteCoverageReport } from './paletteMaterialRuntime';
+import type { WaterOceanTerrainBinding } from './renderEnvironmentBridge';
 import {
   buildNormalizedEditableMapGroupCore,
   buildStructuredWaterGroup,
@@ -450,6 +451,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
   const compactOcean = compactOceanBuild?.group ?? null;
   const compactOceanCoast = compactOceanBuild?.coast ?? null;
   if (compactOcean) {
+    offsetWorldWaterBindings(compactOcean, 0, 0, bundle.plan.recipe.size);
     compactOcean.visible = false;
     modelsRoot.add(compactOcean);
   }
@@ -1094,7 +1096,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     root.add(entry.terrainMount);
     entry.rendered.modelsRoot.position.set(centerX, 0, centerZ);
     modelsRoot.add(entry.rendered.modelsRoot);
-    offsetWorldWaterBindings(entry.rendered.modelsRoot, centerX, centerZ);
+    offsetWorldWaterBindings(entry.rendered.modelsRoot, centerX, centerZ, bundle.plan.recipe.size);
   }
 
   function harborQuayObject(
@@ -1742,13 +1744,14 @@ function localSceneArt(plan: SceneArtPlan | null, map: EditableMap, tile: WorldT
   };
 }
 
-function offsetWorldWaterBindings(root: THREE.Object3D, x: number, z: number): void {
+function offsetWorldWaterBindings(root: THREE.Object3D, x: number, z: number, worldSize: number): void {
   root.traverse(object => {
     const shore = object.userData.waterShore as { center?: [number, number]; worldSpace?: boolean } | undefined;
     if (shore?.worldSpace !== false && shore?.center) shore.center = [shore.center[0] + x, shore.center[1] + z];
-    const ocean = object.userData.waterOceanTerrain as { center?: [number, number]; splashPoints?: Array<[number, number]> } | undefined;
+    const ocean = object.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
     if (ocean?.center) ocean.center = [ocean.center[0] + x, ocean.center[1] + z];
     if (ocean?.splashPoints) ocean.splashPoints = ocean.splashPoints.map(point => [point[0] + x, point[1] + z]);
+    if (ocean) ocean.terrainBounds = [-worldSize / 2, -worldSize / 2, worldSize / 2, worldSize / 2];
   });
 }
 

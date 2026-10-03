@@ -543,6 +543,7 @@ describe('main editor streamed world renderer', () => {
       const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
       expect(ocean.parent?.visible).toBe(true);
       expect(ocean.userData.waterOceanTerrain).toBeDefined();
+      expect(ocean.userData.waterOceanTerrain.terrainBounds).toEqual([-250, -250, 250, 250]);
       expect(ocean.userData.waterOceanTerrain.mapSize[0]).toBeGreaterThanOrEqual(500);
       expect(ocean.userData.waterOceanTerrain.mapSize[1]).toBeGreaterThanOrEqual(500);
       expect(ocean.userData.waterOceanTerrain.terrainSize[0]).toBeGreaterThanOrEqual(251);
@@ -662,6 +663,9 @@ describe('main editor streamed world renderer', () => {
         return Boolean(settled && settled.pendingTiles === 0 && settled.contentChunks > 1);
       });
       expect(rendered.getDebugStats().streaming?.contentChunks).toBeGreaterThan(1);
+      const ocean = rendered.group.getObjectByName('water:world-ocean') as THREE.Mesh;
+      const half = bundle.plan.recipe.size / 2;
+      expect(ocean.userData.waterOceanTerrain.terrainBounds).toEqual([-half, -half, half, half]);
       expect(rendered.objectGroups.get('manual-root')!.getWorldPosition(new THREE.Vector3())).toEqual(position);
       const collision = rendered.getCollisionWorld?.();
       const manualGroup = rendered.objectGroups.get('manual-root');
