@@ -6,6 +6,7 @@ import * as worldSampling from '../src/shared/worldMapState';
 import { worldPlanKey, type WorldPlan } from '../src/shared/worldPlanning';
 import type { WorldMapState } from '../src/shared/worldMapState';
 import type { WorldRecipe } from '../src/shared/worldTerrain';
+import { createWorldSeaProbeSampler } from '../src/shared/worldEnvironmentEvidence';
 
 function recipe(height: (x: number, z: number) => number): WorldRecipe {
   const resolution = 65, size = 500;
@@ -93,6 +94,25 @@ describe('continuous world map environment compatibility', () => {
     expect(shore.waterDistance).toBeGreaterThanOrEqual(7.9);
     expect(shore.waterDistance).toBeLessThan(8.2);
     expect(sampleMapEnvironment(map, 240, 0, { waterId: 'sea' }).waterDistance).toBe(Infinity);
+  });
+
+  it('does not invent sea in a deep inland freshwater basin or its dry carved rim', () => {
+    const input = recipe(() => 20);
+    input.waterBodies = [{ id: 'deep-lake', type: 'lake', region: { kind: 'circle', center: [0, 0], radius: 20 },
+      levels: [2], depth: 30 }];
+    const map = worldMap(input);
+    const actual = worldSampling.worldMapSampler(map.world!);
+    const seaProbe = createWorldSeaProbeSampler(actual);
+    expect(actual(0, 0)).toMatchObject({ waterBodyId: 'deep-lake', waterLevel: 2 });
+    expect(actual(0, 0).height).toBeLessThan(0);
+    expect(seaProbe(0, 0).waterLevel).toBeNull();
+    const sample = createMapEnvironmentSampler(map);
+    for (const [x, expectedDistance] of [[24, 1.8335670072205106], [32, 9.742711527929272]]) {
+      expect(actual(x, 0).waterLevel).toBeNull();
+      expect(seaProbe(x, 0).waterLevel).toBeNull();
+      expect(worldSampling.worldMapTerrainContext(map.world!).freshWaterDistance(x, 0)).toBeCloseTo(expectedDistance, 8);
+      expect(sample(x, 0).waterDistance).toBeCloseTo(expectedDistance, 8);
+    }
   });
 
   it('reuses bounded water probes for nearby queries instead of resampling hundreds of points each time', () => {

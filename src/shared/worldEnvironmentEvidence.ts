@@ -38,7 +38,7 @@ const WATER_DISTANCE_REFINEMENTS = 6;
 type WaterSurface = ReturnType<ReturnType<typeof createPlannedWorldSampler>>;
 type WaterTypes = Map<string, 'lake' | 'river'>;
 
-/** Cached 16m terrain interpolation for bounded coast-distance probes; point wetness uses the real sampler. */
+/** Cached 16m sea-identified terrain interpolation; point wetness uses the real sampler. */
 export function createWorldSeaProbeSampler(sample: WorldSampler): WorldSampler {
   const nodes = new Map<string, WaterSurface>();
   const node = (x: number, z: number) => {
@@ -55,8 +55,11 @@ export function createWorldSeaProbeSampler(sample: WorldSampler): WorldSampler {
   return (x, z) => {
     const gx = Math.floor(x / 16), gz = Math.floor(z / 16), tx = x / 16 - gx, tz = z / 16 - gz;
     const a = node(gx, gz), b = node(gx + 1, gz), c = node(gx, gz + 1), d = node(gx + 1, gz + 1);
-    const height = (a.height * (1 - tx) + b.height * tx) * (1 - tz)
-      + (c.height * (1 - tx) + d.height * tx) * tz;
+    // Carved freshwater beds and dry rims can be below zero without being ocean.
+    const coastHeight = (value: WaterSurface) => value.waterLevel !== null && value.waterBodyId === null
+      ? Math.min(-0.001, value.height) : Math.max(0, value.height);
+    const height = (coastHeight(a) * (1 - tx) + coastHeight(b) * tx) * (1 - tz)
+      + (coastHeight(c) * (1 - tx) + coastHeight(d) * tx) * tz;
     return { ...a, height, waterLevel: height < 0 ? 0 : null, waterBodyId: null };
   };
 }
