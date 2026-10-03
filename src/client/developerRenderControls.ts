@@ -29,6 +29,7 @@ const PARAMETER_LABELS: Record<string, string> = {
   tipColor: '草尖颜色',
   visibilityDistance: '可视距离（米）',
   scatterStrength: '散射强度',
+  causticStrength: '焦散强度',
   paletteVariation: '调色板变化',
   bladeHeight: '叶片高度',
   bladeWidth: '叶片宽度',

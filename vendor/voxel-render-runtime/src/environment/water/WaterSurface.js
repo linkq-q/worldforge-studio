@@ -20,6 +20,48 @@ import {
   RING_STRIPE_GLSL as WATER_RING_STRIPE_GLSL,
 } from './chunks.js';
 
+const SHALLOW_WATER_RESOLUTION = 32;
+const SHALLOW_WATER_DOMAIN_SIZE = 16;
+const SHALLOW_WATER_FIXED_STEP = 1 / 30;
+const SHALLOW_WATER_ACTIVE_SECONDS = 3;
+
+const PRIMARY_GERSTNER_PHASE_GLSL = /* glsl */ `
+  float primaryGerstnerRawWaveNumber() {
+    return max(abs(uLargeWaveScale * max(uWaveScale, 0.05) / 1.3), 0.001);
+  }
+
+  float primaryGerstnerWaveNumber() {
+    float waveNumber = primaryGerstnerRawWaveNumber();
+    if (!uUseOceanTerrain || uOceanNearVertexSpacing <= 0.0) return waveNumber;
+    // Preserve primary-wave energy at extreme scale values, but never ask the
+    // geometry for fewer than about 2.6 vertices per wavelength.
+    return min(waveNumber, 2.4 / uOceanNearVertexSpacing);
+  }
+
+  float oceanVertexWaveFilter(float waveNumber) {
+    if (!uUseOceanTerrain || uOceanNearVertexSpacing <= 0.0) return 1.0;
+    // Two samples per wavelength is the Nyquist limit. Fade before that limit
+    // instead of letting high-frequency geometry alias into stationary stripes.
+    float phaseAdvancePerVertex = abs(waveNumber) * uOceanNearVertexSpacing;
+    return 1.0 - smoothstep(2.4, 3.14159265, phaseAdvancePerVertex);
+  }
+
+  float primaryGerstnerPhase(vec2 position) {
+    vec2 dir = normalizeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
+    vec2 tangent = vec2(-dir.y, dir.x);
+    float k = primaryGerstnerWaveNumber();
+    float ridgeStretch = max(uLargeWaveStretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
+    float along = dot(position, dir) * k;
+    float across = dot(position, tangent) * k / ridgeStretch;
+    float seed = dot(dir, vec2(19.17, 47.23)) + k * 7.31;
+    float spacingNoise = noise2D(vec2(along, across) * uWaveSpacingScale + vec2(seed, -seed * 0.37));
+    float phaseWarp = (spacingNoise - 0.5) * 2.0 * uWaveSpacingVariation;
+    return along + phaseWarp
+      + sin((across + phaseWarp * 0.25) * 0.65) * 0.25 * (1.0 - uWaveCrossDamping)
+      + uTime * sqrt(9.81 * k) * uLargeWaveSpeed * uWaveSpeed * 0.45;
+  }
+`;
+
 const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform sampler2D tOceanTerrain;
   uniform bool uUseOceanTerrain;
@@ -31,6 +73,9 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform float uOceanTerrainSinkTarget;
   uniform bool uOceanTerrainBounded;
   uniform vec4 uOceanTerrainBounds;
+  uniform float uOceanWaveGeometryFadeStart;
+  uniform float uOceanWaveGeometryFadeEnd;
+  uniform float uOceanNearVertexSpacing;
 
   bool outsideOceanTerrain(vec2 worldXZ) {
     return uOceanTerrainBounded && (any(lessThan(worldXZ, uOceanTerrainBounds.xy))
@@ -58,7 +103,10 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
       float edgeHeight = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
       float distanceOutside = length((grid - clampedGrid) * safeMapSize / terrainSpan);
       float t = smoothstep(0.0, max(uOceanTerrainApronWidth, 0.001), distanceOutside);
-      return mix(edgeHeight, uOceanTerrainSinkTarget, t);
+      // New coast fields already contain a deep padded floor. Extending the
+      // finite texture must never raise that floor back toward sinkTarget,
+      // otherwise its square edge appears as a bright/dark trench on the sea.
+      return mix(edgeHeight, min(edgeHeight, uOceanTerrainSinkTarget), t);
     }
     if (mod(cell.x + cell.y, 2.0) < 0.5) {
       if (f.x + f.y <= 1.0) return h00 + (h10 - h00) * f.x + (h01 - h00) * f.y;
@@ -67,6 +115,7 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
     if (f.x <= f.y) return h00 + (h11 - h01) * f.x + (h01 - h00) * f.y;
     return h00 + (h10 - h00) * f.x + (h11 - h10) * f.y;
   }
+
 `;
 
 const OCEAN_SWASH_GLSL = /* glsl */ `
@@ -97,15 +146,30 @@ const OCEAN_SWASH_GLSL = /* glsl */ `
     return -0.025 - 0.035 * oceanSwashNoise(p * 0.31 + vec2(-uTime * 0.018, uTime * 0.025));
   }
 
+  float oceanWaveDepthRange() {
+    // WorldForge's authored island shelves are intentionally shallow (often
+    // about 0.25 m below sea level). Treat only the final shoreline band as
+    // swash so the playable ocean still retains its open-water wave spectrum.
+    return max(0.16, uShoreWaveRange * 0.42);
+  }
+
   float computeOceanSwashHeight(vec2 p, float openWave) {
     if (uShoreWaveStrength <= 0.0) return openWave;
     float ground = sampleOceanTerrainHeight(p) - uOceanLevel;
     float phase = oceanSwashPhase(p, ground);
     float push = smoothstep(0.0, 0.30, phase) * (1.0 - smoothstep(0.30, 1.0, phase));
     float swash = mix(oceanSwashTrough(p), oceanSwashCrest(p), push);
-    float shoreDepth = max(0.45, uShoreWaveRange * 3.1);
-    float shore = smoothstep(-shoreDepth, -0.20, ground);
+    float shore = smoothstep(-oceanWaveDepthRange(), -0.025, ground);
     return mix(openWave * 1.3, swash, shore);
+  }
+
+  float oceanWaveGeometryFade(vec2 worldXZ) {
+    float distanceFromMapCenter = length(worldXZ - uOceanMapCenter);
+    return 1.0 - smoothstep(
+      uOceanWaveGeometryFadeStart,
+      max(uOceanWaveGeometryFadeEnd, uOceanWaveGeometryFadeStart + 0.001),
+      distanceFromMapCenter
+    );
   }
 `;
 
@@ -161,6 +225,11 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   uniform float uWaveCrossDamping;
   uniform float uWaveSpacingVariation;
   uniform float uWaveSpacingScale;
+  uniform bool uUseRiverFlow;
+  uniform sampler2D tShallowWaterHeight;
+  uniform bool uUseShallowWaterHeight;
+  uniform vec2 uShallowWaterCenter;
+  uniform float uShallowWaterSize;
   uniform sampler2D tShoreDistance;
   uniform bool uUseShoreDistance;
   uniform bool uInvertShoreDistance;
@@ -226,97 +295,119 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return lenSq > 0.000001 ? normalize(direction) : normalize(fallback);
   }
 
-  float directionalWavePhase(
+  ${PRIMARY_GERSTNER_PHASE_GLSL}
+
+  vec3 gerstnerDisplacement(vec2 direction, float amplitude, float steepness, float phase) {
+    vec2 dir = normalizeDirection(direction, vec2(1.0, 0.25));
+    float s = sin(phase);
+    float c = cos(phase);
+    float lateral = amplitude * steepness * c;
+    return vec3(dir.x * lateral, amplitude * s, dir.y * lateral);
+  }
+
+  vec3 gerstnerWave(
     vec2 position,
     vec2 direction,
-    float scale,
+    float waveNumber,
     float speed,
-    float stretch
+    float amplitude,
+    float steepness,
+    float phaseOffset
   ) {
     vec2 dir = normalizeDirection(direction, vec2(1.0, 0.25));
-    vec2 tangent = vec2(-dir.y, dir.x);
-    float ridgeStretch = max(stretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
-    float along = dot(position, dir) * scale;
-    float across = dot(position, tangent) * scale / ridgeStretch;
-    float seed = dot(dir, vec2(19.17, 47.23)) + scale * 7.31;
-    float spacingNoise = noise2D(vec2(along, across) * uWaveSpacingScale + vec2(seed, -seed * 0.37));
-    float phaseWarp = (spacingNoise - 0.5) * 2.0 * uWaveSpacingVariation;
-    return along + phaseWarp
-      + sin((across + phaseWarp * 0.25) * 0.65) * 0.25 * (1.0 - uWaveCrossDamping)
-      + uTime * speed;
+    float k = max(abs(waveNumber), 0.001);
+    // Deep-water dispersion: long waves travel faster than short waves.
+    float angularFrequency = sqrt(9.81 * k);
+    float phase = dot(position, dir) * k
+      + uTime * angularFrequency * speed * uWaveSpeed * 0.45
+      + phaseOffset;
+    return gerstnerDisplacement(dir, amplitude, steepness, phase);
   }
 
-  float directionalWaveLayer(
-    vec2 position,
-    vec2 direction,
-    float scale,
-    float speed,
-    float stretch,
-    float sharpness
-  ) {
-    float phase = directionalWavePhase(position, direction, scale, speed, stretch);
-    float w = exp(sin(phase) - 1.0);
-    w = (w - uWaveCenter) * uWaveAmplitudeBoost;
-    w = sign(w) * pow(abs(w), max(sharpness, 0.001));
-    return w;
+  float sampleShallowWaterHeight(vec2 worldXZ) {
+    if (!uUseShallowWaterHeight) return 0.0;
+    vec2 uv = (worldXZ - uShallowWaterCenter) / max(uShallowWaterSize, 0.001) + 0.5;
+    vec2 edgeFade = 1.0 - smoothstep(vec2(0.42), vec2(0.5), abs(uv - 0.5));
+    return texture2D(tShallowWaterHeight, clamp(uv, vec2(0.0), vec2(1.0))).r * edgeFade.x * edgeFade.y;
   }
 
-  float computeDirectionalDetailHeight(vec2 worldXZ) {
-    vec2 detailDir = normalizeDirection(uPrimaryWaveDirection + uSecondaryWaveDirection, vec2(0.6, 1.0));
-    return directionalWaveLayer(
-      worldXZ,
-      detailDir,
-      uDetailWaveScale,
-      uDetailWaveSpeed,
-      max(uLargeWaveStretch * 0.25, 0.25),
-      0.8
+  vec3 computeDirectionalWaveDisplacement(vec2 worldXZ) {
+    float spread = clamp(uDirectionalWaveBlend, 0.0, 1.0);
+    // Keep the existing global wave-scale control meaningful for the new spectrum.
+    // Render plans use 1.3 as the neutral value, so authored component scales retain
+    // their current look while lower/higher values lengthen/shorten every wavelength.
+    float scaleMultiplier = max(uWaveScale, 0.05) / 1.3;
+    float crestControl = smoothstep(0.5, 4.0, uWaveRidgeSharpness);
+    float choppiness = crestControl * mix(0.35, 0.82, clamp(uWaveCrestStretch / 4.0, 0.0, 1.0));
+    vec2 midDirection = normalizeDirection(
+      uPrimaryWaveDirection + uSecondaryWaveDirection * 0.35,
+      vec2(1.0, 0.0)
     );
-  }
+    vec2 detailDirection = normalizeDirection(
+      uPrimaryWaveDirection - uSecondaryWaveDirection * 0.45,
+      vec2(0.6, 1.0)
+    );
+    float primaryAmplitude = uWaveHeight * uLargeWaveStrength * 0.62;
+    float secondaryAmplitude = uWaveHeight * uSecondaryWaveStrength * 0.34 * spread;
+    float midAmplitude = uWaveHeight * uMidWaveStrength * 0.24 * spread;
+    float detailAmplitude = uWaveHeight * uDetailWaveStrength * 0.1 * spread;
+    float primaryWaveNumber = primaryGerstnerWaveNumber();
+    float secondaryWaveNumber = max(abs(uSecondaryWaveScale * scaleMultiplier), 0.001);
+    float midWaveNumber = max(abs(uMidWaveScale * scaleMultiplier), 0.001);
+    float detailWaveNumber = max(abs(uDetailWaveScale * scaleMultiplier), 0.001);
+    secondaryAmplitude *= oceanVertexWaveFilter(secondaryWaveNumber);
+    midAmplitude *= oceanVertexWaveFilter(midWaveNumber);
+    detailAmplitude *= oceanVertexWaveFilter(detailWaveNumber);
+    // A Gerstner component folds when Q*A*k exceeds one. Bound the sum so
+    // imported/extreme parameters cannot make the surface self-intersect.
+    float foldoverBudget = abs(primaryAmplitude * primaryWaveNumber)
+      + abs(secondaryAmplitude * secondaryWaveNumber) * 0.82
+      + abs(midAmplitude * midWaveNumber) * 0.68
+      + abs(detailAmplitude * detailWaveNumber) * 0.45;
+    float safeChoppiness = min(choppiness, 0.82 / max(foldoverBudget, 0.001));
 
-  float computeDirectionalWaveHeight(vec2 worldXZ) {
-    float randomOctave = getwavesVertex(worldXZ * uWaveScale);
-
-    float largeA = directionalWaveLayer(
-      worldXZ,
+    vec3 displacement = gerstnerDisplacement(
       uPrimaryWaveDirection,
-      uLargeWaveScale,
-      uLargeWaveSpeed,
-      uLargeWaveStretch,
-      uWaveRidgeSharpness
-    ) * uLargeWaveStrength;
-
-    float largeB = directionalWaveLayer(
+      primaryAmplitude,
+      safeChoppiness,
+      primaryGerstnerPhase(worldXZ)
+    );
+    displacement += gerstnerWave(
       worldXZ,
       uSecondaryWaveDirection,
-      uSecondaryWaveScale,
+      secondaryWaveNumber,
       uSecondaryWaveSpeed,
-      uLargeWaveStretch * 0.75,
-      max(uWaveRidgeSharpness * 0.85, 0.5)
-    ) * uSecondaryWaveStrength;
-
-    float mid = directionalWaveLayer(
+      secondaryAmplitude,
+      safeChoppiness * 0.82,
+      1.73 + uWaveSpacingVariation * 0.31
+    );
+    displacement += gerstnerWave(
       worldXZ,
-      normalizeDirection(uPrimaryWaveDirection + uSecondaryWaveDirection * 0.35, vec2(1.0, 0.0)),
-      uMidWaveScale,
+      midDirection,
+      midWaveNumber,
       uMidWaveSpeed,
-      max(uLargeWaveStretch * 0.55, 0.5),
-      1.0
-    ) * uMidWaveStrength;
-
-    float detail = computeDirectionalDetailHeight(worldXZ) * uDetailWaveStrength;
-    float directional = largeA + largeB + mid + detail * 0.2;
-    return mix(randomOctave, directional, clamp(uDirectionalWaveBlend, 0.0, 1.0));
+      midAmplitude,
+      safeChoppiness * 0.68,
+      3.91 + uWaveSpacingVariation * 0.47
+    );
+    displacement += gerstnerWave(
+      worldXZ,
+      detailDirection,
+      detailWaveNumber,
+      uDetailWaveSpeed,
+      detailAmplitude,
+      safeChoppiness * 0.45,
+      5.37 + uWaveSpacingVariation * 0.73
+    );
+    return displacement;
   }
 
   float computeVertexWaveHeight(vec2 localXZ) {
-    float h;
-    if (uUseDirectionalWaves) {
-      h = computeDirectionalWaveHeight(localXZ);
-    } else {
-      float waveRaw = getwavesVertex(localXZ * uWaveScale);
-      h = (waveRaw - uWaveCenter) * uWaveAmplitudeBoost;
+    if (uUseDirectionalWaves && !uUseRiverFlow) {
+      return computeDirectionalWaveDisplacement(localXZ).y;
     }
-    return h * uWaveHeight;
+    float waveRaw = getwavesVertex(localXZ * uWaveScale);
+    return (waveRaw - uWaveCenter) * uWaveAmplitudeBoost * uWaveHeight;
   }
 
   ${OCEAN_SWASH_GLSL}
@@ -367,26 +458,46 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return waveLine * shoreRangeMask * breakup * uShoreWaveCrestHeight;
   }
 
-  float computeDisplacedWaveHeight(vec2 localXZ, vec3 localPosition) {
-    float waveH = computeVertexWaveHeight(localXZ);
+  vec3 computeDisplacedPosition(vec3 localPosition, float oceanWaveFade) {
+    vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
+    float shallowWaterHeight = sampleShallowWaterHeight(worldBase.xz);
+    vec3 waveOffset = uUseDirectionalWaves && !uUseRiverFlow
+      ? computeDirectionalWaveDisplacement(worldBase.xz)
+      : vec3(0.0, computeVertexWaveHeight(worldBase.xz), 0.0);
     if (uUseOceanTerrain && uShoreWaveEnabled) {
-      vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
-      return computeOceanSwashHeight(worldBase.xz, waveH);
+      // Medium/far ocean rings are intentionally too coarse for vertex waves.
+      // Fade macro geometry radially before the first seam; fragment normals,
+      // reflection and highlights continue animating over the full ocean.
+      waveOffset *= oceanWaveFade;
+      float ground = sampleOceanTerrainHeight(worldBase.xz);
+      float waterDepth = max(uOceanLevel - ground, 0.0);
+      float lateralDamp = smoothstep(0.025, oceanWaveDepthRange(), waterDepth);
+      waveOffset.xz *= lateralDamp;
+      waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y)
+        + shallowWaterHeight * smoothstep(0.025, 0.2, waterDepth);
+      return localPosition + waveOffset;
     }
     float damp = computeShoreDamp(localPosition);
-    return waveH * damp + uSurfaceLift * damp + computeShoreWaveCrestHeight(localPosition);
+    waveOffset *= damp;
+    waveOffset.y += (uSurfaceLift + shallowWaterHeight) * damp + computeShoreWaveCrestHeight(localPosition);
+    return localPosition + waveOffset;
   }
 
   void main() {
-    float waveH = computeDisplacedWaveHeight(position.xz, position);
-    vec3 displaced = position + vec3(0.0, waveH, 0.0);
+    vec3 baseWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+    float oceanWaveFade = uUseOceanTerrain ? oceanWaveGeometryFade(baseWorldPosition.xz) : 1.0;
+    vec3 displaced = computeDisplacedPosition(position, oceanWaveFade);
+    float waveH = displaced.y - position.y;
 
-    // Neighbor sampling keeps the existing displaced vertex normal chain.
+    // The displaced tangents include Gerstner's lateral orbital motion.
+    // Reuse the centre fade for neighbour samples: differentiating the LOD
+    // envelope would create a false circular ridge at the transition band.
     float eps = 0.1;
-    float dx = computeDisplacedWaveHeight(vec2(position.x + eps, position.z), vec3(position.x + eps, position.y, position.z));
-    float dz = computeDisplacedWaveHeight(vec2(position.x, position.z + eps), vec3(position.x, position.y, position.z + eps));
-    // Keep the authored river slope; wave derivatives are only a perturbation.
-    vec3 perturbedNormal = normalize(normal + vec3((waveH - dx) / eps, 0.0, (waveH - dz) / eps) * normal.y);
+    vec3 displacedX = computeDisplacedPosition(position + vec3(eps, 0.0, 0.0), oceanWaveFade);
+    vec3 displacedZ = computeDisplacedPosition(position + vec3(0.0, 0.0, eps), oceanWaveFade);
+    vec3 waveNormal = normalize(cross(displacedZ - displaced, displacedX - displaced));
+    // Keep authored river slope while adding the local wave perturbation.
+    vec3 perturbedNormal = normalize(normal + (waveNormal - vec3(0.0, 1.0, 0.0)) * normal.y);
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
     vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);
@@ -658,6 +769,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform bool uHasTerrainWaterDepth;
   uniform sampler2D tWaterNormalA;
   uniform sampler2D tWaterNormalB;
+  uniform sampler2D tShallowWaterHeight;
+  uniform bool uUseShallowWaterHeight;
+  uniform vec2 uShallowWaterCenter;
+  uniform float uShallowWaterSize;
   uniform bool uUseWaterNormalMaps;
   uniform float uWaterNormalStrength;
   uniform float uWaterNormalScaleA;
@@ -680,34 +795,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     return flowDir * uTime * uFlowSpeed * (uUseRiverFlow ? -1.0 : 1.0);
   }
 
-  float directionalWavePhase(
-    vec2 position,
-    vec2 direction,
-    float scale,
-    float speed,
-    float stretch
-  ) {
-    vec2 dir = normalizeDirection(direction, vec2(1.0, 0.25));
-    vec2 tangent = vec2(-dir.y, dir.x);
-    float ridgeStretch = max(stretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
-    float along = dot(position, dir) * scale;
-    float across = dot(position, tangent) * scale / ridgeStretch;
-    float seed = dot(dir, vec2(19.17, 47.23)) + scale * 7.31;
-    float spacingNoise = noise2D(vec2(along, across) * uWaveSpacingScale + vec2(seed, -seed * 0.37));
-    float phaseWarp = (spacingNoise - 0.5) * 2.0 * uWaveSpacingVariation;
-    return along + phaseWarp
-      + sin((across + phaseWarp * 0.25) * 0.65) * 0.25 * (1.0 - uWaveCrossDamping)
-      + uTime * speed;
-  }
+  ${PRIMARY_GERSTNER_PHASE_GLSL}
 
   float computePrimaryCrestProfile(vec2 worldXZ, out float phase) {
-    phase = directionalWavePhase(
-      worldXZ,
-      uPrimaryWaveDirection,
-      uLargeWaveScale,
-      uLargeWaveSpeed,
-      uLargeWaveStretch
-    );
+    phase = primaryGerstnerPhase(worldXZ);
     return smoothstep(0.45, 0.95, exp(sin(phase) - 1.0));
   }
 
@@ -782,6 +873,19 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     return normalize(vec3(slope, 1.0));
   }
 
+  vec2 sampleShallowWaterSlope(vec2 worldXZ) {
+    if (!uUseShallowWaterHeight) return vec2(0.0);
+    vec2 uv = (worldXZ - uShallowWaterCenter) / max(uShallowWaterSize, 0.001) + 0.5;
+    vec2 edgeFade = 1.0 - smoothstep(vec2(0.42), vec2(0.5), abs(uv - 0.5));
+    float texel = 1.0 / ${SHALLOW_WATER_RESOLUTION}.0;
+    float cellSize = uShallowWaterSize / ${SHALLOW_WATER_RESOLUTION - 1}.0;
+    float left = texture2D(tShallowWaterHeight, clamp(uv - vec2(texel, 0.0), vec2(0.0), vec2(1.0))).r;
+    float right = texture2D(tShallowWaterHeight, clamp(uv + vec2(texel, 0.0), vec2(0.0), vec2(1.0))).r;
+    float back = texture2D(tShallowWaterHeight, clamp(uv - vec2(0.0, texel), vec2(0.0), vec2(1.0))).r;
+    float front = texture2D(tShallowWaterHeight, clamp(uv + vec2(0.0, texel), vec2(0.0), vec2(1.0))).r;
+    return vec2(left - right, back - front) / max(2.0 * cellSize, 0.001) * edgeFade.x * edgeFade.y;
+  }
+
   float computeWaterAbsorptionFactor(vec3 worldPos, float viewDistance, float depthDiff, float shoreDist) {
     float factor = 0.0;
 
@@ -834,6 +938,14 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       depthDiff = 0.0;
       hasDepth = 0.0;
     }
+    // Lakes/rivers use a bounded depth texture, while oceans have a terrain
+    // height field that remains continuous beyond that texture's square edge.
+    // Use one structured column depth for color and lighting so the texture
+    // bounds never appear as a rectangular seam on the open ocean.
+    bool hasStructuredWaterDepth = hasTerrainDepth || uUseOceanTerrain;
+    float structuredWaterDepth = uUseOceanTerrain
+      ? min(max(oceanWaterDepth, 0.0), max(uOceanLevel - uOceanTerrainSinkTarget, 0.001))
+      : terrainWaterDepth;
 
     // === ShoreDistance 采样（v2 局部水域稳定岸线，camera-independent） ===
     float shoreDist = 1.0;
@@ -1028,7 +1140,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float waveWhitecapShadow = 0.0;
     if (uWaterMode < 0.5 && uWhitecapEnabled && uUseDirectionalWaves) {
       float crestPhase;
-      float crestProfile = computePrimaryCrestProfile(vWorldPosition.xz, crestPhase);
+      float crestProfile = computePrimaryCrestProfile(vReflectionWorldPosition.xz, crestPhase);
       float ridgeBand = smoothstep(
         uWhitecapThreshold - max(uWhitecapSoftness, 0.0001),
         uWhitecapThreshold + max(uWhitecapSoftness, 0.0001),
@@ -1085,7 +1197,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     if (uUseShoreDistance) {
       colorFactor = shoreDist;
     }
-    if (hasTerrainDepth) colorFactor = 1.0 - exp(-terrainWaterDepth * uDepthStrength * 0.35);
+    if (hasStructuredWaterDepth) colorFactor = 1.0 - exp(-structuredWaterDepth * uDepthStrength * 0.35);
     if (uUseCartoonBands) {
       if (uWaterMode < 0.5) {
         // Cartoon：完整色阶量化
@@ -1106,15 +1218,17 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       absorb = uHasDepthTexture
         ? 1.0 - exp(-depthDiff * uRealisticAbsorptionStrength)
         : (uUseShoreDistance ? shoreDist : 0.0);
-      if (hasTerrainDepth) absorb = 1.0 - exp(-terrainWaterDepth * uRealisticAbsorptionStrength * 0.4);
+      if (hasStructuredWaterDepth) {
+        absorb = 1.0 - exp(-structuredWaterDepth * uRealisticAbsorptionStrength * 0.4);
+      }
       waterColor = mix(waterColor, uDepthColor, absorb * uRealisticDepthTintStrength);
     }
 
     float viewDistance = length(cameraPosition - vWorldPosition);
     float absorption = 0.0;
     if (uWaterMode > 0.5 && uUseWaterAbsorption) {
-      absorption = hasTerrainDepth
-        ? 1.0 - exp(-terrainWaterDepth * uAbsorptionStrength * 0.35)
+      absorption = hasStructuredWaterDepth
+        ? 1.0 - exp(-structuredWaterDepth * uAbsorptionStrength * 0.35)
         : computeWaterAbsorptionFactor(vWorldPosition, viewDistance, depthDiff, shoreDist);
       vec3 absorptionTint = mix(uShallowTint, uDeepTint, absorption);
       waterColor = mix(waterColor, absorptionTint, absorption * uAbsorptionTintStrength);
@@ -1161,7 +1275,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         detailNormalWorld = normalize(baseNormal + vec3(detailSlope.x, 0.0, detailSlope.y) * baseNormal.y * uWaveNormalBlend);
       }
       float detailStrength = uWaterNormalStrength;
-      if (hasTerrainDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
+      if (hasStructuredWaterDepth && uUseSceneWaterLight && uWaterMode > 0.5 && !flowingDetail) {
         // Broad, slowly advecting wind patches break up uniform lake roughness.
         // Keep a nonzero lower bound so calm patches never turn into flat mirrors.
         float windPatch = noise2D(waterUv * 0.09 + dirA * uTime * uWaterNormalSpeedA * 0.25);
@@ -1170,6 +1284,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       finalWaterNormal = normalize(mix(baseNormal, detailNormalWorld, detailStrength));
     }
     vec3 normalForHighlight = (uWaterMode > 0.5 && uUseWaterNormalMaps) ? finalWaterNormal : baseNormal;
+    // The simulation grid is denser than most water meshes. Sampling its
+    // gradient per fragment preserves the ripple silhouette without adding
+    // geometry or another simulation pass.
+    vec2 shallowWaterSlope = sampleShallowWaterSlope(vWorldPosition.xz);
+    vec3 shallowWaterNormal = vec3(shallowWaterSlope.x, 0.0, shallowWaterSlope.y) * 1.4;
+    finalWaterNormal = normalize(finalWaterNormal + shallowWaterNormal);
+    normalForHighlight = normalize(normalForHighlight + shallowWaterNormal);
     // 6c+：ripple decal 法线扰动，同时喂给主法线与高光法线——卡通/写实两种模式都要反光
     // （rippleSlope 已在上方 foam 段算好；未启用时为 0，法线不变）
     if (uRippleDecalEnabled) {
@@ -1355,7 +1476,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         uHighlightThreshold + max(uHighlightSoftness, 0.001),
         highlightBase
       );
-      float ridgeMask = computeWaveRidgeMask(N, vWorldPosition.xz);
+      float ridgeMask = computeWaveRidgeMask(N, vReflectionWorldPosition.xz);
       highlightMask *= mix(
         1.0,
         ridgeMask,
@@ -1405,7 +1526,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float toonSparkle = 0.0;
     if (uWaterMode < 0.5 && uToonSparkleEnabled) {
       vec3 Ns = normalize(normalForHighlight);
-      float ridgeMask = computeWaveRidgeMask(Ns, vWorldPosition.xz);
+      float ridgeMask = computeWaveRidgeMask(Ns, vReflectionWorldPosition.xz);
       vec2 sDir = normalizeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
       vec2 sTan = vec2(-sDir.y, sDir.x);
       // 波向坐标系：沿波向压缩（拉长亮片）、垂直方向保持密度
@@ -1749,6 +1870,13 @@ export class WaterSurface {
         uRippleDecalAttenuation: { value: 1.5 },
         uRippleDecalFadeStart: { value: 0.55 },
 
+        // Bounded local height-field simulation. It remains disabled until a
+        // gameplay interaction explicitly injects an impulse.
+        tShallowWaterHeight: { value: null },
+        uUseShallowWaterHeight: { value: false },
+        uShallowWaterCenter: { value: new THREE.Vector2() },
+        uShallowWaterSize: { value: SHALLOW_WATER_DOMAIN_SIZE },
+
         uWaterDebugMode: { value: 0 },
 
         // === v2: ShoreDistance / Local Water Body 稳定岸线 ===
@@ -1786,6 +1914,9 @@ export class WaterSurface {
         uOceanTerrainSinkTarget: { value: -3 },
         uOceanTerrainBounded: { value: false },
         uOceanTerrainBounds: { value: new THREE.Vector4() },
+        uOceanWaveGeometryFadeStart: { value: 1e6 },
+        uOceanWaveGeometryFadeEnd: { value: 1e6 + 1 },
+        uOceanNearVertexSpacing: { value: 0 },
 
         // === v3: Water Mode (0=cartoon, 1=realistic, 2=hybrid) ===
         uWaterMode: { value: Math.max(0, WATER_MODE_NAMES.indexOf(opts.waterMode)) },
@@ -1942,6 +2073,16 @@ export class WaterSurface {
     this.material.uniforms.tShoreDistance.value = this._defaultShoreDistanceTex;
     this.material.uniforms.tOceanTerrain.value = this._defaultShoreDistanceTex;
 
+    this._defaultShallowWaterTex = new THREE.DataTexture(
+      new Float32Array([0]), 1, 1, THREE.RedFormat, THREE.FloatType
+    );
+    this._defaultShallowWaterTex.wrapS = this._defaultShallowWaterTex.wrapT = THREE.ClampToEdgeWrapping;
+    this._defaultShallowWaterTex.minFilter = THREE.LinearFilter;
+    this._defaultShallowWaterTex.magFilter = THREE.LinearFilter;
+    this._defaultShallowWaterTex.generateMipmaps = false;
+    this._defaultShallowWaterTex.needsUpdate = true;
+    this.material.uniforms.tShallowWaterHeight.value = this._defaultShallowWaterTex;
+
     // v3 Step 3: 创建1×1默认法线纹理（RGB=128,128,255 → unpackNormalMap 后为 (0,0,1)，即"朝上"中性法线）
     // 用 RepeatWrapping（而非 ClampToEdge），保证用户上传贴图前 scale/speed 变化时 sampler 行为一致、不报错
     this._defaultNormalTex = new THREE.DataTexture(
@@ -1999,6 +2140,7 @@ export class WaterSurface {
     const uniforms = this.material.uniforms;
 
     uniforms.uTime.value += deltaTime;
+    this._updateShallowWater(deltaTime);
     this._expireRippleDecals();
     uniforms.uCameraNear.value = camera.near;
     uniforms.uCameraFar.value = camera.far;
@@ -2271,6 +2413,133 @@ export class WaterSurface {
       direction: [u.uFlowDirection.value.x, u.uFlowDirection.value.y],
       speed: u.uFlowSpeed.value,
     };
+  }
+
+  _createShallowWaterSimulation(x, z) {
+    const count = SHALLOW_WATER_RESOLUTION * SHALLOW_WATER_RESOLUTION;
+    const current = new Float32Array(count);
+    const texture = new THREE.DataTexture(
+      current,
+      SHALLOW_WATER_RESOLUTION,
+      SHALLOW_WATER_RESOLUTION,
+      THREE.RedFormat,
+      THREE.FloatType
+    );
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    this._shallowWater = {
+      current,
+      previous: new Float32Array(count),
+      next: new Float32Array(count),
+      texture,
+      center: new THREE.Vector2(x, z),
+      accumulator: 0,
+      activeUntil: 0,
+    };
+    const u = this.material.uniforms;
+    u.tShallowWaterHeight.value = texture;
+    u.uShallowWaterCenter.value.set(x, z);
+    u.uShallowWaterSize.value = SHALLOW_WATER_DOMAIN_SIZE;
+    return this._shallowWater;
+  }
+
+  _resetShallowWaterSimulation(simulation, x, z) {
+    simulation.current.fill(0);
+    simulation.previous.fill(0);
+    simulation.next.fill(0);
+    simulation.center.set(x, z);
+    simulation.accumulator = 0;
+    simulation.texture.image.data = simulation.current;
+    simulation.texture.needsUpdate = true;
+    this.material.uniforms.uShallowWaterCenter.value.set(x, z);
+  }
+
+  /**
+   * Inject one bounded gameplay disturbance into a lazily allocated 32x32
+   * height field. Rain keeps using the cheaper analytic ripple path.
+   */
+  addShallowWaterImpulse(x, z, strength = 0.08, radius = 0.8) {
+    x = Number(x);
+    z = Number(z);
+    strength = Number(strength);
+    radius = Number(radius);
+    if (![x, z, strength, radius].every(Number.isFinite) || radius <= 0 || strength === 0) return false;
+    const simulation = this._shallowWater || this._createShallowWaterSimulation(x, z);
+    const recenterDistance = SHALLOW_WATER_DOMAIN_SIZE * 0.3;
+    if (Math.abs(x - simulation.center.x) > recenterDistance
+      || Math.abs(z - simulation.center.y) > recenterDistance) {
+      this._resetShallowWaterSimulation(simulation, x, z);
+    }
+    const resolution = SHALLOW_WATER_RESOLUTION;
+    const cellSize = SHALLOW_WATER_DOMAIN_SIZE / (resolution - 1);
+    const centerX = (x - simulation.center.x) / cellSize + (resolution - 1) * 0.5;
+    const centerZ = (z - simulation.center.y) / cellSize + (resolution - 1) * 0.5;
+    const radiusCells = Math.max(1, radius / cellSize);
+    const minX = Math.max(1, Math.floor(centerX - radiusCells));
+    const maxX = Math.min(resolution - 2, Math.ceil(centerX + radiusCells));
+    const minZ = Math.max(1, Math.floor(centerZ - radiusCells));
+    const maxZ = Math.min(resolution - 2, Math.ceil(centerZ + radiusCells));
+    for (let row = minZ; row <= maxZ; row += 1) {
+      for (let column = minX; column <= maxX; column += 1) {
+        const distance = Math.hypot(column - centerX, row - centerZ) / radiusCells;
+        if (distance >= 1) continue;
+        const falloff = Math.cos(distance * Math.PI * 0.5) ** 2;
+        const index = row * resolution + column;
+        const impulse = strength * falloff;
+        simulation.current[index] = THREE.MathUtils.clamp(simulation.current[index] + impulse, -0.25, 0.25);
+        simulation.previous[index] = THREE.MathUtils.clamp(simulation.previous[index] + impulse * 0.45, -0.25, 0.25);
+      }
+    }
+    simulation.activeUntil = this.material.uniforms.uTime.value + SHALLOW_WATER_ACTIVE_SECONDS;
+    simulation.texture.image.data = simulation.current;
+    simulation.texture.needsUpdate = true;
+    this.material.uniforms.uUseShallowWaterHeight.value = true;
+    return true;
+  }
+
+  _updateShallowWater(deltaTime) {
+    const simulation = this._shallowWater;
+    if (!simulation || !this.material.uniforms.uUseShallowWaterHeight.value) return;
+    if (this.material.uniforms.uTime.value >= simulation.activeUntil) {
+      this._resetShallowWaterSimulation(simulation, simulation.center.x, simulation.center.y);
+      this.material.uniforms.uUseShallowWaterHeight.value = false;
+      return;
+    }
+    simulation.accumulator += Math.min(0.1, Math.max(0, Number(deltaTime) || 0));
+    let steps = 0;
+    while (simulation.accumulator >= SHALLOW_WATER_FIXED_STEP && steps < 3) {
+      const resolution = SHALLOW_WATER_RESOLUTION;
+      simulation.next.fill(0);
+      for (let row = 1; row < resolution - 1; row += 1) {
+        for (let column = 1; column < resolution - 1; column += 1) {
+          const index = row * resolution + column;
+          const current = simulation.current[index];
+          const laplacian = simulation.current[index - 1] + simulation.current[index + 1]
+            + simulation.current[index - resolution] + simulation.current[index + resolution]
+            - current * 4;
+          const edgeDistance = Math.min(column, row, resolution - 1 - column, resolution - 1 - row);
+          const edgeAbsorption = Math.min(1, edgeDistance / 3);
+          simulation.next[index] = THREE.MathUtils.clamp(
+            (current * 2 - simulation.previous[index] + laplacian * 0.18) * 0.985 * edgeAbsorption,
+            -0.25,
+            0.25
+          );
+        }
+      }
+      const oldPrevious = simulation.previous;
+      simulation.previous = simulation.current;
+      simulation.current = simulation.next;
+      simulation.next = oldPrevious;
+      simulation.accumulator -= SHALLOW_WATER_FIXED_STEP;
+      steps += 1;
+    }
+    if (steps > 0) {
+      simulation.texture.image.data = simulation.current;
+      simulation.texture.needsUpdate = true;
+    }
   }
 
   /**
@@ -3126,6 +3395,10 @@ export class WaterSurface {
 
   dispose() {
     this.clearOceanShoreSplash();
+    if (this._shallowWater) {
+      this._shallowWater.texture.dispose();
+      this._shallowWater = null;
+    }
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh.geometry.dispose();
@@ -3140,6 +3413,10 @@ export class WaterSurface {
     if (this._defaultShoreDistanceTex) {
       this._defaultShoreDistanceTex.dispose();
       this._defaultShoreDistanceTex = null;
+    }
+    if (this._defaultShallowWaterTex) {
+      this._defaultShallowWaterTex.dispose();
+      this._defaultShallowWaterTex = null;
     }
     if (this._defaultNormalTex) {
       this._defaultNormalTex.dispose();

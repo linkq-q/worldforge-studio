@@ -83,6 +83,7 @@ interface WaterBinding {
 type InteractiveWaterSurface = WaterSurface & {
   setRippleDecalParams(params: Record<string, unknown>): void;
   addRippleDecalPoint(x: number, z: number): number;
+  addShallowWaterImpulse(x: number, z: number, strength?: number, radius?: number): boolean;
 };
 
 export class RenderRuntimeAdapter {
@@ -346,7 +347,7 @@ export class RenderRuntimeAdapter {
       strength: 0.7,
       lifetime: 1.25,
       normalStrength: 0.42
-    });
+    }, true);
   }
 
   addRainRipple(waterBodyId: string, x: number, z: number, elapsedSeconds: number): void {
@@ -367,9 +368,11 @@ export class RenderRuntimeAdapter {
     z: number,
     elapsedSeconds: number,
     cooldown: number,
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
+    simulateShallowWater = false
   ): void {
-    const last = this.waterInteractionAt.get(waterBodyId) ?? -Infinity;
+    const interactionKey = `${waterBodyId}:${simulateShallowWater ? 'interaction' : 'rain'}`;
+    const last = this.waterInteractionAt.get(interactionKey) ?? -Infinity;
     if (elapsedSeconds - last < cooldown) return;
     const binding = this.waterBindings.find((candidate) => (
       candidate.mesh.userData.waterBodyId === waterBodyId
@@ -383,7 +386,8 @@ export class RenderRuntimeAdapter {
       ...params
     });
     surface.addRippleDecalPoint(x, z);
-    this.waterInteractionAt.set(waterBodyId, elapsedSeconds);
+    if (simulateShallowWater) surface.addShallowWaterImpulse(x, z, 0.08, 0.9);
+    this.waterInteractionAt.set(interactionKey, elapsedSeconds);
   }
 
   applyScopedCapabilities(
@@ -649,6 +653,7 @@ export class RenderRuntimeAdapter {
         const waveStrength = style?.waveStrength ?? recipe.waveStrength;
         const waveSpeed = style?.waveSpeed ?? recipe.waveSpeed;
         const foamStrength = style?.foamStrength ?? recipe.foamStrength;
+        const waveHeightScale = mesh.userData.waterBodyType === 'ocean' ? 0.2 : 0.12;
         const waveDirection = style?.waveDirection === undefined
           ? undefined
           : THREE.MathUtils.degToRad(style.waveDirection);
@@ -662,7 +667,7 @@ export class RenderRuntimeAdapter {
           uShallowColor: `#${shallowColor.getHexString()}`,
           uDepthColor: `#${depthColor.getHexString()}`,
           uFoamColor: style?.foamColor,
-          uWaveHeight: waveStrength * 0.12,
+          uWaveHeight: waveStrength * waveHeightScale,
           uWaveSpeed: waveSpeed,
           uWaveScale: style?.waveScale,
           uShoreFoamStrength: foamStrength,
@@ -753,6 +758,23 @@ export class RenderRuntimeAdapter {
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
           const splash = syncWaterSurfaceOcean(surface, ocean);
+          const oceanLod = mesh.geometry.userData.oceanLod as {
+            nearHalfSize?: number;
+            nearSpacing?: number;
+          } | undefined;
+          const nearHalfSize = Number(oceanLod?.nearHalfSize);
+          const nearSpacing = Number(oceanLod?.nearSpacing);
+          if (Number.isFinite(nearHalfSize) && nearHalfSize > 0
+            && Number.isFinite(nearSpacing) && nearSpacing > 0) {
+            const mapHalfSize = Math.max(ocean.mapSize[0], ocean.mapSize[1]) * 0.5;
+            const fadeStart = Math.min(
+              Math.max(mapHalfSize + 8, nearHalfSize - nearSpacing * 4),
+              nearHalfSize - nearSpacing * 2
+            );
+            surface.material.uniforms.uOceanWaveGeometryFadeStart.value = Math.max(0, fadeStart);
+            surface.material.uniforms.uOceanWaveGeometryFadeEnd.value = nearHalfSize;
+            surface.material.uniforms.uOceanNearVertexSpacing.value = nearSpacing;
+          }
           if (splash) mesh.add(splash);
           surface.material.transparent = true;
           surface.material.forceSinglePass = true;
@@ -867,7 +889,10 @@ export class RenderRuntimeAdapter {
       this.ssaoPass.setSharedNormalDepth(normalTexture, depthTexture);
     }
     if (this.fogPass.enabled && depthTexture) {
-      bindDistanceFogDepth(this.fogPass, depthTexture, this.camera);
+      const oceanLevels = this.waterBindings.filter(binding => binding.mesh.visible && binding.mesh.userData.waterBodyType === 'ocean')
+        .map(binding => (binding.mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined)?.level)
+        .filter((level): level is number => typeof level === 'number' && Number.isFinite(level));
+      bindDistanceFogDepth(this.fogPass, depthTexture, this.camera, oceanLevels.length ? Math.max(...oceanLevels) : undefined);
     }
     if (this.underwaterPass.enabled && depthTexture) {
       bindUnderwaterDepth(

@@ -1,0 +1,103 @@
+# Low-cost ocean waves
+
+## Goal
+
+Give the editor ocean coherent fluid-like motion without running a global fluid solver. The implementation must remain adjustable through the existing water controls, preserve rivers and lakes, and keep one ocean draw call.
+
+## Source findings
+
+- Unreal's Water Waves asset uses GPU-driven Gerstner waves for the default ocean surface. Its generator exposes wave count, wavelength and amplitude falloff, wind direction/spread, and steepness. Fewer waves are explicitly cheaper. Source: <https://dev.epicgames.com/documentation/en-us/unreal-engine/simulating-waves-using-the-water-waves-asset?application_version=4.27>
+- Unreal's water mesh concentrates tessellation around the camera with quadtree LOD tiles and morphs between levels; distant water uses progressively coarser geometry. Source: <https://dev.epicgames.com/documentation/unreal-engine/water-meshing-system-and-surface-rendering-in-unreal-engine>
+- Unreal's Niagara shallow-water solver is a height-field technique for local pools, wakes, and interactions. A full 3D FLIP simulation is a substantially more expensive tier and is not the default global-ocean solution. Source: <https://dev.epicgames.com/documentation/unreal-engine/fluid-simulation-in-unreal-engine---overview?lang=en-US>
+- Unreal 5.8 describes the Water system as a shared rendering/meshing pipeline that supports local gameplay ripples and boat wakes, while its scalability controls separately tune mesh LOD density and morphing. Sources: <https://dev.epicgames.com/documentation/unreal-engine/water-system-in-unreal-engine> and <https://dev.epicgames.com/documentation/en-us/unreal-engine/water-debugging-and-scalability-options-in-unreal-engine>
+- The original GPU Gems water model likewise combines a small Gerstner sum for macro geometry with finer normal-map motion. It recommends only a few geometry waves and bounds steepness to avoid loops. Source: <https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models>
+
+## WorldForge implementation
+
+### Macro surface
+
+The vertex shader sums four authored directional components. For wave number `k`, direction `D`, amplitude `A`, and phase `phi`:
+
+```text
+omega = sqrt(g * k)
+phase = dot(worldXZ, D) * k + omega * time + phi
+y     = A * sin(phase)
+xz    = D * A * steepness * cos(phase)
+```
+
+The horizontal displacement is the important difference from a stack of scrolling height-only sine waves: vertices follow a bounded orbital path and form sharper crests. The existing `waveStrength`, `waveSpeed`, `waveScale`, `waveDirection`, and `waveSharpness` controls remain the public parameter surface. River flow keeps its previous height-only path.
+
+One shared primary-phase shader chunk now drives both vertex displacement and crest-dependent whitecaps/highlights. It includes the same deep-water dispersion, global scale, wind direction, crest stretch, and bounded spacing warp in both shader stages. Previously those visual crest lines still used the old phase formula, so they could slide independently of the geometry.
+
+The shader also enforces a Gerstner foldover budget. It calculates the summed horizontal derivative contribution of the four components and reduces only their choppiness when `sum(abs(A * k * Q))` would exceed `0.82`. Normal presets remain unchanged; extreme or imported parameter combinations retain their wave height but cannot fold the mesh through itself.
+
+The ocean host also supplies the near-ring vertex spacing to the shader. At extreme public `waveScale` values, the primary wave number saturates at `2.4 / spacing` (about 2.6 vertices per wavelength), while the three smaller geometry components fade between 2.4 radians per vertex and the Nyquist limit. This keeps the large-wave energy and shared crest phase but prevents under-sampled geometry from turning into stationary parallel stripes. Default presets remain below the limit.
+
+Ocean terrain depth attenuates lateral displacement near land before the existing swash function takes over. The swash band is `max(0.16 m, shoreWaveRange * 0.42)` rather than the previous `shoreWaveRange * 3.1`: the old formula classified the example island's approximately 0.25 m-deep shelf as almost entirely shoreline and suppressed the open-water spectrum. The revised band keeps orbital Gerstner motion in the playable ocean, blends around 0.10 m depth, and leaves only the final approximately 0.025 m shoreline to the swash crest. The existing world-space normal maps still provide micro ripples, so high-frequency geometry waves are unnecessary.
+
+### Geometry budget
+
+The previous ocean was one uniform 4096 m plane with `192 x 192` cells. On a 96 m map this put neighboring vertices about 21.3 m apart, too coarse for the default macro wavelength.
+
+The replacement is one indexed geometry and one draw call composed of three aligned square rings:
+
+| Ring | Half extent | Spacing on a 96 m map | Purpose |
+| --- | ---: | ---: | --- |
+| Near | 128 m | 4 m | playable map, shore, readable crests |
+| Mid | 512 m | 16 m | transition water |
+| Far | 2048 m | 64 m | horizon coverage |
+
+For larger maps the three extents scale together and always keep the playable map inside the near ring. The medium and far spacing cannot represent the authored Gerstner wavelengths without aliasing, so macro vertex displacement fades radially to zero over the last two to four near-ring cells. Fragment normal maps, highlights, and reflections continue animating across every ring. The normal finite difference deliberately reuses the centre vertex's LOD fade for both neighbour samples; differentiating the fade envelope itself produced a false circular ridge even though the wave surface was continuous.
+
+Ocean optical depth now comes from the continuous ocean terrain field everywhere rather than switching to the bounded lake/river depth texture inside its square footprint. Visual depth saturates at the deep-water target, and sampling outside an already padded coast field can only preserve or lower its floor, never raise it. Together these rules prevent the map storage boundary and the deep-floor apron from appearing as rectangular color blocks or trenches in high top-down views.
+
+Distance fog still treats real terrain and object depth as authoritative. Water cannot write the shared prepass because its own shader consumes that opaque-scene depth, so empty pixels beyond the finite seabed apron previously looked like unfogged sky and outlined the apron as a square. The fog shader now reconstructs the ocean-plane distance only for sky-depth rays that point down into the ocean; it never replaces a real depth sample and adds no draw call.
+
+This is a map-centered adaptation of Unreal's near-dense/far-coarse water mesh; it is deliberately simpler than a camera-following quadtree because WorldForge maps are centered and bounded.
+
+Geometry cost changed from 37,249 vertices / 73,728 triangles to 12,675 vertices / 23,552 triangles. The higher-quality near field therefore costs less geometry overall.
+
+### Bounded interaction height field
+
+WorldForge adds the fluid-like tier only while a player is moving through water:
+
+- The first gameplay impulse lazily allocates one `32 x 32` scalar height field for that water surface. Rain retains the existing analytic decal path and does not allocate or wake the solver.
+- A fixed 30 Hz damped wave equation propagates each impulse through four-neighbour height differences. The frame loop performs at most three catch-up steps, clamps height to `+-0.25 m`, absorbs the outer three cells, and sleeps three seconds after the final impulse.
+- The simulated domain is only `16 x 16 m`. It recentres and clears when the interaction leaves the central 60% region, so cost does not grow with map or ocean size.
+- The height texture displaces the water mesh. Because the simulation grid can be denser than lake or ocean geometry, the fragment shader also samples its four-neighbour gradient for the reflection/highlight normal. This preserves readable concentric ripples without another draw call or a second simulation.
+- Rain and player interaction have independent cooldown keys, so a rain shower cannot suppress a player's local wake.
+
+This is deliberately a local 2D wave equation rather than a global Navier-Stokes or FLIP solve. It gives impacts memory, outward propagation, troughs, damping, and interference while inactive water pays only a uniform branch and the shared neutral texture.
+
+## Measured browser result
+
+Measured in the original editor on the same ocean map and the same water parameters (`waveStrength=1.2`, `waveScale=0.55`, `waveDirection=28`, `waveSharpness=2.6`):
+
+| Build | FPS average | FPS 1% low | Frame average | Draw calls | Scene triangles |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Previous directional waves | 165.0 | 158.7 | 6.06 ms | 67 | 448,226 |
+| Four-wave Gerstner + three LOD rings | 164.9 | 156.3 | 6.06 ms | 67 | 398,050 |
+
+Environment: Edge, ANGLE D3D11, NVIDIA GeForce RTX 5060 Laptop GPU, 1280 x 720. This is a single-machine comparison, not a universal hardware target. The editor also reported a pre-existing missing `HDRI-35.exr`; no WebGL shader compilation or runtime page error occurred.
+
+The local solver was also measured in the original play mode on the same pond and camera path. Each sample lasted ten seconds:
+
+| Pond state | FPS average | FPS 1% low | Frame average | Draw calls | Scene triangles |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Solver asleep, player still | 135.1 | 80.0 | 7.40 ms | 401 | 454,485 |
+| Solver active, player wading | 137.3 | 92.6 | 7.28 ms | 401 | 454,485 |
+
+The run-to-run variation is larger than any measured solver cost, so these numbers support only a bounded conclusion: no FPS regression was measurable on this machine, and activation adds neither a draw call nor geometry. An active surface uploads 4 KiB of height data at 30 Hz and keeps three 4 KiB CPU arrays (12 KiB total). The active/sleep browser screenshots show the local ring trail disappearing after the three-second timeout. The same pre-existing HDRI 404 was present and no WebGL shader error occurred.
+
+Parameter-boundary runs used the same browser/GPU and ten-second capture. A calm profile (`strength=0.15`, `scale=0.5`, `sharpness=0.7`) measured 165.0 FPS. A maximum public-control stress profile (`strength=1.5`, `scale=4`, `sharpness=4`) also measured 165.0 FPS, with a 156.2 FPS 1% low, the same 67 draw calls, and 398,050 scene triangles. Two time-separated screenshots showed broad moving primary waves without foldover, LOD cracks, or the old dense alias stripes; once the mesh sampling limit is reached, additional scale increases saturate macro frequency instead of inventing false detail. A separate five-run V8 microbenchmark measured the active `32 x 32` solver step at a 0.00384 ms median and the inactive early-out at 0.000022 ms median. These synthetic CPU numbers explain the bounded cost but are not a substitute for browser profiling on lower-end hardware.
+
+A later fixed camera trajectory crossed near shore, low angle, close zoom, panning, opposite azimuth, and the far top-down view, followed by 20 seconds of continuous orbit. The final build sampled 3,299 frames at 164.9 FPS average, 6.5 ms p95 frame time, and 13.0 ms worst frame time. The high view was important: it exposed and then verified removal of the bounded-depth texture square, under-sampled coarse-ring bands, the false LOD-envelope normal ridge, the pre-padded ocean-floor boundary, and the fog discontinuity at the finite seabed apron. No shader or page error occurred; only the same pre-existing HDRI 404 remained.
+
+A separate 20-minute soak sampled the editor every 30 seconds. All 40 samples remained around 165 FPS; p95 frame time stayed between 6.7 and 7.2 ms. Used JavaScript heap moved from 80.2 MB to 59.3 MB with a normal garbage-collection sawtooth rather than monotonic growth. The only logged request error was again the pre-existing HDRI 404.
+
+## Deliberate boundaries
+
+- This is a physically inspired surface model, not a mass-conserving ocean simulation.
+- Global FFT and 3D FLIP were rejected for the current cost target.
+- The local height field is visual interaction only; it does not feed buoyancy, collision, or the persisted map schema.
+- A camera-following ring origin is only needed if a future map can move the playable area far from the current centered bounds.
