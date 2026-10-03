@@ -28,9 +28,11 @@ describe('underwater post-process', () => {
     expect(shader).toContain('waterlineEdge');
     expect(shader).toContain('vec2 waterSurfaceSlope');
     expect(shader).toContain('refractedUv');
-    expect(shader).toContain('float causticPattern');
+    expect(shader).toContain('float causticBands');
+    expect(shader).toContain('vec3 causticColor = mix(uScatterColor, uWaterlineColor, 0.28)');
+    expect(shader).not.toContain('pow(ridge, 5.0)');
     expect(shader).toContain('waterlineHalo');
-    expect(shader).toContain('waterlineFoamShelf');
+    expect(shader).not.toContain('waterlineFoamShelf');
     expect(shader).toContain('passActivation');
     expect(shader).toContain('rippledWaterlineDelta');
     expect(shader).toContain('cameraUnderwater');

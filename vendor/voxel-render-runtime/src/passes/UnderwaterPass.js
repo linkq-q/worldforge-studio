@@ -91,15 +91,18 @@ const UnderwaterShader = {
       ) / sampleStep;
     }
 
-    float causticPattern(vec2 worldXZ) {
+    float causticBands(vec2 worldXZ) {
       vec2 primary = safeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
       vec2 secondary = safeDirection(uSecondaryWaveDirection, vec2(-0.35, 1.0));
       float scale = max(uWaveScale, 0.001);
-      float first = sin(dot(worldXZ, primary) * scale * 3.8 + uTime * uWaveSpeed * 1.6);
-      float second = sin(dot(worldXZ, secondary) * scale * 4.6 - uTime * uWaveSpeed * 1.25 + 1.4);
-      float crossed = sin(dot(worldXZ, primary + secondary) * scale * 2.5 + uTime * uWaveSpeed * 0.7);
-      float ridge = clamp(first * 0.42 + second * 0.38 + crossed * 0.2, -1.0, 1.0) * 0.5 + 0.5;
-      return pow(ridge, 5.0);
+      float time = uTime * uWaveSpeed;
+      float warp = sin(dot(worldXZ, primary - secondary) * scale * 0.48 + time * 0.34) * 0.7;
+      float first = sin(dot(worldXZ, primary) * scale * 2.2 + time * 1.15 + warp);
+      float second = sin(dot(worldXZ, secondary) * scale * 2.6 - time * 0.92 - warp * 0.75);
+      float firstBand = 1.0 - smoothstep(0.16, 0.55, abs(first));
+      float secondBand = 1.0 - smoothstep(0.18, 0.58, abs(second));
+      return clamp(max(firstBand * 0.72, secondBand * 0.58)
+        + min(firstBand, secondBand) * 0.18, 0.0, 1.0);
     }
 
     void main() {
@@ -160,10 +163,12 @@ const UnderwaterShader = {
       vec3 refractedColor = texture2D(tDiffuse, refractedUv).rgb;
 
       float surfaceDepth = max(0.0, waterSurfaceHeight(scenePosition.xz) - scenePosition.y);
-      float caustic = causticPattern(scenePosition.xz)
+      float caustic = causticBands(scenePosition.xz)
         * (1.0 - smoothstep(0.5, 9.0, surfaceDepth))
+        * (1.0 - smoothstep(18.0, 70.0, sceneDistance))
         * (1.0 - step(0.9999, depthSample));
-      vec3 litWaterColor = refractedColor + uWaterlineColor * caustic * 0.11;
+      vec3 causticColor = mix(uScatterColor, uWaterlineColor, 0.28);
+      vec3 litWaterColor = refractedColor + causticColor * caustic * 0.035;
       vec3 transmission = exp(-uAbsorption * max(waterDistance, 0.0));
       float upwardLight = smoothstep(-0.45, 0.7, rayDirection.y);
       vec3 scatterColor = uScatterColor * mix(0.78, 1.18, upwardLight);
@@ -184,16 +189,6 @@ const UnderwaterShader = {
         * mix(0.45, 0.9, foamBreakup)
         * uWaterlineStrength
         * (usesNearWaterline ? 1.0 : 0.0);
-      float waterlineFoamShelf = (1.0 - smoothstep(
-        lineWidth * 2.0,
-        lineWidth * 11.0,
-        max(-rippledWaterlineDelta, 0.0)
-      ))
-        * step(rippledWaterlineDelta, 0.0)
-        * nearSurface
-        * mix(0.3, 0.9, foamBreakup)
-        * uWaterlineStrength
-        * (usesNearWaterline ? 1.0 : 0.0);
       float waterlineEdge = (1.0 - smoothstep(lineWidth, lineWidth * 2.4, abs(rippledWaterlineDelta)))
         * nearSurface
         * mix(0.7, 1.0, foamBreakup)
@@ -201,7 +196,6 @@ const UnderwaterShader = {
         * (usesNearWaterline ? 1.0 : 0.0);
       vec3 haloColor = mix(uScatterColor, uWaterlineColor, 0.58);
       finalColor = mix(finalColor, haloColor, clamp(waterlineHalo * 0.24 * passActivation, 0.0, 0.32));
-      finalColor = mix(finalColor, uWaterlineColor, clamp(waterlineFoamShelf * 0.26 * passActivation, 0.0, 0.4));
       finalColor = mix(finalColor, uWaterlineColor, clamp(waterlineEdge * 0.96 * passActivation, 0.0, 0.96));
       gl_FragColor = vec4(finalColor, inColor.a);
     }
