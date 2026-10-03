@@ -35,6 +35,8 @@
     .archive-actions { display: flex; align-items: center; gap: 10px; font-size: .86rem; }
     .aesthetic-rejected { color: #e6ad7a; }
     .aesthetic-unreviewed { color: #a9bdb8; }
+    .paid-index { border: 1px solid #537077; border-radius: 12px; background: #1b3033; padding: 18px; margin: 22px 0; }
+    .paid-index ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 20px; padding-left: 24px; margin: 12px 0 0; }
     figure { margin: 0; }
     figure img { display: block; width: 100%; height: auto; border: 1px solid #496067; border-radius: 5px; }
     figcaption { color: #a9bdb8; font-size: .9rem; margin-top: 6px; }
@@ -43,6 +45,22 @@
 <body>
   <h1>地形四向复查</h1>
   <p class="lead">以下截图均来自 WorldForge 原版编辑器，等待 64 块地形全部加载、待载入归零后拍摄。切换四个固定斜角便于比较；点击“在页内旋转”会按需载入一个原版编辑器，切换案例时仍只保留这一个实时视图。截图保留了 AI 首版地形，没有为单个样例重雕。</p>
+  <nav class="paid-index" aria-label="本轮十次付费规划">
+    <h2>本轮十次付费规划 · 原始白盒</h2>
+    <p>十种地貌各有一张 500×500 米地图，均未通过完整视觉与游玩验收。只有前两张拍了四视角静态截图；其余八张可点击下列链接在 WorldForge 原版编辑器里旋转查看，也可在下方“本轮不同地貌”逐项打开。</p>
+    <ol>
+      <li><a href="http://127.0.0.1:8818/?map=map-24fc5d7a-e6f7-4a65">峡湾与渔猎驿站</a> · 有四视角截图</li>
+      <li><a href="http://127.0.0.1:8818/?map=map-d9ebf543-c0c0-464e">河口三角洲</a> · 有四视角截图</li>
+      <li><a href="http://127.0.0.1:8818/?map=map-f23fb9f4-fc54-4c25">沙丘盆地与绿洲商道</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-736b0ea7-cb7f-4e66">冰斗高山与冰碛湖</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-5312b0bf-15cb-4538">台地峡谷与阶地聚落</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-7f514170-d2eb-472b">喀斯特洼地与石灰岩峰</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-edc8d003-9d61-4250">潮汐群岛与跨海通路</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-e65a063b-0b19-4508">红树林河口与高地村落</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-4604ecbc-a481-432c">恶地侵蚀沟与天然石拱</a></li>
+      <li><a href="http://127.0.0.1:8818/?map=map-9c617f21-7e49-4dab">热带环礁与泻湖村落</a></li>
+    </ol>
+  </nav>
 
   <section class="live-view" id="live-view" hidden aria-live="polite">
     <header>
