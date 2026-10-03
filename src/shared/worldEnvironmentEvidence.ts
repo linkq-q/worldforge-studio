@@ -6,7 +6,7 @@ import {
   type Point,
   type WorldPlan
 } from './worldPlanning';
-import { dominantBiome, sampleWorldSlope, type WorldBiome } from './worldTerrain';
+import { dominantBiome, sampleWorldSlope, type WorldBiome, type WorldSampler } from './worldTerrain';
 
 export interface WorldAnchorEnvironmentSample {
   id: string;
@@ -38,6 +38,29 @@ const WATER_DISTANCE_REFINEMENTS = 6;
 type WaterSurface = ReturnType<ReturnType<typeof createPlannedWorldSampler>>;
 type WaterTypes = Map<string, 'lake' | 'river'>;
 
+/** Cached 16m terrain interpolation for bounded coast-distance probes; point wetness uses the real sampler. */
+export function createWorldSeaProbeSampler(sample: WorldSampler): WorldSampler {
+  const nodes = new Map<string, WaterSurface>();
+  const node = (x: number, z: number) => {
+    const key = `${x},${z}`;
+    let value = nodes.get(key);
+    if (!value) {
+      // Bound retained context for dispersed queries across very large worlds.
+      if (nodes.size >= 16384) nodes.clear();
+      value = sample(x * 16, z * 16);
+      nodes.set(key, value);
+    }
+    return value;
+  };
+  return (x, z) => {
+    const gx = Math.floor(x / 16), gz = Math.floor(z / 16), tx = x / 16 - gx, tz = z / 16 - gz;
+    const a = node(gx, gz), b = node(gx + 1, gz), c = node(gx, gz + 1), d = node(gx + 1, gz + 1);
+    const height = (a.height * (1 - tx) + b.height * tx) * (1 - tz)
+      + (c.height * (1 - tx) + d.height * tx) * tz;
+    return { ...a, height, waterLevel: height < 0 ? 0 : null, waterBodyId: null };
+  };
+}
+
 function waterReading(surface: WaterSurface, waterTypes: WaterTypes) {
   return surface.waterLevel === null ? null : {
     kind: surface.waterBodyId === null ? 'sea' as const : waterTypes.get(surface.waterBodyId)!,
@@ -47,8 +70,11 @@ function waterReading(surface: WaterSurface, waterTypes: WaterTypes) {
   };
 }
 
-/** Fixed 24-ray, 160m probe; evidence may report null beyond that bounded context. */
-function nearestWater(sample: ReturnType<typeof createPlannedWorldSampler>, point: Point,
+/**
+ * Approximate fixed 24-ray, 160m probe (12m rings, six boundary refinements).
+ * Narrow water between probes can be missed; null means no sampled water in this bounded context.
+ */
+export function nearestWorldWater(sample: ReturnType<typeof createPlannedWorldSampler>, point: Point,
   surface: WaterSurface, waterTypes: WaterTypes): WorldAnchorEnvironmentSample['nearestWater'] {
   const here = waterReading(surface, waterTypes);
   if (here) return { kind: here.kind, id: here.id, surfaceHeight: here.surfaceHeight,
@@ -120,7 +146,7 @@ export function createWorldEnvironmentEvidence(input: WorldPlan): WorldEnvironme
       slopeDegrees: rounded(Math.atan(sampleWorldSlope(sample, ...anchor.position)) * 180 / Math.PI),
       biome: dominantBiome(surface),
       water: waterReading(surface, waterTypes),
-      nearestWater: nearestWater(sample, anchor.position, surface, waterTypes),
+      nearestWater: nearestWorldWater(sample, anchor.position, surface, waterTypes),
       access: nearest ? { routeId: nearest.route.id, pathId: nearest.path.id,
         distanceMeters: rounded(nearest.distance), declaredConnection: nearest.declared } : null
     };

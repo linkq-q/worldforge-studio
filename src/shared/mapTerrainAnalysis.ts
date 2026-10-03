@@ -2,12 +2,22 @@ import { sampleTerrainHeight, type EditableMap } from './map';
 import { mapGuidePolyline } from './mapGuide';
 import { distanceToWater, isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
 import type { VisualZoneRegion } from './visualDirection';
+import { createWorldSeaProbeSampler, nearestWorldWater } from './worldEnvironmentEvidence';
+import { worldMapSampler, worldMapTerrainContext, type WorldMapState } from './worldMapState';
+import { worldFeaturePathPolyline, worldRoadPolyline } from './worldPlanning';
+import { sampleWorldSlope, type WorldSampler } from './worldTerrain';
+
+const seaProbes = new WeakMap<WorldMapState, WorldSampler>();
 
 export interface MapEnvironmentSample {
   x: number;
   z: number;
   height: number;
   slope: number;
+  /**
+   * Worlds use fresh-water boundaries and a 24-ray, 160m coast search over cached 16m terrain interpolation.
+   * Coast distance is approximate and may miss sub-grid features; Infinity means no water found within 160m.
+   */
   waterDistance: number;
   guideDistance: number;
   /** Signed distance to the requested region boundary: negative inside, positive outside. */
@@ -25,32 +35,60 @@ export function createMapEnvironmentSampler(
   map: EditableMap,
   options: MapEnvironmentSampleOptions = {}
 ): (x: number, z: number) => MapEnvironmentSample {
+  const world = map.world, plan = world?.bundle.plan;
+  const guides = [
+    ...map.guides.map(guide => ({ ...guide, points: mapGuidePolyline(guide) })),
+    ...(plan?.roads ?? []).map(guide => ({ ...guide, points: worldRoadPolyline(guide) })),
+    ...(plan?.featureGraph?.paths ?? []).map(path => ({ ...path, points: worldFeaturePathPolyline(path) })),
+    ...(world?.bundle.patches ?? []).flatMap(patch => {
+      const town = plan!.towns.find(candidate => candidate.id === patch.townId)!;
+      return patch.streets.map(street => ({ ...street, points: worldRoadPolyline(street).map(point =>
+        [point[0] + town.center[0], point[1] + town.center[1]] as [number, number]) }));
+    })
+  ];
   const selected = options.guideIds && options.guideIds.length > 0
-    ? map.guides.filter((guide) => options.guideIds!.includes(guide.id))
-    : map.guides;
+    ? guides.filter((guide) => options.guideIds!.includes(guide.id))
+    : guides;
   const guideSegments = selected.flatMap((guide) => {
-    const points = mapGuidePolyline(guide);
+    const points = guide.points;
     return points.slice(1).map((end, index) => ({ start: points[index], end, halfWidth: guide.width / 2 }));
   });
   const water = options.waterId === undefined
     ? undefined
     : map.waterBodies.find((candidate) => candidate.id === options.waterId);
-  if (options.waterId !== undefined && !water) throw new Error(`unknown_map_environment_water:${options.waterId}`);
+  const worldWater = plan?.recipe.waterBodies?.find(candidate => candidate.id === options.waterId);
+  const sea = !!world && options.waterId === 'sea';
+  if (options.waterId !== undefined && !water && !worldWater && !sea) {
+    throw new Error(`unknown_map_environment_water:${options.waterId}`);
+  }
+  const sampleWorld = world ? worldMapSampler(world) : undefined;
+  let seaProbe = world ? seaProbes.get(world) : undefined;
+  if (world && !seaProbe) {
+    seaProbe = createWorldSeaProbeSampler(sampleWorld!);
+    seaProbes.set(world, seaProbe);
+  }
+  const context = world ? worldMapTerrainContext(world) : undefined;
+  const noFreshWater = new Map<string, 'lake' | 'river'>();
   return (x, z) => {
-    const insideWater = water ? isPointInsideWaterBody(water, x, z, map) : false;
+    const surface = sampleWorld?.(x, z);
+    const insideWater = water ? isPointInsideWaterBody(water, x, z, map)
+      : !!surface && surface.waterLevel !== null && (surface.waterBodyId ?? 'sea') === options.waterId;
+    const freshWaterDistance = context?.freshWaterDistance(x, z) ?? Infinity;
+    const seaDistance = surface && surface.waterLevel !== null ? 0
+      : seaProbe ? nearestWorldWater(seaProbe, [x, z], surface!, noFreshWater)?.distanceMeters ?? Infinity : Infinity;
     return {
       x,
       z,
       height: sampleTerrainHeight(map, x, z),
       slope: terrainSlopeDegrees(map, x, z),
-      waterDistance: distanceToWater(map, x, z),
+      waterDistance: Math.min(distanceToWater(map, x, z), freshWaterDistance <= 160 ? freshWaterDistance : Infinity, seaDistance),
       guideDistance: distanceToGuideSegments(x, z, guideSegments),
       ...(options.region ? { regionDistance: signedDistanceToRegion(x, z, options.region) } : {}),
-      ...(water ? { water: {
-        id: water.id,
+      ...(water || worldWater || sea ? { water: {
+        id: options.waterId!,
         inside: insideWater,
-        surfaceHeight: insideWater ? waterSurfaceLevelAt(water, x, z) : null,
-        depth: water.depth
+        surfaceHeight: insideWater ? water ? waterSurfaceLevelAt(water, x, z) : surface!.waterLevel : null,
+        depth: water?.depth ?? worldWater?.depth ?? (insideWater ? Math.max(0, surface!.waterLevel! - surface!.height) : 0)
       } } : {})
     };
   };
@@ -66,6 +104,7 @@ export function sampleMapEnvironment(
 }
 
 export function terrainSlopeDegrees(map: EditableMap, x: number, z: number): number {
+  if (map.world) return Math.atan(sampleWorldSlope(worldMapSampler(map.world), x, z)) * 180 / Math.PI;
   const stepX = map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1);
   const stepZ = map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1);
   const riseX = (
@@ -87,7 +126,7 @@ export function terrainFootprintSlopeDegrees(
 ): number {
   const stepX = map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1);
   const stepZ = map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1);
-  const radius = Math.max(0.1, footprintRadius, Math.min(stepX, stepZ) * 0.75);
+  const radius = Math.max(0.1, footprintRadius, map.world ? 0 : Math.min(stepX, stepZ) * 0.75);
   const directions = [
     [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1],
     [Math.SQRT1_2, Math.SQRT1_2], [Math.SQRT1_2, -Math.SQRT1_2],
