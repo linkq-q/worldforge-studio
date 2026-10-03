@@ -59,6 +59,7 @@ describe('render-plan water ownership', () => {
     expect(material.uniforms.uWaveHeight.value).toBeCloseTo(0.04);
     expect(material.uniforms.uOceanWaveGeometryFadeStart.value).toBe(112);
     expect(material.uniforms.uOceanWaveGeometryFadeEnd.value).toBe(128);
+    expect(material.uniforms.uOceanNearVertexSpacing.value).toBe(4);
     expect(material.uniforms.uUseShallowWaterHeight.value).toBe(false);
     adapter.addRainRipple('ocean', 0, 0, 0.5);
     expect(material.uniforms.uUseShallowWaterHeight.value).toBe(false);

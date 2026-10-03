@@ -30,17 +30,21 @@ function fogPass() {
 }
 
 describe('render environment bridge', () => {
-  it('keeps distance fog tied to scene depth instead of an analytic ocean plane', () => {
+  it('fills only sky-depth ocean rays without overriding real scene depth', () => {
     const pass = createExponentialFogPass();
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
     camera.position.set(0, 20, 30);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
     const texture = new THREE.DepthTexture(4, 4);
-    bindDistanceFogDepth(pass, texture, camera);
+    bindDistanceFogDepth(pass, texture, camera, 0);
     expect(pass.uniforms.tDepth.value).toBe(texture);
-    expect(pass.uniforms).not.toHaveProperty('uFogOceanEnabled');
-    expect(pass.material.fragmentShader).not.toContain('oceanInFront');
+    expect(pass.uniforms.uFogOceanEnabled.value).toBe(true);
+    expect(pass.uniforms.uFogCameraWorld.value.equals(camera.matrixWorld)).toBe(true);
+    expect(pass.material.fragmentShader).toContain('uFogOceanEnabled && depthSample >= 0.9999');
+    expect(pass.material.fragmentShader).toContain('depthSample >= 0.9999 && !oceanInFront');
+    bindDistanceFogDepth(pass, texture, camera);
+    expect(pass.uniforms.uFogOceanEnabled.value).toBe(false);
     texture.dispose();
     pass.dispose();
   });

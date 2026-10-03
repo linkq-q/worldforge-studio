@@ -26,10 +26,30 @@ const SHALLOW_WATER_FIXED_STEP = 1 / 30;
 const SHALLOW_WATER_ACTIVE_SECONDS = 3;
 
 const PRIMARY_GERSTNER_PHASE_GLSL = /* glsl */ `
+  float primaryGerstnerRawWaveNumber() {
+    return max(abs(uLargeWaveScale * max(uWaveScale, 0.05) / 1.3), 0.001);
+  }
+
+  float primaryGerstnerWaveNumber() {
+    float waveNumber = primaryGerstnerRawWaveNumber();
+    if (!uUseOceanTerrain || uOceanNearVertexSpacing <= 0.0) return waveNumber;
+    // Preserve primary-wave energy at extreme scale values, but never ask the
+    // geometry for fewer than about 2.6 vertices per wavelength.
+    return min(waveNumber, 2.4 / uOceanNearVertexSpacing);
+  }
+
+  float oceanVertexWaveFilter(float waveNumber) {
+    if (!uUseOceanTerrain || uOceanNearVertexSpacing <= 0.0) return 1.0;
+    // Two samples per wavelength is the Nyquist limit. Fade before that limit
+    // instead of letting high-frequency geometry alias into stationary stripes.
+    float phaseAdvancePerVertex = abs(waveNumber) * uOceanNearVertexSpacing;
+    return 1.0 - smoothstep(2.4, 3.14159265, phaseAdvancePerVertex);
+  }
+
   float primaryGerstnerPhase(vec2 position) {
     vec2 dir = normalizeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
     vec2 tangent = vec2(-dir.y, dir.x);
-    float k = max(abs(uLargeWaveScale * max(uWaveScale, 0.05) / 1.3), 0.001);
+    float k = primaryGerstnerWaveNumber();
     float ridgeStretch = max(uLargeWaveStretch * mix(1.0, uWaveCrestStretch, uDirectionalAnisotropy), 0.001);
     float along = dot(position, dir) * k;
     float across = dot(position, tangent) * k / ridgeStretch;
@@ -53,6 +73,7 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform float uOceanTerrainSinkTarget;
   uniform float uOceanWaveGeometryFadeStart;
   uniform float uOceanWaveGeometryFadeEnd;
+  uniform float uOceanNearVertexSpacing;
 
   float sampleOceanTerrainHeight(vec2 worldXZ) {
     vec2 safeMapSize = max(uOceanMapSize, vec2(0.0001));
@@ -320,10 +341,13 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     float secondaryAmplitude = uWaveHeight * uSecondaryWaveStrength * 0.34 * spread;
     float midAmplitude = uWaveHeight * uMidWaveStrength * 0.24 * spread;
     float detailAmplitude = uWaveHeight * uDetailWaveStrength * 0.1 * spread;
-    float primaryWaveNumber = max(abs(uLargeWaveScale * scaleMultiplier), 0.001);
+    float primaryWaveNumber = primaryGerstnerWaveNumber();
     float secondaryWaveNumber = max(abs(uSecondaryWaveScale * scaleMultiplier), 0.001);
     float midWaveNumber = max(abs(uMidWaveScale * scaleMultiplier), 0.001);
     float detailWaveNumber = max(abs(uDetailWaveScale * scaleMultiplier), 0.001);
+    secondaryAmplitude *= oceanVertexWaveFilter(secondaryWaveNumber);
+    midAmplitude *= oceanVertexWaveFilter(midWaveNumber);
+    detailAmplitude *= oceanVertexWaveFilter(detailWaveNumber);
     // A Gerstner component folds when Q*A*k exceeds one. Bound the sum so
     // imported/extreme parameters cannot make the surface self-intersect.
     float foldoverBudget = abs(primaryAmplitude * primaryWaveNumber)
@@ -1873,6 +1897,7 @@ export class WaterSurface {
         uOceanTerrainSinkTarget: { value: -3 },
         uOceanWaveGeometryFadeStart: { value: 1e6 },
         uOceanWaveGeometryFadeEnd: { value: 1e6 + 1 },
+        uOceanNearVertexSpacing: { value: 0 },
 
         // === v3: Water Mode (0=cartoon, 1=realistic, 2=hybrid) ===
         uWaterMode: { value: Math.max(0, WATER_MODE_NAMES.indexOf(opts.waterMode)) },
