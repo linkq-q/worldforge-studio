@@ -52,6 +52,18 @@ describe('underwater runtime state', () => {
     expect(cameraWaterSurfaceLevel(map, 0, 0)).toBeCloseTo(2, 5);
   });
 
+  it('uses the render-derived ocean continuation beyond the authored terrain edge', () => {
+    const map = createEmptyMap('ocean continuation', 'ocean-continuation', [48, 16, 48]);
+    map.terrain.heights.fill(2);
+    map.waterBodies = [{
+      id: 'ocean', name: 'ocean', type: 'ocean', level: 0, depth: 8, width: 1,
+      points: [[-24, -24], [24, -24], [24, 24], [-24, 24]]
+    }];
+
+    expect(cameraWaterSurfaceLevel(map, 0, 0)).toBeNull();
+    expect(cameraWaterSurfaceLevel(map, 30, 0)).toBe(0);
+  });
+
   it('uses the persisted world sampler when a world map has no local water bodies', () => {
     const map = createEmptyMap('world lake', 'world-lake-map', [500, 20, 500]);
     map.world = worldWithLake();

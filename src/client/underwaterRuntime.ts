@@ -2,12 +2,15 @@ import * as THREE from 'three';
 import { absorptionFromTransmittance } from '@voxel-studio/render-runtime/postprocess';
 import type { EditableMap } from '../shared/map';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from '../shared/mapWater';
+import { mapOceanCoast, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import type { RuntimeUnderwaterStyle } from '../shared/renderPlan';
 import { worldMapSampler } from '../shared/worldMapState';
 
 interface UnderwaterPassLike {
   uniforms: Record<string, { value: unknown }>;
 }
+
+const oceanCoastCache = new WeakMap<EditableMap, OceanCoastField | null>();
 
 export interface UnderwaterWaveProfile {
   amplitude: number;
@@ -32,13 +35,22 @@ export const DEFAULT_UNDERWATER_WAVE_PROFILE: UnderwaterWaveProfile = {
 export function cameraWaterSurfaceLevel(map: EditableMap | null, x: number, z: number): number | null {
   if (!map) return null;
   if (map.world) return worldMapSampler(map.world)(x, z).waterLevel ?? null;
+  const oceanCoast = cachedOceanCoast(map);
   let level: number | null = null;
   for (const water of map.waterBodies) {
-    if (!isPointInsideWaterBody(water, x, z, map)) continue;
     const candidate = waterSurfaceLevelAt(water, x, z);
+    const inside = water.type === 'ocean'
+      ? oceanCoast !== null && candidate - sampleCoastGrid(oceanCoast, x, z) > 0.025
+      : isPointInsideWaterBody(water, x, z, map);
+    if (!inside) continue;
     if (level === null || candidate > level) level = candidate;
   }
   return level;
+}
+
+function cachedOceanCoast(map: EditableMap): OceanCoastField | null {
+  if (!oceanCoastCache.has(map)) oceanCoastCache.set(map, mapOceanCoast(map));
+  return oceanCoastCache.get(map) ?? null;
 }
 
 export function advanceUnderwaterBlend(
