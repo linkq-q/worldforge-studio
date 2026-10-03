@@ -68,6 +68,69 @@ function terrainBoundaryPoints(geometry: THREE.BufferGeometry): THREE.Vector3[] 
 }
 
 describe('terrain normal generation', () => {
+  it('keeps circular surface transitions smooth between terrain vertices and updates their texture', async () => {
+    const map = createEmptyMap('surface sampling');
+    map.box.size = [48, 16, 48];
+    map.terrain = { resolutionX: 33, resolutionZ: 33, heights: Array(1089).fill(3) };
+    const painted = applyMapOperations(map, [{ type: 'terrain.surface', surface: 'sand',
+      zoneId: 'sand', region: { kind: 'circle', x: 0, z: 0, radius: 11 } }]);
+    const rendered = await buildEditableMapGroup(painted, { terrainTextureSize: 256 });
+    try {
+      rendered.setGrassStyle({ ...DEFAULT_RUNTIME_GRASS_STYLE, groundTint: false });
+      const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+      const state = terrain.userData.sandFlow as { colorSurface: THREE.DataTexture; colorBounds: THREE.Vector4 };
+      expect(state.colorSurface).toBeDefined();
+      const texture = state.colorSurface;
+      const { width, height, data } = texture.image;
+      const pixels = data as Uint8Array;
+      const redAt = (x: number, z: number): number => {
+        const bounds = state.colorBounds;
+        const u = (x - bounds.x) / bounds.z * width - 0.5, v = (z - bounds.y) / bounds.w * height - 0.5;
+        const col = Math.floor(u), row = Math.floor(v), tx = u - col, tz = v - row;
+        const at = (dx: number, dz: number) => pixels[((row + dz) * width + col + dx) * 4] / 255;
+        return (at(0, 0) * (1 - tx) + at(1, 0) * tx) * (1 - tz)
+          + (at(0, 1) * (1 - tx) + at(1, 1) * tx) * tz;
+      };
+      const ring = Array.from({ length: 64 }, (_, i) => redAt(Math.cos(i * Math.PI / 32) * 9.5, Math.sin(i * Math.PI / 32) * 9.5));
+      expect(Math.max(...ring) - Math.min(...ring)).toBeLessThan(0.015);
+      expect(redAt(0, 0)).toBeGreaterThan(redAt(14, 0) + 0.2);
+      const positions = Array.from(terrain.geometry.getAttribute('position').array);
+      const disposed = vi.spyOn(texture, 'dispose');
+      rendered.refreshTerrain(map);
+      expect(disposed).toHaveBeenCalledOnce();
+      expect(Array.from(terrain.geometry.getAttribute('position').array)).toEqual(positions);
+      const latest = state.colorSurface;
+      expect(latest.image.data).not.toEqual(texture.image.data);
+      const finalDispose = vi.spyOn(latest, 'dispose');
+      rendered.dispose();
+      expect(finalDispose).toHaveBeenCalledOnce();
+    } catch (error) {
+      rendered.dispose();
+      throw error;
+    }
+  });
+
+  it('samples shared chunk color edges at the same world positions', async () => {
+    const map = createEmptyMap('shared color edge', 'shared-color-edge', [48, 16, 48]);
+    map.terrain.heights.fill(3);
+    const chunks = await Promise.all([0, 48].map(offset => buildEditableMapGroup(map, {
+      terrainTextureSize: 32,
+      terrainSurfaceWeight: (x, _z, tags) => tags.includes('sand') ? (x + offset) / 100 + 0.2 : 0
+    })));
+    try {
+      const textures = chunks.map(chunk => (chunk.group.getObjectByName('terrain')!.userData.sandFlow as {
+        colorSurface: THREE.DataTexture
+      }).colorSurface);
+      const first = textures[0].image, second = textures[1].image;
+      const a = ((first.height / 2) * first.width + first.width - 1) * 4;
+      const b = ((second.height / 2) * second.width) * 4;
+      expect(Array.from((first.data as Uint8Array).slice(a, a + 3)))
+        .toEqual(Array.from((second.data as Uint8Array).slice(b, b + 3)));
+    } finally {
+      chunks.forEach(chunk => chunk.dispose());
+    }
+  });
+
   it('keeps material grain visible on bounded streamed terrain textures', () => {
     const streamedPixelsPerMetre = 128 / 125;
     expect(terrainDetailPixelSpan(0.04, streamedPixelsPerMetre)).toBe(0.75);
@@ -355,6 +418,39 @@ describe('structured map water rendering', () => {
     expect(terrain.userData.terrainTextureChannels).toContain('normal');
     expect(terrain.geometry.getAttribute('color').count).toBe(terrain.geometry.getAttribute('position').count);
     rendered.dispose();
+  });
+
+  it('refreshes surface color for grass style, density, and palette without tinting the skirt twice', async () => {
+    const map = createEmptyMap('surface tint');
+    map.terrain.heights.fill(3);
+    const layer = createGrassLayer({ seed: 3 }, map.terrain.resolutionX, map.terrain.resolutionZ);
+    map.grassLayers = [layer];
+    fillGrassLayerInPlace(map, layer.id, 1);
+    const rendered = await buildEditableMapGroup(map, { terrainTextureSize: 64 });
+    try {
+      const mesh = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+      const state = mesh.userData.sandFlow as { colorSurface: THREE.DataTexture };
+      const center = () => {
+        const { width, height, data } = state.colorSurface.image;
+        const offset = (Math.floor(height / 2) * width + Math.floor(width / 2)) * 4;
+        return Array.from((data as Uint8Array).slice(offset, offset + 3));
+      };
+      rendered.setGrassStyle({ ...DEFAULT_RUNTIME_GRASS_STYLE, groundTint: false });
+      const plain = center();
+      rendered.setGrassStyle({ ...DEFAULT_RUNTIME_GRASS_STYLE, groundTint: true,
+        groundColor: '#ff0000', rootColor: '#ff0000', groundTintStrength: 1 });
+      expect(center()).toEqual([255, 0, 0]);
+      fillGrassLayerInPlace(map, layer.id, 0);
+      rendered.refreshGrass(map);
+      expect(center()).toEqual(plain);
+      rendered.setColorPalette(createColorPalette({ colors: ['#ffffff', '#eeeeee'] }));
+      expect(center()).not.toEqual(plain);
+      expect(new Set(mesh.geometry.getAttribute('terrainSurface').array)).toEqual(new Set([1]));
+      const skirt = mesh.getObjectByName('terrain-skirt') as THREE.Mesh;
+      expect(new Set(skirt.geometry.getAttribute('terrainSurface').array)).toEqual(new Set([0]));
+    } finally {
+      rendered.dispose();
+    }
   });
 
   it('keeps adjacent streamed terrain skirt segments joined down a sloped edge', async () => {
