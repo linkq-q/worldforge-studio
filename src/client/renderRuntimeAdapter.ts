@@ -716,7 +716,10 @@ export class RenderRuntimeAdapter {
         mesh,
         originalMaterial,
         surface,
-        usesSceneDepth: shouldUseSceneDepthForWater(mesh.userData.waterShore as WaterShoreBinding | undefined)
+        usesSceneDepth: shouldUseSceneDepthForWater(
+          mesh.userData.waterShore as WaterShoreBinding | undefined,
+          mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined
+        )
       });
     }
   }

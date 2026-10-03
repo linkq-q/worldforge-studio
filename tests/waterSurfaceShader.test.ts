@@ -156,6 +156,34 @@ describe('WaterSurface shader', () => {
     surface.dispose();
   });
 
+  it('limits streamed ocean shallows to rendered terrain bounds and clears the limit on rebinding', () => {
+    const surface = new WaterSurface(new THREE.Scene(), {} as THREE.WebGLRenderer, new THREE.Group(), { size: 1, segments: 1 });
+    const terrain = new THREE.DataTexture(new Float32Array(4), 2, 2, THREE.RedFormat, THREE.FloatType);
+    const config = { terrainSize: [2, 2], mapSize: [540, 540], center: [0, 0],
+      terrainBounds: [-250, -200, 250, 300] };
+    try {
+      surface.setOceanTerrainTexture(terrain, config);
+      expect(surface.material.uniforms.uOceanTerrainBounded?.value).toBe(true);
+      expect(surface.material.uniforms.uOceanTerrainBounds?.value.toArray()).toEqual(config.terrainBounds);
+      for (const shader of [surface.material.vertexShader, surface.material.fragmentShader]) {
+        expect(shader).toContain('if (outsideOceanTerrain(worldXZ)) return uOceanTerrainSinkTarget;');
+      }
+      // The padded shore-distance texture must not reintroduce a false shallow band.
+      expect(surface.material.fragmentShader).toContain('if (uUseOceanTerrain && outsideOceanTerrain(vWorldPosition.xz)) shoreDist = 1.0;');
+      expect(surface.material.fragmentShader).toContain('if (uOceanTerrainBounded && uHasDepthTexture && depthSample >= 1.0) alpha = 1.0;');
+      surface.setOceanTerrainTexture(terrain, { ...config, terrainBounds: undefined });
+      expect(surface.material.uniforms.uOceanTerrainBounded.value).toBe(false);
+      surface.setOceanTerrainTexture(terrain, { ...config, terrainBounds: [250, -200, -250, 300] });
+      expect(surface.material.uniforms.uOceanTerrainBounded.value).toBe(false);
+      surface.setOceanTerrainTexture(terrain, config);
+      surface.setOceanTerrainTexture(null);
+      expect(surface.material.uniforms.uOceanTerrainBounded.value).toBe(false);
+    } finally {
+      surface.dispose();
+      terrain.dispose();
+    }
+  });
+
   it('keeps reflections stable on a still camera while preserving local ripple distortion', () => {
     const surface = new WaterSurface(
       new THREE.Scene(),

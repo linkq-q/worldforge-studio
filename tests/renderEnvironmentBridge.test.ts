@@ -164,6 +164,14 @@ describe('render environment bridge', () => {
     texture.dispose();
   });
 
+  it('requests actual scene depth for a finite ocean even when it already has a shore mask', () => {
+    const texture = new THREE.Texture();
+    const shore = { texture, center: [0, 0] as [number, number], size: 540 };
+    expect(shouldUseSceneDepthForWater(shore, { terrainBounds: [-250, -250, 250, 250] })).toBe(true);
+    expect(shouldUseSceneDepthForWater(shore)).toBe(false);
+    texture.dispose();
+  });
+
   it('keeps ocean and lake material detail independent from terrain depth', () => {
     const texture = new THREE.Texture();
     const oceanShore = { texture, center: [0, 0] as [number, number], size: 4096 };

@@ -29,8 +29,18 @@ const OCEAN_TERRAIN_GLSL = /* glsl */ `
   uniform float uOceanLevel;
   uniform float uOceanTerrainApronWidth;
   uniform float uOceanTerrainSinkTarget;
+  uniform bool uOceanTerrainBounded;
+  uniform vec4 uOceanTerrainBounds;
+
+  bool outsideOceanTerrain(vec2 worldXZ) {
+    return uOceanTerrainBounded && (any(lessThan(worldXZ, uOceanTerrainBounds.xy))
+      || any(greaterThan(worldXZ, uOceanTerrainBounds.zw)));
+  }
 
   float sampleOceanTerrainHeight(vec2 worldXZ) {
+    // Streamed worlds end at a vertical cut; their padded depth field has no
+    // rendered seabed outside that cut to support transparent shallows.
+    if (outsideOceanTerrain(worldXZ)) return uOceanTerrainSinkTarget;
     vec2 safeMapSize = max(uOceanMapSize, vec2(0.0001));
     vec2 terrainSpan = max(uOceanTerrainSize - 1.0, vec2(1.0));
     vec2 uv = (worldXZ - uOceanMapCenter) / safeMapSize + 0.5;
@@ -863,6 +873,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       if (!uShoreWorldSpace && shoreDist < uShoreClipThreshold) discard;
     }
 
+    // The shore mask is padded too. Outside a finite world it must describe
+    // open water, not a shallow/foam band around an unrendered coast apron.
+    if (uUseOceanTerrain && outsideOceanTerrain(vWorldPosition.xz)) shoreDist = 1.0;
+
     // === 1. foam 噪声扰动（多层叠加，更有机） ===
     float noiseVal;
     if (uUseFoamNoise) {
@@ -1540,6 +1554,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float oceanDeepOcclusion = smoothstep(0.2, 0.8, oceanDepthFraction);
       alpha = mix(alpha, 1.0, oceanDeepOcclusion);
       alpha = mix(alpha, 1.0, foam * 0.65);
+      // A grazing view can leave the finite seabed even from an in-bounds
+      // shallow pixel. Transmit only when actual scene geometry is behind it.
+      if (uOceanTerrainBounded && uHasDepthTexture && depthSample >= 1.0) alpha = 1.0;
     }
     float riverMouthFade = uUseRiverFlow ? clamp(vRiverMouthFade, 0.0, 1.0) : 1.0;
     if (hasTerrainDepth && uHasWaterSceneColor) {
@@ -1767,6 +1784,8 @@ export class WaterSurface {
         uOceanLevel: { value: 0 },
         uOceanTerrainApronWidth: { value: 1 },
         uOceanTerrainSinkTarget: { value: -3 },
+        uOceanTerrainBounded: { value: false },
+        uOceanTerrainBounds: { value: new THREE.Vector4() },
 
         // === v3: Water Mode (0=cartoon, 1=realistic, 2=hybrid) ===
         uWaterMode: { value: Math.max(0, WATER_MODE_NAMES.indexOf(opts.waterMode)) },
@@ -2489,11 +2508,12 @@ export class WaterSurface {
    * Bind a map terrain height field for ocean swash. Invalid or missing input
    * disables the feature and leaves the legacy shore-distance path intact.
    * @param {THREE.Texture|null} texture
-   * @param {{terrainSize?:number[],mapSize?:number[],center?:number[],level?:number,apronWidth?:number,sinkTarget?:number}} [config]
+   * @param {{terrainSize?:number[],mapSize?:number[],center?:number[],level?:number,apronWidth?:number,sinkTarget?:number,terrainBounds?:number[]}} [config]
    * @returns {boolean}
    */
   setOceanTerrainTexture(texture, config = {}) {
     const u = this.material.uniforms;
+    u.uOceanTerrainBounded.value = false;
     const terrainSize = Array.isArray(config.terrainSize) ? config.terrainSize.map(Number) : [];
     const mapSize = Array.isArray(config.mapSize) ? config.mapSize.map(Number) : [];
     const valid = !!texture
@@ -2526,6 +2546,14 @@ export class WaterSurface {
     u.uOceanTerrainSinkTarget.value = Number.isFinite(sinkTarget)
       ? sinkTarget
       : u.uOceanLevel.value - 3;
+    // Optional world-space [minX, minZ, maxX, maxZ]; ordinary maps render the
+    // full coast apron and deliberately keep the unbounded sampling path.
+    const bounds = config.terrainBounds;
+    if (Array.isArray(bounds) && bounds.length === 4 && bounds.every(Number.isFinite)
+      && bounds[0] < bounds[2] && bounds[1] < bounds[3]) {
+      u.uOceanTerrainBounds.value.fromArray(bounds);
+      u.uOceanTerrainBounded.value = true;
+    }
     u.uUseOceanTerrain.value = true;
     return true;
   }

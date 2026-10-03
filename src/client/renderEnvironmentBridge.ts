@@ -41,11 +41,16 @@ export interface WaterOceanTerrainBinding {
   level: number;
   apronWidth: number;
   sinkTarget: number;
+  /** Rendered terrain extent in world XZ: minX, minZ, maxX, maxZ. */
+  terrainBounds?: [number, number, number, number];
   splashPoints: Array<[number, number]>;
 }
 
-export function shouldUseSceneDepthForWater(binding: WaterShoreBinding | undefined): boolean {
-  return !binding?.texture?.isTexture;
+export function shouldUseSceneDepthForWater(
+  binding: WaterShoreBinding | undefined,
+  ocean?: Pick<WaterOceanTerrainBinding, 'terrainBounds'>
+): boolean {
+  return Boolean(ocean?.terrainBounds) || !binding?.texture?.isTexture;
 }
 
 export function shouldUseStructuredWaterMaterialDetail(binding: WaterShoreBinding | undefined): boolean {

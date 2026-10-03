@@ -388,6 +388,7 @@ declare module '@voxel-studio/render-runtime/environment' {
         level?: number;
         apronWidth?: number;
         sinkTarget?: number;
+        terrainBounds?: number[];
       }
     ): boolean;
     setOceanShoreSplashPoints(
