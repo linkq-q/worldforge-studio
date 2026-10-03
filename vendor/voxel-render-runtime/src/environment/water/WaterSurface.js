@@ -164,7 +164,8 @@ const OCEAN_SWASH_GLSL = /* glsl */ `
   }
 
   float oceanWaveGeometryFade(vec2 worldXZ) {
-    float distanceFromMapCenter = length(worldXZ - uOceanMapCenter);
+    vec2 fromMapCenter = abs(worldXZ - uOceanMapCenter);
+    float distanceFromMapCenter = max(fromMapCenter.x, fromMapCenter.y);
     return 1.0 - smoothstep(
       uOceanWaveGeometryFadeStart,
       max(uOceanWaveGeometryFadeEnd, uOceanWaveGeometryFadeStart + 0.001),
@@ -498,6 +499,17 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     vec3 waveNormal = normalize(cross(displacedZ - displaced, displacedX - displaced));
     // Keep authored river slope while adding the local wave perturbation.
     vec3 perturbedNormal = normalize(normal + (waveNormal - vec3(0.0, 1.0, 0.0)) * normal.y);
+    if (uUseOceanTerrain && oceanWaveFade < 1.0) {
+      // Outer LOD rings cannot carry near-shore geometry, but can interpolate
+      // broad normals cheaply across their sparse vertices.
+      vec2 primary = normalizeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
+      vec2 secondary = normalizeDirection(uSecondaryWaveDirection, vec2(-0.35, 1.0));
+      float phaseA = dot(baseWorldPosition.xz, primary) * 0.012 + uTime * uWaveSpeed * 0.14;
+      float phaseB = dot(baseWorldPosition.xz, secondary) * 0.009 - uTime * uWaveSpeed * 0.11;
+      vec2 outerSlope = primary * (cos(phaseA) * 0.045) + secondary * (cos(phaseB) * 0.025);
+      perturbedNormal = normalize(perturbedNormal
+        + vec3(outerSlope.x, 0.0, outerSlope.y) * (1.0 - oceanWaveFade));
+    }
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
     vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);
@@ -1247,8 +1259,12 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       vec2 dirA = length(uWaterNormalDirectionA) > 0.0001 ? normalize(uWaterNormalDirectionA) : vec2(1.0, 0.0);
       vec2 dirB = length(uWaterNormalDirectionB) > 0.0001 ? normalize(uWaterNormalDirectionB) : vec2(1.0, 0.0);
 
-      vec2 uvA = (waterUv + flowOffset) * uWaterNormalScaleA + dirA * uTime * uWaterNormalSpeedA;
-      vec2 uvB = (waterUv + flowOffset) * uWaterNormalScaleB + dirB * uTime * uWaterNormalSpeedB;
+      // Reuse the same water detail maps at a broader scale on sparse ocean
+      // rings; near-shore sampling stays identical to lakes and rivers.
+      float oceanDetailScale = uUseOceanTerrain
+        ? mix(1.0, 0.035, 1.0 - oceanWaveGeometryFade(waterUv)) : 1.0;
+      vec2 uvA = (waterUv + flowOffset) * uWaterNormalScaleA * oceanDetailScale + dirA * uTime * uWaterNormalSpeedA;
+      vec2 uvB = (waterUv + flowOffset) * uWaterNormalScaleB * oceanDetailScale + dirB * uTime * uWaterNormalSpeedB;
 
       vec3 nA = unpackNormalMap(texture2D(tWaterNormalA, uvA).rgb);
       vec3 nB = unpackNormalMap(texture2D(tWaterNormalB, uvB).rgb);

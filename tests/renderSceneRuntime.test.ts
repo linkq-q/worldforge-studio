@@ -106,6 +106,20 @@ describe('applyRenderScheme', () => {
     expect((targets.scene.background as THREE.Color).getHex()).toBe(0x111719);
   });
 
+  it('keeps the physical underwater view available on an unschemed water map', () => {
+    const { targets, adapter } = createTargets();
+    const map = createEmptyMap('coast', 'coast', [500, 80, 500], 'voxel', 'outdoor', [500, 80, 500]);
+    map.waterBodies = [{
+      id: 'sea', name: 'Sea', type: 'ocean', level: 0, depth: 8, width: 1,
+      points: [[-250, -250], [250, -250], [250, 250], [-250, 250]], shorelineSmoothness: 0
+    }];
+    targets.map = map;
+
+    applyRenderScheme(targets, null);
+
+    expect(adapter.applyUnderwater).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'clear' }));
+  });
+
   it('uses an indoor night profile instead of the outdoor daylight path', () => {
     const { targets, rendered } = createTargets();
     targets.map = createEmptyMap('night room', 'night-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);

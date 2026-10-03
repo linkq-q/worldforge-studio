@@ -475,7 +475,10 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     configureRendererOutput(renderer, applySceneLightingContext(targets, 'noon', 1));
     adapter.applyColorGrade({ recipe: 'neutral' });
     adapter.applyPostQuality({ bloom: 'off', ssao: 'off', depthOfField: 'off' });
-    adapter.applyUnderwater({ mode: 'off', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72, causticStrength: 0.22 });
+    adapter.applyUnderwater({
+      mode: targets.map?.world || targets.map?.waterBodies.length ? 'clear' : 'off',
+      tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72, causticStrength: 0.22
+    });
     adapter.applyDistanceFog('#111719', 0);
     adapter.applyScopedCapabilities([], [], []);
     targets.rendered?.setGrassStyle(grassStyleWithSharedWind(DEFAULT_RUNTIME_GRASS_STYLE, targets.map));
