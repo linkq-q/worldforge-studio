@@ -1870,6 +1870,9 @@ class MapEditor {
           <p id="world-size-hint" class="empty inspector-note">固定生成 500 × 500 米世界。</p>
           <button id="generate-world-ai" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>一句话完整生成 500m 世界</button>
           <button id="generate-world-whitebox" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>白盒规划（无建筑）</button>
+          <button id="generate-terrain-program" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>自然地形 · 程序生成（实验）</button>
+          <button id="generate-terrain-recipe" class="secondary" ${this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(suggestion) ? 'disabled' : ''}>自然地形 · 原配方对照</button>
+          <p class="empty inspector-note">自然地形仅运行一次规划，不生成树木或建筑；程序版保留生成代码与采样记录。</p>
           ${map.world?.bundle.plan.whitebox ? `<button id="construct-world-whitebox" ${this.state.busy || this.state.dirty || Boolean(suggestion) ? 'disabled' : ''}>沿当前已保存白盒施工</button>` : ''}
           <p class="empty inspector-note">先生成可检查尺寸的白盒施工预览，不调用 DeepSeek。确认灰盒和清单后，可在预览中单独确认生成 3D 资产；应用或保存预览不会自动生成资产。</p>
           ${map.world?.review && !this.mapAiPreviewMap ? renderWorldConstructionDetails(
@@ -2063,10 +2066,8 @@ class MapEditor {
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
       if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
-      const worldButton = host.querySelector<HTMLButtonElement>('#generate-world-ai');
-      if (worldButton) worldButton.disabled = blocked || Boolean(this.mapAiSuggestion) || (!map.world && !isCompositionEmptyMap(map));
-      const whiteboxButton = host.querySelector<HTMLButtonElement>('#generate-world-whitebox');
-      if (whiteboxButton) whiteboxButton.disabled = blocked || Boolean(this.mapAiSuggestion) || (!map.world && !isCompositionEmptyMap(map));
+      host.querySelectorAll<HTMLButtonElement>('#generate-world-ai, #generate-world-whitebox, #generate-terrain-program, #generate-terrain-recipe')
+        .forEach(button => {button.disabled = blocked || Boolean(this.mapAiSuggestion) || (!map.world && !isCompositionEmptyMap(map));});
     });
     host.querySelector<HTMLInputElement>('#map-ai-focus-prompt')?.addEventListener('input', (event) => {
       this.mapAiFocusPrompt = (event.target as HTMLInputElement).value;
@@ -2156,6 +2157,8 @@ class MapEditor {
     });
     host.querySelector('#generate-world-ai')?.addEventListener('click', () => void this.generateWorldPreview('generate-complete'));
     host.querySelector('#generate-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview('whitebox'));
+    host.querySelector('#generate-terrain-program')?.addEventListener('click', () => void this.generateWorldPreview('terrain-program'));
+    host.querySelector('#generate-terrain-recipe')?.addEventListener('click', () => void this.generateWorldPreview('terrain-recipe'));
     host.querySelector('#construct-world-whitebox')?.addEventListener('click', () => void this.generateWorldPreview('construct-whitebox'));
     host.querySelector<HTMLSelectElement>('#world-town')?.addEventListener('change', event => {
       if (this.state.map) this.frameWorldTown(this.state.map, (event.target as HTMLSelectElement).value);
@@ -2816,9 +2819,10 @@ class MapEditor {
 
   private mapAiPanelRenderedAt = 0;
 
-  private async generateWorldPreview(mode: 'generate' | 'generate-complete' | 'whitebox' | 'construct-whitebox' = 'generate'): Promise<void> {
+  private async generateWorldPreview(mode: 'generate' | 'generate-complete' | 'whitebox' | 'construct-whitebox' | 'terrain-program' | 'terrain-recipe' = 'generate'): Promise<void> {
     const map = this.state.map;
     if (!map || map.sceneMode !== 'outdoor' || this.state.busy || this.state.dirty) return;
+    const terrainOnly = mode === 'terrain-program' || mode === 'terrain-recipe';
     const whitebox = mode === 'whitebox';
     const construction = mode === 'construct-whitebox';
     const complete = mode === 'generate-complete';
@@ -2835,7 +2839,7 @@ class MapEditor {
       return;
     }
     this.mapAiAbortController = new AbortController();
-    this.setBusy(true, construction ? '正在沿已保存白盒施工…'
+    this.setBusy(true, terrainOnly ? '正在生成自然地形首轮结果…' : construction ? '正在沿已保存白盒施工…'
       : complete ? '正在生成首版白盒并沿其语义施工…' : '正在规划地形、城镇功能与道路…');
     try {
       const library = this.state.assetLibraries.find(item => item.id === this.activeAssetLibraryId);
@@ -2856,7 +2860,9 @@ class MapEditor {
         finalObservation?: WorldWhiteboxObservation;
       }>('/api/editor/worlds/generate', {
         method: 'POST', signal: this.mapAiAbortController.signal,
-        body: JSON.stringify(whitebox
+        body: JSON.stringify(terrainOnly
+          ? {mode: 'terrain-only', representation: mode === 'terrain-program' ? 'program' : 'recipe', prompt: this.mapAiPrompt, seed: map.seed, size: 500}
+          : whitebox
           ? {mode: 'whitebox', prompt: this.mapAiPrompt, seed: map.seed, size: 500, generateAssets: false}
           : construction
             ? {mode: 'construct-whitebox', whiteboxPlan: savedWhiteboxPlan,
@@ -2906,7 +2912,9 @@ class MapEditor {
       const paidCallCount = review?.paidCallCount ?? Math.max(0, Math.floor(result.paidCallCount ?? 0));
       this.worldConstructionDetails = review ? {...review, assetsApproved: false, assetPaidCallCount: 0} : null;
       this.mapAiSuggestion = {
-        summary: whitebox
+        summary: terrainOnly
+          ? `自然地形首轮结果：${mode === 'terrain-program' ? '程序生成' : '原配方对照'}，付费调用 ${paidCallCount} 次。`
+          : whitebox
           ? `白盒世界：${result.bundle.plan.featureGraph?.regions.length ?? 0} 个区域，${result.bundle.plan.featureGraph?.paths.length ?? 0} 条路径，${result.bundle.plan.featureGraph?.anchors.length ?? 0} 个锚点。`
           : construction
             ? `沿白盒施工预览：${result.bundle.plan.towns.length} 处聚落，${result.bundle.plan.roads.length} 条区域道路，付费调用 ${paidCallCount} 次。`

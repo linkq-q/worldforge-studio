@@ -250,7 +250,9 @@ describe('local continuous landforms',()=>{
     expect(validateWorldRecipe({...recipe,landforms:[{...recipe.landforms[0],radius:80 as never}]}).landforms?.[0].radius)
       .toEqual([80,80]);
     expect(()=>validateWorldRecipe({...recipe,landforms:[{...recipe.landforms[0],radius:[0,60]}]})).toThrow('invalid_world_landform');
-    expect(()=>validateWorldRecipe({...recipe,landforms:Array(17).fill(recipe.landforms[0])})).toThrow('invalid_world_landform');
+    // A first-call mountain plan used 17 valid forms; preserve all of them.
+    expect(validateWorldRecipe({...recipe,landforms:Array(17).fill(recipe.landforms[0])}).landforms).toHaveLength(17);
+    expect(()=>validateWorldRecipe({...recipe,landforms:Array(33).fill(recipe.landforms[0])})).toThrow('invalid_world_landform');
   });
 });
 

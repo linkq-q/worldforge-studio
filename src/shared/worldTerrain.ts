@@ -1,3 +1,4 @@
+import { sampleTerrainProgramField, validateTerrainProgramField, type TerrainProgramField } from './terrainProgramField';
 /**
  * Experimental continuous world sampler. Metres, Y up, sea level 0, north = -Z.
  * No editor state, rendering style, network or mutable RNG enters this recipe.
@@ -72,6 +73,7 @@ export interface WorldRecipe {
   constraints: WorldConstraint[];
   landforms?: Array<{ center: [number, number]; radius: [number, number]; height: number }>;
   terrainBrushes?: WorldTerrainBrush[];
+  terrainProgram?: TerrainProgramField;
   waterBodies?: WorldWaterBody[];
   biomePatches?: WorldBiomePatch[];
 }
@@ -273,6 +275,7 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
     seen.add(item.region);
   }
   const recipe: WorldRecipe = { version: 1, seed: input.seed, size: input.size, constraints: input.constraints.map(item => ({ ...item })) };
+  if (input.terrainProgram !== undefined) recipe.terrainProgram = validateTerrainProgramField(input.terrainProgram);
   if (input.reliefProfile !== undefined) {
     if (input.reliefProfile !== 'legacy' && input.reliefProfile !== 'compact') throw new Error('invalid_world_relief_profile');
     recipe.reliefProfile = input.reliefProfile;
@@ -282,7 +285,7 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
     recipe.heightScale = input.heightScale;
   }
   if (input.landforms !== undefined) {
-    if (!Array.isArray(input.landforms) || input.landforms.length > 16) throw new Error('invalid_world_landform');
+    if (!Array.isArray(input.landforms) || input.landforms.length > 32) throw new Error('invalid_world_landform');
     recipe.landforms = input.landforms.map(form => {
       const suppliedRadius: unknown = form?.radius;
       const radius = typeof suppliedRadius === 'number'
@@ -1563,6 +1566,7 @@ export function createWorldTerrainContext(input: WorldRecipe): WorldTerrainConte
         * 360 * terrainScale * (recipe.heightScale ?? 1);
       height += reliefDetail * (proceduralAmplitude + authoredDetailAmplitude) + authoredDrainageDetail;
     }
+    if (recipe.terrainProgram) height = sampleTerrainProgramField(recipe.terrainProgram, recipe.size, x, z);
     for (let brushIndex = 0; brushIndex < brushLimit; brushIndex += 1) {
       const brush = terrainBrushes[brushIndex];
       const defaultGradeFeather = compactRelief && (brush.mode === 'flatten' || brush.mode === 'grade')

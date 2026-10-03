@@ -1,3 +1,4 @@
+import {generateTerrainOnlyWorld} from './worldTerrainProgramGeneration';
 import { readFile } from 'node:fs/promises';
 import { timingSafeEqual } from 'node:crypto';
 import type http from 'node:http';
@@ -268,7 +269,9 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
         sendJson(res, 200, await (generationInput && typeof generationInput === 'object' && !Array.isArray(generationInput)
           && (generationInput as Record<string, unknown>).mode === 'generate-approved-world-assets'
           ? generateApprovedWorldAssets(generationInput, store, controller.signal)
-          : generateWorld(generationInput, store, controller.signal)));
+          : generationInput && typeof generationInput === 'object' && (generationInput as Record<string, unknown>).mode === 'terrain-only'
+            ? generateTerrainOnlyWorld(generationInput, controller.signal)
+            : generateWorld(generationInput, store, controller.signal)));
       });
     } catch (error) {
       throw new HttpError(422, error instanceof Error ? error.message : String(error));
