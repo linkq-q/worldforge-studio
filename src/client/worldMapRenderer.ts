@@ -39,6 +39,7 @@ import {
 } from './mapRenderer';
 import {
   buildMapMeshCollisionWorld,
+  createCollisionMeshInstance,
   MeshCollisionWorld,
   type CollisionMeshKind
 } from './mapMeshCollision';
@@ -807,7 +808,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       spawnPoints: [[0, sample(centerX, centerZ).height, 0]],
       visualSemantics: {
         version: 1,
-        zones: [],
+        // Road overlays must follow this visible tile's grid and refinement lifecycle.
+        zones: roadZones(tile, true),
         wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind }
       },
       layout: createDefaultMapLayout(boxSize),
@@ -910,7 +912,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       spawnPoints: [[0, sample(centerX, centerZ).height, 0]],
       visualSemantics: {
         version: 1,
-        zones: roadZones(tile),
+        // Keep grass contact masks here; the visible terrain tiles own road geometry.
+        zones: roadZones(tile).map(zone => ({ ...zone, material: 'default', forceRoadOverlay: false })),
         wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind }
       },
       layout: createDefaultMapLayout(boxSize),
@@ -928,7 +931,28 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     kinds: ReadonlySet<CollisionMeshKind>
   ): MeshCollisionWorld {
     const transform = new THREE.Matrix4().makeTranslation(centerX, 0, centerZ);
-    return buildMapMeshCollisionWorld(localMap, kinds, { transform, idPrefix: localMap.id });
+    const bridgeObjects = kinds.has('scene') ? localMap.objects.filter(object =>
+      bridgeDecks.some(deck => object.id === `world-bridge:${deck.id}`)) : [];
+    const ordinaryMap = bridgeObjects.length
+      ? { ...localMap, objects: localMap.objects.filter(object => !bridgeObjects.includes(object)) } : localMap;
+    const collision = buildMapMeshCollisionWorld(ordinaryMap, kinds, { transform, idPrefix: localMap.id });
+    if (!bridgeObjects.length) return collision;
+    // Preserve the existing AABB collision approximation, but enclose the actual
+    // Three.js slab. The shared legacy Euler helper uses a different rotation order.
+    const bridgeInstances = bridgeObjects.map(object => {
+      const { position, rotation, scale, size } = object.transform;
+      const matrix = new THREE.Matrix4().compose(new THREE.Vector3(...position),
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation, 'XYZ')),
+        new THREE.Vector3(scale[0] * size[0], scale[1] * size[1], scale[2] * size[2]));
+      const bounds = new THREE.Box3(new THREE.Vector3(-.5, 0, -.5), new THREE.Vector3(.5, 1, .5))
+        .applyMatrix4(transform.clone().multiply(matrix));
+      const center = bounds.getCenter(new THREE.Vector3()), dimensions = bounds.getSize(new THREE.Vector3());
+      const geometry = new THREE.BoxGeometry(dimensions.x, dimensions.y, dimensions.z).translate(center.x, center.y, center.z);
+      const instance = createCollisionMeshInstance(`${localMap.id}:map:${object.id}`, 'scene', geometry);
+      geometry.dispose();
+      return instance;
+    });
+    return collision.withInstances(bridgeInstances);
   }
 
   function ecologyForChunk(chunk: EcologyChunk): EcologyInstance[] {
@@ -1016,14 +1040,18 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     return asset;
   }
 
-  function roadZones(tile: WorldTile): SceneVisualZone[] {
+  function roadZones(tile: WorldTile, clipRoadToTerrain = false): SceneVisualZone[] {
     const centerX = tile.x + tile.size / 2;
     const centerZ = tile.z + tile.size / 2;
     const result: SceneVisualZone[] = [];
     for (const road of roads) {
+      if (clipRoadToTerrain && bridgeDecks.some(deck => deck.id === road.id)) continue;
       const points = roadPolylines.get(road.id)!;
       const surface = worldRoadSurfaceStyle(road);
-      const fragments = clipPolylineToRect(points, tile.x, tile.z, tile.x + tile.size, tile.z + tile.size, Boolean(road.closed));
+      // Include the neighboring centerline so clipping the full ribbon leaves no edge wedges.
+      const margin = clipRoadToTerrain ? road.width / 2 : 0;
+      const fragments = clipPolylineToRect(points, tile.x - margin, tile.z - margin,
+        tile.x + tile.size + margin, tile.z + tile.size + margin, Boolean(road.closed));
       fragments.forEach((fragment, index) => {
         const local = fragment.points.map(([x, z]) => [x - centerX, z - centerZ] as [number, number]);
         const minX = Math.min(...local.map(point => point[0])), maxX = Math.max(...local.map(point => point[0]));
@@ -1040,7 +1068,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
           roadDistanceOffset: fragment.distanceOffset,
           roadContinuesBefore: fragment.continuesBefore,
           roadContinuesAfter: fragment.continuesAfter,
-          forceRoadOverlay: surface.forceRoadOverlay
+          forceRoadOverlay: clipRoadToTerrain || surface.forceRoadOverlay,
+          clipRoadToTerrain
         } as SceneVisualZone);
       });
     }
@@ -1120,14 +1149,20 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     bridge: WorldBridgeDeck & { id: string }, centerX: number, centerZ: number
   ): MapObject {
     const dx = bridge.to[0] - bridge.from[0], dz = bridge.to[1] - bridge.from[1];
-    const length = Math.hypot(dx, dz);
+    const forward = new THREE.Vector3(dx, bridge.toHeight - bridge.fromHeight, dz);
+    const length = forward.length();
+    forward.divideScalar(length);
+    const right = new THREE.Vector3(dz, 0, -dx).normalize();
+    const up = new THREE.Vector3().crossVectors(forward, right);
+    const rotation = new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, forward), 'XYZ');
     return {
       id: `world-bridge:${bridge.id}`, name: '跨水桥', parentId: null, assetId: null,
       transform: {
-        position: [(bridge.from[0] + bridge.to[0]) / 2 - centerX,
-          (bridge.fromHeight + bridge.toHeight) / 2 - .3,
-          (bridge.from[1] + bridge.to[1]) / 2 - centerZ],
-        rotation: [-Math.atan2(bridge.toHeight - bridge.fromHeight, length), Math.atan2(dx, dz), 0],
+        // The fallback slab is bottom-anchored; these heights describe its top face.
+        position: [(bridge.from[0] + bridge.to[0]) / 2 - centerX - up.x * .3,
+          (bridge.fromHeight + bridge.toHeight) / 2 - up.y * .3,
+          (bridge.from[1] + bridge.to[1]) / 2 - centerZ - up.z * .3],
+        rotation: [rotation.x, rotation.y, rotation.z],
         scale: [1, 1, 1], size: [bridge.width, .3, length]
       },
       heightMode: 'fixed', visible: true, locked: true,

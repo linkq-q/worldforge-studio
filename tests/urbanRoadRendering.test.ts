@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { buildEditableMapGroup } from '../src/client/mapRenderer';
+import { buildEditableMapGroup, buildNormalizedEditableMapGroupCore } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, type RuntimeTerrainMaterialStyle } from '../src/shared/renderPlan';
@@ -68,6 +68,40 @@ function roadMeshes(rendered: Awaited<ReturnType<typeof buildEditableMapGroup>>)
 function commands(texture: THREE.Texture | null): CanvasCommand[] {
   return (texture!.image as { commands: CanvasCommand[] }).commands;
 }
+
+it('gives streamed soil overlays sole ownership of road paint while retaining ordinary soil paint', async () => {
+  recordCanvases();
+  for (const streamed of [false, true]) {
+    const map = applyMapOperations(createEmptyMap('soil paint ownership'), [{
+      type: 'terrain.surface', surface: 'soil', material: 'compacted-earth',
+      region: { kind: 'path', points: [[-10, 0], [10, 0]], width: 3 }, zoneId: 'soil-trail'
+    }]);
+    if (streamed) Object.assign(map.visualSemantics.zones[0], { clipRoadToTerrain: true, forceRoadOverlay: true });
+    const rendered = await buildNormalizedEditableMapGroupCore(map);
+    try {
+      const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+      for (const [texture, ink] of [
+        [terrain.material.map, 'rgba(150,124,96,'],
+        [terrain.material.roughnessMap, 'rgba(216,216,216,'],
+        [terrain.material.bumpMap, 'rgba(133,133,133,']
+      ] as const) {
+        const roadPaint = commands(texture).filter(command => command.method === 'stroke'
+          && typeof command.color === 'string' && command.color.startsWith(ink));
+        if (streamed) expect(roadPaint).toHaveLength(0);
+        else expect(roadPaint.length).toBeGreaterThan(0);
+      }
+      const overlay = rendered.group.getObjectByName('road-surface:soil-trail') as THREE.Mesh | undefined;
+      if (streamed) {
+        expect(overlay).toBeDefined();
+        const material = overlay!.material as THREE.MeshStandardMaterial;
+        expect(material.color.getHexString()).toBe('967c60');
+        expect(material.roughness).toBe(1);
+      } else expect(overlay).toBeUndefined();
+    } finally {
+      rendered.dispose();
+    }
+  }
+});
 
 function watchResources(rendered: Awaited<ReturnType<typeof buildEditableMapGroup>>) {
   const resources = new Set<THREE.BufferGeometry | THREE.Material | THREE.Texture>();

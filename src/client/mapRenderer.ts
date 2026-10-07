@@ -766,6 +766,8 @@ function buildRoadMaterialBodies(map: EditableMap, style = DEFAULT_RUNTIME_TERRA
       for (let j = 0; j < count && placed <= 4500; j += 1) {
         const t = (j + 0.5) / count; const across = (random() - 0.5) * zone.region.width * (recipe.kind === 'dirt' || recipe.kind === 'mud' ? 0.72 : 0.82);
         const x = ax + dx * t - Math.sin(tangent) * across; const z = az + dz * t + Math.cos(tangent) * across;
+        if ((zone as RuntimeRoadZone).clipRoadToTerrain && (x < -map.box.size[0] / 2 || x >= map.box.size[0] / 2
+          || z < -map.box.size[2] / 2 || z >= map.box.size[2] / 2)) continue;
         const terrainY = sampleTerrainHeight(map, x, z); const scale = 0.78 + random() * 0.42;
         transform.position.set(x, terrainY + recipe.height * scale * 0.18, z);
         transform.rotation.set(recipe.kind === 'slab' ? -Math.PI / 2 : 0, tangent + (random() - 0.5) * (recipe.kind === 'brick' ? 0.12 : 0.45), 0);
@@ -831,6 +833,7 @@ type RuntimeRoadZone = SceneVisualZone & {
   roadContinuesBefore?: boolean;
   roadContinuesAfter?: boolean;
   forceRoadOverlay?: boolean;
+  clipRoadToTerrain?: boolean;
 };
 
 function buildRoadSurfaceOverlays(
@@ -892,9 +895,9 @@ function buildRoadSurfaceOverlays(
         });
       }
     }
-    const vertices: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
+    let vertices: number[] = [];
+    let uvs: number[] = [];
+    let indices: number[] = [];
     const crossSegments = Math.min(32, Math.max(4,
       Math.ceil(zone.region.width / Math.max(0.5, terrainStep * 0.5) / 2) * 2));
     for (let index = 0; index < overlaySamples.length; index += 1) {
@@ -923,9 +926,12 @@ function buildRoadSurfaceOverlays(
         }
       }
     }
+    if (runtime.clipRoadToTerrain) {
+      ({ vertices, uvs, indices } = clipRoadSurfaceToTerrain(vertices, uvs, indices, terrainGrid));
+    }
     liftRoadTrianglesAboveTerrain(vertices, indices, terrainGrid);
     const geometry = new THREE.BufferGeometry();
-    geometry.userData.roadCrossSectionSize = crossSegments + 1;
+    if (!runtime.clipRoadToTerrain) geometry.userData.roadCrossSectionSize = crossSegments + 1;
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
@@ -951,6 +957,57 @@ function buildRoadSurfaceOverlays(
     group.add(mesh);
   }
   return group;
+}
+
+function clipRoadSurfaceToTerrain(
+  sourceVertices: number[], sourceUvs: number[], sourceIndices: number[], grid: CoastGrid
+): { vertices: number[]; uvs: number[]; indices: number[] } {
+  // Clip XZ and texture coordinates before sampling height: an outside vertex's
+  // clamped height must never be interpolated back into the visible tile.
+  type Vertex = [number, number, number, number];
+  const planes: [0 | 1, number, boolean][] = [
+    [0, grid.minX, true], [0, grid.minX + (grid.width - 1) * grid.stepX, false],
+    [1, grid.minZ, true], [1, grid.minZ + (grid.depth - 1) * grid.stepZ, false]
+  ];
+  const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
+  const sharedVertices = new Map<string, number>();
+  const vertexIndex = (vertex: Vertex): number => {
+    const key = vertex.map(value => value.toFixed(7)).join(':');
+    const existing = sharedVertices.get(key);
+    if (existing !== undefined) return existing;
+    const index = vertices.length / 3;
+    sharedVertices.set(key, index);
+    vertices.push(vertex[0], sampleRenderedTerrainHeight(grid, vertex[0], vertex[1]) + 0.025, vertex[1]);
+    uvs.push(vertex[2], vertex[3]);
+    return index;
+  };
+  for (let triangle = 0; triangle < sourceIndices.length; triangle += 3) {
+    let polygon = sourceIndices.slice(triangle, triangle + 3).map((index): Vertex =>
+      [sourceVertices[index * 3], sourceVertices[index * 3 + 2], sourceUvs[index * 2], sourceUvs[index * 2 + 1]]);
+    for (const [axis, limit, keepGreater] of planes) {
+      const clipped: Vertex[] = [];
+      for (let index = 0; index < polygon.length; index += 1) {
+        const a = polygon[index], b = polygon[(index + 1) % polygon.length];
+        const aInside = keepGreater ? a[axis] >= limit : a[axis] <= limit;
+        const bInside = keepGreater ? b[axis] >= limit : b[axis] <= limit;
+        if (aInside) clipped.push(a);
+        if (aInside !== bInside) {
+          const t = (limit - a[axis]) / (b[axis] - a[axis]);
+          const intersection = a.map((value, component) => value + (b[component] - value) * t) as Vertex;
+          intersection[axis] = limit;
+          clipped.push(intersection);
+        }
+      }
+      polygon = clipped;
+    }
+    if (polygon.length < 3) continue;
+    const first = vertexIndex(polygon[0]);
+    for (let index = 1; index < polygon.length - 1; index += 1) {
+      const b = vertexIndex(polygon[index]), c = vertexIndex(polygon[index + 1]);
+      if (first !== b && b !== c && c !== first) indices.push(first, b, c);
+    }
+  }
+  return { vertices, uvs, indices };
 }
 
 function sampleRenderedTerrainHeight(grid: CoastGrid, x: number, z: number): number {
@@ -3431,6 +3488,10 @@ const TERRAIN_BUMP_COLORS: Record<TerrainDetailSurface, string> = {
   snow: '#808080'
 };
 
+function streamedSoilOverlayOwnsPaint(zone: SceneVisualZone): boolean {
+  return Boolean((zone as RuntimeRoadZone).clipRoadToTerrain && zone.material === 'compacted-earth');
+}
+
 function drawSemanticTerrainSurface(
   ctx: CanvasRenderingContext2D,
   map: EditableMap,
@@ -3439,6 +3500,9 @@ function drawSemanticTerrainSurface(
   style: RuntimeTerrainMaterialStyle
 ): void {
   for (const zone of map.visualSemantics.zones) {
+    // Streamed soil has one color owner; multiplying its overlay color into
+    // the biome-colored terrain would leave a dark duplicate below the trail.
+    if (streamedSoilOverlayOwnsPaint(zone)) continue;
     const tag = [...zone.tags].reverse().find((item): item is keyof typeof SEMANTIC_SURFACE_COLORS => (
       item in SEMANTIC_SURFACE_COLORS
     ));
@@ -3466,6 +3530,7 @@ function drawTerrainMaterialZones(
   height: number
 ): void {
   for (const zone of map.visualSemantics.zones) {
+    if (streamedSoilOverlayOwnsPaint(zone)) continue;
     const tag = [...zone.tags].reverse().find((item): item is TerrainDetailSurface => (
       ['grass', 'soil', 'sand', 'rocky', 'paving', 'snow'].includes(item)
     ));
@@ -3502,6 +3567,7 @@ function drawTerrainRecipeDetails(
   ctx.save();
   ctx.globalAlpha *= roadDetailStrength(style);
   for (const zone of map.visualSemantics.zones) {
+    if (streamedSoilOverlayOwnsPaint(zone)) continue;
     if (!zone.material || zone.material === 'default' || zone.region?.kind !== 'path') continue;
     const region = zone.region;
     const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
