@@ -159,6 +159,16 @@ describe('persistent map design conversation client', () => {
     expect(request.mock.calls.filter(([path]) => path.endsWith('/draft'))).toHaveLength(2);
   });
 
+  it('recovers the newest dialogue rather than an older failed draft with a newer maintenance timestamp', async () => {
+    const older=session({id:'old-design',createdAt:10,updatedAt:9999,status:'paused',operationCount:1,draftRevision:1});
+    const current=session({id:'new-design',createdAt:20,updatedAt:30,status:'idle',operationCount:1,draftRevision:6});
+    const request=vi.fn(async (path:string)=>path.endsWith('/draft') ? draft(current) : {sessions:[older,current]});
+    const {client,hooks}=setup(request);
+    await client.connect({mapId:'map-a',version:1});
+    expect(client.session?.id).toBe('new-design');
+    expect(hooks.draft.mock.calls[0][0].session.id).toBe('new-design');
+  });
+
   it('keeps dirty manual work untouched and presents the cached draft once that conflict clears', async () => {
     const current = session({ operationCount: 1, draftRevision: 1, status: 'idle' });
     const request = vi.fn(async (path: string) => path.endsWith('/draft') ? draft(current) : { sessions: [current] });

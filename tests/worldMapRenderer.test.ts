@@ -835,6 +835,25 @@ describe('main editor streamed world renderer', () => {
     }
   }, 30_000);
 
+  it('renders sea-level lake basins through one ocean surface while retaining elevated lakes', async () => {
+    const map=createEmptyMap();
+    const plan=structuredClone(smallBundle.plan);
+    plan.recipe.waterBodies=[
+      {id:'sea-basin',type:'lake',region:{kind:'circle',center:[-45,0],radius:30},levels:[0],depth:8},
+      {id:'raised-lake',type:'lake',region:{kind:'circle',center:[45,0],radius:30},levels:[10],depth:4}
+    ];
+    map.world={bundle:validateWorldBundle({plan,patches:[]}),assets:[]};
+    map.box.size=[500,4096,500];
+    const rendered=await buildEditableMapGroup(map,{worldInitialView:{x:0,z:0,distance:400}});
+    try {
+      await waitFor(()=>rendered.getDebugStats().streaming?.pendingTiles===0);
+      expect(rendered.group.getObjectByName('water:world-ocean')).toBeDefined();
+      expect(rendered.group.getObjectByName('water:sea-basin')).toBeUndefined();
+      expect(rendered.group.getObjectByName('water:raised-lake')).toBeDefined();
+      expect(map.world.bundle.plan.recipe.waterBodies).toHaveLength(2);
+    } finally {rendered.dispose();}
+  },30_000);
+
   it('bounds resident terrain/content and keeps manual objects in the live collision world', async () => {
     const map = createEmptyMap();
     const town = bundle.plan.towns[0];

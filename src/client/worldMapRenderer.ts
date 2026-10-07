@@ -1137,6 +1137,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const centerZ = tile.z + tile.size / 2;
     const bodies = terrainContext.waterBodies.flatMap((prepared): MapWaterBody[] => {
       const water = prepared.source;
+      // The implicit ocean already draws these carved basins at the same elevation.
+      // A second translucent lake plane would stamp its footprint into the ocean color.
+      if (prepared.mapWater.type === 'lake' && prepared.mapWater.carveTerrain !== false
+        && Math.abs(prepared.mapWater.level) <= 1e-6) return [];
       const owner = water.region.kind === 'circle'
         ? water.region.center
         : water.region.points[Math.floor(water.region.points.length / 2)];

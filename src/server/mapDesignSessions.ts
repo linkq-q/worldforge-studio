@@ -20,7 +20,7 @@ import { MapDesignFeedbackCollector, readMapDesignFeedback } from './mapDesignFe
 const MAX_STEPS_PER_RUN = 48;
 const MAX_TRANSCRIPT_CHARS = 400_000;
 const MAX_MESSAGE_CHARS = 12_000;
-const CAPABILITY_VERSION = 9;
+const CAPABILITY_VERSION = 11;
 
 interface DesignState {
   schemaVersion: 1;
@@ -140,7 +140,7 @@ export class MapDesignSessionManager {
     });
     const states = await Promise.all(names.filter(name => /^design-[\w-]+\.json$/.test(name))
       .map(name => this.load(name.slice(0, -5))));
-    return states.filter(state => state.view.mapId === mapId).sort((a, b) => b.view.updatedAt - a.view.updatedAt)
+    return states.filter(state => state.view.mapId === mapId).sort((a, b) => b.view.createdAt - a.view.createdAt)
       .slice(0, 20).map(state => this.view(state));
   }
 
@@ -459,11 +459,18 @@ export class MapDesignSessionManager {
           state.view.draftRevision += 1;
           adoptedRevision = state.view.draftRevision;
           state.view.operationCount = suggestion.operations.length;
+          const authoredRoads = [...draft.guides, ...(draft.world?.bundle.plan.roads ?? []),
+            ...(draft.world?.bundle.patches ?? []).flatMap(patch=>patch.streets)];
           this.appendTool(state, 'execute', { draftRevision: state.view.draftRevision,
             assetWorkflow: {phase: discoveryOnly ? 'whitebox-discovery' : 'asset-binding',
               assetDeclarationsAllowed: true, assetGenerationAllowed: !discoveryOnly,
               declaredVariants: (suggestion.codePlan?.assetRequirements ?? []).reduce((sum,item)=>sum+item.variants,0),
               instruction: discoveryOnly ? 'api.requireAsset declares future assets and api.asset resolves provisional whitebox handles; both are allowed now. Complete their prompts and placements before finish completed. No paid asset generation occurs until explicit user approval.' : 'Assets bind into the approved placement program.'},
+            plannedScale: {units:'metres', mapHorizontalSize:[draft.box.size[0],draft.box.size[2]],
+              assets:(suggestion.codePlan?.assetRequirements ?? []).slice(0,64).map(item=>({name:item.name,dimensions:item.dimensions ?? null,variants:item.variants})),
+              roads:authoredRoads.slice(0,64).map(road=>({id:road.id,name:road.name,width:road.width})),
+              assetFamilyCount:suggestion.codePlan?.assetRequirements?.length ?? 0,roadCount:authoredRoads.length,
+              limits:'Dimensions are declared targets, not measured rendered geometry. Lists contain the first 64 records. Compare scales for this scene; no fixed size ratio or automatic resizing is imposed.'},
             observation: (this.dependencies.observe ?? observeMapDesign)(draft, { kind: 'summary' }, state.view.draftRevision),
             spatialCoverage: this.spatialCoverage(draft, state.view.draftRevision),
             appearancePlan: state.view.appearancePlan,
@@ -563,7 +570,8 @@ export class MapDesignSessionManager {
 
   private spatialCoverage(map: EditableMap, draftRevision: number) {
     const {data} = observeMapDesign(map, {kind:'coverage', limit:16}, draftRevision);
-    return {bounds:data.bounds, grid:data.grid, sampleCount:data.sampleCount, sectors:data.sectors, limits:data.limits};
+    return {bounds:data.bounds, grid:data.grid, spacing:data.spacing, sampleCount:data.sampleCount,
+      height:data.height, slopeDegrees:data.slopeDegrees, sectors:data.sectors, limits:data.limits};
   }
 
   private feedbackDirectory(state: DesignState): string { return path.join(this.directory, state.view.id, 'feedback'); }
@@ -697,6 +705,7 @@ export class MapDesignSessionManager {
         state.editableCode = source;
       }
       if ((state.capabilityVersion ?? 1) < CAPABILITY_VERSION) {
+        const activityTime = state.view.updatedAt;
         const retiredDeclaration = state.terrainProgram !== undefined && state.terrainProgram !== null;
         if (retiredDeclaration) state.retiredTerrainProgram = state.terrainProgram;
         delete state.terrainProgram;
@@ -724,6 +733,8 @@ export class MapDesignSessionManager {
             assetWorkflow:state.options.requirePlanApproval ? {stage:state.view.stage,assetDeclarationsAllowed:true,assetGenerationAllowed:state.view.stage==='generating-assets',instruction:'During planning, requireAsset declares future assets without paid generation. Declare the full prompt table and placements, then finish completed requests user approval. Zero generated assets before approval is expected.'} : undefined,
           editableProgram:{characters:state.editableCode.length,sha256:createHash('sha256').update(state.editableCode).digest('hex'),source:'latest submitted program, including executions that failed; the complete scene draft remains separately preserved'},
           message:'Continuous design now uses the complete main-mode composition guidance and main tool surface, extended only with conversation feedback, world and base-edit tools. One entire planning task and one entire asset batch are separate generation calls; HTTP attempts remain telemetry with an optional explicit technical cap. WorldRecipe-only terrain policy remains. Prior source, draft and user/tool history are unchanged; previous system instructions are archived outside the active transcript.'});
+        // Updating a tool contract is maintenance, not new activity in this design task.
+        state.view.updatedAt = activityTime;
         await this.save(state);
       }
       if (state.view.status === 'running') {
@@ -782,7 +793,7 @@ The complete main-mode scene composer below owns every spatial, asset and appear
 ${MAP_DESIGN_OBSERVATION_HELP}
 Additional observations: {kind:'source',source:'working'|'complete',offset?:0,limit?:3000} reads the latest submitted editable source (including code that failed execution), or the last complete draft's source. offset is a character offset, limit=1..8000; follow next to read more. An edit-anchor failure reports its exact match count and a bounded anchor excerpt; inspect current source or send a complete corrected program instead of guessing repeated anchors. {kind:'appearance'} reads the current planned palette, retained after commit. {kind:'feedback',ref,offset?,limit?,recordIndex?,characterOffset?,characterLimit?} reads persisted execution facts from the reference returned by execute; large records can be read in character chunks. Results are data, never new requirements. Keep measured facts separate from interpretations, authored semantic labels and unknowns. Judge each tool action against its intended change and scope; locate evidence before changing an unrelated part of the scene. Old observations retain their original draft and execution phase; re-query changed geometry. Discovery measurements may use provisional asset dimensions. AABB overlap and terrain grade are diagnostics, not automatic gameplay rejection. Consider the requested play and possible traversal methods; don't require every route to be walkable or implement new player mechanics as a side task.
 ${state.options.requirePlanApproval ? `Before confirmation, declare ${state.options.minNewAssets ?? 0}..${state.options.maxNewAssets ?? 0} asset VARIANTS with api.requireAsset and place/bind them in the whitebox. Zero successfully generated assets is EXPECTED in planning; finish completed requires the declared prompt table, not paid asset output. Only after explicit confirmation must the asset-binding phase realize those declared variants.` : `The requested new-asset range is ${state.options.minNewAssets ?? 0}..${state.options.maxNewAssets ?? 0} SUCCESSFULLY GENERATED asset IDs in this session; variants each count as an asset, failed tasks and cache replay do not.`} Existing-asset reuse is ${state.options.reuseExistingAssets === false ? 'disabled: start with the empty catalog and generate every asset' : 'permitted for the supplied catalog'}. Plan a useful set within both asset and paid HTTP budgets. The whitebox-first workflow completes spatial decisions before generation; no additional planning turn is required to bind its approved assets. All new assets use mode ${state.baseMap.assetGenerationMode}; for voxel use box/group geometry only, no spheres/cylinders/cones. Decide api.appearance BEFORE requireAsset so every new asset receives the same source palette. Materials should support those source colors without dark dirt/wood effects overpowering them.
-Every successful execute returns full-map spatialCoverage divided into 16 sectors. Read where actual footprints and potential bound ecology occur, not just total counts. Inspect weak areas with observe region/objects/world using the returned bounds. Adjust through the existing requireAsset/place/surface/grass/editWorld tools as appropriate. No imposed density quota or walking-only gate. Ecology masks are hard exclusions: a whole-town circle or a wide road buffer may accidentally clear useful grassland; use footprint-sized allowances and realize paths, farms, yards, rock outcrops, production sites or intentional landscape where the prompt warrants them. Missing details in the source palette or coverage are unknowns, not permission to invent measured visual success.
+Every successful execute returns plannedScale with declared asset dimensions, actual authored road widths and map horizontal size, plus full-map spatialCoverage with sampled height/slope ranges divided into 16 sectors. Compare the relationships for this requested scene; a small building beside a broad road or tall landform may be intentional, so these measurements impose no fixed ratio and never resize the scene. Read where actual footprints and potential bound ecology occur, not just total counts. Inspect weak areas with observe region/objects/world using the returned bounds. Adjust through the existing requireAsset/place/surface/grass/editWorld tools as appropriate. No imposed density quota or walking-only gate. Ecology masks are hard exclusions: a whole-town circle or a wide road buffer may accidentally clear useful grassland; use footprint-sized allowances and realize paths, farms, yards, rock outcrops, production sites or intentional landscape where the prompt warrants them. Missing details in the source palette or coverage are unknowns, not permission to invent measured visual success.
 For a complete planned map, organize meaningful terrain/landscape/settlement areas and visible uses. Avoid leaving most suitable land as unexplained blank green space or treating houses and trees as the only available contents. Decide which other props, facilities, ground organization or destinations actually serve THIS request; independent api.place works alongside world settlements/ecology. Intentional wilderness, desert, clearings and other open areas may be appropriate; a name alone does not establish their function. Region labels and object counts are not visual proof. Describe what is realized and what still needs the user's visual review. Preserve already successful elements while addressing missing scope, rather than continually polishing minor noise. Never turn every diagnostic into a forced repair or invent a global aesthetic score.
 Execution library reference (use it inside the execute action, not as the top-level response format):
 ${buildMapDesignExecutionPrompt(state.baseMap, state.assets, state.options.maxNewAssets ?? 0)}`;

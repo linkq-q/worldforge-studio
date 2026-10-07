@@ -1356,7 +1356,7 @@ function waterRecipe(recipe: RuntimeWaterStyle['recipe']): {
     environmentReflectionStrength: number;
   }> = {
     'calm-lake': { mode: 'realistic', color: '#347f7c', shallowColor: '#67aaa0', depthColor: '#173f49', opacity: 0.58, waveStrength: 0.2, waveSpeed: 0.3, foamStrength: 0.18, environmentReflectionStrength: 0.22 },
-    'clear-river': { mode: 'hybrid', color: '#318a9a', shallowColor: '#6ebbb5', depthColor: '#1b4d60', opacity: 0.52, waveStrength: 0.42, waveSpeed: 0.75, foamStrength: 0.38, environmentReflectionStrength: 0.2 },
+    'clear-river': { mode: 'hybrid', color: '#347f7c', shallowColor: '#67aaa0', depthColor: '#173f49', opacity: 0.58, waveStrength: 0.42, waveSpeed: 0.75, foamStrength: 0.38, environmentReflectionStrength: 0.22 },
     stylized: { mode: 'cartoon', color: '#3689b2', shallowColor: '#62b8bd', depthColor: '#1a4c68', opacity: 0.62, waveStrength: 0.32, waveSpeed: 0.48, foamStrength: 0.72, environmentReflectionStrength: 0.18 },
     stormy: { mode: 'hybrid', color: '#344d5d', shallowColor: '#55717a', depthColor: '#152735', opacity: 0.68, waveStrength: 1.05, waveSpeed: 1.15, foamStrength: 1.1, environmentReflectionStrength: 0.16 }
   };

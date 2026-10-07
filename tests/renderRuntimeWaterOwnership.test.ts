@@ -7,6 +7,27 @@ import {
 } from '../src/client/renderRuntimeAdapter';
 
 describe('render-plan water ownership', () => {
+  it('uses one natural-water color palette across rivers and ocean while honoring explicit scoped color', () => {
+    const modelsRoot=new THREE.Group();
+    const meshes=['river','ocean'].map(type=>{
+      const mesh=new THREE.Mesh(new THREE.PlaneGeometry(),new THREE.MeshStandardMaterial());
+      mesh.userData.materialTags=['water',type];
+      mesh.userData.waterBodyType=type;
+      modelsRoot.add(mesh);return mesh;
+    });
+    const adapter=Object.create(RenderRuntimeAdapter.prototype) as RenderRuntimeAdapter;
+    Object.assign(adapter as unknown as Record<string,unknown>,{renderer:{},scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),modelsRoot,
+      waterBindings:[],waterDetailTexture:null,waterSceneCapture:null,waterEnvironmentMap:null,waterInteractionAt:new Map()});
+    const runtime=adapter as unknown as {applyWaterStyles(styles:unknown[]):void};
+    runtime.applyWaterStyles([]);
+    const uniforms=meshes.map(mesh=>(mesh.material as unknown as THREE.ShaderMaterial).uniforms);
+    for(const name of ['uWaterColor','uShallowColor','uDepthColor','uOpacity']) {
+      expect(uniforms[0][name].value).toEqual(uniforms[1][name].value);
+    }
+    runtime.applyWaterStyles([{scope:{target:'water',tag:'river'},recipe:'clear-river',color:'#336699'}]);
+    expect((meshes[0].material as unknown as THREE.ShaderMaterial).uniforms.uWaterColor.value.getHexString()).toBe('336699');
+    for(const mesh of meshes){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();}
+  });
   it('leaves material-tag model water under its dedicated runtime', () => {
     const naturalWater = new THREE.Mesh();
     const modelWater = new THREE.Mesh();

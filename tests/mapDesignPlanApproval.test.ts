@@ -70,6 +70,8 @@ it('shows a complete whitebox and color prompts with zero asset requests, then b
   const executeFeedback=(await manager.get(session.id)).messages.filter(item=>item.role==='tool')
     .map(item=>JSON.parse(item.content)).find(item=>item.action==='execute');
   expect(executeFeedback.result.assetWorkflow).toMatchObject({phase:'whitebox-discovery',assetDeclarationsAllowed:true,assetGenerationAllowed:false,declaredVariants:1});
+  expect(executeFeedback.result.plannedScale).toMatchObject({units:'metres',mapHorizontalSize:[48,48],assets:[{name:'Park bench',dimensions:[2,1,1],variants:1}]});
+  expect(executeFeedback.result.spatialCoverage).toMatchObject({height:{min:0,max:0},spacing:[3,3]});
   const draft=await manager.draft(session.id);
   expect(draft.planPreview!.placements[0]).toMatchObject({position:[8,0,4],size:[2,1,1],rotationY:0.4,pending:true,fitToDimensions:true});
   expect(draft.suggestion!.codePlan!.assetRequirements![0]).toMatchObject({prompt:expect.stringContaining('#B88752'),dimensions:[2,1,1]});

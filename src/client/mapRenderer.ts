@@ -1502,7 +1502,7 @@ export function buildStructuredWaterGroup(
       map,
       waters,
       water.type === 'ocean' ? coast : null,
-      waters.some((candidate) => candidate.type === 'river') ? terrainHeightAt : undefined
+      terrainHeightAt
     );
     const isComposite = waters.length > 1;
     const usesGrid = water.type !== 'ocean' && (isComposite || water.type === 'lake');
@@ -1639,10 +1639,10 @@ function createCompositeWaterShoreBinding(
       const insideLocalTerrain = Math.abs(x) <= map.box.size[0] / 2 && Math.abs(z) <= map.box.size[2] / 2;
       if (depthData && (terrainHeightAt || insideLocalTerrain)) {
         const owner = depthOwners.find((candidate) => pointInPolygon(x, z, candidate.boundary));
-        const canSampleTerrain = insideLocalTerrain || (owner?.water.type === 'river' && terrainHeightAt);
+        const canSampleTerrain = insideLocalTerrain || terrainHeightAt;
         if (owner && canSampleTerrain && owner.water.carveTerrain !== false) {
           const level = owner.water.type === 'river' ? sampleRiverProfile(x, z, owner.samples).level : owner.water.level;
-          const terrainHeight = !insideLocalTerrain && terrainHeightAt && owner.water.type === 'river'
+          const terrainHeight = terrainHeightAt
             ? terrainHeightAt(x, z)
             : sampleTerrainHeight(map, x, z);
           const encoded = Math.round(THREE.MathUtils.clamp((level - terrainHeight) / 64, 0, 1) * 65535);
@@ -1837,7 +1837,7 @@ function refreshStructuredWaterTerrain(
       map,
       waters,
       waters[0].type === 'ocean' ? coast : null,
-      waters.some((candidate) => candidate.type === 'river') ? terrainHeightAt : undefined
+      terrainHeightAt
     );
     const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
     if (shore?.texture?.isDataTexture) {

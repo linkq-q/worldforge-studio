@@ -20,6 +20,17 @@ function dispose(group: THREE.Group) {
   }
 }
 describe('terrain water depth', () => {
+  it('uses the continuous-world sampler for lake depth inside and beyond its owner tile', () => {
+    const map=createEmptyMap();
+    map.terrain.heights.fill(1.5);
+    map.waterBodies=[{...lake,points:[[-12,-12],[40,-12],[40,12],[-12,12]]}];
+    const group=buildStructuredWaterGroup(map,null,()=>-3), mesh=group.children[0] as THREE.Mesh;
+    expect(depthAt(mesh,0,0)).toMatchObject({valid:255});
+    expect(depthAt(mesh,0,0).depth).toBeCloseTo(5,2);
+    expect(depthAt(mesh,32,0).valid).toBe(255);
+    expect(depthAt(mesh,32,0).depth).toBeCloseTo(5,2);
+    dispose(group);
+  });
   it('keeps structural water invalid inside a connected river-lake mesh', () => {
     const map=createEmptyMap();
     map.waterBodies=[lake,{...lake,id:'chute',type:'river',points:[[0,12],[0,24]],width:4,levels:[2,5],carveTerrain:false}];

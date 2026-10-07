@@ -74,7 +74,7 @@ export class MapDesignSessionClient {
       this.recoveryPending = false;
       this.error = '';
       const latest = sessions.filter(item => item.mapId === context.mapId)
-        .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+        .sort((a, b) => b.createdAt - a.createdAt)[0];
       if (latest) await this.accept(latest, epoch);
     } catch (error) {
       if (epoch === this.epoch) this.error = `${this.recoveryPending ? '恢复对话失败，正在重试。' : ''}${errorText(error)}`;

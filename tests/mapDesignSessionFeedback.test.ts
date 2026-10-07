@@ -150,11 +150,12 @@ it('upgrades saved tool instructions without replacing the user and tool convers
     expect(JSON.stringify(messages)).not.toContain('OLD TOOL CONTRACT');
     return JSON.stringify({action:'finish',outcome:'unchanged',summary:'Read updated tools'});
   }});
+  expect((await recovered.get(session.id)).updatedAt).toBe(saved.view.updatedAt);
   await recovered.message(session.id,'Inspect with the updated tools');
   await recovered.settled(session.id);
   const upgraded=JSON.parse(await readFile(file,'utf8'));
   expect(upgraded.instructionHistory[0].content).toContain('OLD TOOL CONTRACT');
-  expect(upgraded.capabilityVersion).toBe(9);
+  expect(upgraded.capabilityVersion).toBe(11);
 });
 
 it('does not report an already adopted complete draft as unapplied when its observation fails', async () => {
