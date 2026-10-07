@@ -8,6 +8,9 @@ import { worldBridgeDeck } from '../src/client/worldContent';
 import { getCollisionMeshBvhBuildStats, resetCollisionMeshBvhBuildStats } from '../src/client/mapMeshCollision';
 import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldRoadSurfaceStyle, worldTileSurfaceWeight, yieldWorldBuild } from '../src/client/worldMapRenderer';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { applyMapOperations } from '../src/shared/mapOperations';
+import { sampleGrassDensity } from '../src/shared/mapGrass';
+import { terrainSemanticSurfaceWeight } from '../src/client/terrainAppearance';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
 import { selectWorldTiles, WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
@@ -63,6 +66,89 @@ function sampleOceanFloor(
 }
 
 describe('main editor streamed world renderer', () => {
+  it('renders authored functional surfaces, routes and crop grass through world tile refinement', async () => {
+    const flat = structuredClone(smallBundle);
+    flat.plan.recipe.constraints = [{ region: 'center', biome: 'grassland' }];
+    flat.plan.recipe.terrainBrushes = [{ id: 'ground', mode: 'flatten',
+      region: { kind: 'circle', center: [0, 0], radius: 400 }, height: 10 }];
+    const base = applyMapOperations(createEmptyMap(), [{ type: 'world.set', world: { bundle: flat, assets: [] } }]);
+    const map = applyMapOperations(base, [
+      { type: 'terrain.surface', zoneId: 'plaza', surface: 'paving', material: 'concrete',
+        region: { kind: 'polygon', points: [[-30, -30], [30, -30], [30, 30], [-30, 30]] }, intensity: 1 },
+      { type: 'terrain.surface', zoneId: 'authored-route', surface: 'paving', material: 'brick-paver',
+        region: { kind: 'path', points: [[-90, 48], [90, 48]], width: 6 }, intensity: 1 },
+      { type: 'grass.layer.add', layer: { id: 'crops', preset: 'farm', height: 1.8,
+        mix: { short: 0.1, tall: 0.9, flowers: 0 } } },
+      { type: 'grass.density.set', layerId: 'crops', resolutionX: 65, resolutionZ: 65,
+        densities: Array(65 * 65).fill(0.7) }
+    ]);
+    expect(map.terrain.resolutionX).toBe(2);
+    expect(map.grassLayers[0].resolutionX).toBe(257);
+    expect(sampleGrassDensity(map.grassLayers[0], map, 80, 80)).toBeCloseTo(0.7);
+    const grassSpy = vi.spyOn(grassRenderer, 'buildMapGrassField');
+    const rendered = await buildEditableMapGroup(map);
+    const assertRoute = () => {
+      rendered.group.updateMatrixWorld(true);
+      const roads: THREE.Mesh[] = [], terrain: THREE.Mesh[] = [];
+      rendered.group.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        if (object.name.startsWith('brick-road-surface:authored-route')) roads.push(object);
+        if (object.name === 'terrain') terrain.push(object);
+      });
+      expect(roads.length).toBeGreaterThan(0);
+      const ray = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
+      for (const x of [-62.6, -62.4, -0.1, 0.1, 62.4, 62.6]) {
+        ray.ray.origin.set(x, 100, 48);
+        const ground = ray.intersectObjects(terrain, false)[0];
+        const road = ray.intersectObjects(roads, false)[0];
+        expect(road).toBeDefined();
+        expect(road.point.y - ground.point.y).toBeGreaterThan(0);
+        expect(road.point.y - ground.point.y).toBeLessThan(0.05);
+      }
+      let plazaColor: number[] | undefined;
+      for (const mesh of terrain) {
+        const positions = mesh.geometry.getAttribute('position'), colors = mesh.geometry.getAttribute('color');
+        for (let index = 0; index < positions.count; index++) {
+          const point = mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, index));
+          if (point.x > 5 && point.x < 20 && point.z > 5 && point.z < 20 && point.y > 9) {
+            plazaColor = [colors.getX(index), colors.getY(index), colors.getZ(index)];
+            break;
+          }
+        }
+        if (plazaColor) break;
+      }
+      expect(plazaColor).toBeDefined();
+      // Paving is warm gray; ignoring the surface callback leaves grass green.
+      expect(plazaColor![0]).toBeGreaterThan(plazaColor![1]);
+    };
+    try {
+      assertRoute();
+      await waitFor(() => rendered.getDebugStats().streaming?.terrainTiles === 64
+        && rendered.getDebugStats().streaming?.pendingTiles === 0, 1000);
+      assertRoute();
+      const content = grassSpy.mock.calls.map(([value]) => value)
+        .find(value => value.id.endsWith(':content:0:0'))!;
+      expect(content).toBeDefined();
+      // This content block is [0, 256] in world coordinates.
+      expect(terrainSemanticSurfaceWeight(content, 10 - 128, 10 - 128, ['paving'])).toBe(1);
+      const crops = content.grassLayers.find(layer => layer.id === 'crops')!;
+      expect(crops).toMatchObject({ preset: 'farm', height: 1.8, mix: { short: 0.1, tall: 0.9, flowers: 0 } });
+      expect(sampleGrassDensity(crops, content, 80 - 128, 80 - 128)).toBeCloseTo(0.7);
+      expect(sampleGrassDensity(crops, content, 12 - 128, 12 - 128)).toBe(0);
+      expect(sampleGrassDensity(crops, content, 64 - 128, 48 - 128)).toBe(0);
+      const neighbor = grassSpy.mock.calls.map(([value]) => value)
+        .find(value => value.id.endsWith(':content:-1:0'))!;
+      const neighborCrops = neighbor.grassLayers.find(layer => layer.id === 'crops')!;
+      expect(sampleGrassDensity(neighborCrops, neighbor, 128, 80 - 128))
+        .toBeCloseTo(sampleGrassDensity(crops, content, -128, 80 - 128));
+      const tiles = grassSpy.mock.calls.map(([value]) => value).filter(value => value.id.includes(':world:'));
+      expect(tiles.some(value => value.visualSemantics.zones.some(zone => zone.id === 'plaza'))).toBe(true);
+      // Road overlays belong only to terrain tiles; content maps retain contact masks.
+      expect(content.visualSemantics.zones.filter(zone => zone.id.startsWith('authored-route'))
+        .every(zone => zone.material === 'default')).toBe(true);
+    } finally { rendered.dispose(); grassSpy.mockRestore(); }
+  }, 30000);
+
   it.each([0, 0.2])('keeps streamed street surfaces on visible terrain through tile refinement (slope %s)', async (slope) => {
     const roadBundle = validateWorldBundle({
       plan: {

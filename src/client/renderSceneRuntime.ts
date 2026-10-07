@@ -201,7 +201,8 @@ export class RenderSceneRuntime {
       rendered?.modelsRoot ?? null,
       rendered ? {
         restore: rendered.restoreMaterialEffects,
-        syncEnvironment: rendered.syncMaterialEnvironment
+        syncEnvironment: rendered.syncMaterialEnvironment,
+        selectMaterialThemeTargets: rendered.selectMaterialThemeTargets
       } : undefined
     );
     this.rendered = rendered;

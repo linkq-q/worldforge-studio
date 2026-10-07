@@ -110,6 +110,7 @@ export interface MapAiOptions {
 }
 
 export interface AssetGenerationRequest {
+  appearancePlan?: import('../shared/sceneAppearance').SceneAppearancePlan;
   /** Existing asset to decorate through Studio's existing /api/mount endpoint. */
   mountOnAssetId?: string;
   name: string;

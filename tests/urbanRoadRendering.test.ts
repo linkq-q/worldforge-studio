@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup, buildNormalizedEditableMapGroupCore } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
-import { DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, type RuntimeTerrainMaterialStyle } from '../src/shared/renderPlan';
+import { compileRuntimeTerrainMaterialStyle, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, type RuntimeTerrainMaterialStyle } from '../src/shared/renderPlan';
 
 beforeEach(() => {
   vi.stubGlobal('document', {
@@ -68,6 +68,25 @@ function roadMeshes(rendered: Awaited<ReturnType<typeof buildEditableMapGroup>>)
 function commands(texture: THREE.Texture | null): CanvasCommand[] {
   return (texture!.image as { commands: CanvasCommand[] }).commands;
 }
+
+it('refreshes planned road source colors and neutral textures together, then restores legacy appearance', async () => {
+  recordCanvases();
+  const rendered = await buildEditableMapGroup(roadMap(), {terrainTextureSize:32});
+  const terrain = roadMeshes(rendered).terrain;
+  const before = Array.from(terrain.geometry.getAttribute('color').array);
+  const style = compileRuntimeTerrainMaterialStyle({version:1,baseSchemeId:'render-indoor-neutral',modules:[{id:'runtime.terrain-materials',params:{cobblestoneColor:'#c1bcaa'}}]});
+  try {
+    rendered.setTerrainMaterialStyle(style);
+    expect(Array.from(terrain.geometry.getAttribute('color').array)).not.toEqual(before);
+    const colors = commands(terrain.material.map).map(command=>String(command.color));
+    expect(colors.some(color=>color.startsWith('rgba(255,255,255,'))).toBe(true);
+    expect(colors.some(color=>color.startsWith('rgba(193,188,170,'))).toBe(false);
+    expect(terrain.material.roughnessMap).toBeInstanceOf(THREE.CanvasTexture);
+    expect(terrain.material.bumpMap).toBeInstanceOf(THREE.CanvasTexture);
+    rendered.setTerrainMaterialStyle(DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE);
+    expect(Array.from(terrain.geometry.getAttribute('color').array)).toEqual(before);
+  } finally {rendered.dispose();}
+});
 
 it('gives streamed soil overlays sole ownership of road paint while retaining ordinary soil paint', async () => {
   recordCanvases();

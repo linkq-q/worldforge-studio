@@ -220,6 +220,8 @@ export interface RuntimeGrassStyle {
   maxInstances: number;
   groundTint: boolean;
   groundColor: string;
+  /** Explicit planned base color; legacy ground tint remains density-weighted. */
+  groundColorExplicit?: boolean;
   groundTintStrength: number;
 }
 
@@ -288,6 +290,8 @@ export interface RuntimeShaderExtension {
 }
 
 export interface RuntimeTerrainMaterialStyle {
+  /** Recipes whose source color was explicitly supplied by the render plan. */
+  explicitRoadColors?: Array<keyof typeof DEFAULT_RUNTIME_ROAD_COLORS>;
   detailStrength: number;
   soilRecipe: 'dry' | 'moist';
   sandRecipe: 'dune' | 'beach';
@@ -998,6 +1002,7 @@ export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {
     maxInstances: numericValue(params.maxInstances) ?? DEFAULT_RUNTIME_GRASS_STYLE.maxInstances,
     groundTint: params.groundTint !== 'off',
     groundColor: stringValue(params.groundColor) ?? DEFAULT_RUNTIME_GRASS_STYLE.groundColor,
+    groundColorExplicit: typeof params.groundColor === 'string',
     groundTintStrength: numericValue(params.groundTintStrength) ?? DEFAULT_RUNTIME_GRASS_STYLE.groundTintStrength
   };
 }
@@ -1005,6 +1010,10 @@ export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {
 export function compileRuntimeTerrainMaterialStyle(plan: RenderPlan): RuntimeTerrainMaterialStyle {
   const params = plan.modules.find((item) => item.id === 'runtime.terrain-materials')?.params ?? {};
   return {
+    explicitRoadColors: (Object.keys(DEFAULT_RUNTIME_ROAD_COLORS) as Array<keyof typeof DEFAULT_RUNTIME_ROAD_COLORS>).filter(recipe => {
+      const key = recipe.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase()) + 'Color';
+      return typeof params[key] === 'string';
+    }),
     detailStrength: numericValue(params.detailStrength) ?? DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.detailStrength,
     soilRecipe: params.soilRecipe === 'moist' ? 'moist' : 'dry',
     sandRecipe: params.sandRecipe === 'beach' ? 'beach' : 'dune',
@@ -1027,16 +1036,33 @@ export function compileRuntimeMaterialThemes(plan: RenderPlan): RuntimeMaterialT
     .map((item, index) => {
       const scope = item.scope ?? { target: 'material-tag' as const, tag: 'base' };
       const directed = plan.visualDirection ? visualMaterialTint(plan.visualDirection, scope.tag) : undefined;
+      const recipe = enumValue(item.params.recipe, ['natural', 'autumn', 'winter', 'weathered', 'polished', 'pastel'], 'natural');
+      const recipeStyle = item.params.recipe === undefined ? undefined : materialThemeStyle(recipe, scope.tag);
       return {
         key: item.key ?? `material-theme-${index}`,
         scope,
-        recipe: enumValue(item.params.recipe, ['natural', 'autumn', 'winter', 'weathered', 'polished', 'pastel'], 'natural'),
+        recipe,
         strength: numericValue(item.params.strength) ?? directed?.strength,
         color: stringValue(item.params.color) ?? directed?.color,
-        roughness: numericValue(item.params.roughness),
-        metalness: numericValue(item.params.metalness)
+        roughness: numericValue(item.params.roughness) ?? recipeStyle?.roughness,
+        metalness: numericValue(item.params.metalness) ?? recipeStyle?.metalness
       };
     });
+}
+
+export function materialThemeStyle(
+  recipe: RuntimeMaterialTheme['recipe'],
+  tag = ''
+): { color: string; roughness: number; metalness: number } {
+  const styles: Record<RuntimeMaterialTheme['recipe'], { color: string; roughness: number; metalness: number }> = {
+    natural: { color: tag.includes('stone') ? '#8b8b83' : tag.includes('metal') ? '#9aa2a8' : '#6d8c4d', roughness: 0.76, metalness: tag.includes('metal') ? 0.72 : 0.04 },
+    autumn: { color: tag.includes('bark') || tag.includes('wood') ? '#6f4528' : '#bd6b32', roughness: 0.82, metalness: 0.02 },
+    winter: { color: tag.includes('stone') ? '#aab5b8' : '#b8c7c3', roughness: 0.88, metalness: 0.02 },
+    weathered: { color: '#77766f', roughness: 0.94, metalness: tag.includes('metal') ? 0.38 : 0.01 },
+    polished: { color: tag.includes('metal') ? '#b7c0c8' : '#9c9991', roughness: 0.24, metalness: tag.includes('metal') ? 0.86 : 0.08 },
+    pastel: { color: '#c7b9d5', roughness: 0.72, metalness: 0.01 }
+  };
+  return styles[recipe];
 }
 
 export function compileRuntimeLightRig(plan: RenderPlan): RuntimeLightRig {

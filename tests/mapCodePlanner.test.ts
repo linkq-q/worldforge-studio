@@ -9,6 +9,8 @@ import {
 } from '../src/server/mapCodePlanner';
 import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPreviewPayload } from '../src/shared/mapOperations';
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
+import {SCENE_APPEARANCE_CONTRACT} from '../src/shared/sceneAppearance';
+import {buildMapDesignExecutionPrompt} from '../src/server/mapDesignExecution';
 import {
   MAX_MAP_CODE_LENGTH,
   MAX_MAP_CODE_SCENE_OPERATIONS,
@@ -133,7 +135,7 @@ describe('map code planner', () => {
       createEmptyMap(), [], 1, 4, 'scene', 'generate', '', [], 'minimal'
     );
 
-    expect(prompt).toContain('exactly these 12 WorldForge APIs');
+    expect(prompt).toContain('exactly these 13 WorldForge APIs');
     for (const name of ['terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route', 'grass', 'requireAsset', 'asset', 'place', 'random']) {
       expect(prompt).toContain(`api.${name}`);
     }
@@ -157,8 +159,8 @@ describe('map code planner', () => {
 
     expect(indoorPrompt).toContain('procedural indoor-scene planner');
     expect(refinePrompt).toContain('Outdoor Scene Code refinement');
-    expect(indoorPrompt).not.toContain('exactly these 12 WorldForge APIs');
-    expect(refinePrompt).not.toContain('exactly these 12 WorldForge APIs');
+    expect(indoorPrompt).not.toContain('exactly these 13 WorldForge APIs');
+    expect(refinePrompt).not.toContain('exactly these 13 WorldForge APIs');
   });
 
   it('guides large outdoor scenes through shared dependencies and bounded fields without hard zoning', () => {
@@ -209,7 +211,7 @@ describe('map code planner', () => {
     expect(main).toContain('Use api.sampleProbabilityField for vegetation');
     expect(main).toContain('api.foundation');
     expect(main).toContain('api.bridge');
-    expect(main).toContain('exactly these 20 keys');
+    expect(main).toContain('exactly these 21 keys');
     expect(main).toContain('Declare 2..5 useful asset families');
     expect(main).toContain('## Architectural composition');
     expect(main).toContain('## Settlement formation');
@@ -232,7 +234,18 @@ describe('map code planner', () => {
     expect(main).not.toContain('Do not split routine settlement buildings');
     expect(main).not.toContain('Air conditioners, signs');
     expect(main).toContain('Changing a grid position by a small random offset');
-    expect(main.length).toBeLessThan(standard.length / 2);
+    // Compare layout instructions separately: both modes now carry the same
+    // appearance capability reference, which must stay complete and appear once.
+    const appearanceLine = main.split('\n').find(line => line.includes(SCENE_APPEARANCE_CONTRACT))!;
+    expect(appearanceLine).toContain('api.appearance(plan)');
+    expect(main.split(appearanceLine)).toHaveLength(2);
+    expect(standard.split(appearanceLine)).toHaveLength(2);
+    expect(main.replace(appearanceLine + '\n', '').length)
+      .toBeLessThan(standard.replace(appearanceLine + '\n', '').length / 2);
+    // Retain an absolute 16 KiB ceiling too; shared references cannot grow freely.
+    expect(Buffer.byteLength(main, 'utf8')).toBeLessThanOrEqual(16 * 1024);
+    const designReference = buildMapDesignExecutionPrompt(outdoor, [], 5);
+    expect(designReference.split(SCENE_APPEARANCE_CONTRACT)).toHaveLength(2);
     expect(main).not.toContain('never uniform grids');
     expect(refine).toContain('Outdoor Scene Code refinement');
     expect(indoor).toContain('procedural indoor-scene planner');

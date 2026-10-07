@@ -102,6 +102,10 @@ import {
 } from '../shared/terrainGeneration';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
 import type { AssetGenerationRequest } from './mapAi';
+import { normalizeSceneAppearancePlan, SCENE_APPEARANCE_CONTRACT, type SceneAppearancePlan } from '../shared/sceneAppearance';
+import type {MapDesignToolObservation} from '../shared/mapDesignFeedback';
+import type {CompiledMapDesignTerrain} from './mapDesignWorld';
+import {mapCodeObservedApi, validateMapCodeReport} from './mapCodeObservations';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
@@ -132,10 +136,12 @@ const GENERATED_ASSET_CONTEXT_MAX_CHARS = 12_000;
 const DEFAULT_USER_PROMPT_MAX_CHARS = 1_200;
 const USER_PROMPT_HARD_MAX_CHARS = 8_000;
 const MINIMAL_MAP_CODE_API_KEYS = [
+  'appearance',
   'terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
 ] as const;
 const MAIN_MAP_CODE_API_KEYS = [
+  'appearance',
   'seed', 'bounds', 'terrain', 'modifyTerrain', 'sculptTerrain', 'rampTerrain',
   'surface', 'water', 'route', 'grass', 'environmentSample', 'sampleProbabilityField',
   'requireAsset', 'asset', 'place', 'foundation', 'bridge', 'placeBetween', 'spawn', 'urbanLayout'
@@ -186,6 +192,11 @@ type CodeAssetRole = 'structure' | 'environment' | 'functional' | 'decor';
 type CodeSceneIntent = 'natural' | 'authored';
 
 export interface MapCodePlannerOptions extends MapRefineScope {
+  /** Enable only the four documented local spatial reads for continuous design sessions. */
+  spatialObservationApis?: boolean;
+  appearancePlan?: SceneAppearancePlan;
+  compiledTerrain?: CompiledMapDesignTerrain;
+  onToolObservation?: (observation: MapDesignToolObservation) => void;
   apiBase?: string;
   provider?: ChatProvider;
   fetchImpl?: typeof fetch;
@@ -587,6 +598,10 @@ interface CodeAssetRequirementInput {
 }
 
 interface CodeExecutionOptions {
+  spatialObservationApis?: boolean;
+  appearancePlan?: SceneAppearancePlan;
+  compiledTerrain?: CompiledMapDesignTerrain;
+  onToolObservation?: (observation: MapDesignToolObservation) => void;
   stablePlacementIds?: boolean;
   worldEditPolicy?: 'diagnostic';
   /** Standalone historical scripts only; newly generated code never enables this. */
@@ -622,6 +637,9 @@ interface CodeExecutionIssue {
 }
 
 interface MapCodeReplayContext {
+  spatialObservationApis?: boolean;
+  compiledTerrain?: CompiledMapDesignTerrain;
+  onToolObservation?: (observation: MapDesignToolObservation) => void;
   stablePlacementIds?: boolean;
   worldEditPolicy?: 'diagnostic';
   legacyApis?: boolean;
@@ -634,6 +652,7 @@ interface MapCodeReplayContext {
   assets: MapAsset[];
   bindings: Map<string, MapAsset[]>;
   generatedAssets: MapAsset[];
+  appearancePlan?: SceneAppearancePlan;
   failedTasks: Array<{ key: string; name: string }>;
   requirements: CodeAssetRequirement[];
   repairAttempts: number;
@@ -807,6 +826,7 @@ export async function generateMapCodeSuggestion(
             : ''
         ].filter(Boolean).join('\n'),
         tags: requirement.tags,
+        ...(discovery.suggestion.appearancePlan ? {appearancePlan: discovery.suggestion.appearancePlan} : {}),
         ...(requirement.mountOnAssetId ? { mountOnAssetId: requirement.mountOnAssetId } : {}),
         ...(requirement.light ? { light: requirement.light } : {}),
         mode: map.assetGenerationMode,
@@ -850,6 +870,7 @@ export async function generateMapCodeSuggestion(
     family[task.variantIndex] = asset;
     bindings.set(task.key, family);
   });
+  const appearancePlan = discovery.suggestion.appearancePlan;
   const adapted = options.revisionMode === 'first-pass'
     ? { code, discovery }
     : await adaptMapCodeToGeneratedAssets(
@@ -871,8 +892,11 @@ export async function generateMapCodeSuggestion(
   });
   const failedTasks = tasks.filter((_task, index) => generatedResults[index] === null);
   const replayContext: Omit<MapCodeReplayContext, 'expiresAt'> = {
+    spatialObservationApis: options.spatialObservationApis,
     stablePlacementIds: options.stablePlacementIds,
     worldEditPolicy: options.worldEditPolicy,
+    compiledTerrain: options.compiledTerrain,
+    onToolObservation: options.onToolObservation,
     mapId: map.id,
     mapVersion: map.version,
     planningMap: map,
@@ -880,6 +904,7 @@ export async function generateMapCodeSuggestion(
     assets: [...reusableAssets, ...generatedAssets],
     bindings,
     generatedAssets,
+    appearancePlan,
     failedTasks: failedTasks.map((task) => ({ key: task.key, name: task.name })),
     requirements: discovery.requirements,
     repairAttempts: execution.repairAttempts,
@@ -967,6 +992,7 @@ async function adaptMapCodeToGeneratedAssets(
     }), true);
     if (candidateCode === code) return { code, discovery };
     const candidateDiscovery = runMapCodePlan(candidateCode, map, assets, {
+      spatialObservationApis: options.spatialObservationApis,
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'discovery',
       requestMode: options.mode ?? 'generate',
@@ -977,6 +1003,9 @@ async function adaptMapCodeToGeneratedAssets(
       legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       worldEditPolicy: options.worldEditPolicy,
+      compiledTerrain: options.compiledTerrain,
+      onToolObservation: options.onToolObservation,
+      appearancePlan: options.appearancePlan,
       executionTimeoutMs: clampInteger(
         options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
         1,
@@ -1000,6 +1029,7 @@ async function adaptMapCodeToGeneratedAssets(
       )].join(',')}`);
     }
     const candidateFinal = runMapCodePlan(candidateCode, map, assets, {
+      spatialObservationApis: options.spatialObservationApis,
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'final',
       requestMode: options.mode ?? 'generate',
@@ -1010,6 +1040,9 @@ async function adaptMapCodeToGeneratedAssets(
       legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       worldEditPolicy: options.worldEditPolicy,
+      compiledTerrain: options.compiledTerrain,
+      onToolObservation: options.onToolObservation,
+      appearancePlan: options.appearancePlan,
       executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? MAP_CODE_FINAL_TIMEOUT_MS, 1, MAP_CODE_FINAL_TIMEOUT_MS),
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     }).suggestion;
@@ -1110,9 +1143,13 @@ function executeFinalMapCodeReplay(
   context: Omit<MapCodeReplayContext, 'expiresAt'>,
   executionTimeoutMs: number
 ): MapAiSuggestion {
-  return runMapCodePlan(context.code, context.planningMap, context.assets, {
+  const final = runMapCodePlan(context.code, context.planningMap, context.assets, {
+    spatialObservationApis: context.spatialObservationApis,
     stablePlacementIds: context.stablePlacementIds,
     worldEditPolicy: context.worldEditPolicy,
+    compiledTerrain: context.compiledTerrain,
+    onToolObservation: context.onToolObservation,
+    appearancePlan: context.appearancePlan,
     refineScope: context.refineScope,
     mode: 'final',
     requestMode: context.requestMode,
@@ -1125,6 +1162,10 @@ function executeFinalMapCodeReplay(
     executionTimeoutMs,
     refinableObjectIds: new Set(context.refinableObjectIds)
   }).suggestion;
+  if (JSON.stringify(final.appearancePlan) !== JSON.stringify(context.appearancePlan)) {
+    throw new Error('map_code_output_contract:scene_appearance_changed_after_asset_generation');
+  }
+  return final;
 }
 
 function completeGeneratedMapCodeSuggestion(
@@ -1415,7 +1456,7 @@ function executeMapCodePlanInternal(
       : undefined;
     const position = input.position === undefined
       ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
-      : placementPosition(input.position, map, terrain);
+      : placementPosition(input.position, currentEnvironmentMap(), terrain);
     const asset = assetId ? assetById.get(assetId) : undefined;
     const role = roleByAssetId.get(assetId ?? '')
       ?? normalizeCodePlacementRole(input.role, map.sceneMode)
@@ -1448,6 +1489,11 @@ function executeMapCodePlanInternal(
     return referenceId;
   };
   let spatialQueryCount = 0;
+  const spatialReadCoverage = () => ({
+    checkedSources: ['manual-map-object-collider-aabbs', 'current-program-placement-collider-aabbs'],
+    uncheckedSources: ['terrain', 'water', ...(currentEnvironmentMap().world
+      ? ['streamed-town-buildings', 'streamed-ecology', 'streamed-bridges', 'streamed-harbor-quays'] : [])]
+  });
   const spatialAabbs = (): MapObjectAabb[] => {
     spatialQueryCount += 1;
     if (spatialQueryCount > MAX_SPATIAL_QUERIES) throw new Error('map_code_spatial_query_limit');
@@ -1502,11 +1548,64 @@ function executeMapCodePlanInternal(
       ]
     };
   };
+  let appearancePlan = options.appearancePlan;
+  let appearanceDeclared = false;
+  const publishWorld = (input: unknown, revision: number): void => {
+    const candidate = input as WorldMapState;
+    if (!candidate || !candidate.bundle || !Array.isArray(candidate.bundle.patches)
+      || !Array.isArray(candidate.assets)) throw new Error('invalid_map_code_world_edit');
+    const plan = validateWorldPlan({...candidate.bundle.plan, revision,
+      ...(options.worldEditPolicy ? {generationPolicy:options.worldEditPolicy} : {})});
+    if (options.compiledTerrain && plan.recipe.terrainProgram?.source === options.compiledTerrain.field.source
+      && (plan.recipe.size !== options.compiledTerrain.size || plan.recipe.seed !== options.compiledTerrain.seed)) {
+      throw new Error('map_code_terrain_program_context_mismatch');
+    }
+    const worldKey = worldPlanKey(plan);
+    const originalBindings = candidate.assets.filter(binding =>
+      typeof binding?.assetId !== 'string' || !isCodeMissingAsset(binding.assetId));
+    // Validate pending bindings before generation; placeholders never enter world.set.
+    const bindings = originalBindings.map(binding => typeof binding?.assetId === 'string'
+      && isCodeAssetPlaceholder(binding.assetId) ? {...binding,assetId:'pending-world-asset'} : binding);
+    const world = validateWorldMapState({...candidate, assets:bindings,
+      bundle:{plan, patches:candidate.bundle.patches.map(patch => ({...patch,worldKey}))}});
+    authoredWorldState = {...world, assets:world.assets.map(binding =>
+      ({...binding,assetId:originalBindings.find(original => original.key === binding.key)!.assetId}))};
+    worldAssetReferences.clear();
+    for (const binding of authoredWorldState.assets) {
+      if (isCodeAssetPlaceholder(binding.assetId)) worldAssetReferences.add(binding.assetId);
+    }
+    emitSceneOperation({type:'world.set',world:{...world,
+      assets:authoredWorldState.assets.filter(binding => !isCodeAssetPlaceholder(binding.assetId))}});
+  };
   const api = Object.freeze({
+    report(label: string, value: unknown): void {
+      record('report');
+      validateMapCodeReport(label, value);
+    },
+    appearance(input: unknown): void {
+      if (appearanceDeclared) throw new Error('scene_appearance_declared_twice');
+      appearancePlan = normalizeSceneAppearancePlan(input);
+      appearanceDeclared = true;
+      record('appearance');
+    },
     TAU: Math.PI * 2,
     PHI: (1 + Math.sqrt(5)) / 2,
-    seed: map.seed,
-    bounds: Object.freeze(getMapBounds(map)),
+    get seed() { return currentEnvironmentMap().seed; },
+    get bounds() { return Object.freeze(getMapBounds(currentEnvironmentMap())); },
+    terrainProgram() {
+      record('terrainProgram');
+      if (!options.compiledTerrain) throw new Error('map_code_terrain_program_unavailable');
+      return structuredClone(options.compiledTerrain.field);
+    },
+    createWorld(input: unknown): void {
+      record('createWorld');
+      if (map.sceneMode !== 'outdoor') throw new Error('world_requires_outdoor_map');
+      if (authoredWorldState ?? currentEnvironmentMap().world) throw new Error('map_code_world_already_exists');
+      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('invalid_map_code_world_create');
+      const {patches = [], assets: bindings = [], ...planInput} = input as Record<string, unknown>;
+      const plan = {version:1, id:'design-world', revision:1, prompt:map.name, ecology:[],towns:[],roads:[], ...planInput};
+      publishWorld({bundle:{plan,patches},assets:bindings}, 1);
+    },
     worldState(): WorldMapState {
       record('worldState');
       const world = authoredWorldState ?? currentEnvironmentMap().world;
@@ -1523,27 +1622,7 @@ function executeMapCodePlanInternal(
       if (returned && typeof (returned as unknown as {then?: unknown}).then === 'function') {
         throw new Error('async_map_code_world_edit_not_supported');
       }
-      const candidate = returned === undefined ? draft : returned;
-      if (!candidate || !candidate.bundle || !Array.isArray(candidate.assets)) throw new Error('invalid_map_code_world_edit');
-      const plan = validateWorldPlan({...candidate.bundle.plan, revision: current.bundle.plan.revision + 1,
-        ...(options.worldEditPolicy ? {generationPolicy:options.worldEditPolicy} : {})});
-      const worldKey = worldPlanKey(plan);
-      const originalBindings = candidate.assets.filter(binding =>
-        typeof binding?.assetId !== 'string' || !isCodeMissingAsset(binding.assetId));
-      // Validate pending bindings too, before paying for generation. Their placeholder URI
-      // stays in the program's working state, but never enters a world.set operation.
-      const bindings = originalBindings.map(binding => typeof binding?.assetId === 'string'
-        && isCodeAssetPlaceholder(binding.assetId) ? {...binding,assetId:'pending-world-asset'} : binding);
-      const world = validateWorldMapState({...candidate, assets: bindings,
-        bundle: {plan, patches: candidate.bundle.patches.map(patch => ({...patch, worldKey}))}});
-      authoredWorldState = {...world, assets:world.assets.map(binding =>
-        ({...binding, assetId:originalBindings.find(original => original.key === binding.key)!.assetId}))};
-      worldAssetReferences.clear();
-      for (const binding of authoredWorldState.assets) {
-        if (isCodeAssetPlaceholder(binding.assetId)) worldAssetReferences.add(binding.assetId);
-      }
-      emitSceneOperation({type:'world.set', world:{...world,
-        assets:authoredWorldState.assets.filter(binding => !isCodeAssetPlaceholder(binding.assetId))}});
+      publishWorld(returned === undefined ? draft : returned, current.bundle.plan.revision + 1);
     },
     urbanLayout(options: UrbanLayoutOptions | WaterfrontUrbanLayoutOptions = {}) {
       record('urbanLayout');
@@ -1554,7 +1633,7 @@ function executeMapCodePlanInternal(
         if (!water) throw new Error(`unknown_map_code_water:${waterId}`);
         return createWaterfrontUrbanLayout({ ...options, waterId }, environmentMap, water);
       }
-      return createUrbanLayout(options as UrbanLayoutOptions, getMapBounds(map), map.seed);
+      return createUrbanLayout(options as UrbanLayoutOptions, getMapBounds(currentEnvironmentMap()), currentEnvironmentMap().seed);
     },
     room: indoorRoom ? Object.freeze({ ...indoorRoom, openings: Object.freeze([...roomOpenings]) }) : null,
     roomPoint(localX: number, localZ: number, height = 0): Point3 {
@@ -2677,7 +2756,7 @@ function executeMapCodePlanInternal(
       if (typeof costFunction !== 'function') throw new Error('invalid_layout_optimizer_cost');
       return optimizeLayoutItems(
         options.items,
-        normalizePoissonBounds(options.bounds, getMapBounds(map)),
+        normalizePoissonBounds(options.bounds, getMapBounds(currentEnvironmentMap())),
         { ...options, seed: options.seed ?? map.seed },
         costFunction
       );
@@ -2837,7 +2916,11 @@ function executeMapCodePlanInternal(
     assetSpace(assetId: string) {
       record('assetSpace');
       const asset = assetById.get(assetId);
-      return asset ? assetSpaceSummary(asset) : { evidence: 'unavailable', interior: 'unknown', supportSurfaces: [], parts: [] };
+      return {
+        ...(asset ? assetSpaceSummary(asset) : { evidence: 'unavailable', interior: 'unknown', supportSurfaces: [], parts: [] }),
+        coverage: { checkedSources: asset ? ['requested-asset-local-geometry-and-metadata'] : [],
+          uncheckedSources: ['placed-instance-transform', 'terrain-contact', 'scene-neighbors'] }
+      };
     },
     sightline(input: SightlineInput) {
       record('sightline');
@@ -2849,6 +2932,7 @@ function executeMapCodePlanInternal(
         clear: blockers.length === 0,
         distance: Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]),
         blockers,
+        coverage: spatialReadCoverage(),
         approximation: 'collider-aabb' as const
       };
       if (input.required && blockers[0]) {
@@ -2901,6 +2985,7 @@ function executeMapCodePlanInternal(
         width,
         height,
         blockers,
+        coverage: spatialReadCoverage(),
         approximation: 'collider-aabb' as const
       };
       if (input.required && blockers[0]) {
@@ -2937,6 +3022,7 @@ function executeMapCodePlanInternal(
         horizontalDistance: Math.hypot(axisGaps[0], axisGaps[2]),
         verticalDistance: axisGaps[1],
         axisGaps,
+        coverage: spatialReadCoverage(),
         approximation: 'collider-aabb' as const
       };
       if (input.required && !result.connected) {
@@ -3310,13 +3396,15 @@ function executeMapCodePlanInternal(
     }
   });
 
-  const sandboxApi = minimalMode
-    ? Object.freeze(Object.fromEntries(MINIMAL_MAP_CODE_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
-    : mainMode
-      ? Object.freeze(Object.fromEntries(MAIN_MAP_CODE_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
-    : map.sceneMode === 'outdoor' && !options.legacyApis
-      ? Object.freeze(Object.fromEntries(Object.entries(api).filter(([key]) => !RETIRED_OUTDOOR_MAP_CODE_API_KEYS.has(key))))
-      : api;
+  const exposedKeys = minimalMode ? new Set<string>(MINIMAL_MAP_CODE_API_KEYS)
+    : mainMode ? new Set<string>(MAIN_MAP_CODE_API_KEYS) : null;
+  const spatialReadKeys = new Set(['assetSpace', 'sightline', 'passage', 'connectionGap']);
+  const sandboxApi = mapCodeObservedApi(Object.defineProperties({}, Object.fromEntries(
+    Object.entries(Object.getOwnPropertyDescriptors(api)).filter(([key]) =>
+      options.spatialObservationApis && spatialReadKeys.has(key)
+      || (exposedKeys ? exposedKeys.has(key)
+        : map.sceneMode !== 'outdoor' || options.legacyApis || !RETIRED_OUTDOOR_MAP_CODE_API_KEYS.has(key)))
+  )), mode, options.onToolObservation);
   const script = new vm.Script(`${cleanCode}\n;if (typeof plan !== 'function') throw new Error('missing_plan_function');\nplan(api);`, {
     filename: 'worldforge-map-plan.js'
   });
@@ -3391,6 +3479,7 @@ function executeMapCodePlanInternal(
       suggestion: {
         summary: `无需调整：${noChangeReason}`,
         operations: [],
+        ...(appearancePlan ? {appearancePlan} : {}),
         renderPromptSuggestions: [],
         generatedAssets: [],
         codePlan: {
@@ -3670,6 +3759,7 @@ function executeMapCodePlanInternal(
       ? `室内功能规划生成了 ${placements.length} 个摆放意图与 ${roomOpenings.length} 个门窗预留`
       : `整体 Code 生成了 ${placements.length} 个摆放意图与 ${sceneOperations.length} 项环境操作`,
     operations,
+    ...(appearancePlan ? {appearancePlan} : {}),
     renderPromptSuggestions,
     generatedAssets: [],
     codePlan: {
@@ -4136,7 +4226,7 @@ Use finite numbers and bounded loops. Map bounds are x=${bounds.minX}..${bounds.
 Map height is ${map.box.size[1]}m: terrain and water levels cap at ${map.box.size[1] - 0.05}m, water depth caps at ${MAX_WATER_DEPTH}m. Mountain, ridge and terrace relief shrinks in narrow regions; a narrow ridge becomes a mountain. Elevated lakes need surrounding terrain or a retaining structure.
 Compose the requested terrain, circulation, focal forms, repeated structure and natural detail directly. Preserve intentional open space and vary density, height and rhythm instead of filling a uniform grid. Continuous ground cover (snow, sand, mud, grass and similar effects) uses supported terrain/surface/grass/water APIs, never tiled model assets. Use surface:'snow' for snow cover and drifts; the native renderer supplies its thin layer. Assets represent distinct objects.
 
-The sandbox exposes exactly these 12 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
+The sandbox exposes exactly these 13 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
 Region objects use kind, never type, and must be exactly {kind:'circle',center:[x,z],radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}. Enum fields are closed choices. For concrete or asphalt ground, use surface:'paving', material:'concrete' or material:'asphalt'.
 1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
 2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,direction?,variation?,layers?,layout?,access?,seed?}).
@@ -4150,10 +4240,12 @@ Region objects use kind, never type, and must be exactly {kind:'circle',center:[
 10. api.random(min?,max?) is deterministic for this map seed.
 11. api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}) locally shapes or smooths terrain.
 12. api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}) makes a graded path; omitted heights sample terrain.
+13. api.appearance(plan) declares optional scene appearance once.
 
 Ground objects should use position:[x,z], for example [-21,20] means x=-21,z=20 and samples terrain Y. In [x,y,z], y is vertical height, not z; terrain accepts only boolean true or false, never 'ground'. Use terrain:true with [x,0,z] only when you need an explicit terrain-relative Y offset.
 
 ${CODE_ASSET_PROMPT_CONTRACT}
+api.appearance(plan) may be declared once to coordinate new asset source colors and a companion render draft. ${SCENE_APPEARANCE_CONTRACT}
 Declare ${minNewAssets}..${maxNewAssets} requireAsset families and place every declared variant at least once. Each asset prompt describes one standalone reusable object and follows this orientation contract: Y+ up, Z+ front/entrance, X+ right. Keep all coordinates inside the map bounds and return the complete function plan(api).`;
 }
 
@@ -4194,7 +4286,7 @@ Where grass belongs, first cover broad suitable ground with one or more habitat-
 
 ${URBAN_LAYOUT_CONTRACT}
 
-The sandbox exposes exactly these 20 keys; write your own other helpers:
+The sandbox exposes exactly these 21 keys; write your own other helpers:
 - Data: api.seed, api.bounds.
 - Land: api.terrain(preset,{amplitude?,roughness?,seed?}) with preset 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,access?:'walkable'|'scenic'}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}). Keep ramp softness and strength between 0 and 1.
 - Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving'|'snow',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,height?,mix?:{short?,tall?,flowers?},habitat?}). Grass regions can be a circle, a path with points/width, or a polygon with points; use kind, never type.
@@ -4204,6 +4296,7 @@ The sandbox exposes exactly these 20 keys; write your own other helpers:
 
 Use one object for surface, for example api.surface({id:'court',surface:'paving',region:{kind:'circle',center:[0,0],radius:6}}). Water returns its actual ID: const stream = api.water('stream',{type:'river',points:[[-10,0],[10,0]],width:3}); use {waterId:stream} in later observations and bridges. Keep display names separate from IDs and reuse returned IDs instead of rewriting them.
 ${CODE_ASSET_PROMPT_CONTRACT}
+api.appearance(plan) may be declared once to coordinate new asset source colors and a companion render draft. ${SCENE_APPEARANCE_CONTRACT}
 Declare ${minNewAssets}..${maxNewAssets} useful asset families and place every declared variant at least once. Asset prompts describe one standalone reusable object in English, with Y+ up, Z+ front/entrance and X+ right; names are short Simplified Chinese. Keep every placement inside bounds. Do not invent API names or asset IDs. Return the function only.`;
 }
 
@@ -4258,6 +4351,7 @@ export function buildMapCodePlannerSystemPrompt(
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}${terrainAdaptiveContract}${compositionContract}${densityContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
 ${CODE_ASSET_PROMPT_CONTRACT}
+api.appearance(plan) may be declared once to coordinate new asset source colors and a companion render draft. ${SCENE_APPEARANCE_CONTRACT}
 ${CODE_ACTIVITY_CONTRACT()}
 
 ## Output contract
@@ -4351,6 +4445,7 @@ function buildIndoorMapCodePlannerSystemPrompt(
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 ${CODE_ASSET_LIGHT_CONTRACT}
 ${CODE_ASSET_PROMPT_CONTRACT}
+api.appearance(plan) may be declared once to coordinate new asset source colors and a companion render draft. ${SCENE_APPEARANCE_CONTRACT}
 ${CODE_ACTIVITY_CONTRACT(true)}
 
 ## Output contract
@@ -4457,6 +4552,7 @@ function applyLocalCodeRepair(code: string, response: string, allowUnchanged = f
 }
 
 function preservesCodePlanContent(before: CodeExecutionResult, after: CodeExecutionResult): boolean {
+  if (JSON.stringify(before.suggestion.appearancePlan) !== JSON.stringify(after.suggestion.appearancePlan)) return false;
   const required = new Map(after.requirements.map((item) => [item.key, item.variants]));
   if (before.requirements.some((item) => (required.get(item.key) ?? 0) < item.variants)) return false;
   const significantTypes = ['terrain.generate', 'water.add', 'guide.upsert', 'grass.layer.add'] as const;
@@ -4524,8 +4620,12 @@ function runFirstPassMapCodeDiscovery(
 ): { code: string; discovery: CodeExecutionResult; repairAttempts: number } {
   try {
     const discovery = runMapCodePlan(code, map, assets, {
+      spatialObservationApis: options.spatialObservationApis,
       stablePlacementIds: options.stablePlacementIds,
       worldEditPolicy: options.worldEditPolicy,
+      compiledTerrain: options.compiledTerrain,
+      onToolObservation: options.onToolObservation,
+      appearancePlan: options.appearancePlan,
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'discovery',
       requestMode: options.mode ?? 'generate',
@@ -4572,6 +4672,7 @@ async function discoverMapCodeWithRepairs(
   while (true) {
     try {
       const discovery = runMapCodePlan(code, map, assets, {
+        spatialObservationApis: options.spatialObservationApis,
         refineScope: options.mode === 'refine' ? options : undefined,
         mode: 'discovery',
         requestMode: options.mode ?? 'generate',
@@ -4582,6 +4683,9 @@ async function discoverMapCodeWithRepairs(
         legacyApis: options.legacyApis,
         spatialPolicy: options.spatialPolicy,
         worldEditPolicy: options.worldEditPolicy,
+        compiledTerrain: options.compiledTerrain,
+        onToolObservation: options.onToolObservation,
+        appearancePlan: options.appearancePlan,
         executionTimeoutMs: clampInteger(
           options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
           1,

@@ -19,7 +19,7 @@ import {
   type MapAssetSizeClass
 } from './mapAssetMetadata';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from './modelGenerationMode';
-import { normalizeGrassLayers, type MapGrassLayer } from './mapGrass';
+import { normalizeGrassLayers, worldGrassResolution, type MapGrassLayer } from './mapGrass';
 import {
   normalizeMaterialTagPolicy,
   type MapMaterialTagPolicy
@@ -812,7 +812,9 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
       : normalizeInteriorArtDirection(input.interiorArtDirection, Number.isFinite(Number(input.seed)) ? Number(input.seed) : seedFromString(id)),
     lighting: normalizeLighting(input.lighting),
     terrain,
-    grassLayers: normalizeGrassLayers(input.grassLayers, terrain.resolutionX, terrain.resolutionZ),
+    grassLayers: normalizeGrassLayers(input.grassLayers,
+      world ? worldGrassResolution(world.bundle.plan.recipe.size) : terrain.resolutionX,
+      world ? worldGrassResolution(world.bundle.plan.recipe.size) : terrain.resolutionZ, Boolean(world)),
     waterBodies: normalizeWaterBodies(input.waterBodies, boxSize),
     paintStrokes: Array.isArray(input.paintStrokes)
       ? input.paintStrokes.map((stroke) => createPaintStroke(stroke)).slice(-1200)

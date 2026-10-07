@@ -56,6 +56,7 @@ import {
   generateGrassRegionInPlace,
   setGrassLayerDensitiesInPlace,
   updateGrassLayer,
+  worldGrassResolution,
   type GrassBrushMode,
   type GrassHabitat,
   type GrassLayerInput,
@@ -230,6 +231,7 @@ export interface MapTransactionSummary {
 }
 
 export interface MapAiSuggestion {
+  appearancePlan?: import('./sceneAppearance').SceneAppearancePlan;
   summary: string;
   generationTraceId?: string;
   operations: MapOperation[];
@@ -407,8 +409,8 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (next.grassLayers.length >= MAX_GRASS_LAYERS) throw new Error('too_many_grass_layers');
         const layer = createGrassLayer(
           operation.layer,
-          next.terrain.resolutionX,
-          next.terrain.resolutionZ,
+          next.world ? worldGrassResolution(next.world.bundle.plan.recipe.size) : next.terrain.resolutionX,
+          next.world ? worldGrassResolution(next.world.bundle.plan.recipe.size) : next.terrain.resolutionZ,
           next.seed + next.grassLayers.length + 1
         );
         if (next.grassLayers.some((item) => item.id === layer.id)) throw new Error('duplicate_grass_layer_id');

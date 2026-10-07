@@ -6,6 +6,7 @@ import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
 import { worldMapSampler } from './worldMapState';
 import { WORLD_BIOMES, worldRegionWeight } from './worldTerrain';
 import { visualZoneWeight } from './visualDirection';
+import { observeMapDesignDetails } from './mapDesignDetails';
 
 type Point = [number, number];
 type Bounds = [number, number, number, number];
@@ -14,11 +15,14 @@ type Footprint = { reference: string; id: string; source: string; name: string; 
   geometry: string; polygon: Point[]; bottom: number | null; top: number | null; entrance: null };
 
 export const MAP_DESIGN_OBSERVATION_HELP = `observe reads the CURRENT complete draft without changing it. Query JSON:
-{kind:'summary',offset?:0,limit?:32} lists paged regions, ecology rules, biome patches, routes, settlements (including town-local ports and district offsets), groups and declared entrances; totals are unpaged.
+{kind:'summary',offset?:0,limit?:32} lists paged regions, ecology rules, biome patches, grass-layer styles and density resolution/spacing, routes, settlements (including town-local ports and district offsets), groups and declared entrances; totals are unpaged.
 {kind:'points',points:[[x,z],...],guideIds?:['id'],waterId?:'sea|existing-water-id'}: 1..128 samples.
 {kind:'region',bounds:[minX,minZ,maxX,maxZ],grid?:9,offset?:0,limit?:64}: grid 2..17; sampled coverage, biome/forest-mask relationships and paged grid cells. Bounds must lie inside the map.
 {kind:'path',pathId:'reference from summary OR unique route id',spacing?:4,maxGrade?:0.15,offset?:0,limit?:64}; alternatively supply points:[[x,z],...],curve?:'polyline'|'catmull-rom',closed?:false,width?:2 instead of pathId. At most 512 profile samples; actual spacing is reported. maxGrade is an optional designer-selected rise/run threshold, not a walkability rule. Reports terrain longitudinal grades, water transitions, threshold crossings, corridor endpoint gaps and declared access distances; it does NOT sample a bridge deck or prove controller traversal.
 {kind:'objects',ids?:['exact reference OR id'],bounds?:[minX,minZ,maxX,maxZ],offset?:0,limit?:32}: object visual AABB footprints and town building planned oriented footprints, sampled ground relief/support and route gaps; full footprints, not center-only tests. Missing actual doorway data stays unknown.
+{kind:'assets',ids?:['asset-id'],section?:'summary'|'parts'|'supports'|'materials'|'semantic',offset?:0,limit?:32}: actual stored asset geometry, candidate supports, authored material colors/explicit palette roles and generator semantic text. Semantic text is split into 2000-character chunks. Colors are model values, not rendered pixels; missing geometry remains unknown.
+{kind:'world',section?:'overview'|'designSemantics'|'featureGraph'|'settlementPlan'|'mobilityPlan'|'explorationPlan'|'intentionalEmptyAreas'|'towns'|'roads'|'ecology'|'assets'|'patches',offset?:0,limit?:32}: shared design relationships, functional destinations, route intent, exact authored curves/ecology masks, asset bindings and town-local authored geometry. Declarations do not prove visual clarity or playability.
+{kind:'terrain',section?:'overview'|'recipe'|'source'|'inspections',offset?:0,limit?:32}: actual storage resolution/spacing, paged recipe parameters, explicitly requested source chunks, or historical compiler observations. Source offsets count 2000-character chunks, not characters. No default height-array dump; use points/region to measure the current field. New detail pages may stop at a 24000-character record budget; continue at nextOffset.
 All pages accept limit 1..64, offset 0..1000000. Results include mapVersion, draftRevision, units and precision. null distance means no match in the documented search range, NOT zero. Biome/ecology/grass fields are authoring/sample facts, not rendered instance counts or visibility. Reread after changing the draft; old observations retain their old revision.`;
 
 /** Structured facts only: no style score, placement repair, persistent cache or mutation. */
@@ -29,23 +33,25 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
     summary: ['offset', 'limit'], points: ['points', 'guideIds', 'waterId'],
     region: ['bounds', 'grid', 'offset', 'limit'],
     path: ['pathId', 'points', 'curve', 'closed', 'width', 'spacing', 'maxGrade', 'offset', 'limit'],
-    objects: ['ids', 'bounds', 'offset', 'limit']
+    objects: ['ids', 'bounds', 'offset', 'limit'], assets: ['ids', 'section', 'offset', 'limit'],
+    world: ['section', 'offset', 'limit'], terrain: ['section', 'offset', 'limit']
   };
   if (typeof kind !== 'string' || !Object.hasOwn(allowed, kind)
     || Object.keys(query).some(key => key !== 'kind' && !allowed[kind].includes(key))) throw new Error('invalid_observation_query');
   const offset = integer(query.offset, 0, 1_000_000, 0), limit = integer(query.limit, 1, 64, 32);
-  const paths = mapEnvironmentGuides(map), world = map.world, plan = world?.bundle.plan;
-  const worldSample = world ? worldMapSampler(world) : undefined;
+  const detailQuery = ['assets', 'world', 'terrain'].includes(kind);
+  const paths = detailQuery ? [] : mapEnvironmentGuides(map), world = map.world, plan = world?.bundle.plan;
+  const worldSample = world && !detailQuery ? worldMapSampler(world) : undefined;
   const guideIds = query.guideIds === undefined ? undefined : strings(query.guideIds, 64);
   const waterId = query.waterId === undefined ? undefined : id(query.waterId);
   if (guideIds?.some(key => !paths.some(path => path.id === key))) throw new Error('unknown_observation_guide');
-  const environment = createMapEnvironmentSampler(map, { guideIds, waterId });
+  const environment = detailQuery ? undefined : createMapEnvironmentSampler(map, { guideIds, waterId });
   const page = <T>(items: T[]) => ({ total: items.length, offset, limit,
     nextOffset: offset + limit < items.length ? offset + limit : null, items: items.slice(offset, offset + limit) });
   let footprintCache: Footprint[] | undefined;
   const footprints = () => footprintCache ??= observedFootprints(map);
   const sample = (point: Point) => {
-    const [x, z] = point, reading = environment(x, z), surface = worldSample?.(x, z);
+    const [x, z] = point, reading = environment!(x, z), surface = worldSample?.(x, z);
     const localWater = map.waterBodies.find(water => isPointInsideWaterBody(water, x, z, map));
     const actualWater = localWater ? { id: localWater.id, surfaceHeight: waterSurfaceLevelAt(localWater, x, z),
       depth: Math.max(0, waterSurfaceLevelAt(localWater, x, z) - reading.height) }
@@ -59,19 +65,26 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
   const routeBrief = (path: MapEnvironmentGuide) => ({ reference: path.reference, id: path.id, source: path.source,
     name: path.name, width: path.width, length: length(path), endpoints: [path.points[0], path.points.at(-1)], tags: path.tags });
   let data: unknown;
-  if (kind === 'summary') {
+  if (detailQuery) {
+    data = observeMapDesignDetails(map, kind, query, offset, limit);
+  } else if (kind === 'summary') {
     const all = footprints();
     data = { name: map.name, size: map.box.size, intent: map.designSemantics.intent,
       worldConcept: plan?.concept ?? null, generation: plan?.whitebox ? 'semantic-whitebox' : 'scene',
       counts: { objects: map.objects.length, visibleObjectFootprints: all.filter(item => item.source === 'map-object').length,
         townBuildings: all.filter(item => item.source === 'town-patch').length, paths: paths.length,
-        ecologyRules: plan?.ecology.length ?? 0, biomePatches: plan?.recipe.biomePatches?.length ?? 0 },
+        ecologyRules: plan?.ecology.length ?? 0, biomePatches: plan?.recipe.biomePatches?.length ?? 0,
+        grassLayers: map.grassLayers.length },
       routes: page(paths.map(routeBrief)), regions: page(plan?.featureGraph?.regions ?? []),
       ecologyRules: page((plan?.ecology ?? []).map(rule => ({ ...rule, region: compactRegion(rule.region),
         exclusions: rule.exclusions?.map(compactRegion),
         boundAssetIds: world!.assets.filter(asset => asset.role === 'tree'
           && (asset.ecologyRuleId === rule.id || !asset.ecologyRuleId && asset.ecologyKind === rule.kind)).map(asset => asset.assetId) }))),
       biomePatches: page((plan?.recipe.biomePatches ?? []).map(patch => ({ ...patch, region: compactRegion(patch.region) }))),
+      grassLayers: page(map.grassLayers.map(layer => ({ id: layer.id, visible: layer.visible,
+        preset: layer.preset, height: layer.height, mix: layer.mix,
+        densityResolution: [layer.resolutionX, layer.resolutionZ],
+        densitySpacing: [map.box.size[0] / (layer.resolutionX - 1), map.box.size[2] / (layer.resolutionZ - 1)] }))),
       climateConstraints: page(plan?.recipe.constraints ?? []),
       settlements: page((plan?.towns ?? []).map(town => ({ id: town.id, name: town.name, center: town.center,
         radius: town.radius, population: town.population ?? null, terrainMode: town.terrainMode,
@@ -196,6 +209,7 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
       : 'stored heightfield bilinear interpolation; rendered triangle and collision surfaces may differ',
       slope: world ? 'central differences with 4m offset' : 'central differences with stored cell spacing',
       waterDistance: world ? 'freshwater boundary plus approximate sea search: 24 rays, 160m range, cached 16m interpolation' : 'authored water boundary',
+      grassDensity: 'stored density fields with bilinear interpolation; summary lists each field spacing in metres, not rendered blade spacing or coverage',
       paths: 'shared mapGuidePolyline approximation; 12 subdivisions per Catmull-Rom segment, bounded by guide point limit',
       nullDistances: 'No matching geometry or no water found within bounded search. Not zero.', numericRounding: '4 decimal places' }, data
   }, (_key, value) => typeof value === 'number' ? Number.isFinite(value) ? Math.round(value * 10_000) / 10_000 : null : value));

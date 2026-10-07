@@ -5,6 +5,7 @@ import {validateWorldMapState} from '../src/shared/worldMapState';
 import {worldPlanKey} from '../src/shared/worldPlanning';
 import {buildMapDesignExecutionPrompt, executeMapDesignProgram} from '../src/server/mapDesignExecution';
 import {executeMapCodePlan} from '../src/server/mapCodePlanner';
+import type {MapDesignToolObservation} from '../src/shared/mapDesignFeedback';
 
 const mocks = vi.hoisted(() => ({llmChat: vi.fn()}));
 vi.mock('../src/server/modelApi', async original => ({...await original<typeof import('../src/server/modelApi')>(), llmChat:mocks.llmChat}));
@@ -23,6 +24,38 @@ const worldMap = () => {
 
 describe('design-session scene execution', () => {
   beforeEach(() => vi.clearAllMocks());
+  it.each([false, true])('executes documented spatial reads and retains their real phases (new asset %s)', async generated => {
+    const observations: MapDesignToolObservation[] = [];
+    await executeMapDesignProgram({baseMap:generated?worldMap():createEmptyMap(),assets:[],maxNewAssets:generated?1:0,
+      createAsset:vi.fn().mockResolvedValue(asset),onToolObservation:value=>observations.push(value),
+      code:`function plan(api){
+        if(typeof api.gridPoints!=='undefined')throw new Error('unrelated legacy API exposed');
+        ${generated?"const key=api.requireAsset({key:'tree',name:'Tree',prompt:'A tree',dimensions:[2,5,2],role:'environment'});api.place({assetId:api.asset(key),position:[12,12]});":''}
+        const a=api.place({position:[-8,0]}); const b=api.place({position:[8,0]});
+        api.assetSpace(${generated?"api.asset(key)":"'unknown'"});
+        api.sightline({from:[0,20,0],to:[2,20,0]});
+        api.passage({points:[[-10,-10],[-8,-10]],width:2,height:2});
+        api.connectionGap({a,b,tolerance:1});
+      }`});
+    for(const phase of generated?['discovery','final']:['discovery']) {
+      expect(observations.filter(value=>value.phase===phase).map(value=>value.tool))
+        .toEqual(['assetSpace','sightline','passage','connectionGap']);
+    }
+    expect(new Set(observations.map(value=>value.phase))).toEqual(new Set(generated?['discovery','final']:['discovery']));
+    for(const observation of observations) {
+      const result=observation.result as {coverage:{checkedSources:string[];uncheckedSources:string[]}};
+      expect(result.coverage).toBeDefined();
+      if(observation.tool==='assetSpace') {
+        expect(result.coverage.uncheckedSources).toContain('terrain-contact');
+      } else {
+        expect(result.coverage.checkedSources).toContain('current-program-placement-collider-aabbs');
+        expect(result.coverage.uncheckedSources).toContain('terrain');
+        expect(result.coverage.uncheckedSources.includes('streamed-town-buildings')).toBe(generated);
+        expect(result.coverage.uncheckedSources.includes('streamed-bridges')).toBe(generated);
+      }
+    }
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+  });
   it('replays each complete candidate over the original base, with stable IDs and no hidden model calls', async () => {
     const baseMap = createEmptyMap();
     const baseObject = createMapObject('existing');

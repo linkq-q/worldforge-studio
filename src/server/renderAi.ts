@@ -35,6 +35,8 @@ export interface RenderAiOptions {
   /** User asked this round to dress the sky with a panorama from the library. */
   requireHdriSky?: boolean;
   sceneProfile?: RenderSceneProfile;
+  /** Joint color reasoning from structured scene/material evidence, with one text attempt. */
+  coordinateColors?: boolean;
   onProgress?: (event: AgentProgressEvent) => void;
 }
 
@@ -62,7 +64,8 @@ export async function generateRenderSuggestion(
         options.currentPlan,
         options.hdriTextures,
         options.requireHdriSky,
-        sceneProfile
+        sceneProfile,
+        options.coordinateColors
       )
     },
     { role: 'user', content: cleanPrompt }
@@ -74,6 +77,7 @@ export async function generateRenderSuggestion(
     // RenderPlan V2 now carries visual direction, HDRI and atmosphere modules.
     // 1000 tokens can truncate an otherwise valid plan before its closing brace.
     maxTokens: 4096,
+    ...(options.coordinateColors ? { maxAttempts: 1 as const } : {}),
     fetchImpl: options.fetchImpl,
     signal: options.signal,
     onProgress: options.onProgress
@@ -81,9 +85,11 @@ export async function generateRenderSuggestion(
   const content = await llmChat(messages, requestOptions);
   try {
     options.onProgress?.({ phase: 'validating', label: '校验渲染白名单与参数范围' });
-    const suggestion = stabilizeRenderForScene(cleanPrompt, stabilizeRenderSemantics(
+    const normalized = normalizeRenderSuggestion(content, schemes, options.hdriTextures);
+    if (options.coordinateColors) assertSceneArtReferences(normalized.plan, sceneProfile);
+    const suggestion = options.coordinateColors ? preserveCoordinatedRefine(normalized, options.currentPlan) : stabilizeRenderForScene(cleanPrompt, stabilizeRenderSemantics(
       cleanPrompt,
-      normalizeRenderSuggestion(content, schemes, options.hdriTextures),
+      normalized,
       schemes,
       options.currentPlan
     ), schemes, sceneProfile, options.currentPlan);
@@ -95,6 +101,7 @@ export async function generateRenderSuggestion(
     return suggestion;
   } catch (error) {
     options.signal?.throwIfAborted();
+    if (options.coordinateColors) throw error;
     const reason = error instanceof Error ? error.message : 'invalid_render_plan';
     options.onProgress?.({
       phase: 'repairing',
@@ -210,7 +217,8 @@ function buildSystemPrompt(
   currentPlan?: RenderPlan,
   hdriTextures: readonly HdriTexture[] = [],
   requireHdriSky = false,
-  sceneProfile?: RenderSceneProfile
+  sceneProfile?: RenderSceneProfile,
+  coordinateColors = false
 ): string {
   const library = schemes.map((scheme) => ({
     id: scheme.id,
@@ -233,6 +241,16 @@ function buildSystemPrompt(
     }
   ];
   return [
+    ...(coordinateColors ? [
+      '本轮是 AI 色彩协调，只使用结构化 colorContext、sceneArtBrief 和 targets；不得使用截图、视觉模型、图像附件或臆测视觉验收。',
+      '以地图意图、世界区域、生物群系、生态角色、资产语义标签和源材质颜色为证据，联合推理地面、植被、建筑、道具、水体与光照。发现源色不协调时说明主要关系与调整理由，不要仅凭资产名字猜配色，也不要照搬源色。worldBindingCount 是绑定引用数，不是渲染实例数；生态密度是规则，不是实例统计。',
+      '保留区域身份与主次焦点，维持可读的明度差异、材质辨识与有意的强调色；禁止最近色卡映射、ColorPalette、统一强制去饱和或把所有对象染成同色。',
+      '批量调整使用 runtime.material-theme 与真实 material-tag/asset-tag；局部例外使用 targets 中已有 objectId/partId 的 runtime.surface-detail。world-only 资产摘要不是可用 objectId，不得编造世界实例、部件或区域目标；无真实 targets 的区域只说明配色意图，不创建局部规则。',
+      'material-tag 的 scope.tag 使用已有 tag 名或枚举 value：base:wood 对应 wood，foliage:leaf 对应 foliage；不要把冒号表达式或 variant 当成 scope.tag。variant 仅作为材质证据；asset-tag 必须来自 colorContext.assets[].tags，其中包含真实 assetId，使用 assetId 可批量调整该资产的所有实例，包括没有语义标签的旧资产。',
+      '用现有 RenderPlan 能力表达协调结果，不新增 palette schema。草与地表渐变、铺装颜色、水体深浅、天空和光色应共同服从区域意图；颜色是受光前基色，不代替照明。',
+      ...(currentPlan ? ['本轮 Refine 只协调颜色：保持当前基底、几何形态、草高与风、波浪、透明度、光照强度、阴影、后处理、雾距离、材质粗糙度与金属度。只改变颜色及必要的色彩分级，不借协调改变时间、天气、HDRI 文件或其他行为。已有规则的 key 必须保持同一 scope 和对象/部件/区域目标；包含 recipe、roughness 或 metalness 的材质规则保持原 strength，以免改变物理参数插值。'] : []),
+      '在 explanation 简述结构证据、色彩关系与未覆盖的证据边界；只返回一次完整 JSON，失败不会进行第二次 AI 修复。'
+    ] : []),
     ...(requireHdriSky && sceneProfile?.sceneMode === 'indoor' ? [
       '当前是室内场景，但仍从现有 HDRI 池选择环境贴图。必须输出 environment.hdri，texture 只能使用 environment.hdri-library 中的文件名。',
       '室内 HDRI 必须设置 backgroundVisibility=hidden、useAsEnvironment=on，environmentIntensity 保持在 0.35-0.7；它只提供克制的材质反射和间接环境，不显示室外天空。'
@@ -269,7 +287,7 @@ function buildSystemPrompt(
     '道路与铺装配色使用 runtime.terrain-materials：compactedEarthColor、gardenStoneColor、asphaltColor、concreteColor、brickPaverColor、cobblestoneColor、gravelColor、mudColor 分别调整对应材料的受光前基色。新方案按场景与建筑协调路面色相明度，不要求砖必为红色或沥青接近黑色；只覆盖需要的材料。roadDetailStrength 为0到1的路面细节强度，roadTextureScale 为0.5到2的实际纹理尺寸倍率，值越大砖石纹理越大；精细铺装可取0.5到1，避免粗大砖缝抢过建筑。Refine 只改用户要求涉及的颜色和细节；道路宽度、布局和材料种类属于地图阶段，不写进渲染方案。',
     '局部美术能力是可重复模块，每个提供唯一 key，省略 scope，params.config 是下述 JSON 对象序列化后的字符串。只使用当前场景 targets 中的真实 objectId、partId、zoneId；只改用户要求的对象和区域，不为填满预算而添加模块。',
     'runtime.color-field 最多4条：{zoneId?:区域ID,target:"ground-and-grass"|"terrain"|"grass",axis:"x"|"z"|"radial",center:[x,z],start:起点,end:终点,feather:边缘过渡米数,strength:0到1,stops:[[0,"#RRGGBB"],[0.4,"#RRGGBB"],[1,"#RRGGBB"]]}。2–4个递增色标，首尾0和1；end必须大于start。草与地面默认共享区域配色，避免无意义彩虹。颜色是受光前基色，不代替照明。',
-    'runtime.grass-style 的 rootColor/tipColor 为显式颜色，覆盖预设。colorStops 是2–4个草叶高度色标数组的JSON字符串，首尾0和1；gradientBias和rootDarken可调。启用用户色卡时在该色卡允许的颜色内选色。',
+    'runtime.grass-style 的 rootColor/tipColor 为显式颜色，覆盖预设。colorStops 是2–4个草叶高度色标数组的JSON字符串，首尾0和1；gradientBias和rootDarken可调。' + (coordinateColors ? '根据结构化源色协调关系，不进行色卡量化。' : '启用用户色卡时在该色卡允许的颜色内选色。'),
     '新生成渲染方案时，按用户场景与 renderHints 主动协调草、地面、建筑和天空的色相及明度；草的 preset 是形态语义，不要求保留绿色。区域渐变用 runtime.color-field，草叶高度渐变用 runtime.grass-style，避免两层着色互相冲突。Refine 时只有用户要求涉及这些色彩才调整，保留已选方案的其他参数。',
     'runtime.local-light 最多8条，覆盖真实灯具对象而不改地图：{objectId,kind:"point"|"spot",color:"#RRGGBB",intensity:0.5到12,range:1到20,offset:[局部x,y,z],targetId?:照向的对象ID,enabled:true}。共享原有点光与聚光预算；发光材质不会自动照亮地面。',
     'runtime.surface-detail 最多16条：{objectId,partId?:具体材质部件ID,color?:"#RRGGBB",roughness?:0到1,metalness?:0到1,transmission?:0到1,colorExpression?:表达式,emissionExpression?:表达式}。transmission只用于已有物理玻璃部件；表达式只用于普通受支持表面，不用于water或特殊ShaderMaterial。',
@@ -317,6 +335,61 @@ function assertRefineBase(currentPlan: RenderPlan | undefined, suggestion: Rende
   if (currentPlan && suggestion.plan.baseSchemeId !== currentPlan.baseSchemeId) {
     throw new Error('refine_base_scheme_changed');
   }
+}
+
+/** Coordinating an existing scheme changes color, not its lighting, motion or material behavior. */
+function preserveCoordinatedRefine(suggestion: RenderSuggestion, currentPlan?: RenderPlan): RenderSuggestion {
+  if (!currentPlan) return suggestion;
+  assertRefineBase(currentPlan, suggestion);
+  const modules = currentPlan.modules.map(module => ({ ...module, params: { ...module.params } }));
+  const targetIdentity = (module: RenderPlan['modules'][number]): string => {
+    const repeatable = RENDER_CAPABILITIES.find(capability => capability.id === module.id)?.repeatable;
+    const target = module.scope?.target ?? (module.id === 'runtime.water-style' ? 'water' : repeatable ? 'material-tag' : 'scene');
+    const tag = target === 'scene' ? undefined : module.scope?.tag ?? (module.id === 'runtime.water-style' ? 'water' : module.id === 'runtime.effect-recipe' ? 'emissive' : repeatable ? 'base' : undefined);
+    const config = ['runtime.surface-detail', 'runtime.local-light', 'runtime.color-field'].includes(module.id)
+      ? JSON.parse(String(module.params.config || '{}')) : {};
+    return JSON.stringify([module.id, target, tag, config.objectId, config.partId, config.zoneId, config.target, config.targetId]);
+  };
+  const identity = (module: RenderPlan['modules'][number]): string => {
+    if (module.key) return `${module.id}:${module.key}`;
+    return targetIdentity(module);
+  };
+  for (const incoming of suggestion.plan.modules) {
+    const keyed = incoming.key ? modules.find(module => module.key === incoming.key) : undefined;
+    if (keyed && targetIdentity(keyed) !== targetIdentity(incoming)) throw new Error(`coordinate_rule_target_changed:${incoming.key}`);
+    const existing = modules.find(module => identity(module) === identity(incoming));
+    const capability = RENDER_CAPABILITIES.find(capability => capability.id === incoming.id);
+    const params: typeof incoming.params = {};
+    for (const [key, value] of Object.entries(incoming.params)) {
+      if (capability?.params[key]?.type === 'color'
+        || incoming.id === 'runtime.color-grade'
+        || incoming.id === 'environment.hdri' && ['tintStrength', 'saturation'].includes(key)
+        || incoming.id === 'runtime.material-theme' && key === 'strength'
+          && existing?.params.recipe === undefined && existing?.params.roughness === undefined && existing?.params.metalness === undefined
+        || incoming.id === 'runtime.grass-style' && ['colorStops', 'paletteVariation', 'rootDarken', 'gradientBias', 'groundTint', 'groundTintStrength'].includes(key)) {
+        params[key] = value;
+      }
+    }
+    if (incoming.id === 'runtime.surface-detail' || incoming.id === 'runtime.local-light' || incoming.id === 'runtime.color-field') {
+      const config = JSON.parse(String(incoming.params.config || '{}')) as Record<string, unknown>;
+      const previous = existing ? JSON.parse(String(existing.params.config || '{}')) as Record<string, unknown> : undefined;
+      if (incoming.id === 'runtime.color-field') params.config = JSON.stringify(previous ? { ...previous, stops: config.stops, strength: config.strength } : config);
+      else if (config.color !== undefined && (previous || incoming.id === 'runtime.surface-detail')) {
+        params.config = JSON.stringify(previous ? { ...previous, color: config.color }
+          : { objectId: config.objectId, ...(config.partId ? { partId: config.partId } : {}), color: config.color });
+      }
+    }
+    if (!Object.keys(params).length) continue;
+    if (existing) Object.assign(existing.params, params);
+    else modules.push({ ...incoming, params });
+  }
+  const plan: RenderPlan = {
+    ...currentPlan, modules,
+    ...(currentPlan.visualDirection && suggestion.plan.visualDirection ? { visualDirection: {
+      ...currentPlan.visualDirection, palette: { ...suggestion.plan.visualDirection.palette }
+    } } : {})
+  };
+  return { ...suggestion, plan, settings: compileRenderPlan(plan) };
 }
 
 function summarizeAiAccess(scheme: RenderScheme): Record<string, Record<string, unknown>> {

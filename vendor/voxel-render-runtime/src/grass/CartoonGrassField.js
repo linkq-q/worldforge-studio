@@ -248,9 +248,6 @@ export class CartoonGrassField {
   _syncUniforms() {
     for (const material of this._materials) {
       syncGrassUniformValues(material.userData.grassUniforms, this._style);
-      if (material.emissive && material.userData.grassUniforms) {
-        material.emissive.set(this._style.tipColor);
-      }
     }
   }
 
@@ -266,7 +263,16 @@ export class CartoonGrassField {
 
 export function createGrassMaterial(style = {}) {
   const normalized = normalizeStyle(style);
-  const material = new THREE.MeshBasicMaterial({
+  // Authored colors are surface albedo, so use the same scene lighting as terrain.
+  // Legacy preset grass retains its unlit appearance.
+  const material = normalized.colorMode === 'explicit' ? new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 1,
+    metalness: 0,
+    side: THREE.DoubleSide,
+    vertexColors: true,
+    fog: true,
+  }) : new THREE.MeshBasicMaterial({
     color: 0xffffff,
     side: THREE.DoubleSide,
     vertexColors: true,
@@ -283,6 +289,7 @@ export function createGrassMaterial(style = {}) {
 attribute vec3 instanceGroundNormal;
 varying float vGrassBladeT;
 varying float vGrassFade;
+varying vec3 vGrassGroundViewNormal;
 uniform float uGrassTime;
 uniform float uGrassWindStrength;
 uniform float uGrassWindSpeed;
@@ -305,12 +312,18 @@ vGrassFade = grassFade;
 transformed.x *= grassFade;
 transformed.y *= grassFade;`)
       .replace('#include <defaultnormal_vertex>', `#include <defaultnormal_vertex>
-vec3 grassGroundViewNormal = normalize(normalMatrix * instanceGroundNormal);
-transformedNormal = normalize(mix(transformedNormal, grassGroundViewNormal, uGrassNormalFlatten));`);
+vGrassGroundViewNormal = normalize(normalMatrix * instanceGroundNormal);
+${normalized.colorMode === 'explicit' ? '' : 'transformedNormal = normalize(mix(transformedNormal, vGrassGroundViewNormal, uGrassNormalFlatten));'}`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 varying float vGrassFade;
-varying float vGrassBladeT;`)
+varying float vGrassBladeT;
+varying vec3 vGrassGroundViewNormal;
+uniform float uGrassNormalFlatten;`)
+      // Blend after Three flips the blade's back face, so the ground normal stays up.
+      .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+normal = normalize(mix(normal, normalize(vGrassGroundViewNormal), uGrassNormalFlatten));
+nonPerturbedNormal = normal;`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 // At the very end of the height fade, discard the collapsed blade instead of
 // leaving a degenerate ground-plane fragment behind.

@@ -50,7 +50,7 @@ function suggestion(name:string):MapAiSuggestion {
 describe('design-session interruption and persistence boundaries',()=>{
   it('allows only one simultaneous create per map and sends one model request',async()=>{
     const {store,map}=await setup();
-    const chat=vi.fn(async()=>JSON.stringify({action:'finish'}));
+    const chat=vi.fn(async()=>JSON.stringify({action:'finish',outcome:'unchanged',summary:'No changes requested'}));
     const manager=new MapDesignSessionManager(store,{chat});
     const results=await Promise.allSettled([
       manager.create(map.id,{prompt:'First request',expectedVersion:map.version}),
@@ -141,7 +141,7 @@ describe('design-session interruption and persistence boundaries',()=>{
       return originalLoad(id);
     });
     const actions=[{action:'execute',code:'good'}, {action:'finish'},
-      {action:'execute',code:'obsolete'}, {action:'finish'}];
+      {action:'execute',code:'obsolete'}, {action:'finish',outcome:'unchanged',summary:'Retain prior draft'}];
     const manager=new MapDesignSessionManager(store,{
       chat:async()=>JSON.stringify(actions.shift()),
       execute:async input=>{
@@ -169,7 +169,7 @@ describe('design-session interruption and persistence boundaries',()=>{
 
   it('can save again after a transient snapshot write failure without losing the prior draft',async()=>{
     const {store,map}=await setup();
-    const actions=[{action:'execute',code:'good'},{action:'finish'},{action:'finish'}];
+    const actions=[{action:'execute',code:'good'},{action:'finish'},{action:'finish',outcome:'unchanged',summary:'Retain the recovered draft'}];
     const manager=new MapDesignSessionManager(store,{
       chat:async()=>JSON.stringify(actions.shift()),execute:async()=>suggestion('Good draft')
     });

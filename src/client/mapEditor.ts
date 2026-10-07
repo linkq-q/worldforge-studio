@@ -1,5 +1,6 @@
 import type { MapCatalog } from '../shared/experiments';
 import * as THREE from 'three';
+import type { SceneAppearancePlan } from '../shared/sceneAppearance';
 import { serverHttpBase } from './serverEndpoint';
 import type { WorldBundle, WorldPlan, WorldWhiteboxObservation } from '../shared/worldPlanning';
 import {
@@ -352,7 +353,7 @@ export function startMapEditor(app: HTMLElement): void {
   void editor.start();
 }
 
-class MapEditor {
+export class MapEditor {
   private readonly state: EditorState = {
     maps: [],
     assets: [],
@@ -472,6 +473,7 @@ class MapEditor {
   } | null = null;
   private objectClipboard: MapObjectClipboard | null = null;
   private renderDraft: RenderScheme | null = null;
+  private plannedRenderDraft = false;
   private selectedPaletteId = '';
   private paletteDraft: ColorPalette | null = null;
   private paletteDraftChanged = false;
@@ -1650,7 +1652,7 @@ class MapEditor {
       this.updateToolbarState();
       return false;
     }
-    if (this.renderDraftChanged) {
+    if (this.renderDraftChanged && !(this.plannedRenderDraft && this.state.stage === 'map')) {
       this.state.message = '请先保存渲染微调，或切换方案放弃预览';
       this.updateToolbarState();
       return false;
@@ -1692,6 +1694,7 @@ class MapEditor {
       this.state.map = normalizeMap(map);
       this.clearMapAiPreview();
       this.state.undoTransaction = null;
+      this.resetRenderDraft();
       this.state.redoTransaction = transaction;
       this.state.selectedObjectId = null;
       this.state.message = `已撤销：${transaction.label}`;
@@ -1715,6 +1718,7 @@ class MapEditor {
       this.state.map = normalizeMap(map);
       this.clearMapAiPreview();
       this.state.undoTransaction = transaction;
+      this.resetRenderDraft();
       this.state.redoTransaction = null;
       this.state.selectedObjectId = null;
       this.state.message = `已重做：${transaction.label}`;
@@ -1835,7 +1839,13 @@ class MapEditor {
     host.hidden = this.state.stage !== 'map' || this.mapPreviewKind === 'draft';
     if (!this.designClient) {
       this.designClient = new MapDesignSessionClient(editorFetch, {
-        changed: () => { this.designConversation?.render(); this.updateToolbarState(); },
+        changed: () => {
+          const session = this.designClient?.session;
+          if (session?.status === 'committed' && session.appearancePlan && this.state.stage === 'map'
+            && session.mapId === this.state.map?.id && session.baseVersion === this.state.map.version
+            && !this.state.dirty && !this.renderDraftChanged) this.createPlannedRenderDraft(session.appearancePlan);
+          this.designConversation?.render(); this.updateToolbarState();
+        },
         blocked: () => this.designConversationBlock(),
         draft: async draft => {
           if (this.state.map?.id !== draft.session.mapId || this.state.dirty || this.state.busy
@@ -1849,6 +1859,7 @@ class MapEditor {
             if (this.state.map?.id === draft.session.mapId) this.renderPanels();
           }).catch(error => {
             if (this.state.map?.id === draft.session.mapId) {
+              this.designClient?.invalidateDraft(draft.session.draftRevision);
               this.state.message = `草稿已保留，但场景显示失败：${error instanceof Error ? error.message : String(error)}`;
               this.updateToolbarState();
             }
@@ -1871,6 +1882,7 @@ class MapEditor {
           this.state.redoTransaction = null;
           this.state.selectedObjectId = null;
           this.resetRenderDraft();
+          if (result.session.appearancePlan) this.createPlannedRenderDraft(result.session.appearancePlan);
           this.resetManualHistory(this.state.map, true);
           this.state.message = '对话草稿已应用，可撤销本次修改；继续发送想法即可接着设计。';
           await this.clearBrowserMapDraft(result.map.id);
@@ -3840,6 +3852,7 @@ class MapEditor {
         this.clearMapAiPreview();
       }
       this.resetRenderDraft();
+      if (suggestion.appearancePlan) this.createPlannedRenderDraft(suggestion.appearancePlan);
       this.resetManualHistory(this.state.map, true);
       await this.reloadLists();
       await this.refreshScene();
@@ -6355,7 +6368,23 @@ class MapEditor {
     this.updateToolbarState();
   }
 
+  private createPlannedRenderDraft(plan: SceneAppearancePlan): void {
+    const base = this.state.renderSchemes.find(scheme => scheme.id === plan.renderPlan.baseSchemeId);
+    if (!base) return;
+    this.renderAiComparisonScheme = this.selectedRenderScheme() ? structuredClone(this.selectedRenderScheme()!) : null;
+    this.renderDraft = {...structuredClone(base), renderPlan: structuredClone(plan.renderPlan),
+      settings: {...base.settings, ...compileRenderPlan(plan.renderPlan)}, description: plan.intent};
+    delete this.renderDraft.paletteId;
+    delete this.renderDraft.paletteSnapshot;
+    this.renderDraftChanged = true;
+    this.renderAiPreview = true;
+    this.renderAiPreviewVisible = true;
+    this.renderAiExplanation = plan.intent;
+    this.plannedRenderDraft = true;
+  }
+
   private resetRenderDraft(): void {
+    this.plannedRenderDraft = false;
     const selected = this.selectedRenderScheme();
     this.renderDraft = selected ? structuredClone(selected) : null;
     this.renderDraftChanged = false;
@@ -6475,6 +6504,7 @@ class MapEditor {
       this.state.renderSchemes.push(renderScheme);
       this.state.map.renderSchemeId = renderScheme.id;
       this.renderDraft = structuredClone(renderScheme);
+      this.plannedRenderDraft = false;
       this.renderDraftChanged = false;
       this.renderAiPreview = false;
       this.renderAiPreviewVisible = true;
@@ -6648,7 +6678,7 @@ class MapEditor {
     this.painting = false;
     if (this.brushPreview) this.brushPreview.visible = false;
     if (this.renderer) this.renderer.domElement.style.cursor = 'default';
-    if (stage === 'render') this.resetRenderDraft();
+    if (stage === 'render' && !this.plannedRenderDraft) this.resetRenderDraft();
     this.applyCurrentRenderScheme();
     this.renderPanels();
   }
@@ -7311,7 +7341,9 @@ class MapEditor {
     const scheme = !this.mapAiPreviewMap && this.state.map?.confirmedAt
       ? this.renderAiPreview && !this.renderAiPreviewVisible
         ? this.renderAiComparisonScheme ?? this.selectedRenderScheme()
-        : this.renderDraft ?? this.selectedRenderScheme()
+        : this.plannedRenderDraft && this.state.stage !== 'render'
+          ? this.selectedRenderScheme()
+          : this.renderDraft ?? this.selectedRenderScheme()
       : null;
     this.renderScene?.applyScheme(scheme);
   }
@@ -7522,11 +7554,12 @@ class MapEditor {
     }
     const save = this.app.querySelector<HTMLButtonElement>('#save-map');
     if (save) {
-      save.disabled = this.state.busy || !this.state.map || this.renderDraftChanged || Boolean(this.mapAiPreviewMap);
+      const renderChangesBlockSave = this.renderDraftChanged && !(this.plannedRenderDraft && mapStage);
+      save.disabled = this.state.busy || !this.state.map || renderChangesBlockSave || Boolean(this.mapAiPreviewMap);
       save.classList.toggle('dirty', this.state.dirty);
       save.title = this.mapAiPreviewMap
         ? '请先应用或放弃 AI 地图预览'
-        : this.renderDraftChanged
+        : renderChangesBlockSave
           ? '请先保存渲染微调'
           : '保存当前地图';
     }

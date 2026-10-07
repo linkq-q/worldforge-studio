@@ -5,6 +5,103 @@ import { normalizeMapDesignSemantics } from '../src/shared/mapDesign';
 import { createRenderSceneProfile, normalizeRenderSceneProfile } from '../src/shared/renderSceneProfile';
 
 describe('render scene profile', () => {
+  it('exposes the actual asset-id batch selector for an untagged referenced asset', () => {
+    const map = createEmptyMap();
+    map.assets = [{ id: 'asset-old-tree', name: 'old tree', prompt: 'tree', modelJson: { nodes: [] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: false }, mode: 'voxel', createdAt: 1, updatedAt: 1 }];
+    map.objects = [createMapObject('tree 1', 'asset-old-tree'), createMapObject('tree 2', 'asset-old-tree')];
+    const asset = normalizeRenderSceneProfile(createRenderSceneProfile(map))!.colorContext!.assets[0];
+    expect(asset).toMatchObject({ assetId: 'asset-old-tree', tags: ['asset-old-tree'], manualObjectCount: 2 });
+    expect(asset.materials).toEqual([]);
+    expect(map.assets[0].tags).toBeUndefined();
+  });
+
+  it('includes world-only asset bindings, authored ecology, water and regional intent', () => {
+    const map = createEmptyMap();
+    map.world = {
+      bundle: { plan: {
+        version: 1, id: 'world', revision: 1, prompt: 'A coastal forest settlement',
+        recipe: { version: 1, seed: 1, size: 1600, constraints: [{ region: 'west', biome: 'ocean' }],
+          biomePatches: [{ id: 'grove', biome: 'forest', region: { kind: 'circle', center: [10, 20], radius: 80 } }],
+          waterBodies: [{ id: 'lake', type: 'lake', region: { kind: 'circle', center: [40, 20], radius: 10 }, depth: 2, levels: [0] }] },
+        ecology: [{ id: 'grove-oaks', kind: 'broadleaf', biome: 'forest', density: 0.6, spacing: 18, maxSlope: 25, scale: [0.8, 1.2] }],
+        featureGraph: { regions: [{ id: 'harbor', name: 'Harbor', kind: 'working', center: [20, 30], radius: 100 }], paths: [], anchors: [], relations: [] },
+        towns: [], roads: [{ id: 'harbor-road', name: 'Harbor road', points: [[0, 0], [10, 0]], curve: 'polyline', closed: false, width: 4, tags: ['working-waterfront'] }]
+      }, patches: [] },
+      assets: [{ key: 'oak', assetId: 'oak', role: 'tree', ecologyKind: 'broadleaf', ecologyRuleId: 'grove-oaks' }]
+    };
+    map.assets = [{ id: 'oak', name: 'oak', prompt: 'oak', tags: ['tree'], modelJson: {
+      nodes: [{ id: 'leaves', tags: [{ tag: 'foliage', value: 'leaf' }], mesh: { material: { color: '#df284a' } } }]
+    }, colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 0, fallbackUsed: false }, mode: 'voxel', createdAt: 1, updatedAt: 1 }];
+    const profile = normalizeRenderSceneProfile(createRenderSceneProfile(map))!;
+    expect(profile.colorContext?.world).toMatchObject({
+      intent: 'A coastal forest settlement',
+      regions: [{ id: 'harbor', kind: 'working', name: 'Harbor', center: [20, 30], radius: 100 }],
+      biomes: [{ id: 'west', biome: 'ocean' }, { id: 'grove', biome: 'forest' }],
+      ecology: [{ id: 'grove-oaks', kind: 'broadleaf', biome: 'forest', density: 0.6 }],
+      waterBodies: [{ id: 'lake', type: 'lake' }],
+      paths: [{ id: 'harbor-road', tags: ['working-waterfront'] }]
+    });
+    expect(profile.colorContext?.assets).toEqual([expect.objectContaining({
+      assetId: 'oak', tags: ['oak', 'tree'], manualObjectCount: 0, worldBindingCount: 1,
+      roles: ['tree'], ecologyKinds: ['broadleaf'], materials: [{ partId: 'leaves', color: '#df284a', tags: ['foliage:leaf'], count: 1 }]
+    })]);
+    expect(profile.content).toMatchObject({ hasWater: true });
+    expect(profile.targets?.objects).toEqual([]);
+  });
+
+  it('keeps source colors with effective material tags and excludes geometry and image payloads', () => {
+    const map = createEmptyMap();
+    const asset: MapAsset = { id: 'building', name: 'violet building', prompt: 'building', tags: ['building'], modelJson: {
+      image: 'data:image/png;base64,PRIVATE_IMAGE',
+      nodes: [
+        { id: 'group', tags: [{ tag: 'base', value: 'wood', variant: 'bark' }, { tag: 'emissive', value: 1 }] },
+        { id: 'wall', parent: 'group', mesh: { material: { color: '#b38844' }, vertices: ['PRIVATE_GEOMETRY'] } },
+        { id: 'leaf', parent: 'group', tags: [{ tag: 'foliage', value: 'leaf' }], mesh: { color: 0xcc2255 } },
+        { id: 'roof', mesh: { material: { color: [0.2, 0.4, 0.6] } } }
+      ]
+    }, colliderPlan: { version: 1, boxes: [], sourceMeshCount: 3, candidateCount: 0, fallbackUsed: false }, mode: 'voxel', createdAt: 1, updatedAt: 1 };
+    map.assets = [asset]; map.objects = [createMapObject('building', asset.id)];
+    const before = JSON.stringify(map);
+    const profile = normalizeRenderSceneProfile(createRenderSceneProfile(map))!;
+    expect(profile.colorContext?.assets[0].materials).toEqual([
+      { partId: 'wall', color: '#b38844', tags: ['base:wood', 'variant:bark'], count: 1 },
+      { partId: 'leaf', color: '#cc2255', tags: ['foliage:leaf'], count: 1 },
+      { partId: 'roof', color: '#336699', tags: [], count: 1 }
+    ]);
+    expect(JSON.stringify(profile)).not.toMatch(/PRIVATE_|modelJson|vertices|base64/);
+    expect(profile.targets?.objects[0].parts).toContainEqual({ id: 'roof', tags: [] });
+    expect(JSON.stringify(map)).toBe(before);
+  });
+
+  it('bounds representative asset colors and aggregates repeated world bindings', () => {
+    const map = createEmptyMap();
+    map.world = { bundle: { plan: { version: 1, id: 'world', revision: 1, prompt: 'forest',
+      recipe: { version: 1, seed: 1, size: 1600, constraints: [] }, towns: [], roads: [], ecology: [] }, patches: [] },
+      assets: Array.from({ length: 64 }, (_, i) => ({ key: `oak-${i}`, assetId: 'oak', role: 'tree' })) };
+    map.assets = [{ id: 'oak', name: 'oak', prompt: 'oak', modelJson: { nodes: Array.from({ length: 100 }, (_, i) => ({
+      id: `part-${i}`, mesh: { material: { color: `#${i.toString(16).padStart(6, '0')}` } }
+    })) }, colliderPlan: { version: 1, boxes: [], sourceMeshCount: 100, candidateCount: 0, fallbackUsed: false }, mode: 'voxel', createdAt: 1, updatedAt: 1 }];
+    const context = normalizeRenderSceneProfile(createRenderSceneProfile(map))!.colorContext!;
+    expect(context.assets).toHaveLength(1);
+    expect(context.assets[0]).toMatchObject({ worldBindingCount: 64, sourceMaterialCount: 100 });
+    expect(context.assets[0].materials).toHaveLength(16);
+    expect(JSON.stringify(context).length).toBeLessThan(4000);
+  });
+
+  it('normalizes untrusted color evidence to bounded selected fields', () => {
+    const source = { sceneMode: 'outdoor', colorContext: { intent: 'x'.repeat(1200), modelJson: { image: 'PRIVATE_IMAGE' },
+      assets: Array.from({ length: 100 }, () => ({ assetId: 'asset', roles: ['tree'], manualObjectCount: Infinity, worldBindingCount: -5,
+        tags: ['tree'], materials: Array.from({ length: 100 }, () => ({ partId: 'part', color: '#aa11ff', tags: ['base:wood'], count: 5, image: 'PRIVATE_IMAGE' })) })) } };
+    const context = normalizeRenderSceneProfile(source)!.colorContext!;
+    expect(context.intent).toHaveLength(500);
+    expect(context.assets).toHaveLength(32);
+    expect(context.assets[0]).toMatchObject({ roles: ['tree'], manualObjectCount: 0, worldBindingCount: 0 });
+    expect(context.assets[0].materials).toHaveLength(16);
+    expect(context.assets[0].materials[0]).toEqual({ partId: 'part', color: '#aa11ff', tags: ['base:wood'], count: 5 });
+    expect(JSON.stringify(context)).not.toMatch(/PRIVATE_|modelJson|image/);
+  });
+
   it('lets the render planner distinguish paving recipes without embedding finish colors in map data', () => {
     const map = createEmptyMap();
     map.visualSemantics.zones = [

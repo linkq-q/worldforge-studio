@@ -71,7 +71,7 @@ describe('ongoing map design sessions', () => {
         if (++calls === 1) return new Promise<string>((_resolve, reject) => {
           options?.signal?.addEventListener('abort', () => { interrupted = true; reject(new Error('aborted')); }, { once: true });
         });
-        return JSON.stringify({ action: 'finish', summary: 'Keep the mountain and move only the shops' });
+        return JSON.stringify({ action: 'finish', outcome: 'unchanged', summary: 'Keep the mountain and move only the shops' });
       }
     });
     const session = await manager.create(map.id, { prompt: 'Create a mountain village', expectedVersion: map.version });
@@ -144,7 +144,7 @@ describe('ongoing map design sessions', () => {
     expect((await manager.draft(session.id)).map.name).toBe('Draft');
   });
 
-  it('stops at a visible step budget and exposes malformed model output without hidden retries', async () => {
+  it('stops at a visible step budget and bounds explicit same-conversation format corrections', async () => {
     const { store, map } = await setup();
     let calls = 0;
     const manager = new MapDesignSessionManager(store, { maxSteps: 2,
@@ -158,6 +158,6 @@ describe('ongoing map design sessions', () => {
     const failed = await invalid.create(map.id, { prompt: 'Observe again', expectedVersion: map.version });
     await invalid.settled(failed.id);
     expect((await invalid.get(failed.id)).status).toBe('failed');
-    expect((await invalid.get(failed.id)).modelCalls).toBe(1);
+    expect((await invalid.get(failed.id)).modelCalls).toBe(3);
   });
 });

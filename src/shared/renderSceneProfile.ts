@@ -3,6 +3,36 @@ import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapScen
 import { normalizeMapDesignSemantics, type MapDesignGroup, type MapExperienceMode, type MapFocusKind, type MapRevealMode, type MapRelationKind } from './mapDesign';
 import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from './mapAssetMetadata';
 import { TERRAIN_SURFACE_RECIPES, type TerrainSurfaceRecipe } from './visualDirection';
+import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
+import { resolveModelMaterialTags } from '@voxel-studio/render-runtime/effects';
+import { WORLD_BIOMES, type WorldTerrainRegion } from './worldTerrain';
+
+/** Source facts for text-only color reasoning; colors remain authored, never remapped. */
+export interface SceneColorContext {
+  intent: string;
+  surfaces: Array<{ id: string; material: string; tags: string[] }>;
+  world?: {
+    intent: string;
+    themes: string[];
+    regions: Array<{ id: string; kind: string; name: string; center: [number, number]; radius: number }>;
+    biomes: Array<{ id: string; biome: string; region?: WorldTerrainRegion }>;
+    ecology: Array<{ id: string; kind: string; biome: string; density: number; region?: WorldTerrainRegion }>;
+    waterBodies: Array<{ id: string; type: string; region?: WorldTerrainRegion }>;
+    paths: Array<{ id: string; tags: string[] }>;
+  };
+  assets: Array<{
+    assetId: string;
+    name: string;
+    tags: string[];
+    manualObjectCount: number;
+    /** Authored binding references, not a count of procedurally rendered instances. */
+    worldBindingCount: number;
+    roles: string[];
+    ecologyKinds: string[];
+    sourceMaterialCount: number;
+    materials: Array<{ partId: string; color: string; tags: string[]; count: number }>;
+  }>;
+}
 
 /** Map-authored composition cues, not a RenderPlan or a second styling authority. */
 export interface SceneArtBrief {
@@ -16,6 +46,7 @@ export interface SceneArtBrief {
 }
 
 export interface RenderSceneProfile {
+  colorContext?: SceneColorContext;
   sceneArtBrief?: SceneArtBrief;
   targets?: {
     objects: Array<{ id: string; name: string; position: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number]; parentId?: string; groupId?: string; tags?: string[]; light?: MapAssetLight; parts: Array<{ id: string; tags: string[] }> }>;
@@ -53,7 +84,9 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
   const referencedIds = new Set(map.objects
     .filter((object) => object.visible !== false && object.assetId)
     .map((object) => object.assetId!));
+  for (const binding of map.world?.assets ?? []) referencedIds.add(binding.assetId);
   const assets = (map.assets ?? []).filter((asset) => referencedIds.has(asset.id));
+  const evidence = new Map(assets.map(asset => [asset.id, assetColorEvidence(asset)]));
   const tags = new Set(assets.flatMap((asset) => asset.tags ?? []).map((tag) => tag.toLowerCase()));
   const direction = map.interiorArtDirection;
   const design = map.designSemantics;
@@ -94,11 +127,11 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
   } : undefined;
   return {
     sceneMode: map.sceneMode,
+    colorContext: createSceneColorContext(map, assets, evidence),
     ...(sceneArtBrief ? { sceneArtBrief } : {}),
     targets: {
       objects: renderObjects.map(({ object, asset, light, world }) => {
-        const nodes = (asset?.modelJson as { nodes?: Array<{ id?: string; tags?: Array<{ tag?: string; value?: unknown }> }> })?.nodes;
-        return { id: object.id, name: object.name, position: [...world.position], rotation: [...world.rotation], scale: [...world.scale], ...(object.parentId ? { parentId: object.parentId } : {}), ...(object.designGroupId ? { groupId: object.designGroupId } : {}), tags: asset?.tags?.slice(0, 16) ?? [], ...(light ? { light } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 32).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
+        return { id: object.id, name: object.name, position: [...world.position], rotation: [...world.rotation], scale: [...world.scale], ...(object.parentId ? { parentId: object.parentId } : {}), ...(object.designGroupId ? { groupId: object.designGroupId } : {}), tags: asset?.tags?.slice(0, 16) ?? [], ...(light ? { light } : {}), parts: asset ? evidence.get(asset.id)!.parts.slice(0, 32) : [] };
       }),
       zones: map.visualSemantics.zones.slice(0, 64).map(zone => ({ id: zone.id, tags: [...zone.tags], center: [...zone.center], radius: zone.radius, ...(zone.material ? { material: zone.material } : {}) })),
       grassLayers: map.grassLayers.slice(0, 8).map(layer => ({ id: layer.id, preset: layer.preset }))
@@ -126,7 +159,10 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
       coverageRatio: round(coverage.ratio)
     },
     content: {
-      hasWater: map.waterBodies.length > 0 || tags.has('water'),
+      hasWater: map.waterBodies.length > 0 || tags.has('water') || Boolean(map.world && (
+        map.world.bundle.plan.recipe.waterBodies?.length
+        || map.world.bundle.plan.recipe.constraints.some(constraint => constraint.biome === 'ocean')
+        || map.world.bundle.plan.recipe.biomePatches?.some(patch => patch.biome === 'ocean'))),
       hasGrass: map.grassLayers.length > 0,
       hasEmissive: assets.some((asset) => Boolean(asset.light) || assetHasEmission(asset))
     }
@@ -144,6 +180,7 @@ export function normalizeRenderSceneProfile(value: unknown): RenderSceneProfile 
   const brief = input.sceneArtBrief && typeof input.sceneArtBrief === 'object' ? input.sceneArtBrief : undefined;
   return {
     sceneMode: input.sceneMode,
+    ...(input.colorContext && typeof input.colorContext === 'object' ? { colorContext: normalizeSceneColorContext(input.colorContext) } : {}),
     ...(brief ? { sceneArtBrief: normalizeSceneArtBrief(brief) } : {}),
     ...(input.targets ? { targets: normalizeRenderTargets(input.targets) } : {}),
     size: vec3(input.size, [10, 3, 8]),
@@ -216,6 +253,119 @@ function normalizeRenderTargets(input: NonNullable<RenderSceneProfile['targets']
     zones: list(input.zones, 64).map(zone => ({ id: text(zone.id, 120), tags: texts(zone.tags, 8, 40), center: [coordinate(zone.center, 0), coordinate(zone.center, 1)], radius: number(zone.radius, 0, 10000), ...(TERRAIN_SURFACE_RECIPES.includes(zone.material as TerrainSurfaceRecipe) ? { material: zone.material as TerrainSurfaceRecipe } : {}) })),
     grassLayers: list(input.grassLayers, 8).map(layer => ({ id: text(layer.id, 120), preset: text(layer.preset, 40) }))
   };
+}
+
+function createSceneColorContext(
+  map: EditableMap,
+  assets: MapAsset[],
+  evidence: Map<string, ReturnType<typeof assetColorEvidence>>
+): SceneColorContext {
+  const plan = map.world?.bundle.plan;
+  return normalizeSceneColorContext({
+    intent: map.designSemantics.intent,
+    surfaces: map.visualSemantics.zones.filter(zone => zone.material).map(zone => ({ id: zone.id, material: zone.material!, tags: zone.tags })),
+    ...(plan ? { world: {
+      intent: plan.prompt,
+      themes: [plan.concept?.premise, plan.concept?.experience, ...(plan.concept?.themes ?? [])].filter((value): value is string => Boolean(value)),
+      regions: plan.featureGraph?.regions ?? plan.towns.map(town => ({ id: town.id, kind: 'settlement', name: town.name, center: town.center, radius: town.radius })),
+      biomes: [...plan.recipe.constraints.map(constraint => ({ id: constraint.region, biome: constraint.biome })), ...(plan.recipe.biomePatches ?? [])],
+      ecology: plan.ecology,
+      waterBodies: [...(plan.recipe.waterBodies ?? []), ...map.waterBodies.map(water => ({ id: water.id, type: water.type }))],
+      paths: [...plan.roads, ...(map.world?.bundle.patches.flatMap(patch => patch.streets) ?? [])]
+    } } : {}),
+    assets: assets.slice(0, 32).map(asset => {
+      const bindings = (map.world?.assets ?? []).filter(binding => binding.assetId === asset.id);
+      const { materials, sourceMaterialCount } = evidence.get(asset.id)!;
+      return {
+        assetId: asset.id, name: asset.name, tags: [...new Set([asset.id, ...(asset.tags ?? [])])],
+        manualObjectCount: map.objects.filter(object => object.visible !== false && object.assetId === asset.id).length,
+        worldBindingCount: bindings.length,
+        roles: [...new Set(bindings.map(binding => binding.role))],
+        ecologyKinds: [...new Set(bindings.flatMap(binding => binding.ecologyKind ? [binding.ecologyKind] : []))],
+        sourceMaterialCount, materials
+      };
+    })
+  });
+}
+
+function assetColorEvidence(asset: MapAsset) {
+  const model = record(asset.modelJson);
+  const nodes = Array.isArray(model.nodes) ? model.nodes.filter(node => record(node).id && typeof record(node).id === 'string').map(record) : [];
+  // Resolve only semantic fields. Geometry, textures and image payloads never enter the profile.
+  const resolved = resolveModelMaterialTags({ parts: nodes.map(node => ({ id: node.id, parent: node.parent, tags: node.tags })) }, materialTagVocabulary);
+  const parts = nodes.map(node => ({ id: String(node.id), tags: (resolved.byPartId.get(String(node.id)) ?? []).flatMap(tag => [
+    `${tag.tag}:${tag.value}`, ...(tag.variant ? [`variant:${tag.variant}`] : [])
+  ]) }));
+  const materials: SceneColorContext['assets'][number]['materials'] = [];
+  let sourceMaterialCount = 0;
+  const samples = new Map<string, typeof materials[number]>();
+  nodes.forEach((node, index) => {
+    const mesh = record(node.mesh), material = record(mesh.material ?? node.material);
+    const color = sourceColor(material.color ?? mesh.color ?? node.color);
+    if (!color) return;
+    sourceMaterialCount++;
+    const tags = parts[index].tags;
+    const key = JSON.stringify([color, tags]);
+    const previous = samples.get(key);
+    if (previous) previous.count++;
+    else if (materials.length < 16) {
+      const entry = { partId: String(node.id), color, tags, count: 1 };
+      materials.push(entry); samples.set(key, entry);
+    }
+  });
+  return { parts: parts.filter((part, index) => part.tags.length || nodes[index].mesh), materials, sourceMaterialCount };
+}
+
+function sourceColor(value: unknown): string | undefined {
+  if (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
+  let rgb: number | undefined;
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 0xffffff) rgb = Math.round(value);
+  if (Array.isArray(value) && value.length >= 3 && value.slice(0, 3).every(channel => typeof channel === 'number' && Number.isFinite(channel) && channel >= 0 && channel <= 1)) {
+    const [r, g, b] = value.slice(0, 3).map(channel => Math.round(channel * 255));
+    rgb = r * 65536 + g * 256 + b;
+  }
+  return rgb === undefined ? undefined : `#${rgb.toString(16).padStart(6, '0')}`;
+}
+
+function normalizeSceneColorContext(value: unknown): SceneColorContext {
+  const input = record(value), world = input.world && typeof input.world === 'object' ? record(input.world) : undefined;
+  const region = (value: unknown): WorldTerrainRegion | undefined => {
+    const input = record(value);
+    const point = (value: unknown): [number, number] => [number(Array.isArray(value) ? value[0] : 0, -256000, 256000), number(Array.isArray(value) ? value[1] : 0, -256000, 256000)];
+    if (input.kind === 'circle') return { kind: 'circle', center: point(input.center), radius: number(input.radius, 0, 256000) };
+    if (input.kind === 'path' && Array.isArray(input.points)) return { kind: 'path', points: input.points.slice(0, 8).map(point), width: number(input.width, 0, 1000) };
+    return undefined;
+  };
+  const withRegion = (value: unknown) => { const normalized = region(value); return normalized ? { region: normalized } : {}; };
+  return {
+    intent: text(input.intent, 500),
+    surfaces: records(input.surfaces, 64).map(surface => ({ id: text(surface.id, 120), material: text(surface.material, 40), tags: texts(surface.tags, 8, 40) })),
+    ...(world ? { world: {
+      intent: text(world.intent, 500), themes: texts(world.themes, 8, 160),
+      regions: records(world.regions, 16).map(region => ({ id: text(region.id, 120), kind: text(region.kind, 40), name: text(region.name, 80),
+        center: [number(Array.isArray(region.center) ? region.center[0] : 0, -256000, 256000), number(Array.isArray(region.center) ? region.center[1] : 0, -256000, 256000)] as [number, number], radius: number(region.radius, 0, 256000) })),
+      biomes: records(world.biomes, 24).filter(biome => WORLD_BIOMES.includes(biome.biome as typeof WORLD_BIOMES[number])).map(biome => ({ id: text(biome.id, 120), biome: text(biome.biome, 40), ...withRegion(biome.region) })),
+      ecology: records(world.ecology, 8).map(rule => ({ id: text(rule.id, 120), kind: text(rule.kind, 40), biome: text(rule.biome, 40), density: number(rule.density, 0, 1), ...withRegion(rule.region) })),
+      waterBodies: records(world.waterBodies, 16).filter(water => ['ocean', 'lake', 'river'].includes(String(water.type))).map(water => ({ id: text(water.id, 120), type: text(water.type, 40), ...withRegion(water.region) })),
+      paths: records(world.paths, 24).map(path => ({ id: text(path.id, 120), tags: texts(path.tags, 8, 40) }))
+    } } : {}),
+    assets: records(input.assets, 32).map(asset => ({
+      assetId: text(asset.assetId, 120), name: text(asset.name, 80), tags: texts(asset.tags, 16, 48),
+      manualObjectCount: integer(asset.manualObjectCount, 0, 1000000), worldBindingCount: integer(asset.worldBindingCount, 0, 64),
+      roles: texts(asset.roles, 8, 40), ecologyKinds: texts(asset.ecologyKinds, 4, 40), sourceMaterialCount: integer(asset.sourceMaterialCount, 0, 1000000),
+      materials: records(asset.materials, 16).filter(material => colors([material.color], 1).length).map(material => ({
+        partId: text(material.partId, 120), color: String(material.color).toLowerCase(), tags: texts(material.tags, 8, 80), count: integer(material.count, 1, 1000000)
+      }))
+    }))
+  };
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function records(value: unknown, limit: number): Array<Record<string, unknown>> {
+  return Array.isArray(value) ? value.filter(value => value && typeof value === 'object' && !Array.isArray(value)).slice(0, limit).map(record) : [];
 }
 
 function assetHasEmission(asset: MapAsset): boolean {

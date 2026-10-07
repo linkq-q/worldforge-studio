@@ -11,6 +11,8 @@ export const TERRAIN_SURFACE_RECIPES = [
   'concrete', 'brick-paver', 'cobblestone', 'gravel', 'mud'
 ] as const;
 export const MAX_VISUAL_ZONES = 96;
+// Visual zones use world metres too; keep the same extent as supported 256 km worlds.
+const MAX_VISUAL_COORDINATE = 128_000;
 
 export type ContrastMode = typeof CONTRAST_MODES[number];
 export type VisualTimeOfDay = typeof VISUAL_TIMES_OF_DAY[number];
@@ -247,8 +249,8 @@ function normalizeVisualZone(value: unknown): SceneVisualZone | null {
   return {
     id,
     tags,
-    center: pairValue(raw.center, [0, 0]),
-    radius: numberValue(raw.radius, 8, 0.5, 512),
+    center: pairValue(raw.center, [0, 0], MAX_VISUAL_COORDINATE),
+    radius: numberValue(raw.radius, 8, 0.5, MAX_VISUAL_COORDINATE * 2),
     intensity: numberValue(raw.intensity, 1, 0, 1),
     ...(material && material !== 'default' ? { material } : {}),
     ...(region ? { region } : {}),
@@ -261,9 +263,9 @@ function normalizeVisualZoneRegion(value: unknown): VisualZoneRegion | null {
   if (raw.kind === 'circle') {
     return {
       kind: 'circle',
-      x: numberValue(raw.x, 0, -512, 512),
-      z: numberValue(raw.z, 0, -512, 512),
-      radius: numberValue(raw.radius, 8, 0.3, 1024)
+      x: numberValue(raw.x, 0, -MAX_VISUAL_COORDINATE, MAX_VISUAL_COORDINATE),
+      z: numberValue(raw.z, 0, -MAX_VISUAL_COORDINATE, MAX_VISUAL_COORDINATE),
+      radius: numberValue(raw.radius, 8, 0.3, MAX_VISUAL_COORDINATE * 2)
     };
   }
   if (raw.kind !== 'path' && raw.kind !== 'polygon') return null;
@@ -273,7 +275,7 @@ function normalizeVisualZoneRegion(value: unknown): VisualZoneRegion | null {
       Array.isArray(point) && point.length >= 2
       && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1]))
     ))
-      .map((point) => pairValue(point, [0, 0]))
+      .map((point) => pairValue(point, [0, 0], MAX_VISUAL_COORDINATE))
     : [];
   if (points.length < minimumPoints) return null;
   return raw.kind === 'path'
@@ -358,9 +360,9 @@ function numberValue(value: unknown, fallback: number, min: number, max: number)
   return Math.min(max, Math.max(min, Number.isFinite(parsed) ? parsed : fallback));
 }
 
-function pairValue(value: unknown, fallback: [number, number]): [number, number] {
+function pairValue(value: unknown, fallback: [number, number], extent = 512): [number, number] {
   if (!Array.isArray(value) || value.length < 2) return [...fallback];
-  return [numberValue(value[0], fallback[0], -512, 512), numberValue(value[1], fallback[1], -512, 512)];
+  return [numberValue(value[0], fallback[0], -extent, extent), numberValue(value[1], fallback[1], -extent, extent)];
 }
 
 function unitDirection(value: unknown, fallback: [number, number]): [number, number] {

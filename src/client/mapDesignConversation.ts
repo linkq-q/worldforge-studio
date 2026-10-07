@@ -1,6 +1,7 @@
 import type { MapDesignDraft, MapDesignSessionOptions, MapDesignSessionView } from '../shared/mapDesignSession';
 import type { EditableMap } from '../shared/map';
 import type { MapTransactionSummary } from '../shared/mapOperations';
+import type { SceneAppearancePlan } from '../shared/sceneAppearance';
 
 type Request = <T>(path: string, init?: RequestInit) => Promise<T>;
 type CommitResult = { map: EditableMap; transaction: MapTransactionSummary; session: MapDesignSessionView };
@@ -100,6 +101,11 @@ export class MapDesignSessionClient {
     const context = this.context;
     if (!context || !message.trim() || this.pending || this.loading || this.blocked) return false;
     const session = this.session;
+    if (!session && (options.assetIds?.length ?? 0) > 64) {
+      this.error = `当前资产库有 ${options.assetIds!.length} 个资产，超过单次设计会话的 64 个限制。请选择较小的资产库，或关闭复用资产后创建对话；不会自动截断资产列表。`;
+      this.hooks.changed();
+      return false;
+    }
     return this.action(async epoch => {
       const { session: next } = session
         ? await this.request<{ session: MapDesignSessionView }>(this.path(session.id, '/messages'), post({ message }))
@@ -161,6 +167,13 @@ export class MapDesignSessionClient {
     } catch (error) {
       const nextError = `连接中断，正在重连。${errorText(error)}`;
       if (epoch === this.epoch && this.error !== nextError) { this.error = nextError; this.hooks.changed(); }
+    }
+  }
+
+  /** The renderer can fail after accepting a draft; retry its cached geometry on the next poll. */
+  invalidateDraft(draftRevision: number): void {
+    if (this.draft?.session.draftRevision === draftRevision && this.displayedRevision === draftRevision) {
+      this.displayedRevision = -1;
     }
   }
 
@@ -239,6 +252,13 @@ export function renderDesignMessages(session: MapDesignSessionView | null): stri
     : `<article class="design-message design-message-${message.role}"><b>${message.role === 'user' ? '你' : 'WorldForge'}${message.interrupted ? ' · 已中断' : ''}</b><div>${escape(message.content)}</div></article>`).join('');
 }
 
+export function renderDesignAppearance(plan?: SceneAppearancePlan): string {
+  if (!plan) return '';
+  return `<strong>场景配色</strong><p>${escape(plan.intent)}</p><ul>${plan.materials.map(material =>
+    `<li><i aria-hidden="true" style="background:${/^#[\da-f]{6}$/i.test(material.color) ? material.color : 'transparent'}"></i><span>${escape(material.role)} <code>${escape(material.color)}</code>${material.notes ? ` · ${escape(material.notes)}` : ''}</span></li>`
+  ).join('')}</ul><small>新生成资产继承这些源色；复用资产保留原色。地表与环境配色在确认地图后进入渲染草稿。</small>`;
+}
+
 /** Mount once. Only messages and status update, so typing and IME composition survive polling. */
 export class MapDesignConversation {
   private mapId = '';
@@ -253,6 +273,7 @@ export class MapDesignConversation {
       <header><div><strong>一起设计地图</strong><p>边讨论，边查看场景变化</p></div><div><span data-design-status></span><button type="button" class="secondary small" data-design-new hidden>新对话</button></div></header>
       <div class="design-messages" data-design-messages role="log" aria-label="对话与执行记录"></div>
       <div class="design-progress" data-design-progress role="status"></div>
+      <aside class="design-appearance" data-design-appearance hidden></aside>
       <p class="design-error" data-design-error role="alert" hidden></p>
       <div class="design-preview-actions" data-design-preview hidden>
         <button type="button" class="secondary" data-design-before>修改前</button>
@@ -294,6 +315,10 @@ export class MapDesignConversation {
       this.input.value = this.drafts.get(mapId) ?? '';
     }
     const session = this.client.session;
+    const appearance = this.host.querySelector<HTMLElement>('[data-design-appearance]')!;
+    const appearanceHtml = renderDesignAppearance(session?.appearancePlan);
+    if (appearance.innerHTML !== appearanceHtml) appearance.innerHTML = appearanceHtml;
+    appearance.hidden = !appearanceHtml;
     const key = `${session?.id}:${JSON.stringify(session?.messages ?? [])}`;
     if (key !== this.messageKey) {
       this.messageKey = key;
@@ -313,7 +338,8 @@ export class MapDesignConversation {
     this.host.querySelector('[data-design-status]')!.textContent = loading ? '恢复对话…'
       : ({ running: '正在制作', paused: '已暂停', failed: '需要处理', committed: '已应用', idle: '等待你的想法' }[status ?? 'idle']);
     const progress = this.host.querySelector('[data-design-progress]')!;
-    const progressText = session?.progress ? [session.progress.label, session.progress.detail].filter(Boolean).join(' · ') : '';
+    const progressText = session?.progress ? [session.progress.label, session.progress.detail,
+      session.paidRequestLimit !== undefined ? `付费请求 ${session.paidRequests ?? 0}/${session.paidRequestLimit}` : null].filter(Boolean).join(' · ') : '';
     if (progress.textContent !== progressText) progress.textContent = progressText;
     const issue = this.host.querySelector<HTMLElement>('[data-design-error]')!;
     const issueText = blocked || error || session?.error || '';

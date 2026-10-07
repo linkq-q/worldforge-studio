@@ -17,7 +17,10 @@ export interface TerrainProgramField {
   source: string;
   resolution: number;
   heights: number[];
-  observations: Array<{label: string; min: number; max: number; samples: number[]}>;
+  /** Absent in legacy fields; never infer a revision from an inspection label. */
+  terrainRevision?: number;
+  observations: Array<{label: string; min: number; max: number; samples: number[];
+    points?: Array<[number, number]>; terrainRevision?: number}>;
 }
 
 export function validateTerrainProgramField(value: TerrainProgramField): TerrainProgramField {
@@ -27,14 +30,21 @@ export function validateTerrainProgramField(value: TerrainProgramField): Terrain
     || !Array.isArray(value.heights)
     || value.heights.length !== value.resolution ** 2
     || !value.heights.every(h => Number.isFinite(h) && h >= -500 && h <= 500)
+    || value.terrainRevision !== undefined && (!Number.isSafeInteger(value.terrainRevision) || value.terrainRevision < 0)
     || !Array.isArray(value.observations) || value.observations.length > 32
     || !value.observations.every(o => o && typeof o.label === 'string' && o.label.length <= 120
       && Number.isFinite(o.min) && Number.isFinite(o.max) && Array.isArray(o.samples)
-      && o.samples.length <= 256 && o.samples.every(Number.isFinite))) {
+      && o.samples.length <= 256 && o.samples.every(Number.isFinite)
+      && (o.points === undefined || Array.isArray(o.points) && o.points.length === o.samples.length
+        && o.points.every(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite)))
+      && (o.terrainRevision === undefined || Number.isSafeInteger(o.terrainRevision) && o.terrainRevision >= 0
+        && (value.terrainRevision === undefined || o.terrainRevision <= value.terrainRevision)))) {
     throw new Error('invalid_terrain_program_field');
   }
   return {version: 1, source: value.source, resolution: value.resolution, heights: [...value.heights],
-    observations: value.observations.map(o => ({...o, samples: [...o.samples]}))};
+    ...(value.terrainRevision === undefined ? {} : {terrainRevision: value.terrainRevision}),
+    observations: value.observations.map(o => ({...o, samples: [...o.samples],
+      ...(o.points === undefined ? {} : {points: o.points.map(point => [...point] as [number, number])})}))};
 }
 
 export function sampleTerrainProgramField(field: TerrainProgramField, size: number, x: number, z: number): number {

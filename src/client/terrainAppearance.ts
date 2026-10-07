@@ -2,6 +2,27 @@ import * as THREE from 'three';
 import { sampleTerrainHeight, type EditableMap } from '../shared/map';
 import { terrainSlopeDegrees } from '../shared/mapTerrainAnalysis';
 import { visualZoneWeight, type VisualZoneTag } from '../shared/visualDirection';
+import {DEFAULT_RUNTIME_ROAD_COLORS, type RuntimeGrassStyle, type RuntimeTerrainMaterialStyle} from '../shared/renderPlan';
+
+const roadColorKeys = {'compacted-earth':'compactedEarthColor','garden-stone':'gardenStoneColor',asphalt:'asphaltColor',concrete:'concreteColor','brick-paver':'brickPaverColor',cobblestone:'cobblestoneColor',gravel:'gravelColor',mud:'mudColor'} as const;
+export function terrainRecipeTextureColor(recipe: string, style: RuntimeTerrainMaterialStyle): string | undefined {
+  if (!(recipe in roadColorKeys)) return undefined;
+  const key = recipe as keyof typeof roadColorKeys;
+  if (style.explicitRoadColors?.includes(key)) return '#ffffff';
+  return style[roadColorKeys[key]] ?? DEFAULT_RUNTIME_ROAD_COLORS[key];
+}
+
+export function applyGrassGroundColor(base: THREE.Color, style: RuntimeGrassStyle, density: number, coverage: number,
+  groundColor = new THREE.Color(style.groundColor).lerp(new THREE.Color(style.rootColor), style.groundColorExplicit ? 0 : 0.58)): THREE.Color {
+  if (style.groundColorExplicit) {
+    // Sparse blades still belong to the planned ground material. Only the
+    // near-zero edge and semantic exclusions transition back to the terrain.
+    const edge = clamp01(density / 0.05);
+    return base.lerp(groundColor, edge * edge * (3 - 2 * edge) * coverage);
+  }
+  const weight = density * coverage;
+  return base.lerp(groundColor, weight * weight * (3 - 2 * weight) * style.groundTintStrength);
+}
 
 const SAND_COLOR = new THREE.Color('#e6c77d');
 const DRY_COLOR = new THREE.Color('#b89558');
@@ -45,7 +66,8 @@ export function createTerrainColorSampler(
   map: EditableMap,
   palette?: TerrainPaletteColors,
   includeSnow = true,
-  surfaceWeight?: TerrainSurfaceWeightSampler
+  surfaceWeight?: TerrainSurfaceWeightSampler,
+  materialStyle?: RuntimeTerrainMaterialStyle
 ): (x: number, y: number, z: number, renderSurfaceHeight?: number) => [number, number, number] {
   const floor = new THREE.Color(palette?.base ?? map.box.colors.floor);
   const base = new THREE.Color();
@@ -64,6 +86,11 @@ export function createTerrainColorSampler(
   ];
   const activeLayers = layers.filter(layer => layer.strength > 0
     && (surfaceWeight || map.visualSemantics.zones.some(zone => zone.tags.includes(layer.tags[0]))));
+  const explicitRoads = map.visualSemantics.zones.flatMap(zone => {
+    const recipe = zone.material as keyof typeof roadColorKeys;
+    if (!materialStyle?.explicitRoadColors?.includes(recipe)) return [];
+    return [{zone, color:new THREE.Color(materialStyle[roadColorKeys[recipe]] ?? DEFAULT_RUNTIME_ROAD_COLORS[recipe])}];
+  });
   return (x, y, z, renderSurfaceHeight) => {
     const surfaceY = renderSurfaceHeight ?? sampleTerrainHeight(map, x, z);
     base.copy(floor);
@@ -79,6 +106,7 @@ export function createTerrainColorSampler(
         : terrainSemanticSurfaceWeight(map, x, z, layer.tags);
       base.lerp(layer.color, weight * layer.strength);
     }
+    for (const road of explicitRoads) base.lerp(road.color, visualZoneWeight(road.zone, x, z));
     return colorTuple(base);
   };
 }

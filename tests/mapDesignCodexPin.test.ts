@@ -56,7 +56,7 @@ it('pins the Codex executor across no-header UI continuation, reload, expiration
     const continuation=await next(first);
     expect(JSON.stringify(continuation.messages)).toContain('Keep terrain and connect the entrance');
     expect(JSON.stringify(continuation.messages)).toContain('reconsider the view');
-    await respond(first,continuation.id,{action:'finish',summary:'Draft retained'});
+    await respond(first,continuation.id,{action:'finish',outcome:'unchanged',summary:'Draft retained'});
     await mapDesignManager(store).settled(sessionId);
 
     await fetch(`${base}/codex-runs/${first}`,{method:'DELETE'});
@@ -76,7 +76,7 @@ it('pins the Codex executor across no-header UI continuation, reload, expiration
     const rebound=await next(third);
     expect(rebound.id).not.toBe(pendingOld.id);
     expect((await (await fetch(`${base}/codex-runs/${second}/next`)).json()).requests).toHaveLength(0);
-    await respond(third,rebound.id,{action:'finish',summary:'Same design, new executor'});
+    await respond(third,rebound.id,{action:'finish',outcome:'unchanged',summary:'Same design, new executor'});
     await mapDesignManager(store).settled(sessionId);
     const final=await mapDesignManager(store).draft(sessionId);
     expect(final.session.status).toBe('idle');

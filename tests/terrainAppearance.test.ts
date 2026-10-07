@@ -2,8 +2,33 @@ import { describe, expect, it } from 'vitest';
 import { terrainSemanticSurfaceWeight, terrainVertexColor } from '../src/client/terrainAppearance';
 import { createEmptyMap } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
+import * as THREE from 'three';
+import { applyGrassGroundColor, terrainRecipeTextureColor, createTerrainColorSampler } from '../src/client/terrainAppearance';
+import {compileRuntimeGrassStyle, compileRuntimeTerrainMaterialStyle, DEFAULT_RUNTIME_GRASS_STYLE} from '../src/shared/renderPlan';
 
 describe('terrain semantic appearance', () => {
+  it('uses planned grass ground as the base instead of weakening it with roots and floor', () => {
+    const style = compileRuntimeGrassStyle({version:1,baseSchemeId:'render-indoor-neutral',modules:[{id:'runtime.grass-style',params:{groundColor:'#819f62',rootColor:'#507c42'}}]});
+    const base = new THREE.Color('#3b4741');
+    expect(applyGrassGroundColor(base.clone(), style, 0.5, 1).getHexString()).toBe('819f62');
+    expect(applyGrassGroundColor(base.clone(), style, 0, 1).getHexString()).toBe('3b4741');
+    expect(applyGrassGroundColor(base.clone(), style, 1, 0).getHexString()).toBe('3b4741');
+    const legacy = {...DEFAULT_RUNTIME_GRASS_STYLE,groundColor:'#819f62',rootColor:'#507c42'};
+    expect(applyGrassGroundColor(base.clone(), legacy, 0.5, 1).getHexString()).toBe('4e6547');
+  });
+  it('uses planned stone as source color with a neutral recipe texture instead of multiplying old paving', () => {
+    const map = applyMapOperations(createEmptyMap(), [{type:'terrain.surface',surface:'paving',material:'garden-stone',region:{kind:'circle',x:0,z:0,radius:12},zoneId:'stone'}]);
+    map.box.colors.floor = '#3b4741';
+    const style = compileRuntimeTerrainMaterialStyle({version:1,baseSchemeId:'render-indoor-neutral',modules:[{id:'runtime.terrain-materials',params:{gardenStoneColor:'#c1bcaa'}}]});
+    const source = new THREE.Color().fromArray(createTerrainColorSampler(map, undefined, true, undefined, style)(0,2,0,2));
+    const texture = new THREE.Color('#ffffff').lerp(new THREE.Color(terrainRecipeTextureColor('garden-stone',style)!),0.84);
+    expect(source.clone().multiply(texture).getHexString()).toBe('c1bcaa');
+    const legacySource = new THREE.Color().fromArray(createTerrainColorSampler(map)(0,2,0,2));
+    const legacyTexture = new THREE.Color('#ffffff').lerp(new THREE.Color('#c1bcaa'),0.84);
+    expect(legacySource.multiply(legacyTexture).getHexString()).toBe('847d6b');
+    expect(terrainRecipeTextureColor('garden-stone',{...style,explicitRoadColors:undefined})).toBe('#c1bcaa');
+    expect(createTerrainColorSampler(map)(0,2,0,2)).not.toEqual(source.toArray());
+  });
   it('does not shade derived seabed top surfaces as vertical dark skirts', () => {
     const map = createEmptyMap('submerged coast');
     const side = terrainVertexColor(map, 0, -2, 0);

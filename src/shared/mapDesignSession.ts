@@ -28,6 +28,14 @@ export interface MapDesignSessionView {
   modelCalls: number;
   operationCount: number;
   assetCalls: number;
+  paidRequests?: number;
+  paidRequestLimit?: number;
+  paidRequestCounts?: {planning: number; assets: number};
+  /** Planned source colors survive applying a draft and remain available to the conversation. */
+  appearancePlan?: import('./sceneAppearance').SceneAppearancePlan;
+  stepsUsed?: number;
+  stepLimit?: number;
+  outcome?: 'completed' | 'unchanged' | 'blocked';
   error?: string;
 }
 
@@ -37,6 +45,10 @@ export interface MapDesignSessionOptions {
   provider?: ChatProvider;
   assetProvider?: ModelProvider;
   maxNewAssets?: number;
+  /** Model actions per uninterrupted task run; reaching it preserves an unfinished draft. */
+  maxSteps?: number;
+  /** Total upstream HTTP attempts for planning and assets, including retries; Codex bridge turns are excluded. */
+  maxPaidRequests?: number;
   assetIds?: string[];
 }
 

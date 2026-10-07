@@ -1,10 +1,53 @@
 import { describe, expect, it } from 'vitest';
 import { compileTerrainProgram } from '../src/server/terrainProgram';
 import { createWorldSampler, validateWorldRecipe } from '../src/shared/worldTerrain';
-import { sampleTerrainProgramField } from '../src/shared/terrainProgramField';
+import { sampleTerrainProgramField, validateTerrainProgramField } from '../src/shared/terrainProgramField';
 
 const request = {seed: 47, size: 500, resolution: 65};
 describe('terrain programs', () => {
+  it('retains inspection coordinates and actual terrain revisions with immutable report snapshots', async () => {
+    const result = await compileTerrainProgram(`function generate(t) {
+      const points = [[-100,0],[100,0]];
+      const initial = t.inspect('same-label', points);
+      points[0][0] = -200;
+      initial.points[1][0] = 200; initial.samples[0] = 99;
+      t.map((x,z)=> 50 + x / 10);
+      t.inspect('same-label', [[-100,0],[100,0]]);
+      t.map((x,z,h)=>h);
+      t.erode({iterations:0});
+      t.erode({iterations:1,thermal:0,drainage:0});
+      t.inspect('no-change', [[0,0]]);
+      t.erode({iterations:1,thermal:0,drainage:1});
+      t.inspect('after-erosion', [[0,0]]);
+      const exposed = t.result();
+      exposed.heights[0] = 499;
+      exposed.observations[0].points[0][0] = 250;
+    }`, request);
+    expect(result.terrainRevision).toBe(2);
+    expect(result.observations.map(item => item.terrainRevision)).toEqual([0, 1, 1, 2]);
+    expect(result.observations[0]).toMatchObject({ points: [[-100, 0], [100, 0]], samples: [0, 0] });
+    expect(result.observations[1]).toMatchObject({ points: [[-100, 0], [100, 0]], samples: [40, 60] });
+    expect(result.heights[0]).not.toBe(499);
+  });
+
+  it('preserves optional provenance during normalization and keeps legacy provenance unknown', async () => {
+    const current = await compileTerrainProgram('function generate(t){t.map(()=>8);t.inspect("height",[[0,0]])}', request);
+    const normalized = validateTerrainProgramField(current);
+    current.observations[0].points![0][0] = 9;
+    expect(normalized.observations[0].points).toEqual([[0, 0]]);
+    expect(normalized.terrainRevision).toBe(1);
+    const legacy = { version: 1 as const, source: 'old', resolution: 33, heights: Array(33 ** 2).fill(1),
+      observations: [{ label: 'old', min: 1, max: 1, samples: [1] }] };
+    expect(validateTerrainProgramField(legacy)).toEqual(legacy);
+    expect(validateTerrainProgramField(legacy)).not.toHaveProperty('terrainRevision');
+    for (const bad of [
+      { ...normalized, terrainRevision: -1 }, { ...normalized, terrainRevision: 1.5 },
+      { ...normalized, observations: [{ ...normalized.observations[0], terrainRevision: 2 }] },
+      { ...normalized, observations: [{ ...normalized.observations[0], points: [] }] },
+      { ...normalized, observations: [{ ...normalized.observations[0], points: [[NaN, 0]] }] }
+    ]) expect(() => validateTerrainProgramField(bad as never)).toThrow('invalid_terrain_program_field');
+  });
+
   it('reduces narrow ridge error with 513 samples while preserving legacy 257 fields exactly', async () => {
     const source = 'function generate(t){t.map((x,z)=>40+10*Math.exp(-(((x-0.9765625)/0.35)**2)))}';
     const coarse = await compileTerrainProgram(source, {...request, resolution: 257});

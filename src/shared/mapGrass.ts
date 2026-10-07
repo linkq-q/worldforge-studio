@@ -2,6 +2,7 @@ import { sampleTerrainHeight, type EditableMap } from './map';
 import { habitatBandSuitability, normalizeHabitatBand, type HabitatBand } from './mapHabitat';
 import { MAX_MAP_GRASS_LAYERS } from './mapLimits';
 import { distanceToWater } from './mapWater';
+import { createMapEnvironmentSampler, terrainSlopeDegrees } from './mapTerrainAnalysis';
 
 export type GrassBrushMode = 'add' | 'erase' | 'density' | 'smooth';
 
@@ -59,6 +60,12 @@ export interface GrassLayerInput {
 export type GrassLayerPatch = Pick<GrassLayerInput, 'name' | 'visible' | 'seed' | 'preset' | 'height' | 'mix'>;
 
 export const MAX_GRASS_LAYERS = MAX_MAP_GRASS_LAYERS;
+export const MAX_WORLD_GRASS_RESOLUTION = 513;
+
+/** Worlds use a separate density grid, never their 2x2 editor-terrain placeholder. */
+export function worldGrassResolution(size: number): number {
+  return Math.min(MAX_WORLD_GRASS_RESOLUTION, Math.max(257, Math.ceil(size / 2) + 1));
+}
 export const DEFAULT_GRASS_MIX: GrassVariantMix = { short: 0.76, tall: 0.2, flowers: 0.04 };
 export const GRASS_PRESET_DEFINITIONS: ReadonlyArray<{
   id: GrassPresetId;
@@ -77,7 +84,8 @@ export const GRASS_PRESET_DEFINITIONS: ReadonlyArray<{
 export function normalizeGrassLayers(
   value: unknown,
   resolutionX: number,
-  resolutionZ: number
+  resolutionZ: number,
+  preserveResolution = false
 ): MapGrassLayer[] {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
@@ -88,8 +96,14 @@ export function normalizeGrassLayers(
     const id = cleanText(input.id, '') || createGrassId();
     if (seen.has(id)) continue;
     seen.add(id);
-    const sourceX = positiveInt(input.resolutionX, resolutionX);
-    const sourceZ = positiveInt(input.resolutionZ, resolutionZ);
+    const sourceX = preserveResolution ? worldGrassDimension(input.resolutionX === undefined ? resolutionX : input.resolutionX)
+      : positiveInt(input.resolutionX, resolutionX);
+    const sourceZ = preserveResolution ? worldGrassDimension(input.resolutionZ === undefined ? resolutionZ : input.resolutionZ)
+      : positiveInt(input.resolutionZ, resolutionZ);
+    if (preserveResolution && (!Array.isArray(input.densities) || input.densities.length !== sourceX * sourceZ)) {
+      throw new Error('invalid_grass_density_field');
+    }
+    const targetX = preserveResolution ? sourceX : resolutionX, targetZ = preserveResolution ? sourceZ : resolutionZ;
     const source = normalizeDensityArray(input.densities, sourceX * sourceZ);
     const preset = normalizeGrassPreset(input.preset);
     const definition = grassPresetDefinition(preset);
@@ -98,11 +112,11 @@ export function normalizeGrassLayers(
       name: cleanText(input.name, `草地 ${layers.length + 1}`),
       visible: input.visible !== false,
       seed: finiteSeed(input.seed, layers.length + 1),
-      resolutionX,
-      resolutionZ,
-      densities: sourceX === resolutionX && sourceZ === resolutionZ
-        ? normalizeDensityArray(source, resolutionX * resolutionZ)
-        : resampleDensity(source, sourceX, sourceZ, resolutionX, resolutionZ),
+      resolutionX: targetX,
+      resolutionZ: targetZ,
+      densities: sourceX === targetX && sourceZ === targetZ
+        ? normalizeDensityArray(source, targetX * targetZ)
+        : resampleDensity(source, sourceX, sourceZ, targetX, targetZ),
       preset,
       height: normalizeGrassHeight(input.height, definition.defaultHeight),
       mix: normalizeGrassMix(input.mix, definition.defaultMix)
@@ -151,12 +165,13 @@ export function setGrassLayerDensitiesInPlace(
   resolutionZ: number
 ): void {
   const layer = requireLayer(map, layerId);
-  const sourceX = positiveInt(resolutionX, 0);
-  const sourceZ = positiveInt(resolutionZ, 0);
+  const sourceX = map.world ? worldGrassDimension(resolutionX) : positiveInt(resolutionX, 0);
+  const sourceZ = map.world ? worldGrassDimension(resolutionZ) : positiveInt(resolutionZ, 0);
   if (sourceX < 2 || sourceZ < 2 || densities.length !== sourceX * sourceZ) {
     throw new Error('invalid_grass_density_field');
   }
   const source = normalizeDensityArray(densities, sourceX * sourceZ);
+  ensureWorldGrassPrecision(map, layer, sourceX, sourceZ);
   layer.densities = sourceX === layer.resolutionX && sourceZ === layer.resolutionZ
     ? source
     : resampleDensity(source, sourceX, sourceZ, layer.resolutionX, layer.resolutionZ);
@@ -172,6 +187,7 @@ export function applyGrassBrushInPlace(
   targetDensity = 0.6
 ): void {
   const layer = requireLayer(map, layerId);
+  ensureWorldGrassPrecision(map, layer);
   const [width, , depth] = map.box.size;
   const radius = Math.max(0.1, finite(size, 3));
   const amount = clamp01(strength);
@@ -208,25 +224,31 @@ export function generateGrassRegionInPlace(
   habitat?: GrassHabitat
 ): void {
   const layer = requireLayer(map, layerId);
+  ensureWorldGrassPrecision(map, layer);
   const [width, , depth] = map.box.size;
   const baseDensity = clamp01(density);
   const densityVariation = clamp01(variation);
   const edgeSoftness = clamp01(softness);
   const effectiveSeed = finiteSeed(seed, layer.seed);
   const safeHabitat = normalizeGrassHabitat(habitat);
+  // Reuse the established world evidence sampler once per field. Sea distance is
+  // approximate (24 rays, 160m search, cached 16m interpolation), as in observe.
+  const environment = map.world && safeHabitat?.waterDistance ? createMapEnvironmentSampler(map) : undefined;
   for (let z = 0; z < layer.resolutionZ; z += 1) {
     for (let x = 0; x < layer.resolutionX; x += 1) {
       const worldX = indexToWorld(x, width, layer.resolutionX);
       const worldZ = indexToWorld(z, depth, layer.resolutionZ);
       const regionWeight = grassRegionWeight(region, worldX, worldZ, edgeSoftness);
       if (regionWeight <= 0) continue;
+      const observed = environment?.(worldX, worldZ);
       const habitatWeight = (safeHabitat?.height
-        ? habitatBandSuitability(sampleTerrainHeight(map, worldX, worldZ), safeHabitat.height)
+        ? habitatBandSuitability(observed?.height ?? sampleTerrainHeight(map, worldX, worldZ), safeHabitat.height)
         : 1) * (safeHabitat?.waterDistance
-        ? habitatBandSuitability(distanceToWater(map, worldX, worldZ), safeHabitat.waterDistance)
+        ? habitatBandSuitability(observed?.waterDistance ?? distanceToWater(map, worldX, worldZ), safeHabitat.waterDistance)
         : 1);
       if (habitatWeight <= 0) continue;
-      const slopeWeight = grassSlopeWeight(map, x, z, layer.preset);
+      const slopeWeight = grassSlopeWeight(map, x, z, layer.preset,
+        map.world ? observed?.slope ?? terrainSlopeDegrees(map, worldX, worldZ) : undefined);
       const noise = hash01(x, z, effectiveSeed) * 2 - 1;
       const generated = clamp01(baseDensity * (1 + noise * densityVariation) * regionWeight * slopeWeight * habitatWeight);
       const index = z * layer.resolutionX + x;
@@ -275,7 +297,7 @@ export function inferGrassPreset(value: unknown): GrassPresetId {
   return 'meadow';
 }
 
-function grassSlopeWeight(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
+function grassSlopeWeight(map: EditableMap, x: number, z: number, preset: GrassPresetId, measuredSlope?: number): number {
   const terrain = map.terrain;
   const left = terrain.heights[z * terrain.resolutionX + Math.max(0, x - 1)] ?? 0;
   const right = terrain.heights[z * terrain.resolutionX + Math.min(terrain.resolutionX - 1, x + 1)] ?? 0;
@@ -283,7 +305,7 @@ function grassSlopeWeight(map: EditableMap, x: number, z: number, preset: GrassP
   const up = terrain.heights[Math.min(terrain.resolutionZ - 1, z + 1) * terrain.resolutionX + x] ?? 0;
   const stepX = map.box.size[0] / Math.max(1, terrain.resolutionX - 1);
   const stepZ = map.box.size[2] / Math.max(1, terrain.resolutionZ - 1);
-  const slope = Math.atan(Math.hypot((right - left) / Math.max(stepX * 2, 0.001), (up - down) / Math.max(stepZ * 2, 0.001))) * 180 / Math.PI;
+  const slope = measuredSlope ?? Math.atan(Math.hypot((right - left) / Math.max(stepX * 2, 0.001), (up - down) / Math.max(stepZ * 2, 0.001))) * 180 / Math.PI;
   const [full, none] = grassSlopeBand(preset);
   if (slope <= full) return 1;
   if (slope >= none) return 0;
@@ -336,6 +358,23 @@ function requireLayer(map: EditableMap, layerId: string): MapGrassLayer {
   const layer = map.grassLayers.find((item) => item.id === layerId);
   if (!layer) throw new Error('grass_layer_not_found');
   return layer;
+}
+
+function worldGrassDimension(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 2 || value > MAX_WORLD_GRASS_RESOLUTION) {
+    throw new Error('invalid_world_grass_resolution');
+  }
+  return value;
+}
+
+function ensureWorldGrassPrecision(map: EditableMap, layer: MapGrassLayer, sourceX = 2, sourceZ = 2): void {
+  if (!map.world) return;
+  const fallback = worldGrassResolution(map.world.bundle.plan.recipe.size);
+  const targetX = Math.max(layer.resolutionX, sourceX, fallback), targetZ = Math.max(layer.resolutionZ, sourceZ, fallback);
+  if (targetX === layer.resolutionX && targetZ === layer.resolutionZ) return;
+  layer.densities = resampleDensity(layer.densities, layer.resolutionX, layer.resolutionZ, targetX, targetZ);
+  layer.resolutionX = targetX;
+  layer.resolutionZ = targetZ;
 }
 
 function normalizeDensityArray(value: unknown, length: number): number[] {

@@ -18,6 +18,17 @@ import { completeMapVisualSemantics } from '../src/shared/mapVisualSemantics';
 import { patchMapVisualZone } from '../src/shared/mapVisualSemantics';
 
 describe('visual direction contract', () => {
+  it('preserves metre coordinates and extents of surface zones on large worlds', () => {
+    const zones = [
+      {id:'far-field',tags:['soil'],center:[900,-800],radius:700,region:{kind:'circle',x:900,z:-800,radius:650}},
+      {id:'outer-path',tags:['paving'],center:[-900,900],radius:800,region:{kind:'path',points:[[-1100,800],[-700,1000]],width:4}},
+      {id:'plot',tags:['soil'],center:[800,800],radius:30,region:{kind:'polygon',points:[[780,780],[820,780],[820,820],[780,820]]}}
+    ];
+    const normalized = normalizeMapVisualSemantics({version:1,zones});
+    expect(normalized.zones.map(zone=>({center:zone.center,radius:zone.radius,region:zone.region})))
+      .toEqual(zones.map(zone=>({center:zone.center,radius:zone.radius,region:zone.region})));
+    expect(normalizeMapVisualSemantics(normalized)).toEqual(normalized);
+  });
   it('derives a stable water zone for structured water added during refine', () => {
     const map = createEmptyMap('water semantics', 'map-water-semantics');
     map.waterBodies = [{

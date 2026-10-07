@@ -16,7 +16,7 @@ import { createColorPalette, nearestPaletteColor } from '../src/shared/colorPale
 import { applyMapOperations } from '../src/shared/mapOperations';
 import type { MapAsset } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
-import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
+import { compileRuntimeGrassStyle, DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
 import { MAX_VISIBLE_MAP_LOCAL_LIGHTS, MAX_VISIBLE_MAP_POINT_LIGHTS } from '../src/client/mapLocalLights';
 
 beforeEach(() => {
@@ -31,6 +31,23 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+it('keeps planned ground color on terrain-only tiles without grass layers and excludes semantic roads', async () => {
+  const map = createEmptyMap();
+  map.grassLayers = [];
+  const rendered = await buildEditableMapGroup(map, {terrainOnly:true,terrainTextureSize:16,
+    terrainSurfaceWeight:(x,_z,tags)=>tags.includes('grass') ? 1 : tags.includes('paving') && x > 0 ? 1 : 0});
+  try {
+    rendered.setGrassStyle(compileRuntimeGrassStyle({version:1,baseSchemeId:'render-indoor-neutral',modules:[{id:'runtime.grass-style',params:{groundColor:'#819f62'}}]}));
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const positions = terrain.geometry.getAttribute('position'), colors = terrain.geometry.getAttribute('color');
+    const index = Array.from({length:positions.count},(_,i)=>i).find(i=>positions.getX(i)<-1)!;
+    expect(new THREE.Color().fromBufferAttribute(colors,index).getHexString()).toBe('819f62');
+    const road = Array.from({length:positions.count},(_,i)=>i).find(i=>positions.getX(i)>1)!;
+    expect(new THREE.Color().fromBufferAttribute(colors,road).getHexString()).not.toBe('819f62');
+    expect(rendered.group.getObjectByName('grass')).toBeUndefined();
+  } finally {rendered.dispose();}
 });
 
 function referencedTerrainPoints(geometry: THREE.BufferGeometry): THREE.Vector3[] {

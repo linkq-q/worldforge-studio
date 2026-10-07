@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, createMapObject, type EditableMap } from '../src/shared/map';
+import { createEmptyMap, createMapObject, type EditableMap, type MapAsset } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { observeMapDesign } from '../src/shared/mapDesignObservation';
 import { mapEnvironmentGuides } from '../src/shared/mapTerrainAnalysis';
@@ -23,6 +23,149 @@ function route(id: string, points: [number, number][], width = 4): MapGuide {
 }
 
 describe('versioned map design observations', () => {
+  it('pages stored grass style and density precision without arrays or invented rendered coverage', () => {
+    const map = applyMapOperations(world(), [
+      { type: 'grass.layer.add', layer: { id: 'orchard', preset: 'farm', height: 0.6,
+        mix: { short: 0.8, tall: 0.15, flowers: 0.05 } } },
+      { type: 'grass.layer.add', layer: { id: 'hidden', preset: 'wetland', visible: false } }
+    ]);
+    const before = JSON.stringify(map), first = observeMapDesign(map, { kind: 'summary', limit: 1 }, 7);
+    expect(map.terrain.resolutionX).toBe(2);
+    expect(first.data.counts.grassLayers).toBe(2);
+    expect(first.data.grassLayers).toMatchObject({ total: 2, offset: 0, limit: 1, nextOffset: 1,
+      items: [{ id: 'orchard', visible: true, preset: 'farm', height: 0.6,
+        mix: { short: 0.8, tall: 0.15, flowers: 0.05 }, densityResolution: [257, 257],
+        densitySpacing: [1.9531, 1.9531] }] });
+    const second = observeMapDesign(map, { kind: 'summary', offset: 1, limit: 1 }, 7);
+    expect(second.data.grassLayers).toMatchObject({ nextOffset: null, items: [{ id: 'hidden', visible: false }] });
+    expect(JSON.stringify(first.data.grassLayers)).not.toContain('densities');
+    expect(JSON.stringify(first.data.grassLayers).length).toBeLessThan(500);
+    expect(first.precision.grassDensity).toContain('not rendered');
+    expect(JSON.stringify(map)).toBe(before);
+    const ordinary = applyMapOperations(createEmptyMap(), [{ type: 'grass.layer.add', layer: { id: 'ordinary' } }]);
+    expect(observeMapDesign(ordinary, { kind: 'summary' }, 0).data.grassLayers.items[0].densityResolution)
+      .toEqual([ordinary.terrain.resolutionX, ordinary.terrain.resolutionZ]);
+  });
+
+  it('returns actual asset geometry, authored material colors and semantic pages without inventing supports', () => {
+    const map = createEmptyMap();
+    const asset: MapAsset = { id: 'house', name: 'House', prompt: 'house', mode: 'voxel', createdAt: 1, updatedAt: 9,
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: true },
+      modelJson: { nodes: [{ id: 'roof', tags: [{ tag: 'palette', value: 'secondary' }],
+        mesh: { type: 'box', params: { width: 8, height: 3, depth: 6 }, material: { color: '#a06040' } } }],
+        _meta: { semanticSnapshot: { text: 'Measured roof and doorway. '.repeat(200) } } } };
+    map.assets = [asset, { ...asset, id: 'empty', modelJson: { nodes: [] } }];
+    const summary = observeMapDesign(map, { kind: 'assets', ids: ['house'] }, 4);
+    expect(summary.data.items[0]).toMatchObject({ assetId: 'house', assetUpdatedAt: 9,
+      geometry: { evidence: 'geometry', interior: 'unknown', size: [8, 3, 6] } });
+    const materials = observeMapDesign(map, { kind: 'assets', ids: ['house'], section: 'materials' }, 4);
+    expect(materials.data.items[0]).toMatchObject({ assetId: 'house', nodeId: 'roof', rawColor: '#a06040',
+      paletteRole: { value: 'secondary', sourceNodeId: 'roof' }, source: 'stored-model-material' });
+    expect(materials.data.limits.join(' ')).toContain('not rendered');
+    const parts = observeMapDesign(map, { kind: 'assets', ids: ['house'], section: 'supports' }, 4);
+    expect(parts.data.items[0]).toMatchObject({ assetId: 'house', nodeId: 'roof', min: [-4, 3, -3], max: [4, 3, 3] });
+    const first = observeMapDesign(map, { kind: 'assets', ids: ['house'], section: 'semantic', limit: 1 }, 4);
+    expect(first.data.nextOffset).toBe(1);
+    const second = observeMapDesign(map, { kind: 'assets', ids: ['house'], section: 'semantic', offset: 1, limit: 1 }, 4);
+    expect(first.data.items[0].text + second.data.items[0].text).toBe(('Measured roof and doorway. '.repeat(200)).slice(0, 4000));
+    expect(observeMapDesign(map, { kind: 'assets', ids: ['empty'] }, 4).data.items[0].geometry)
+      .toMatchObject({ evidence: 'unavailable', interior: 'unknown', localBounds: null, size: null });
+  });
+
+  it('makes shared design relations and planned destination connections readable without dumping terrain', () => {
+    const map = world(), plan = map.world!.bundle.plan;
+    map.designSemantics.experienceMode = 'sequential';
+    map.designSemantics.relations = [{ id: 'orchard-market', kind: 'attract', sourceSelector: 'orchard', targetSelector: 'market', strength: 'normal' }];
+    plan.featureGraph = { regions: [{ id: 'village', name: 'Village', kind: 'district', center: [0, 0], radius: 80 }],
+      paths: [{ id: 'orchard-return', name: 'Return lane', kind: 'trail', width: 3, points: [[0, 0], [50, 0]] }],
+      anchors: [{ id: 'market', kind: 'civic', position: [0, 0], regionId: 'village' },
+        { id: 'orchard', kind: 'working', position: [50, 0], regionId: 'village' }],
+      relations: [{ fromId: 'orchard', toId: 'market', kind: 'supplies' }] };
+    plan.mobilityPlan = { routes: [{ id: 'return', pathId: 'orchard-return', mode: 'walk', connects: ['market', 'orchard'] }] };
+    plan.explorationPlan = { pointsOfInterest: [{ id: 'fruit', anchorId: 'orchard', purpose: 'Find fruit stalls' }], sequence: ['fruit'] };
+    const overview = observeMapDesign(map, { kind: 'world' }, 4);
+    expect(overview.data).toMatchObject({ worldPlanRevision: 1, experienceMode: 'sequential' });
+    const design = observeMapDesign(map, { kind: 'world', section: 'designSemantics' }, 4);
+    expect(design.data.items.find((item: { collection: string }) => item.collection === 'relations').value.id).toBe('orchard-market');
+    const mobility = observeMapDesign(map, { kind: 'world', section: 'mobilityPlan' }, 4);
+    expect(mobility.data.items[0].value.connects).toEqual(['market', 'orchard']);
+    const exploration = observeMapDesign(map, { kind: 'world', section: 'explorationPlan' }, 4);
+    expect(exploration.data.sequence).toEqual(['fruit']);
+    expect(JSON.stringify([overview, design, mobility, exploration])).not.toContain('not sent to the model');
+    expect(JSON.stringify([overview, design, mobility, exploration])).not.toContain('heights');
+    plan.roads = [{ ...route('actual-road', [[-20, 0], [0, 20], [20, 0]]), curve: 'catmull-rom' }];
+    expect(observeMapDesign(map, { kind: 'world', section: 'roads' }, 4).data.items[0].value)
+      .toMatchObject({ id: 'actual-road', curve: 'catmull-rom', points: [[-20, 0], [0, 20], [20, 0]] });
+  });
+
+  it('distinguishes terrain storage precision, source pages and historical inspections from current observations', () => {
+    const map = world(), program = map.world!.bundle.plan.recipe.terrainProgram!;
+    program.source = 'function generate(t) {'.padEnd(7000, ' ') + '}';
+    program.observations = [{ label: 'earlier-pass', min: 1, max: 9, samples: [1, 9] }];
+    const overview = observeMapDesign(map, { kind: 'terrain' }, 6);
+    expect(overview.data).toMatchObject({ representation: 'terrain-program', resolution: [65, 65], spacing: [7.8125, 7.8125] });
+    expect(overview.data.source).toMatchObject({ available: true, totalCharacters: program.source.length });
+    expect(JSON.stringify(overview)).not.toContain('function generate');
+    const chunks: string[] = [];
+    let offset = 0;
+    do {
+      const page = observeMapDesign(map, { kind: 'terrain', section: 'source', offset, limit: 1 }, 6).data;
+      chunks.push(...page.items.map((item: { text: string }) => item.text));
+      offset = page.nextOffset;
+    } while (offset !== null);
+    expect(chunks.join('')).toBe(program.source);
+    const reports = observeMapDesign(map, { kind: 'terrain', section: 'inspections' }, 6);
+    expect(reports.data.items[0]).toMatchObject({ label: 'earlier-pass', samples: [1, 9], points: null,
+      capturedTerrainRevision: null, source: 'stored-terrain-program-inspection', freshness: 'unknown' });
+    expect(reports.data.limits.join(' ')).toContain('historical');
+    expect(observeMapDesign(createEmptyMap(), { kind: 'terrain' }, 0).data.representation).toBe('stored-heightfield');
+  });
+
+  it('bounds new details, validates sections and preserves the input map', () => {
+    const map = world(), before = JSON.stringify(map);
+    for (const query of [{ kind: 'assets', ids: ['missing'] }, { kind: 'assets', section: 'modelJson' },
+      { kind: 'world', section: 'all' }, { kind: 'terrain', section: 'heights' }, { kind: 'terrain', limit: 1000 }]) {
+      expect(() => observeMapDesign(map, query, 0)).toThrow();
+    }
+    observeMapDesign(map, { kind: 'world', section: 'featureGraph' }, 0);
+    observeMapDesign(map, { kind: 'terrain', section: 'recipe' }, 0);
+    expect(JSON.stringify(map)).toBe(before);
+  });
+
+  it('compares saved inspection revisions against the compiled field without guessing from labels', () => {
+    const map = world(), program = map.world!.bundle.plan.recipe.terrainProgram!;
+    program.terrainRevision = 4;
+    program.observations = [
+      { label: 'final', min: 0, max: 1, samples: [1], points: [[3, 5]], terrainRevision: 2 },
+      { label: 'before', min: 1, max: 2, samples: [2], points: [[3, 5]], terrainRevision: 4 },
+      { label: 'legacy', min: 0, max: 1, samples: [1] }
+    ];
+    const result = observeMapDesign(map, { kind: 'terrain', section: 'inspections' }, 9);
+    expect(result.data.terrainRevision).toBe(4);
+    expect(result.data.items).toMatchObject([
+      { capturedTerrainRevision: 2, points: [[3, 5]], freshness: 'superseded-program-field' },
+      { capturedTerrainRevision: 4, points: [[3, 5]], freshness: 'current-program-field' },
+      { capturedTerrainRevision: null, points: null, freshness: 'unknown' }
+    ]);
+  });
+
+  it('paginates long source text at a character budget without dropping chunks', () => {
+    const map = world(), program = map.world!.bundle.plan.recipe.terrainProgram!;
+    program.source = 'x'.repeat(58_000);
+    const chunks: string[] = [];
+    let offset = 0, pages = 0;
+    do {
+      const result = observeMapDesign(map, { kind: 'terrain', section: 'source', offset, limit: 64 }, 3).data;
+      expect(JSON.stringify(result.items).length).toBeLessThan(24_050);
+      expect(result.items.length).toBeLessThan(64);
+      chunks.push(...result.items.map((item: { text: string }) => item.text));
+      offset = result.nextOffset;
+      pages++;
+    } while (offset !== null);
+    expect(pages).toBeGreaterThan(1);
+    expect(chunks.join('')).toBe(program.source);
+  });
+
   it('reads the complete current world field, reports precision, and does not expose height arrays or mutate the draft', () => {
     const map = world();
     map.version = 7;

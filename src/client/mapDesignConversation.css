@@ -23,3 +23,9 @@
 .design-preview-actions button { padding: 7px; font-size: 12px; flex: 1; }
 .design-preview-actions button[aria-pressed="true"] { border-color: #819569; background: #303b2b; }
 .design-preview-actions[hidden], .design-error[hidden], [data-design-control][hidden] { display: none; }
+.design-appearance { padding: 10px 12px; border: 1px solid var(--line, #d7d1c5); border-radius: 8px; }
+.design-appearance p { margin: 5px 0; }
+.design-appearance ul { margin: 8px 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.design-appearance li { display: flex; align-items: center; gap: 7px; }
+.design-appearance i { width: 18px; height: 18px; flex: 0 0 18px; border: 1px solid #0002; border-radius: 3px; }
+.design-appearance small { color: var(--muted, #756e64); }

@@ -24,7 +24,8 @@ import type { SceneArtPlan } from '../shared/sceneArt';
 import type { Vec3 } from '../shared/protocol';
 import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapObject, type MapWaterBody } from '../shared/map';
 import type { MapGuide } from '../shared/mapGuide';
-import type { MapGrassLayer } from '../shared/mapGrass';
+import { sampleGrassDensity, type MapGrassLayer } from '../shared/mapGrass';
+import { terrainSemanticSurfaceWeight } from './terrainAppearance';
 import { buildOceanCoastField, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import type { PaletteCoverageReport } from './paletteMaterialRuntime';
 import type { WaterOceanTerrainBinding } from './renderEnvironmentBridge';
@@ -645,6 +646,11 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     const borderDepth = edgeHeight + 4;
     const sampledAt = performance.now();
     const tileMap = makeTerrainTileMap(tile, sampled.heights, includeOcean);
+    const surfaceSemantics = { visualSemantics: { ...tileMap.visualSemantics,
+      // Compacted-earth ribbons already own their color in the road overlay.
+      zones: tileMap.visualSemantics.zones.filter(zone => zone.material !== 'compacted-earth'
+        || !(zone as SceneVisualZone & { clipRoadToTerrain?: boolean }).clipRoadToTerrain)
+    } };
     const textureSize = tile.size <= 256 ? FINE_TERRAIN_TEXTURE_SIZE : tile.size <= 2_048 ? 64 : 32;
     const rendered = await buildNormalizedEditableMapGroupCore(tileMap, {
       ...options,
@@ -655,7 +661,10 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       oceanCoast: false,
       waterOceanCoast: includeOcean,
       terrainOnly: true,
-      terrainSurfaceWeight: (x, z, tags) => worldTileSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags),
+      terrainSurfaceWeight: (x, z, tags) => Math.max(
+        worldTileSurfaceWeight(sampled, tile, centerX + x, centerZ + z, tags),
+        terrainSemanticSurfaceWeight(surfaceSemantics, x, z, tags)
+      ),
       waterTerrainHeight: (x, z) => sample(centerX + x, centerZ + z).height
     });
     applyWorldTerrainEdgeNormals(rendered.group, tile, centerX, centerZ);
@@ -809,7 +818,7 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       visualSemantics: {
         version: 1,
         // Road overlays must follow this visible tile's grid and refinement lifecycle.
-        zones: roadZones(tile, true),
+        zones: [...roadZones(tile, true), ...authoredSurfaceZones(tile, true)],
         wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind }
       },
       layout: createDefaultMapLayout(boxSize),
@@ -905,7 +914,8 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       room: null,
       interiorArtDirection: null,
       terrain: { resolutionX: sampled.resolution, resolutionZ: sampled.resolution, heights: Array.from(sampled.heights) },
-      grassLayers: worldGrassLayers(sampled, tile, { density, exclusion }),
+      grassLayers: [...worldGrassLayers(sampled, tile, { density, exclusion }),
+        ...authoredGrassLayers(tile, sampled.resolution)],
       waterBodies: [],
       paintStrokes: [],
       objects,
@@ -913,7 +923,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       visualSemantics: {
         version: 1,
         // Keep grass contact masks here; the visible terrain tiles own road geometry.
-        zones: roadZones(tile).map(zone => ({ ...zone, material: 'default', forceRoadOverlay: false })),
+        zones: [...roadZones(tile), ...authoredSurfaceZones(tile)].map(zone => ({
+          ...zone, material: 'default', forceRoadOverlay: false
+        })),
         wind: { ...map.visualSemantics?.wind ?? DEFAULT_MAP_VISUAL_SEMANTICS.wind }
       },
       layout: createDefaultMapLayout(boxSize),
@@ -1074,6 +1086,50 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
       });
     }
     return result;
+  }
+
+  function authoredSurfaceZones(tile: WorldTile, clipRoadToTerrain = false): SceneVisualZone[] {
+    const centerX = tile.x + tile.size / 2, centerZ = tile.z + tile.size / 2;
+    const localPoint = ([x, z]: [number, number]): [number, number] => [x - centerX, z - centerZ];
+    return map.visualSemantics.zones.flatMap((zone): SceneVisualZone[] => {
+      if (tileDistanceSquared(tile, zone.center[0], zone.center[1]) > zone.radius ** 2) return [];
+      const center = localPoint(zone.center);
+      const region = zone.region;
+      if (!region) return [{ ...zone, center }];
+      if (region.kind === 'circle') return [{ ...zone, center,
+        region: { ...region, x: region.x - centerX, z: region.z - centerZ } }];
+      if (region.kind === 'polygon') return [{ ...zone, center,
+        region: { ...region, points: region.points.map(localPoint) } }];
+      if (!clipRoadToTerrain || !zone.material || zone.material === 'default') {
+        return [{ ...zone, center, region: { ...region, points: region.points.map(localPoint) } }];
+      }
+      // Match world roads: include the full ribbon at tile edges, preserve its
+      // arc-length texture phase and let the terrain owner clip final geometry.
+      const margin = region.width / 2;
+      return clipPolylineToRect(region.points, tile.x - margin, tile.z - margin,
+        tile.x + tile.size + margin, tile.z + tile.size + margin, false).map((fragment, index) => ({
+          ...zone, id: `${zone.id}:${index}:${tileKey(tile)}`, center,
+          region: { ...region, points: fragment.points.map(localPoint) },
+          roadDistanceOffset: fragment.distanceOffset,
+          roadContinuesBefore: fragment.continuesBefore,
+          roadContinuesAfter: fragment.continuesAfter,
+          forceRoadOverlay: true, clipRoadToTerrain: true
+        }));
+    });
+  }
+
+  function authoredGrassLayers(tile: WorldTile, resolution: number): MapGrassLayer[] {
+    return map.grassLayers.filter(layer => layer.visible).flatMap(layer => {
+      const densities = Array.from({ length: resolution * resolution }, (_, index) => {
+        const x = tile.x + index % resolution / (resolution - 1) * tile.size;
+        const z = tile.z + Math.floor(index / resolution) / (resolution - 1) * tile.size;
+        if (Math.abs(x) > map.box.size[0] / 2 || Math.abs(z) > map.box.size[2] / 2) return 0;
+        return sampleGrassDensity(layer, map, x, z);
+      });
+      return densities.some(value => value > 0.001)
+        ? [{ ...layer, resolutionX: resolution, resolutionZ: resolution, densities }]
+        : [];
+    });
   }
 
   function tileWaterBodies(tile: WorldTile, includeOcean: boolean): MapWaterBody[] {
@@ -1343,6 +1399,9 @@ export async function buildStreamedWorldMapGroup(map: EditableMap, options: MapR
     group: root,
     modelsRoot,
     runtimeIndex,
+    selectMaterialThemeTargets: scope => new Map(renderedEntries().flatMap(entry => [
+      ...(entry.rendered.selectMaterialThemeTargets?.(scope) ?? [])
+    ])),
     objectGroups,
     pickables,
     buildProfile: buildProfile(),

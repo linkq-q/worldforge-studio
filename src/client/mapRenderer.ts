@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { createMaterialThemeSelector } from './materialThemeTargets';
+import type { MaterialThemeSelection } from './renderRuntimeAdapter';
+import type { RuntimeMaterialTheme } from '../shared/renderPlan';
 import { mapOceanCoast, sampleCoastGrid, type CoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import {
   getMapPlayerMetrics,
@@ -29,6 +32,8 @@ import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
 import { buildTerrainSnowLayer, createTerrainSnowTexture } from './terrainSnow';
 import {
   createTerrainColorSampler,
+  applyGrassGroundColor,
+  terrainRecipeTextureColor,
   terrainSemanticSurfaceWeight,
   type TerrainPaletteColors,
   type TerrainSurfaceWeightSampler
@@ -112,6 +117,7 @@ export interface RenderedMap {
   group: THREE.Group;
   modelsRoot: THREE.Group;
   runtimeIndex: RuntimeIndex;
+  selectMaterialThemeTargets?: (scope: RuntimeMaterialTheme['scope']) => MaterialThemeSelection;
   objectGroups: Map<string, THREE.Group>;
   pickables: THREE.Object3D[];
   buildProfile: MapBuildProfile;
@@ -297,7 +303,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     grass?.dispose();
     grass = buildMapGrassField(grassMap, grassStyle);
     if (grass) root.add(grass.group);
-    applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight);
+    applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight, terrainMaterialStyle);
     applySceneArt();
   };
 
@@ -413,6 +419,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
     group: root,
     modelsRoot,
     runtimeIndex: instancing.runtimeIndex,
+    selectMaterialThemeTargets: createMaterialThemeSelector(instancing.runtimeIndex, map, assets, deriveAssetTags, objectGroups),
     objectGroups,
     pickables,
     buildProfile,
@@ -442,7 +449,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       sceneArt.clear();
       grassStyle = style;
       grass?.setStyle(style);
-      applyTerrainGrassTint(terrain, grassMap, style, terrainPalette, terrainSurfaceWeight);
+      applyTerrainGrassTint(terrain, grassMap, style, terrainPalette, terrainSurfaceWeight, terrainMaterialStyle);
       applySceneArt();
     },
     setSceneArt: (plan, palette) => {
@@ -462,6 +469,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined, terrainTextureSize, terrainSurfaceWeight);
+      applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight, style);
       rebuildRoadMaterials(currentMap);
       snowLayer?.material.copy(material);
       terrain.userData.terrainMaterialStyle = { ...style };
@@ -477,7 +485,7 @@ export async function buildNormalizedEditableMapGroupCore(mapInput: EditableMap,
       replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined, terrainTextureSize, terrainSurfaceWeight);
       snowLayer?.material.copy(material);
       if (roomShell) applyRoomShellPalette(roomShell, currentMap, palette);
-      applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight);
+      applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette, terrainSurfaceWeight, terrainMaterialStyle);
       applySceneArt();
       return report;
     },
@@ -661,24 +669,25 @@ function applyTerrainGrassTint(
   map: EditableMap,
   style: RuntimeGrassStyle,
   palette?: TerrainPaletteColors,
-  surfaceWeight?: TerrainSurfaceWeightSampler
+  surfaceWeight?: TerrainSurfaceWeightSampler,
+  materialStyle?: RuntimeTerrainMaterialStyle
 ): void {
   const geometry = mesh.geometry;
   const positions = geometry.getAttribute('position');
   const colors = geometry.getAttribute('color') as THREE.BufferAttribute;
-  const grassColor = new THREE.Color(style.groundColor);
-  const rootColor = new THREE.Color(style.rootColor);
-  grassColor.lerp(rootColor, 0.58);
+  const groundColor = new THREE.Color(style.groundColor).lerp(new THREE.Color(style.rootColor), style.groundColorExplicit ? 0 : 0.58);
   const color = new THREE.Color();
-  const terrainColor = createTerrainColorSampler(map, palette, Boolean(surfaceWeight), surfaceWeight);
+  const terrainColor = createTerrainColorSampler(map, palette, Boolean(surfaceWeight), surfaceWeight, materialStyle);
   const sampleColor = (x: number, y: number, z: number): THREE.Color => {
     const base = terrainColor(x, y, z, geometry.userData.oceanCoast ? y : undefined);
     color.setRGB(base[0], base[1], base[2]);
     if (style.groundTint && (!geometry.userData.oceanCoast || y >= sampleTerrainHeight(map, x, z) - 0.05)) {
-      const grassDensity = combinedGrassDensity(map, x, z);
-      const density = grassDensity > 0 ? grassDensity * grassSurfaceCoverage(map, x, z) : 0;
-      const transition = density * density * (3 - 2 * density);
-      color.lerp(grassColor, transition * style.groundTintStrength);
+      const semanticGround = style.groundColorExplicit && surfaceWeight;
+      const grassDensity = semanticGround ? 1 : combinedGrassDensity(map, x, z);
+      const coverage = semanticGround
+        ? surfaceWeight(x, z, ['grass']) * (1 - surfaceWeight(x, z, ['rocky', 'paving', 'soil', 'clear', 'snow']))
+        : grassDensity > 0 ? grassSurfaceCoverage(map, x, z) : 0;
+      applyGrassGroundColor(color, style, grassDensity, coverage, groundColor);
     }
     return color;
   };
@@ -3508,9 +3517,10 @@ function drawSemanticTerrainSurface(
     ));
     if (!tag || tag === 'snow') continue;
     const recipeColor = zone.material && zone.material !== 'default'
-      ? roadRecipeColor(zone.material, style)
+      ? terrainRecipeTextureColor(zone.material, style)
       : undefined;
-    const opacity = recipeColor
+    const opacity = zone.material && style.explicitRoadColors?.includes(zone.material as keyof typeof DEFAULT_RUNTIME_ROAD_COLORS)
+      ? 1 : recipeColor
       ? Math.min(0.88, 0.62 + zone.intensity * 0.22)
       : Math.min(0.24, 0.08 + zone.intensity * 0.12);
     drawSemanticZoneShape(ctx, map, zone, recipeColor ?? SEMANTIC_SURFACE_COLORS[tag], opacity, width, height);

@@ -52,6 +52,7 @@ import {
   type UnderwaterWaveProfile
 } from './underwaterRuntime';
 import type { VolumetricLightRuntime } from './volumetricLightRuntime';
+import { materialThemeStyle } from '../shared/renderPlan';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -71,6 +72,16 @@ interface MaterialBaseline {
   color?: THREE.Color;
   roughness?: number;
   metalness?: number;
+}
+
+export type MaterialThemeSelection = Map<THREE.Mesh, Set<number> | null>;
+
+interface MaterialThemeBinding {
+  material: THREE.Material | THREE.Material[];
+  geometry: THREE.BufferGeometry;
+  instanceColor: THREE.InstancedBufferAttribute | null;
+  clones: THREE.Material[];
+  baseColors?: THREE.BufferAttribute;
 }
 
 interface WaterBinding {
@@ -113,6 +124,8 @@ export class RenderRuntimeAdapter {
   private underwaterWaveProfile: UnderwaterWaveProfile = { ...DEFAULT_UNDERWATER_WAVE_PROFILE };
   private underwaterPassActive = false;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
+  private readonly materialThemeBindings = new Map<THREE.Mesh, MaterialThemeBinding>();
+  private selectMaterialThemeTargets: ((scope: RuntimeMaterialTheme['scope']) => MaterialThemeSelection) | null = null;
   private readonly waterBindings: WaterBinding[] = [];
   private waterDetailTexture: THREE.DataTexture | null = null;
   private waterSceneCapture: WaterSceneCapture | null = null;
@@ -212,6 +225,7 @@ export class RenderRuntimeAdapter {
         environmentMap: THREE.Texture | null,
         waterEnvironmentMap: THREE.Texture | null
       ) => void;
+      selectMaterialThemeTargets?: (scope: RuntimeMaterialTheme['scope']) => MaterialThemeSelection;
     }
   ): void {
     if (this.modelsRoot && this.modelsRoot !== modelsRoot) this.resetScopedCapabilities();
@@ -221,6 +235,7 @@ export class RenderRuntimeAdapter {
     this.modelsRoot = modelsRoot;
     this.restoreMaterialEffects = materialRuntime?.restore ?? null;
     this.syncMaterialEnvironment = materialRuntime?.syncEnvironment ?? null;
+    this.selectMaterialThemeTargets = materialRuntime?.selectMaterialThemeTargets ?? null;
     this.syncMaterialEnvironment?.(this.scene.environment, this.waterEnvironmentMap);
     if (sceneChanged && contentRoot) this.frameCoordinator.notifySceneLoaded();
   }
@@ -425,6 +440,14 @@ export class RenderRuntimeAdapter {
       this.effectRuntime.removeFromObject3D(this.modelsRoot);
       this.restoreMaterialEffects?.();
     }
+    for (const [mesh, binding] of this.materialThemeBindings ?? []) {
+      mesh.material = binding.material;
+      if (mesh.geometry !== binding.geometry) mesh.geometry.dispose();
+      mesh.geometry = binding.geometry;
+      if ((mesh as THREE.InstancedMesh).isInstancedMesh) (mesh as THREE.InstancedMesh).instanceColor = binding.instanceColor;
+      binding.clones.forEach(material => material.dispose());
+    }
+    this.materialThemeBindings?.clear();
   }
 
   tick(deltaTime: number, elapsedSeconds: number, waterLevel: number | null = null): void {
@@ -568,39 +591,90 @@ export class RenderRuntimeAdapter {
 
   private applyMaterialTheme(theme: RuntimeMaterialTheme): void {
     if (!this.modelsRoot) return;
-    const targets = scopedTargets(this.modelsRoot, theme.scope);
-    for (const target of targets) {
-      target.traverse((object) => {
-        const mesh = object as THREE.Mesh;
-        if (!mesh.isMesh || !matchesScope(mesh, theme.scope)) return;
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const source of materials) {
-          const material = source as THREE.MeshStandardMaterial;
-          if (!material.color) continue;
-          if (!this.materialBaselines.has(material)) {
-            this.materialBaselines.set(material, {
-              material,
-              color: material.color.clone(),
-              roughness: typeof material.roughness === 'number' ? material.roughness : undefined,
-              metalness: typeof material.metalness === 'number' ? material.metalness : undefined
-            });
-          }
-          const baseline = this.materialBaselines.get(material);
-          const targetStyle = materialThemeStyle(theme.recipe, theme.scope.tag);
-          const strength = theme.strength ?? 1;
-          const color = new THREE.Color(theme.color ?? targetStyle.color);
-          if (baseline?.color) material.color.copy(baseline.color).lerp(color, strength);
-          if (typeof material.roughness === 'number') {
-            const next = theme.roughness ?? targetStyle.roughness;
-            material.roughness = THREE.MathUtils.lerp(baseline?.roughness ?? material.roughness, next, strength);
-          }
-          if (typeof material.metalness === 'number') {
-            const next = theme.metalness ?? targetStyle.metalness;
-            material.metalness = THREE.MathUtils.lerp(baseline?.metalness ?? material.metalness, next, strength);
-          }
-          material.needsUpdate = true;
+    const selections: MaterialThemeSelection = new Map(scopedMeshes(this.modelsRoot, theme.scope).map(mesh => [mesh, null]));
+    for (const [mesh, slots] of this.selectMaterialThemeTargets?.(theme.scope) ?? []) selections.set(mesh, slots);
+    const targetStyle = materialThemeStyle(theme.recipe, theme.scope.tag);
+    const strength = theme.strength ?? 1;
+    const color = new THREE.Color(theme.color ?? targetStyle.color);
+    for (const [mesh, slots] of selections) {
+      if (slots?.size === 0 || !isUnderRoot(mesh, this.modelsRoot)) continue;
+      let binding = this.materialThemeBindings.get(mesh);
+      if (!binding) {
+        const sources = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        if (sources.some(source => !(source as THREE.MeshStandardMaterial).color)) continue;
+        const clones = sources.map(source => {
+          const material = source.clone() as THREE.MeshStandardMaterial;
+          material.userData = { ...source.userData, shaderPatchChain: [...(source.userData.shaderPatchChain ?? [])] };
+          material.onBeforeCompile = (shader, renderer) => source.onBeforeCompile(shader, renderer);
+          material.customProgramCacheKey = () => source.customProgramCacheKey();
+          this.materialBaselines.set(material, {
+            material, color: material.color.clone(),
+            roughness: material.roughness, metalness: material.metalness
+          });
+          return material;
+        });
+        binding = { material: mesh.material, geometry: mesh.geometry, instanceColor: (mesh as THREE.InstancedMesh).instanceColor ?? null, clones };
+        mesh.material = Array.isArray(mesh.material) ? clones : clones[0];
+        this.materialThemeBindings.set(mesh, binding);
+      }
+      const instanced = mesh as THREE.InstancedMesh;
+      const vertexColors = binding.geometry.getAttribute('color');
+      const hasAttributeColors = instanced.isInstancedMesh || Boolean((mesh as THREE.BatchedMesh).isBatchedMesh)
+        || Boolean(vertexColors && (binding.clones[0] as THREE.MeshStandardMaterial).vertexColors);
+      if (hasAttributeColors && !binding.baseColors) {
+        const count = instanced.isInstancedMesh ? instanced.count : binding.geometry.getAttribute('position').count;
+        const base = new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3);
+        const original = new THREE.Color();
+        const sources = Array.isArray(binding.material) ? binding.material : [binding.material];
+        const materialIndices = sources.length > 1 && !instanced.isInstancedMesh ? vertexMaterialIndices(binding.geometry, count) : null;
+        for (let i = 0; i < count; i++) {
+          const source = sources[materialIndices?.[i] ?? 0] as THREE.MeshStandardMaterial;
+          original.setRGB(1, 1, 1);
+          if (instanced.isInstancedMesh && binding.instanceColor) original.fromBufferAttribute(binding.instanceColor, i);
+          else if (!instanced.isInstancedMesh && vertexColors && source.vertexColors) original.fromBufferAttribute(vertexColors, i);
+          original.multiply(source.color);
+          base.setXYZ(i, original.r, original.g, original.b);
         }
-      });
+        binding.baseColors = base;
+        if (instanced.isInstancedMesh) instanced.instanceColor = new THREE.InstancedBufferAttribute(base.array.slice(), 3);
+        else {
+          mesh.geometry = binding.geometry.clone();
+          const colors = vertexColors?.clone() ?? base.clone();
+          for (let i = 0; i < count; i++) colors.setXYZ(i, base.getX(i), base.getY(i), base.getZ(i));
+          mesh.geometry.setAttribute('color', colors);
+        }
+        for (const clone of binding.clones) {
+          const material = clone as THREE.MeshStandardMaterial;
+          material.color.setRGB(1, 1, 1);
+          if (!instanced.isInstancedMesh) material.vertexColors = true;
+        }
+      }
+      if (binding.baseColors) {
+        // A direct target is the effective authored base color, before textures/lighting.
+        const colors = instanced.isInstancedMesh ? instanced.instanceColor! : mesh.geometry.getAttribute('color');
+        const batches = mesh.geometry.getAttribute('batchId');
+        const mixed = new THREE.Color();
+        for (let i = 0; i < binding.baseColors.count; i++) {
+          if (slots && !slots.has(instanced.isInstancedMesh ? i : batches?.getX(i))) continue;
+          mixed.fromBufferAttribute(binding.baseColors, i).lerp(color, strength);
+          colors.setXYZ(i, mixed.r, mixed.g, mixed.b);
+        }
+        colors.needsUpdate = true;
+      }
+      // PBR scalars cannot vary per slot without a new shader/material bucket.
+      const wholeMesh = slots === null || selectedAllSlots(mesh, slots);
+      for (const clone of binding.clones) {
+        const material = clone as THREE.MeshStandardMaterial;
+        const baseline = this.materialBaselines.get(material)!;
+        if (!binding.baseColors) material.color.copy(baseline.color!).lerp(color, strength);
+        if (wholeMesh && typeof material.roughness === 'number' && (theme.roughness !== undefined || theme.color === undefined)) {
+          material.roughness = THREE.MathUtils.lerp(baseline.roughness!, theme.roughness ?? targetStyle.roughness, strength);
+        }
+        if (wholeMesh && typeof material.metalness === 'number' && (theme.metalness !== undefined || theme.color === undefined)) {
+          material.metalness = THREE.MathUtils.lerp(baseline.metalness!, theme.metalness ?? targetStyle.metalness, strength);
+        }
+        material.needsUpdate = true;
+      }
     }
   }
 
@@ -1192,6 +1266,32 @@ function scopedTargets(root: THREE.Object3D, scope: { target: string; tag?: stri
   return targets;
 }
 
+function isUnderRoot(object: THREE.Object3D, root: THREE.Object3D): boolean {
+  let current: THREE.Object3D | null = object;
+  while (current) {
+    if (current === root) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+function vertexMaterialIndices(geometry: THREE.BufferGeometry, count: number): Uint32Array {
+  const materials = new Uint32Array(count);
+  const indices = geometry.getIndex();
+  for (const group of geometry.groups) {
+    for (let i = group.start; i < group.start + group.count; i++) {
+      materials[indices ? indices.getX(i) : i] = group.materialIndex ?? 0;
+    }
+  }
+  return materials;
+}
+
+function selectedAllSlots(mesh: THREE.Mesh, slots: Set<number>): boolean {
+  if ((mesh as THREE.InstancedMesh).isInstancedMesh) return slots.size === (mesh as THREE.InstancedMesh).count;
+  const batches = mesh.geometry.getAttribute('batchId');
+  return Boolean(batches) && Array.from({ length: batches.count }, (_, i) => batches.getX(i)).every(slot => slots.has(slot));
+}
+
 function scopedMeshes(root: THREE.Object3D, scope: { target: string; tag?: string }): THREE.Mesh[] {
   const meshes: THREE.Mesh[] = [];
   for (const target of scopedTargets(root, scope)) {
@@ -1231,21 +1331,6 @@ function hasMaterialTag(object: THREE.Object3D, requested: string): boolean {
     current = current.parent;
   }
   return false;
-}
-
-function materialThemeStyle(
-  recipe: RuntimeMaterialTheme['recipe'],
-  tag = ''
-): { color: string; roughness: number; metalness: number } {
-  const styles: Record<RuntimeMaterialTheme['recipe'], { color: string; roughness: number; metalness: number }> = {
-    natural: { color: tag.includes('stone') ? '#8b8b83' : tag.includes('metal') ? '#9aa2a8' : '#6d8c4d', roughness: 0.76, metalness: tag.includes('metal') ? 0.72 : 0.04 },
-    autumn: { color: tag.includes('bark') || tag.includes('wood') ? '#6f4528' : '#bd6b32', roughness: 0.82, metalness: 0.02 },
-    winter: { color: tag.includes('stone') ? '#aab5b8' : '#b8c7c3', roughness: 0.88, metalness: 0.02 },
-    weathered: { color: '#77766f', roughness: 0.94, metalness: tag.includes('metal') ? 0.38 : 0.01 },
-    polished: { color: tag.includes('metal') ? '#b7c0c8' : '#9c9991', roughness: 0.24, metalness: tag.includes('metal') ? 0.86 : 0.08 },
-    pastel: { color: '#c7b9d5', roughness: 0.72, metalness: 0.01 }
-  };
-  return styles[recipe];
 }
 
 function waterRecipe(recipe: RuntimeWaterStyle['recipe']): {

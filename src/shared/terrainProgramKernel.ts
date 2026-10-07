@@ -3,7 +3,11 @@ import { thermalErodeInPlace, carveDrainageInPlace } from './terrainErosion';
 /** This module and terrainErosion are compiled into a fresh worker VM, without host callbacks. */
 export function createTerrainProgramApi(seed: number, size: number, resolution: number) {
   let heights = new Array<number>(resolution * resolution).fill(0);
-  const observations: Array<{label: string; min: number; max: number; samples: number[]}> = [];
+  let terrainRevision = 0;
+  type Inspection = {label: string; min: number; max: number; samples: number[]; points: Array<[number, number]>; terrainRevision: number};
+  const observations: Inspection[] = [];
+  const copyInspection = (report: Inspection): Inspection => ({...report,
+    samples: [...report.samples], points: report.points.map(point => [...point] as [number, number])});
   const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
   const mix = (a: number, b: number, t: number) => a + (b - a) * t;
   const ease = (t: number) => t * t * (3 - 2 * t);
@@ -32,13 +36,16 @@ export function createTerrainProgramApi(seed: number, size: number, resolution: 
   };
   const map = (fn: (x: number, z: number, height: number) => number) => {
     const next = new Array<number>(heights.length);
+    let changed = false;
     for (let z = 0; z < resolution; z++) for (let x = 0; x < resolution; x++) {
       const i = z * resolution + x;
       const h = fn((x / (resolution - 1) - 0.5) * size, (z / (resolution - 1) - 0.5) * size, heights[i]);
       if (!Number.isFinite(h) || Math.abs(h) > 500) throw new Error('terrain_height_out_of_range');
       next[i] = h;
+      changed ||= h !== heights[i];
     }
     heights = next;
+    if (changed) terrainRevision++;
   };
   type ProfilePoint = [number, number, number, number];
   const profile = (points: ProfilePoint[], valley: boolean, slope: number, base: number) => {
@@ -63,23 +70,26 @@ export function createTerrainProgramApi(seed: number, size: number, resolution: 
     if (!Number.isInteger(iterations) || iterations < 0 || iterations > 40
       || ![thermal, drainage].every(v => Number.isFinite(v) && v >= 0 && v <= 1)
       || !Number.isFinite(talus) || talus < 5 || talus > 80) throw new Error('invalid_terrain_erosion');
+    const before = [...heights];
     const field = {terrain: {heights, resolutionX: resolution, resolutionZ: resolution}, box: {size: [size, 501, size] as [number, number, number]}};
     thermalErodeInPlace(field, iterations, talus, thermal, -500);
     for (let i = 0; i < iterations; i++) if (drainage > 0) carveDrainageInPlace(field, drainage, -500);
     heights = field.terrain.heights;
+    if (heights.some((height, index) => height !== before[index])) terrainRevision++;
   };
   const inspect = (label: string, points: Array<[number, number]> = []) => {
     if (typeof label !== 'string' || label.length > 120 || observations.length >= 32
       || !Array.isArray(points) || points.length > 256
-      || !points.every(p => p.length === 2 && p.every(Number.isFinite))) throw new Error('invalid_terrain_inspection');
+      || !points.every(p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite))) throw new Error('invalid_terrain_inspection');
     let min = Infinity, max = -Infinity;
     for (const h of heights) {min = Math.min(min, h); max = Math.max(max, h);}
-    const report = {label, min, max, samples: points.map(p => sample(p[0], p[1]))};
+    const report: Inspection = {label, min, max, samples: points.map(p => sample(p[0], p[1])),
+      points: points.map(point => [...point] as [number, number]), terrainRevision};
     observations.push(report);
-    return {...report, samples: [...report.samples]};
+    return copyInspection(report);
   };
   return {seed, size, resolution, spacing: size / (resolution - 1), noise, map, sample, inspect, erode,
     ridge: (points: ProfilePoint[], options: {base?: number} = {}) => profile(points, false, 1, options.base ?? 0),
     channel: (points: ProfilePoint[], options: {bankSlope?: number} = {}) => profile(points, true, options.bankSlope ?? 0.7, 0),
-    result: () => ({heights, observations})};
+    result: () => ({heights: [...heights], terrainRevision, observations: observations.map(copyInspection)})};
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MapDesignSessionClient, renderDesignMessages } from '../src/client/mapDesignConversation';
+import { MapDesignSessionClient, renderDesignMessages, renderDesignAppearance } from '../src/client/mapDesignConversation';
 import type { MapDesignDraft, MapDesignSessionView } from '../src/shared/mapDesignSession';
 import { createEmptyMap } from '../src/shared/map';
 
@@ -25,6 +25,41 @@ function setup(request: (path: string, init?: RequestInit) => Promise<unknown>, 
 }
 
 describe('persistent map design conversation client', () => {
+  it('explains an oversized asset library without sending or silently truncating it', async () => {
+    const request=vi.fn(async () => ({sessions:[]}));
+    const {client}=setup(request);
+    await client.connect({mapId:'map-a',version:1});
+    request.mockClear();
+    expect(await client.send('Build a map',{assetIds:Array.from({length:65},(_,i)=>`asset-${i}`)})).toBe(false);
+    expect(request).not.toHaveBeenCalled();
+    expect(client.error).toContain('65');
+    expect(client.error).toContain('64 个限制');
+  });
+  it('retries cached geometry after an asynchronous renderer failure, ignoring stale failure callbacks', async () => {
+    let current=session({operationCount:1,draftRevision:1,status:'idle'});
+    const request=vi.fn(async (path:string) => path.endsWith('/draft')?draft(current):path.includes('/maps/')?{sessions:[current]}:{session:current});
+    const {client,hooks}=setup(request);
+    await client.connect({mapId:'map-a',version:1});
+    expect(hooks.draft).toHaveBeenCalledTimes(1);
+    client.invalidateDraft(1);
+    await client.poll();
+    expect(hooks.draft).toHaveBeenCalledTimes(2);
+    expect(request.mock.calls.filter(([path])=>path.endsWith('/draft'))).toHaveLength(1);
+    current={...current,draftRevision:2,version:2};
+    await client.poll();
+    client.invalidateDraft(1);
+    await client.poll();
+    expect(hooks.draft).toHaveBeenCalledTimes(3);
+  });
+  it('shows authored material roles and colors without treating reused assets as recolored', () => {
+    const html=renderDesignAppearance({version:1,intent:'<coherent>',materials:[{role:'plaster',color:'#bda783',notes:'walls'}],
+      renderPlan:{version:1,baseSchemeId:'render-runtime-sketch-mist',modules:[]}});
+    expect(html).toContain('background:#bda783');
+    expect(html).toContain('plaster');
+    expect(html).toContain('&lt;coherent&gt;');
+    expect(html).toContain('复用资产保留原色');
+    expect(renderDesignAppearance()).toBe('');
+  });
   it('retries failed session recovery before allowing a message to create a duplicate conversation', async () => {
     vi.useFakeTimers();
     let recoveries = 0;

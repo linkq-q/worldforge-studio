@@ -5,6 +5,7 @@ import {
   compileRuntimePresentation,
   compileRuntimeStyle,
   compileRuntimeTerrainMaterialStyle,
+  compileRuntimeMaterialThemes,
   RENDER_CAPABILITIES,
   type RenderPlan
 } from '../src/shared/renderPlan';
@@ -13,6 +14,9 @@ import {
   normalizeRenderSuggestion,
   refineRenderSuggestion
 } from '../src/server/renderAi';
+import { createEmptyMap } from '../src/shared/map';
+import { createRenderSceneProfile } from '../src/shared/renderSceneProfile';
+import { normalizeVisualDirection } from '../src/shared/visualDirection';
 
 // Legacy IDs remain useful as isolated parser fixtures; they are not shipped
 // by the product and therefore do not reappear in the scheme picker.
@@ -28,6 +32,164 @@ const BUILTIN_RENDER_SCHEMES = [
 ];
 
 describe('render AI adapter', () => {
+  it('coordinates colors from structured evidence in one text-only request', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({
+      plan: { version: 2, baseSchemeId: 'render-natural-day', modules: [
+        { key: 'leaves', id: 'runtime.material-theme', scope: { target: 'material-tag', tag: 'foliage' }, params: { color: '#71864e' } }
+      ] }
+    }) }), { status: 200 }));
+    const map = createEmptyMap(); map.designSemantics.intent = 'Coastal warm stone village';
+    const suggestion = await generateRenderSuggestion('统一世界配色', BUILTIN_RENDER_SCHEMES, {
+      fetchImpl, coordinateColors: true, sceneProfile: createRenderSceneProfile(map)
+    });
+    expect(suggestion.plan.modules).toContainEqual(expect.objectContaining({ id: 'runtime.material-theme', params: { color: '#71864e' } }));
+    const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
+    expect(request.messages.every((message: {content: unknown}) => typeof message.content === 'string')).toBe(true);
+    expect(request.messages[0].content).toContain('colorContext');
+    expect(request.messages[0].content).toContain('地面、植被、建筑、道具、水体与光照');
+    expect(request.messages[0].content).toContain('区域身份');
+    expect(request.messages[0].content).toContain('源材质颜色');
+    expect(request.messages[0].content).toContain('不得使用截图、视觉模型');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('surfaces invalid coordinated output without AI repair', async () => {
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ ok: true, content: '{invalid' }), { status: 200 }));
+    const progress: string[] = [];
+    await expect(generateRenderSuggestion('统一配色', BUILTIN_RENDER_SCHEMES, {
+      fetchImpl, coordinateColors: true, onProgress: event => progress.push(event.phase)
+    })).rejects.toThrow('invalid_render_ai_json');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(progress).not.toContain('repairing');
+  });
+
+  it('does not retry a failed color coordination transport request', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: false, error: 'busy' }), { status: 503 }));
+    await expect(generateRenderSuggestion('统一配色', BUILTIN_RENDER_SCHEMES, { fetchImpl, coordinateColors: true })).rejects.toThrow();
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('preserves current non-color parameters even when coordinated AI output changes or omits them', async () => {
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day', modules: [
+      { id: 'runtime.grass-style', params: { bladeHeight: 1.2, windStrength: 0.2, rootColor: '#224433' } },
+      { key: 'water', id: 'runtime.water-style', scope: { target: 'water' }, params: { waveStrength: 0.35, opacity: 0.6, color: '#335577' } },
+      { id: 'runtime.post-quality', params: { ssao: 'soft', bloom: 'off' } }
+    ] };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, modules: [
+        { id: 'runtime.grass-style', params: { bladeHeight: 2, windStrength: 0.9, rootColor: '#776644' } },
+        { key: 'water', id: 'runtime.water-style', scope: { target: 'water' }, params: { waveStrength: 1, opacity: 0.8, color: '#448899' } }
+      ]
+    } }) }), { status: 200 }));
+    const suggestion = await refineRenderSuggestion('协调颜色', currentPlan, BUILTIN_RENDER_SCHEMES, { fetchImpl, coordinateColors: true });
+    expect(suggestion.plan.modules).toEqual([
+      { id: 'runtime.grass-style', params: { bladeHeight: 1.2, windStrength: 0.2, rootColor: '#776644' } },
+      { key: 'water', id: 'runtime.water-style', scope: { target: 'water' }, params: { waveStrength: 0.35, opacity: 0.6, color: '#448899' } },
+      { id: 'runtime.post-quality', params: { ssao: 'soft', bloom: 'off' } }
+    ]);
+  });
+
+  it('preserves scoped surface physics and visual direction behavior while coordinating their colors', async () => {
+    const original = { objectId: 'house', partId: 'wall', color: '#c1ad99', roughness: 0.72, metalness: 0.03 };
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day',
+      visualDirection: normalizeVisualDirection({ timeOfDay: 'evening', contrastMode: 'colored-shadow', temperature: 'warm', atmosphereFx: { dust: 0.15 } }),
+      modules: [{ key: 'wall', id: 'runtime.surface-detail', params: { config: JSON.stringify(original) } }] };
+    const direction = normalizeVisualDirection({ timeOfDay: 'night', temperature: 'cool', palette: { accent: '#773355' }, atmosphereFx: { dust: 1 } });
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, visualDirection: direction,
+      modules: [{ key: 'wall', id: 'runtime.surface-detail', params: { config: JSON.stringify({ ...original, color: '#bfc9b2', roughness: 0.1, metalness: 0.9 }) } }]
+    } }) }), { status: 200 }));
+    const sceneProfile = createRenderSceneProfile(createEmptyMap());
+    sceneProfile.targets!.objects = [{ id: 'house', name: 'house', position: [0, 0, 0], parts: [{ id: 'wall', tags: ['base:stone'] }] }];
+    const result = await refineRenderSuggestion('协调石墙与强调色', currentPlan, BUILTIN_RENDER_SCHEMES, { coordinateColors: true, fetchImpl, sceneProfile });
+    expect(JSON.parse(String(result.plan.modules[0].params.config))).toEqual({ ...original, color: '#bfc9b2' });
+    expect(result.plan.visualDirection).toEqual({ ...currentPlan.visualDirection, palette: direction.palette });
+    expect(currentPlan.modules[0].params.config).toBe(JSON.stringify(original));
+  });
+
+  it('rejects fabricated world instance targets on the first coordinated attempt', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      version: 2, baseSchemeId: 'render-natural-day', modules: [{ key: 'fake', id: 'runtime.surface-detail', params: {
+        config: JSON.stringify({ objectId: 'world-ecology:invented', partId: 'leaf', color: '#446633' })
+      } }]
+    } }) }), { status: 200 }));
+    await expect(generateRenderSuggestion('统一树叶颜色', BUILTIN_RENDER_SCHEMES, {
+      coordinateColors: true, fetchImpl, sceneProfile: createRenderSceneProfile(createEmptyMap())
+    })).rejects.toThrow('unknown_scene_art_object:world-ecology:invented');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('validates incoming keyed references before merging colors into a real target', async () => {
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day', modules: [{
+      key: 'wall', id: 'runtime.surface-detail', params: { config: JSON.stringify({ objectId: 'real-house', partId: 'wall', color: '#aaaaaa' }) }
+    }] };
+    const sceneProfile = createRenderSceneProfile(createEmptyMap());
+    sceneProfile.targets!.objects = [{ id: 'real-house', name: 'house', position: [0, 0, 0], parts: [{ id: 'wall', tags: [] }] }];
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, modules: [{ key: 'wall', id: 'runtime.surface-detail', params: {
+        config: JSON.stringify({ objectId: 'invented-house', partId: 'wall', color: '#ff0000' })
+      } }]
+    } }) }), { status: 200 }));
+    await expect(refineRenderSuggestion('协调颜色', currentPlan, BUILTIN_RENDER_SCHEMES, { coordinateColors: true, sceneProfile, fetchImpl }))
+      .rejects.toThrow('unknown_scene_art_object:invented-house');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(currentPlan.modules[0].params.config)).color).toBe('#aaaaaa');
+  });
+
+  it.each([
+    ['runtime.surface-detail', { objectId: 'house', partId: 'wall', color: '#aaaaaa' }, { objectId: 'house', partId: 'roof', color: '#ff0000' }],
+    ['runtime.local-light', { objectId: 'house', targetId: 'lamp', color: '#aaaaaa' }, { objectId: 'house', targetId: 'house', color: '#ff0000' }],
+    ['runtime.color-field', { target: 'terrain', stops: [[0, '#aaaaaa'], [1, '#ffffff']] }, { target: 'grass', stops: [[0, '#ff0000'], [1, '#ffffff']] }]
+  ] as const)('rejects a reused %s key with a different existing config target', async (id, before, after) => {
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day', modules: [{ key: 'rule', id, params: { config: JSON.stringify(before) } }] };
+    const sceneProfile = createRenderSceneProfile(createEmptyMap());
+    sceneProfile.targets!.objects = [
+      { id: 'house', name: 'house', position: [0, 0, 0], parts: [{ id: 'wall', tags: [] }, { id: 'roof', tags: [] }] },
+      { id: 'lamp', name: 'lamp', position: [1, 0, 0], parts: [] }
+    ];
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, modules: [{ key: 'rule', id, params: { config: JSON.stringify(after) } }]
+    } }) }), { status: 200 }));
+    await expect(refineRenderSuggestion('协调颜色', currentPlan, BUILTIN_RENDER_SCHEMES, { coordinateColors: true, sceneProfile, fetchImpl }))
+      .rejects.toThrow('coordinate_rule_target_changed:rule');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a reused material-theme key with a different scope', async () => {
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day', modules: [{
+      key: 'wood', id: 'runtime.material-theme', scope: { target: 'material-tag', tag: 'wood' }, params: { color: '#aaaaaa' }
+    }] };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, modules: [{ key: 'wood', id: 'runtime.material-theme', scope: { target: 'asset-tag', tag: 'house' }, params: { color: '#ff0000' } }]
+    } }) }), { status: 200 }));
+    await expect(refineRenderSuggestion('协调颜色', currentPlan, BUILTIN_RENDER_SCHEMES, { coordinateColors: true, fetchImpl }))
+      .rejects.toThrow('coordinate_rule_target_changed:wood');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it.each<Record<string, string | number>>([{ roughness: 0.9, metalness: 0.2 }, { recipe: 'weathered' }])('preserves existing material interpolation strength for physics-bearing rules %j', async physics => {
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day', modules: [{
+      key: 'wood', id: 'runtime.material-theme', scope: { target: 'material-tag', tag: 'wood' }, params: { ...physics, strength: 0.2, color: '#aaaaaa' }
+    }] };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, modules: [{ ...currentPlan.modules[0], params: { ...physics, strength: 0.8, color: '#ff0000' } }]
+    } }) }), { status: 200 }));
+    const result = await refineRenderSuggestion('协调颜色', currentPlan, BUILTIN_RENDER_SCHEMES, { coordinateColors: true, fetchImpl });
+    const before = compileRuntimeMaterialThemes(currentPlan)[0], after = compileRuntimeMaterialThemes(result.plan)[0];
+    expect(after).toMatchObject({ strength: before.strength, roughness: before.roughness, metalness: before.metalness, color: '#ff0000' });
+  });
+
+  it('allows strength changes on existing pure color material rules', async () => {
+    const currentPlan: RenderPlan = { version: 2, baseSchemeId: 'render-natural-day', modules: [{
+      key: 'wood', id: 'runtime.material-theme', scope: { target: 'material-tag', tag: 'wood' }, params: { strength: 0.2, color: '#aaaaaa' }
+    }] };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: JSON.stringify({ plan: {
+      ...currentPlan, modules: [{ ...currentPlan.modules[0], params: { strength: 0.8, color: '#ff0000' } }]
+    } }) }), { status: 200 }));
+    const result = await refineRenderSuggestion('协调颜色', currentPlan, BUILTIN_RENDER_SCHEMES, { coordinateColors: true, fetchImpl });
+    expect(result.plan.modules[0].params).toEqual({ strength: 0.8, color: '#ff0000' });
+  });
+
   it('keeps scene-directed road colors from AI responses in the render plan', async () => {
     const params = { asphaltColor: '#6a7d85', brickPaverColor: '#b8a58a', roadDetailStrength: 0.3, roadTextureScale: 0.75 };
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({

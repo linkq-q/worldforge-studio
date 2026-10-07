@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Material, Mesh } from 'three';
+import { Color, ShaderLib, type Material, type Mesh, type MeshStandardMaterial } from 'three';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
 import { MAX_GRASS_LAYERS, combinedGrassDensity, inferGrassPreset, normalizeGrassLayers, sampleGrassDensity } from '../src/shared/mapGrass';
 import { applyMapOperations } from '../src/shared/mapOperations';
@@ -39,6 +39,35 @@ describe('map grass layers', () => {
     expect((grassMesh!.material as Material).type).toBe('MeshBasicMaterial');
     expect(grassMesh!.receiveShadow).toBe(true);
     expect(isNormalDepthPrePassMesh(grassMesh!)).toBe(true);
+    field.dispose();
+  });
+
+  it('lights explicitly planned grass colors and keeps them non-emissive after wind updates', () => {
+    const map = applyMapOperations(createEmptyMap('planned grass', 'planned-grass'), [
+      { type: 'grass.layer.add', layer: { id: 'meadow' } },
+      { type: 'grass.fill', layerId: 'meadow', density: 0.5 }
+    ]);
+    const field = buildMapGrassField(map)!;
+    const style = { ...DEFAULT_RUNTIME_GRASS_STYLE, colorMode: 'explicit' as const,
+      rootColor: '#507c42', tipColor: '#9abd69', rootDarken: 1 };
+    field.setStyle(style);
+    const blade = field.group.getObjectByName('grass:meadow') as Mesh;
+    const material = blade.material as MeshStandardMaterial;
+    expect(material.type).toBe('MeshStandardMaterial');
+    expect(material.emissive.getHexString()).toBe('000000');
+    expect(blade.receiveShadow).toBe(true);
+    const colors = blade.geometry.getAttribute('color');
+    expect(new Color().fromBufferAttribute(colors, 0).getHexString()).toBe('507c42');
+    const shader = { ...ShaderLib.standard, uniforms: { ...ShaderLib.standard.uniforms } };
+    material.onBeforeCompile(shader as never, {} as never);
+    expect(shader.vertexShader).toContain('instanceGroundNormal');
+    expect(shader.fragmentShader).toContain('#include <lights_fragment_begin>');
+    expect(shader.vertexShader).not.toContain('transformedNormal = normalize(mix(transformedNormal');
+    expect(shader.fragmentShader).toContain('#include <normal_fragment_begin>\nnormal = normalize(mix(normal, normalize(vGrassGroundViewNormal), uGrassNormalFlatten));\nnonPerturbedNormal = normal;');
+    field.setStyle({ ...style, windStrength: 0.31 });
+    expect((blade.material as MeshStandardMaterial).emissive.getHexString()).toBe('000000');
+    field.setStyle(DEFAULT_RUNTIME_GRASS_STYLE);
+    expect(((field.group.getObjectByName('grass:meadow') as Mesh).material as Material).type).toBe('MeshBasicMaterial');
     field.dispose();
   });
 
