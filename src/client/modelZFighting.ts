@@ -96,8 +96,8 @@ export interface MapZFightingResult {
 }
 
 /**
- * Assigns deterministic render-only depth layers to overlapping coplanar
- * primitives so the correction survives InstancedMesh/BatchedMesh compilation.
+ * Separates shallowly embedded thin panels and assigns render-only depth layers
+ * to overlapping coplanar primitives, including instanced/batched render paths.
  * The source model is never mutated; an unchanged model is returned by
  * reference when no overlapping coplanar faces are found.
  *
@@ -119,7 +119,13 @@ export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult 
   if (!Array.isArray(data.nodes)) return { modelJson, stats: emptyStats() };
 
   const nodes = data.nodes.filter(isModelNode);
-  const entries = collectPrimitiveEntries(nodes);
+  let entries = collectPrimitiveEntries(nodes);
+  const panelPositions = shallowPanelPositions(entries);
+  const renderNodes = panelPositions.size ? data.nodes.map(node => {
+    const position = panelPositions.get(node);
+    return position ? { ...node, transform: { ...node.transform, pos: position } } : node;
+  }) : data.nodes;
+  if (panelPositions.size) entries = collectPrimitiveEntries(renderNodes.filter(isModelNode));
   const stats: ModelZFightingStats = {
     entries: entries.length,
     pairChecks: 0,
@@ -143,7 +149,7 @@ export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult 
       stats.resolvedPairs += 1;
     }
   }
-  if (conflicts.size === 0) return { modelJson, stats };
+  if (conflicts.size === 0 && panelPositions.size === 0) return { modelJson, stats };
 
   const ordered = [...entries].sort((first, second) => (
     second.volume - first.volume
@@ -160,7 +166,7 @@ export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult 
     if (layer > 0) depthLayers.set(entry.node, layer);
   }
 
-  const adjustedNodes = data.nodes.map((node) => {
+  const adjustedNodes = renderNodes.map((node) => {
     const layer = depthLayers.get(node);
     if (!layer || !node.mesh) return node;
     return {
@@ -177,9 +183,69 @@ export function resolveModelZFighting(modelJson: unknown): ModelZFightingResult 
       }
     };
   });
-  stats.adjustedNodes = depthLayers.size;
-  stats.maxDepthLayer = Math.max(...depthLayers.values());
+  stats.adjustedNodes = new Set([
+    ...[...depthLayers.keys()].map(node => node.id), ...[...panelPositions.keys()].map(node => node.id)
+  ]).size;
+  stats.maxDepthLayer = Math.max(0, ...depthLayers.values());
   return { modelJson: { ...data, nodes: adjustedNodes }, stats };
+}
+
+/** A thin inset plate can miss coplanar detection while still disappearing into its backing wall. */
+function shallowPanelPositions(entries: PrimitiveEntry[]): Map<ModelNode, [number, number, number]> {
+  const positions = new Map<ModelNode, [number, number, number]>();
+  const boxes = entries.filter((entry): entry is BoxPrimitive => entry.type === 'box');
+  const faces = new Map(boxes.map(entry => [entry, boxWorldFaces(entry) as RectFace[]]));
+  for (const panel of boxes) {
+    const panelFaces = faces.get(panel)!;
+    const sizes = [0, 2, 4].map(index => panelFaces[index].center.distanceTo(panelFaces[index + 1].center));
+    const axis = sizes.indexOf(Math.min(...sizes));
+    const thickness = sizes[axis];
+    if (thickness > Math.min(...sizes.filter((_, index) => index !== axis)) * 0.2) continue;
+    let offset: THREE.Vector3 | undefined;
+    let ambiguous = false;
+    for (const panelFace of panelFaces.slice(axis * 2, axis * 2 + 2)) {
+      for (const host of boxes) {
+        if (host === panel) continue;
+        const hostFaces = faces.get(host)!;
+        for (let index = 0; index < hostFaces.length; index += 1) {
+          const hostFace = hostFaces[index];
+          if (panelFace.normal.dot(hostFace.normal) < COPLANAR_NORMAL_DOT) continue;
+          const hostThickness = hostFace.center.distanceTo(hostFaces[index ^ 1].center);
+          if (hostThickness < thickness * 3) continue;
+          const embedded = hostFace.normal.dot(hostFace.center.clone().sub(panelFace.center));
+          // Only tiny, fully contained recesses; structural blocks and intentionally deep insets stay intact.
+          if (embedded <= COPLANAR_DISTANCE_EPSILON || embedded > Math.min(0.02, thickness * 0.1)) continue;
+          if (!rectContainsFace(hostFace, panelFace)) continue;
+          // Keep the corrected faces within coplanar tolerance so the ordinary
+          // depth-layer pass also stabilizes them at distant camera positions.
+          const nextOffset = hostFace.normal.clone().multiplyScalar(embedded + COPLANAR_DISTANCE_EPSILON * 0.5);
+          if (offset && offset.clone().normalize().dot(hostFace.normal) < COPLANAR_NORMAL_DOT) ambiguous = true;
+          if (!offset || nextOffset.lengthSq() > offset.lengthSq()) offset = nextOffset;
+        }
+      }
+    }
+    if (!offset || ambiguous) continue;
+    const parentInverse = localMatrixFor(panel.node).multiply(panel.matrixWorld.clone().invert());
+    const position = new THREE.Vector3().setFromMatrixPosition(panel.matrixWorld).add(offset).applyMatrix4(parentInverse);
+    positions.set(panel.node, position.toArray());
+  }
+  return positions;
+}
+
+function rectContainsFace(host: RectFace, panel: RectFace): boolean {
+  const origin = host.corners[0];
+  const u = host.corners[1].clone().sub(origin);
+  const v = host.corners[2].clone().sub(origin);
+  const uu = u.dot(u), vv = v.dot(v), uv = u.dot(v);
+  const determinant = uu * vv - uv * uv;
+  if (determinant <= 1e-12) return false;
+  return panel.corners.every(corner => {
+    const point = corner.clone().sub(origin);
+    const pu = point.dot(u), pv = point.dot(v);
+    const a = (pu * vv - pv * uv) / determinant;
+    const b = (pv * uu - pu * uv) / determinant;
+    return a >= 0 && a <= 1 && b >= 0 && b <= 1;
+  });
 }
 
 /** Applies the model pass only to a render copy, leaving map/collider truth untouched. */
