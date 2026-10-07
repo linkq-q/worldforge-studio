@@ -35,7 +35,7 @@ import { generateDefaultLUT } from '../AIColorPalette.js';
  *   uSaturation  — 饱和度，1=不变，0=灰度，可>1
  *   uTint        — 整体色调偏移（RGB 乘数）
  *   uContrast    — 对比度，1=不变
- *   uBrightness  — 亮度偏移
+ *   uBrightness  — 暗部亮度提升；中间调与高光保持不变
  */
 const ToneMapShader = {
   uniforms: {
@@ -75,7 +75,9 @@ const ToneMapShader = {
       //   S-curve: (color - 0.5) * contrast + 0.5
       //   对比度=1 时不变；>1 拉开中间调；<1 压缩
       // ============================================
-      color = (color - 0.5) * uContrast + 0.5 + uBrightness;
+      float luminanceBeforeGrade = dot(max(color, vec3(0.0)), vec3(0.2126, 0.7152, 0.0722));
+      float shadowWeight = 1.0 - smoothstep(0.0, 0.5, luminanceBeforeGrade);
+      color = (color - 0.5) * uContrast + 0.5 + uBrightness * shadowWeight;
 
       // ============================================
       // 2. 饱和度
@@ -106,7 +108,9 @@ const ToneMapShader = {
       vec3 lutColor = texture2D(uLUT, vec2(luminance, 0.5)).rgb;
       color = mix(color, lutColor, uLUTStrength);
 
-      gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+      // Bloom and OutputPass/ACES consume HDR values after this grading pass.
+      // Only negative values are invalid; clipping highlights here loses energy.
+      gl_FragColor = vec4(max(color, vec3(0.0)), 1.0);
     }
   `,
 };
