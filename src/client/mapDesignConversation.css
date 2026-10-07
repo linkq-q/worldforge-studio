@@ -1,0 +1,25 @@
+.map-design-conversation { display: grid; gap: 12px; padding: 14px 12px; border-bottom: 1px solid var(--line); }
+.map-design-conversation header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.map-design-conversation header strong { font-size: 16px; font-weight: 550; }
+.map-design-conversation header p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.map-design-conversation [data-design-status] { color: #bfcbaa; font-size: 11px; white-space: nowrap; }
+.design-messages { display: grid; gap: 12px; max-height: min(48vh, 520px); overflow: auto; overscroll-behavior: contain; }
+.design-empty { color: var(--muted); font-size: 13px; line-height: 1.75; margin: 5px 0 10px; }
+.design-message { font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.design-message b { display: block; margin-bottom: 4px; font-size: 11px; color: var(--muted); font-weight: 500; }
+.design-message div { white-space: pre-wrap; }
+.design-message-user { margin-left: 16px; padding: 10px; background: #30342d; border-radius: 8px; }
+.design-tool { font-size: 12px; color: var(--muted); border-left: 2px solid #59634d; padding: 4px 0 4px 9px; }
+.design-tool summary { cursor: pointer; overflow-wrap: anywhere; }
+.design-tool pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 200px; overflow: auto; font: 11px/1.6 monospace; }
+.design-progress { color: var(--muted); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.design-progress:empty { display: none; }
+.design-error { margin: 0; padding: 9px; border: 1px solid #77533c; color: #e9bc94; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.design-composer { display: grid; gap: 7px; position: sticky; bottom: -8px; padding: 10px 0 0; background: var(--panel); }
+.design-composer label { font-size: 12px; color: var(--muted); }
+.design-composer textarea { width: 100%; min-height: 84px; resize: vertical; line-height: 1.65; }
+.design-composer-actions, .design-preview-actions { display: flex; align-items: center; gap: 6px; }
+.design-composer-actions [data-design-elapsed] { flex: 1; color: var(--muted); font-size: 11px; }
+.design-preview-actions button { padding: 7px; font-size: 12px; flex: 1; }
+.design-preview-actions button[aria-pressed="true"] { border-color: #819569; background: #303b2b; }
+.design-preview-actions[hidden], .design-error[hidden], [data-design-control][hidden] { display: none; }

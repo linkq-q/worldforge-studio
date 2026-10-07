@@ -169,6 +169,8 @@ import {
   type MapTransactionSummary
 } from '../shared/mapOperations';
 import { createGenerationPreviewOverlay, type GenerationPreviewOverlay } from './generationPreviewOverlay';
+import { MapDesignConversation, MapDesignSessionClient } from './mapDesignConversation';
+import './mapDesignConversation.css';
 
 interface WorldWhiteboxPreviewDetails {
   originalPlan: unknown;
@@ -542,7 +544,9 @@ class MapEditor {
   private newWorldScaleProfile: WorldScaleProfile = DEFAULT_WORLD_SCALE_PROFILE;
   private roomWallDisplayMode: RoomWallDisplayMode = 'cutaway';
   private mapAiSuggestion: MapAiSuggestion | null = null;
-  private mapPreviewKind: 'ai' | 'terrain' | 'draft' = 'ai';
+  private mapPreviewKind: 'ai' | 'terrain' | 'draft' | 'conversation' = 'ai';
+  private designClient: MapDesignSessionClient | null = null;
+  private designConversation: MapDesignConversation | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiPreviewVisible = true;
   private mapAiComparisonMap: EditableMap | null = null;
@@ -816,6 +820,7 @@ class MapEditor {
         </section>
         <aside class="editor-sidebar right">
           <div class="inspector-heading"><strong>属性</strong><button id="close-editor-panel" class="secondary" type="button" aria-label="关闭面板">×</button></div>
+          <div id="map-design-panel"></div>
           <div id="map-ai-panel"></div>
           <div id="map-layout-panel"></div>
           <div id="map-inspector"></div>
@@ -1145,13 +1150,13 @@ class MapEditor {
     const edit = menu('编辑', byId('undo-edit'), byId('redo-edit'), byId('undo-transaction'), byId('redo-transaction'));
     const map = menu('地图', tools, transforms, byId('add-object'), byId('confirm-map'), button('地图设置…', 'map'));
     const assets = menu('资产', button('资产面板…', 'asset'));
-    const generate = menu('生成', button('生成地图…', 'generate'), button('生态分区…', 'map'), toolbar.querySelector<HTMLElement>('[data-open-workspace="experiments"]')!);
+    const generate = menu('生成', button('设计对话…', 'generate'), button('生态分区…', 'map'), toolbar.querySelector<HTMLElement>('[data-open-workspace="experiments"]')!);
     const render = menu('渲染', button('渲染设置…', 'render'), byId('toggle-developer-mode'));
     view.querySelector('summary')!.textContent = '视图';
     view.classList.add('engine-menu');
     view.querySelector('.toolbar-transfer-menu')!.append(toolbar.querySelector<HTMLElement>('[data-play-mode]')!);
     hierarchy.textContent = '场景层级';
-    const windows = menu('窗口', hierarchy, button('生成面板', 'generate'), button('地图面板', 'map'), button('属性面板', 'object'), button('资产面板', 'asset'), button('渲染面板', 'render'), toolbar.querySelector<HTMLElement>('[data-open-workspace="maps"]')!);
+    const windows = menu('窗口', hierarchy, button('设计对话', 'generate'), button('地图面板', 'map'), button('属性面板', 'object'), button('资产面板', 'asset'), button('渲染面板', 'render'), toolbar.querySelector<HTMLElement>('[data-open-workspace="maps"]')!);
     const nav = document.createElement('nav');
     nav.className = 'editor-menu-bar';
     nav.setAttribute('aria-label', '主菜单');
@@ -1159,7 +1164,7 @@ class MapEditor {
     const currentMap = document.createElement('span');
     currentMap.id = 'editor-current-map-name';
     currentMap.className = 'editor-current-map';
-    const generateTrigger = button('生成', 'generate');
+    const generateTrigger = button('设计对话', 'generate');
     generateTrigger.className = 'engine-generate-trigger';
     toolbar.replaceChildren(brand, nav, currentMap, stage, generateTrigger, save);
     nav.querySelectorAll<HTMLButtonElement>('.toolbar-transfer-menu button').forEach((item) => {
@@ -1180,7 +1185,7 @@ class MapEditor {
       item.addEventListener('click', () => this.openEditorPanel(item.dataset.panelTarget!));
     });
     this.app.querySelector('#close-editor-panel')?.addEventListener('click', () => this.openEditorPanel('none'));
-    this.app.dataset.panel = 'none';
+    this.app.dataset.panel = 'generate';
   }
 
   private openEditorPanel(panel: string): void {
@@ -1193,7 +1198,7 @@ class MapEditor {
   private updateEditorPanel(): void {
     const panel = this.app.dataset.panel;
     const heading = this.app.querySelector<HTMLElement>('.inspector-heading strong');
-    if (heading) heading.textContent = ({ generate: '生成地图', map: '地图设置', object: '属性', asset: '资产', render: '渲染方案' } as Record<string, string>)[panel ?? ''] ?? '';
+    if (heading) heading.textContent = ({ generate: '设计地图', map: '地图设置', object: '属性', asset: '资产', render: '渲染方案' } as Record<string, string>)[panel ?? ''] ?? '';
     this.app.querySelectorAll<HTMLButtonElement>('[data-panel-target]').forEach((button) => {
       button.classList.toggle('active', button.dataset.panelTarget === panel);
     });
@@ -1404,6 +1409,8 @@ class MapEditor {
   private async loadMap(id: string): Promise<boolean> {
     if (!id || id === this.state.map?.id) return true;
     if (!await this.confirmLeaveDirtyMap()) return false;
+    this.designClient?.disconnect();
+    this.designConversation?.render();
     this.cancelAssetPlacement();
     const [{ map }, { transaction, redoTransaction }] = await Promise.all([
       editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(id)}`),
@@ -1791,12 +1798,11 @@ class MapEditor {
   }
 
   private renderPanels(): void {
+    this.syncDesignConversation();
     this.renderStats?.setVisible(true);
     this.renderMapSelector();
     this.renderHierarchy();
     const mapStage = this.state.stage === 'map';
-    const mapAiHost = this.app.querySelector<HTMLElement>('#map-ai-panel');
-    if (mapAiHost) mapAiHost.hidden = !mapStage || this.mapPreviewKind === 'draft';
     const mapLayoutHost = this.app.querySelector<HTMLElement>('#map-layout-panel');
     if (mapLayoutHost) mapLayoutHost.hidden = !mapStage || Boolean(this.mapAiPreviewMap);
     const mapEditorHidden = !mapStage || Boolean(this.mapAiPreviewMap);
@@ -1823,6 +1829,88 @@ class MapEditor {
     this.updateToolbarState();
   }
 
+  private syncDesignConversation(): void {
+    const host = this.app.querySelector<HTMLElement>('#map-design-panel');
+    if (!host) return;
+    host.hidden = this.state.stage !== 'map' || this.mapPreviewKind === 'draft';
+    if (!this.designClient) {
+      this.designClient = new MapDesignSessionClient(editorFetch, {
+        changed: () => { this.designConversation?.render(); this.updateToolbarState(); },
+        blocked: () => this.designConversationBlock(),
+        draft: async draft => {
+          if (this.state.map?.id !== draft.session.mapId || this.state.dirty || this.state.busy
+            || this.pendingMapDraftRecovery || this.mapAiPreviewMap && this.mapPreviewKind !== 'conversation') return false;
+          this.mapAiComparisonMap ??= cloneMap(this.state.map);
+          this.mapAiPreviewMap = normalizeMap(draft.map);
+          this.mapAiSuggestion = draft.suggestion;
+          this.mapPreviewKind = 'conversation';
+          this.state.selectedObjectId = null;
+          void this.refreshScene().then(() => {
+            if (this.state.map?.id === draft.session.mapId) this.renderPanels();
+          }).catch(error => {
+            if (this.state.map?.id === draft.session.mapId) {
+              this.state.message = `草稿已保留，但场景显示失败：${error instanceof Error ? error.message : String(error)}`;
+              this.updateToolbarState();
+            }
+          });
+          this.renderPanels();
+          return true;
+        },
+        committed: async result => {
+          if (this.state.map?.id !== result.map.id) return;
+          if (this.state.dirty) {
+            this.clearMapAiPreview();
+            this.state.message = '对话草稿已保存到服务器；提交期间新增的手工修改仍保留在编辑器，请先处理版本冲突。';
+            void this.refreshScene();
+            this.renderPanels();
+            return;
+          }
+          this.state.map = normalizeMap(result.map);
+          this.clearMapAiPreview();
+          this.state.undoTransaction = result.transaction;
+          this.state.redoTransaction = null;
+          this.state.selectedObjectId = null;
+          this.resetRenderDraft();
+          this.resetManualHistory(this.state.map, true);
+          this.state.message = '对话草稿已应用，可撤销本次修改；继续发送想法即可接着设计。';
+          await this.clearBrowserMapDraft(result.map.id);
+          await this.reloadLists();
+          await this.refreshScene();
+          this.renderPanels();
+        },
+        reset: () => {
+          if (this.mapPreviewKind === 'conversation') {
+            this.clearMapAiPreview();
+            void this.refreshScene();
+            this.renderPanels();
+          }
+        }
+      });
+      this.designConversation = new MapDesignConversation(host, this.designClient, () => ({
+        provider: this.mapAiProvider,
+        assetProvider: this.mapAiAssetProvider || undefined,
+        maxNewAssets: this.mapAiMaxNewAssets,
+        assetIds: this.mapAiReuseExistingAssets ? this.state.libraryAssets.map(asset => asset.id) : undefined
+      }), after => {
+        if (this.mapPreviewKind !== 'conversation') return;
+        this.mapAiPreviewVisible = after;
+        void this.refreshScene();
+      }, () => this.mapAiPreviewVisible);
+    }
+    const legacy = this.app.querySelector<HTMLElement>('#map-ai-panel');
+    if (legacy) legacy.hidden = this.state.stage !== 'map' || this.mapPreviewKind === 'draft'
+      || this.designClient.pending || Boolean(this.designClient.session);
+    const blocked = this.designConversationBlock();
+    void this.designClient.connect(this.state.map ? { mapId: this.state.map.id, version: this.state.map.version, blocked } : null);
+  }
+
+  private designConversationBlock(): string {
+    return this.state.dirty ? '请先保存当前手工修改。对话草稿不会覆盖未保存内容。'
+      : this.state.busy ? '正在处理其他编辑操作，请稍候。'
+      : this.pendingMapDraftRecovery || this.mapAiPreviewMap && this.mapPreviewKind !== 'conversation'
+        ? '请先处理当前预览，再继续设计对话。' : '';
+  }
+
   private renderMapAiPanel(): void {
     const host = this.app.querySelector<HTMLElement>('#map-ai-panel');
     const layoutHost = this.app.querySelector<HTMLElement>('#map-layout-panel');
@@ -1833,7 +1921,7 @@ class MapEditor {
       if (layoutHost) layoutHost.innerHTML = '';
       return;
     }
-    const suggestion = this.mapAiSuggestion;
+    const suggestion = this.mapPreviewKind === 'conversation' ? null : this.mapAiSuggestion;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
     const terrainCount = suggestion?.operations.filter((operation) => operation.type.startsWith('terrain.')).length ?? 0;
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
@@ -1853,13 +1941,13 @@ class MapEditor {
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim()
       || !compositionAvailable || Boolean(this.pendingCompositionPlan || this.pendingCodeSuggestion);
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
-    const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
-    const advancedOpen = host.querySelector<HTMLDetailsElement>('.map-ai-advanced')?.open ?? false;
+    const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? false;
+    const advancedOpen = host.querySelector<HTMLDetailsElement>('[data-map-ai-options]')?.open ?? false;
     const layoutHtml = map.sceneMode === 'indoor' ? '' : this.renderMapLayoutHtml(map);
     if (layoutHost) layoutHost.innerHTML = layoutHtml;
     host.innerHTML = `
-      <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
-        <summary><span><b>${map.sceneMode === 'indoor' ? 'AI 生成室内场景' : 'AI 生成地图'}</b><small>一句话生成或继续调整</small></span></summary>
+      <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || Boolean(suggestion) ? 'open' : ''}>
+        <summary><span><b>旧版生成工具</b><small>单次生成、地形与兼容选项</small></span></summary>
         <section class="editor-section inspector-body map-ai">
         <label for="map-ai-prompt">场景描述</label>
         <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
@@ -1880,7 +1968,7 @@ class MapEditor {
           ${map.world ? renderSavedWorldWhiteboxDetails(map.world) : ''}
           ${map.world ? `<label class="field compact"><span>前往聚落／规划点</span><select id="world-town"><option value="">选择地点…</option>${map.world.bundle.plan.towns.map(town=>`<option value="${escapeHtml(town.id)}">${escapeHtml(town.name)}${map.world!.bundle.patches.some(patch => patch.townId === town.id) ? '' : '（仅规划）'}</option>`).join('')}</select></label>` : ''}
         </details>` : ''}
-        <details class="map-ai-advanced" ${advancedOpen ? 'open' : ''}>
+        <details class="map-ai-advanced" data-map-ai-options ${advancedOpen ? 'open' : ''}>
           <summary>高级设置</summary>
         <label class="field compact">
           <span>焦点偏好（可选）</span>
@@ -3709,6 +3797,7 @@ class MapEditor {
   }
 
   private async applyMapAiPreview(): Promise<void> {
+    if (this.mapPreviewKind === 'conversation') { await this.designClient?.commit(); return; }
     const map = this.state.map;
     const suggestion = this.mapAiSuggestion;
     if (!map || !suggestion || this.state.dirty || this.mapAiRoundSavePromise
@@ -6706,7 +6795,8 @@ class MapEditor {
     }
     this.updateSceneLighting();
     const rebuildStartedAt = performance.now();
-    const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
+    const displayed = this.displayedMap();
+    const next = await buildEditableMapGroup(this.mapWithEditorAssets(displayed), {
       editorHelpers: true,
       scene: this.scene,
       renderer: this.renderer ?? undefined,
@@ -6715,6 +6805,9 @@ class MapEditor {
           distance: Math.abs(this.camera.position.y - this.orbit.target.y) }
       } : {})
     });
+    // A newer draft or map can arrive while a heavy scene is building. Its queued
+    // rebuild owns the next swap; never flash the superseded scene into view.
+    if (displayed !== this.displayedMap()) { next.dispose(); return; }
     const rebuildMs = performance.now() - rebuildStartedAt;
     if (rebuildMs > 100) {
       const profile = next.buildProfile;
@@ -7324,6 +7417,14 @@ class MapEditor {
   }
 
   private updateToolbarState(): void {
+    if (this.designClient) this.syncDesignConversation();
+    const designTrigger = this.app.querySelector<HTMLButtonElement>('.engine-generate-trigger');
+    if (designTrigger) {
+      const session = this.designClient?.session;
+      const status = session?.status === 'running' ? ' · 制作中' : session?.status === 'paused' ? ' · 已暂停' : session?.status === 'failed' ? ' · 需要处理' : '';
+      designTrigger.textContent = `设计对话${status}`;
+      designTrigger.title = session?.progress?.label ?? '打开地图设计对话';
+    }
     const mapStage = this.state.stage === 'map';
     this.app.dataset.stage = this.state.stage;
     this.app.querySelectorAll<HTMLButtonElement>('[data-panel-target]').forEach((button) => {
@@ -7645,7 +7746,8 @@ class MapEditor {
       await this.clearBrowserMapDraft(this.pendingMapDraftRecovery.savedMap.id);
       this.clearMapAiPreview();
     }
-    if (this.mapAiPreviewMap) {
+    // Session drafts live on the server and resume when this map is reopened.
+    if (this.mapAiPreviewMap && this.mapPreviewKind !== 'conversation') {
       if (!confirm('当前 AI 地图预览尚未应用。\n\n确定：放弃预览并继续\n取消：留在当前地图')) return false;
       this.clearMapAiPreview();
     }
@@ -7920,7 +8022,7 @@ class MapEditor {
 
   private handleBeforeUnload = (event: BeforeUnloadEvent): void => {
     if (this.state.dirty) this.flushBrowserMapDraft();
-    if (!this.state.dirty && !this.renderDraftChanged && !this.mapAiPreviewMap) return;
+    if (!this.state.dirty && !this.renderDraftChanged && (!this.mapAiPreviewMap || this.mapPreviewKind === 'conversation')) return;
     event.preventDefault();
     event.returnValue = '';
   };

@@ -74,6 +74,7 @@ import type { ProjectExportProfile } from '../shared/projectExport';
 import { applyPaletteToModelJson, type ColorPalette } from '../shared/colorPalette';
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
+import { handleMapDesignHttp } from './mapDesignHttp';
 import { generationTraceId, recordGenerationTrace, withGenerationTrace } from './generationTrace';
 import { generateApprovedWorldAssets, generateWorld } from './worldGeneration';
 import {
@@ -330,6 +331,7 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
   }
 
   if (await handleExperimentRoute(req, res, store, parts)) return;
+  if (await handleMapDesignHttp(req, res, store, parts)) return;
 
   if (parts[2] === 'maps') {
     await handleEditorMaps(req, res, store, parts);

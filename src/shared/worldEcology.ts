@@ -14,6 +14,8 @@ export interface EcologyRule {
   scale: [number, number];
   region?: WorldTerrainRegion;
   regionFeather?: number;
+  /** World-space candidate-center clearances; include the intended asset/canopy margin in the authored region. */
+  exclusions?: WorldTerrainRegion[];
   /** Four-point water distance band: outer min, preferred min/max, outer max. */
   waterDistance?: HabitatBand;
   /** Water measured by waterDistance; omitted keeps the legacy fresh-water behavior. */
@@ -32,6 +34,20 @@ export interface EcologyInstance {
 export interface EcologyChunk { x: number; z: number }
 export const ECOLOGY_CHUNK_SIZE = 256;
 
+function normalizeEcologyRegion(region: WorldTerrainRegion): WorldTerrainRegion {
+  if (!region || typeof region !== 'object') throw new Error('invalid_ecology_rule');
+  if (region.kind === 'circle' && Array.isArray(region.center) && region.center.length === 2
+    && region.center.every(Number.isFinite) && Number.isFinite(region.radius) && region.radius >= 1 && region.radius <= 256000) {
+    return {kind:'circle', center:[region.center[0],region.center[1]], radius:region.radius};
+  }
+  if (region.kind === 'path' && Array.isArray(region.points) && region.points.length >= 2 && region.points.length <= 64
+    && region.points.every(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))
+    && Number.isFinite(region.width) && region.width >= 1 && region.width <= 1000) {
+    return {kind:'path', points:region.points.map(point => [point[0],point[1]]), width:region.width};
+  }
+  throw new Error('invalid_ecology_rule');
+}
+
 export function validateEcologyRules(input: unknown): EcologyRule[] {
   if (!Array.isArray(input) || input.length > 8) throw new Error('invalid_ecology_rules: at most 8 rules');
   const seen = new Set<string>();
@@ -47,24 +63,16 @@ export function validateEcologyRules(input: unknown): EcologyRule[] {
       || rule.scale[0] <= 0 || rule.scale[1] < rule.scale[0] || rule.scale[1] > 8
       || rule.waterSource !== undefined && !['fresh', 'sea', 'any'].includes(rule.waterSource)
       || rule.regionFeather !== undefined && (!Number.isFinite(rule.regionFeather) || rule.regionFeather < 0 || rule.regionFeather > 2000)) throw new Error('invalid_ecology_rule');
-    let region: WorldTerrainRegion | undefined;
-    if (rule.region !== undefined) {
-      if (!rule.region || typeof rule.region !== 'object') throw new Error('invalid_ecology_rule');
-      if (rule.region.kind === 'circle' && Array.isArray(rule.region.center) && rule.region.center.length === 2
-        && rule.region.center.every(Number.isFinite) && Number.isFinite(rule.region.radius) && rule.region.radius >= 1 && rule.region.radius <= 256000) {
-        region = { kind: 'circle', center: [rule.region.center[0], rule.region.center[1]], radius: rule.region.radius };
-      } else if (rule.region.kind === 'path' && Array.isArray(rule.region.points) && rule.region.points.length >= 2 && rule.region.points.length <= 64
-        && rule.region.points.every(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))
-        && Number.isFinite(rule.region.width) && rule.region.width >= 1 && rule.region.width <= 1000) {
-        region = { kind: 'path', points: rule.region.points.map(point => [point[0], point[1]]), width: rule.region.width };
-      } else throw new Error('invalid_ecology_rule');
-    }
+    const region = rule.region === undefined ? undefined : normalizeEcologyRegion(rule.region);
+    if (rule.exclusions !== undefined && (!Array.isArray(rule.exclusions) || rule.exclusions.length > 32)) throw new Error('invalid_ecology_rule');
+    const exclusions = rule.exclusions === undefined ? undefined : Array.from(rule.exclusions, normalizeEcologyRegion);
     const waterDistance = normalizeHabitatBand(rule.waterDistance);
     if (rule.waterDistance !== undefined && !waterDistance) throw new Error('invalid_ecology_rule');
     seen.add(rule.id);
     return { id: rule.id, kind: rule.kind, biome: rule.biome, density: rule.density,
       spacing: rule.spacing, maxSlope: rule.maxSlope, scale: [rule.scale[0], rule.scale[1]],
       ...(region ? { region } : {}), ...(rule.regionFeather === undefined ? {} : { regionFeather: rule.regionFeather }),
+      ...(exclusions === undefined ? {} : {exclusions}),
       ...(waterDistance ? { waterDistance } : {}), ...(rule.waterSource ? { waterSource: rule.waterSource } : {}) };
   });
   return rules.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -203,7 +211,11 @@ export function generateEcologyChunk(
       || point.threshold >= rule.density || options.exclusion?.(point.x, point.z, rule.spacing / 2)) return reject();
     const localDensity = options.density ? options.density(point.x, point.z) : 1;
     if (!Number.isFinite(localDensity)) throw new Error('invalid_ecology_density');
-    const density = rule.density * Math.max(0, Math.min(1, localDensity));
+    let density = rule.density * Math.max(0, Math.min(1, localDensity));
+    for (const exclusion of rule.exclusions ?? []) {
+      density *= 1 - worldRegionWeight(exclusion, point.x, point.z);
+      if (density === 0) return reject();
+    }
     const regionDensity = rule.region ? worldRegionWeight(rule.region, point.x, point.z, rule.regionFeather ?? 0) : 1;
     if (point.threshold >= density * regionDensity) return reject();
     if (rule.waterDistance) {

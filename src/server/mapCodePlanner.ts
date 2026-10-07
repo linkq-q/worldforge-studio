@@ -76,6 +76,8 @@ import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
 import { distanceToWater, isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
 import { createMapStreetGrid, mapGuidePolyline, sampleMapGuide, type MapPlannedBlock } from '../shared/mapGuide';
 import { createUrbanLayout, type UrbanLayoutOptions } from '../shared/mapUrbanLayout';
+import { validateWorldMapState, type WorldMapState } from '../shared/worldMapState';
+import { diagnoseWorldBundle, validateWorldPlan, worldPlanKey } from '../shared/worldPlanning';
 import { createWaterfrontUrbanLayout, type WaterfrontUrbanLayoutOptions } from '../shared/mapWaterfrontLayout';
 import {
   TERRAIN_ACCESS_MODES,
@@ -200,6 +202,9 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   discoveryOnly?: boolean;
   /** Reuse a user-approved Code candidate without asking the model to redesign it. */
   approvedCode?: string;
+  /** Stable within a base map/version and placement declaration order; used by design sessions. */
+  stablePlacementIds?: boolean;
+  worldEditPolicy?: 'diagnostic';
   /** Replay historical plans in diagnostics; regular editor generation never enables this. */
   legacyApis?: boolean;
   /** Local experiment overrides; never applied to regular editor requests. */
@@ -582,6 +587,8 @@ interface CodeAssetRequirementInput {
 }
 
 interface CodeExecutionOptions {
+  stablePlacementIds?: boolean;
+  worldEditPolicy?: 'diagnostic';
   /** Standalone historical scripts only; newly generated code never enables this. */
   legacyApis?: boolean;
   refineScope?: MapRefineScope;
@@ -615,6 +622,8 @@ interface CodeExecutionIssue {
 }
 
 interface MapCodeReplayContext {
+  stablePlacementIds?: boolean;
+  worldEditPolicy?: 'diagnostic';
   legacyApis?: boolean;
   refineScope?: MapRefineScope;
   mapId: string;
@@ -862,6 +871,8 @@ export async function generateMapCodeSuggestion(
   });
   const failedTasks = tasks.filter((_task, index) => generatedResults[index] === null);
   const replayContext: Omit<MapCodeReplayContext, 'expiresAt'> = {
+    stablePlacementIds: options.stablePlacementIds,
+    worldEditPolicy: options.worldEditPolicy,
     mapId: map.id,
     mapVersion: map.version,
     planningMap: map,
@@ -965,6 +976,7 @@ async function adaptMapCodeToGeneratedAssets(
       promptMode: options.promptMode,
       legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
+      worldEditPolicy: options.worldEditPolicy,
       executionTimeoutMs: clampInteger(
         options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
         1,
@@ -997,6 +1009,7 @@ async function adaptMapCodeToGeneratedAssets(
       promptMode: options.promptMode,
       legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
+      worldEditPolicy: options.worldEditPolicy,
       executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? MAP_CODE_FINAL_TIMEOUT_MS, 1, MAP_CODE_FINAL_TIMEOUT_MS),
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     }).suggestion;
@@ -1098,6 +1111,8 @@ function executeFinalMapCodeReplay(
   executionTimeoutMs: number
 ): MapAiSuggestion {
   return runMapCodePlan(context.code, context.planningMap, context.assets, {
+    stablePlacementIds: context.stablePlacementIds,
+    worldEditPolicy: context.worldEditPolicy,
     refineScope: context.refineScope,
     mode: 'final',
     requestMode: context.requestMode,
@@ -1127,7 +1142,8 @@ function completeGeneratedMapCodeSuggestion(
       !((operation.type === 'object.remove' || operation.type === 'object.update') && retained.has(operation.objectId))) };
   }
   const placedAssetIds = new Set(final.operations.flatMap((operation) => (
-    operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
+    operation.type === 'world.set' ? operation.world.assets.map(binding => binding.assetId)
+      : operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
   )));
   const unplacedGeneratedAssets = context.generatedAssets.filter((asset) => !placedAssetIds.has(asset.id));
   const finalProgramIssues = findAuthoredSceneProgramIssues(map, final);
@@ -1240,6 +1256,8 @@ function executeMapCodePlanInternal(
   const sceneOperations: MapOperation[] = [];
   const renderPromptSuggestions: string[] = [];
   const requirements = new Map<string, CodeAssetRequirement>();
+  const worldAssetReferences = new Set<string>();
+  let authoredWorldState: WorldMapState | null = null;
   const unresolvedAssetIds = new Set<string>();
   const foundationWarnings: string[] = [];
   const missingAssetBindings = new Set<string>();
@@ -1331,18 +1349,16 @@ function executeMapCodePlanInternal(
     const points = codePointArray(input.points, 'invalid_map_code_route_points').slice(0, MAX_MAP_GUIDE_POINTS);
     if (points.length < 2) throw new Error('invalid_map_code_route_points');
     const width = clampFinite(input.width ?? 1.5, 0.2, Math.min(map.box.size[0], map.box.size[2]));
-    emitSceneOperation({
-      type: 'guide.upsert',
-      guide: {
-        id,
-        name: cleanText(input.name ?? id, 80),
-        points,
-        curve: input.curve === 'catmull-rom' ? 'catmull-rom' : 'polyline',
-        closed: input.closed === true && points.length >= 3,
-        width,
-        tags: normalizeAssetTags(['route', 'circulation', ...(input.tags ?? [])]) ?? ['route', 'circulation']
-      }
-    });
+    const guide = {
+      id,
+      name: cleanText(input.name ?? id, 80),
+      points,
+      curve: input.curve === 'catmull-rom' ? 'catmull-rom' as const : 'polyline' as const,
+      closed: input.closed === true && points.length >= 3,
+      width,
+      tags: normalizeAssetTags(['route', 'circulation', ...(input.tags ?? [])]) ?? ['route', 'circulation']
+    };
+    emitSceneOperation({ type: 'guide.upsert', guide });
     if (input.groupId && designSemantics.groups.some((group) => group.id === input.groupId)) {
       designSemantics = {
         ...designSemantics,
@@ -1365,7 +1381,7 @@ function executeMapCodePlanInternal(
         ...normalizeCodeSurfaceParams({
           surface,
           material,
-          region: { kind: 'path', points, width },
+          region: { kind: 'path', points: mapGuidePolyline(guide), width },
           intensity: input.intensity ?? 1,
           zoneId: `code:route:${id}`,
           clearNatural: true
@@ -1491,6 +1507,44 @@ function executeMapCodePlanInternal(
     PHI: (1 + Math.sqrt(5)) / 2,
     seed: map.seed,
     bounds: Object.freeze(getMapBounds(map)),
+    worldState(): WorldMapState {
+      record('worldState');
+      const world = authoredWorldState ?? currentEnvironmentMap().world;
+      if (!world) throw new Error('map_code_world_unavailable');
+      return structuredClone(world);
+    },
+    editWorld(edit: (state: WorldMapState) => WorldMapState | void): void {
+      record('editWorld');
+      if (typeof edit !== 'function') throw new Error('invalid_map_code_world_edit');
+      const current = authoredWorldState ?? currentEnvironmentMap().world;
+      if (!current) throw new Error('map_code_world_unavailable');
+      const draft = structuredClone(current);
+      const returned = edit(draft);
+      if (returned && typeof (returned as unknown as {then?: unknown}).then === 'function') {
+        throw new Error('async_map_code_world_edit_not_supported');
+      }
+      const candidate = returned === undefined ? draft : returned;
+      if (!candidate || !candidate.bundle || !Array.isArray(candidate.assets)) throw new Error('invalid_map_code_world_edit');
+      const plan = validateWorldPlan({...candidate.bundle.plan, revision: current.bundle.plan.revision + 1,
+        ...(options.worldEditPolicy ? {generationPolicy:options.worldEditPolicy} : {})});
+      const worldKey = worldPlanKey(plan);
+      const originalBindings = candidate.assets.filter(binding =>
+        typeof binding?.assetId !== 'string' || !isCodeMissingAsset(binding.assetId));
+      // Validate pending bindings too, before paying for generation. Their placeholder URI
+      // stays in the program's working state, but never enters a world.set operation.
+      const bindings = originalBindings.map(binding => typeof binding?.assetId === 'string'
+        && isCodeAssetPlaceholder(binding.assetId) ? {...binding,assetId:'pending-world-asset'} : binding);
+      const world = validateWorldMapState({...candidate, assets: bindings,
+        bundle: {plan, patches: candidate.bundle.patches.map(patch => ({...patch, worldKey}))}});
+      authoredWorldState = {...world, assets:world.assets.map(binding =>
+        ({...binding, assetId:originalBindings.find(original => original.key === binding.key)!.assetId}))};
+      worldAssetReferences.clear();
+      for (const binding of authoredWorldState.assets) {
+        if (isCodeAssetPlaceholder(binding.assetId)) worldAssetReferences.add(binding.assetId);
+      }
+      emitSceneOperation({type:'world.set', world:{...world,
+        assets:authoredWorldState.assets.filter(binding => !isCodeAssetPlaceholder(binding.assetId))}});
+    },
     urbanLayout(options: UrbanLayoutOptions | WaterfrontUrbanLayoutOptions = {}) {
       record('urbanLayout');
       if (options.pattern === 'waterfront') {
@@ -3376,7 +3430,8 @@ function executeMapCodePlanInternal(
     throw new Error('empty_map_code_plan');
   }
   if (mode === 'discovery') {
-    const placedAssetIds = new Set(placements.flatMap((placement) => placement.assetId ? [placement.assetId] : []));
+    const placedAssetIds = new Set([...worldAssetReferences,
+      ...placements.flatMap((placement) => placement.assetId ? [placement.assetId] : [])]);
     for (const [key, requirement] of requirements) {
       const usedIndices = Array.from({ length: requirement.variants }, (_, index) => index)
         .filter((index) => placedAssetIds.has(codeAssetPlaceholder(key, index)));
@@ -3447,9 +3502,15 @@ function executeMapCodePlanInternal(
   const objectIdByReference = new Map<string, string>();
   const fitToDimensionsObjectIds = new Set<string>();
   const workingMap = { ...terrainMap, objects: [...terrainMap.objects] };
+  const stablePrefix = `obj-design-${(hashText(`${map.id}:${map.version}`) >>> 0).toString(36)}`;
+  const usedObjectIds = new Set(workingMap.objects.map(object => object.id));
   let attachmentFallbackCount = 0;
   for (const placement of placements) {
-    const objectId = createId('obj-code');
+    let objectId = options.stablePlacementIds
+      ? `${stablePrefix}-${placement.referenceId.slice('code-object://'.length)}` : createId('obj-code');
+    const candidateId = objectId;
+    for (let collision = 1; usedObjectIds.has(objectId); collision++) objectId = `${candidateId}-${collision}`;
+    usedObjectIds.add(objectId);
     let object: Extract<MapOperation, { type: 'object.add' }>['object'];
     if (placement.attachment) {
       const parentId = objectIdByReference.get(placement.attachment.parentId)
@@ -3667,11 +3728,13 @@ function executeMapCodePlanInternal(
     ...(options.refinableObjectIds ?? [])
   ]);
   const scopedOperations = scopeMapRefinement(planningMap, suggestion.operations, options.refineScope ?? {});
+  const finalWorld = scopedOperations.filter(operation => operation.type === 'world.set').at(-1)?.world;
   const candidate = {
     ...suggestion,
     operations: scopedOperations,
     diagnostics: [
       ...executionDiagnostics,
+      ...(finalWorld?.bundle.plan.generationPolicy === 'diagnostic' ? diagnoseWorldBundle(finalWorld.bundle) : []),
       ...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics,
       ...unresolvedBridgeDiagnostics, ...compositionDiagnostics, ...vegetationDiagnostics,
       ...foundationWarnings.map((message) => ({
@@ -4461,6 +4524,8 @@ function runFirstPassMapCodeDiscovery(
 ): { code: string; discovery: CodeExecutionResult; repairAttempts: number } {
   try {
     const discovery = runMapCodePlan(code, map, assets, {
+      stablePlacementIds: options.stablePlacementIds,
+      worldEditPolicy: options.worldEditPolicy,
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'discovery',
       requestMode: options.mode ?? 'generate',
@@ -4516,6 +4581,7 @@ async function discoverMapCodeWithRepairs(
         promptMode: options.promptMode,
         legacyApis: options.legacyApis,
         spatialPolicy: options.spatialPolicy,
+        worldEditPolicy: options.worldEditPolicy,
         executionTimeoutMs: clampInteger(
           options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
           1,

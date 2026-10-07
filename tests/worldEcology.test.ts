@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import {createHash} from 'node:crypto';
 import { ECOLOGY_CHUNK_SIZE, generateEcologyChunk, selectEcologyChunks, validateEcologyRules, type EcologyRule } from '../src/shared/worldEcology';
 import { createWorldSampler, parseWorldPrompt, validateWorldRecipe, worldFreshWaterDistance, type WorldRecipe, type WorldSample } from '../src/shared/worldTerrain';
 
@@ -232,6 +233,60 @@ describe('ecology residency', () => {
 });
 
 describe('localized ecology rules', () => {
+  it('preserves the pre-exclusion chunk output exactly when no exclusions are authored', () => {
+    const result=generateEcologyChunk(recipe,trees,{x:0,z:0},{sample:flat});
+    expect(createHash('sha256').update(JSON.stringify(result)).digest('hex'))
+      .toBe('2dee3f6eb78a1f87cab45f5a87cd10417c0f47c0667627123947db6e4d1c195e');
+    expect(generateEcologyChunk(recipe,trees.map(rule=>({...rule,exclusions:[]})),{x:0,z:0},{sample:flat})).toEqual(result);
+  });
+
+  it('excludes actual chunk instances from authored circles and paths without moving surviving candidates', () => {
+    const rule:EcologyRule={...trees[0],spacing:6};
+    const base=generateEcologyChunk(recipe,[rule],{x:0,z:0},{sample:flat});
+    rule.exclusions=[{kind:'circle',center:[128,128],radius:64},{kind:'path',points:[[0,50],[256,50]],width:30}];
+    const result=generateEcologyChunk(recipe,[rule],{x:0,z:0},{sample:flat});
+    const inside=(x:number,z:number)=>Math.hypot(x-128,z-128)<=64 || Math.abs(z-50)<=15;
+    expect(base.instances.some(point=>inside(point.x,point.z))).toBe(true);
+    expect(result.instances.length).toBeGreaterThan(0);
+    expect(result.instances.every(point=>!inside(point.x,point.z))).toBe(true);
+    expect(result.candidateCount).toBe(base.candidateCount);
+    for(const point of result.instances) {
+      const original=base.instances.find(item=>item.id===point.id);
+      if(original) expect(point).toEqual(original);
+    }
+    expect(generateEcologyChunk(recipe,[rule],{x:0,z:0},{sample:flat})).toEqual(result);
+  });
+
+  it('validates and copies at most 32 exclusions using the existing circle/path limits', () => {
+    const rule:EcologyRule={...trees[0],exclusions:[{kind:'circle',center:[0,0],radius:1},
+      {kind:'path',points:[[1,2],[3,4]],width:2}]};
+    const original=structuredClone(rule), result=validateEcologyRules([rule])[0];
+    expect(result.exclusions).toEqual(original.exclusions);
+    if(result.exclusions![0].kind==='circle') result.exclusions![0].center[0]=500;
+    if(result.exclusions![1].kind==='path') result.exclusions![1].points[0][0]=500;
+    expect(rule).toEqual(original);
+    const circle={kind:'circle',center:[0,0],radius:10};
+    expect(validateEcologyRules([{...trees[0],exclusions:Array(32).fill(circle)}])[0].exclusions).toHaveLength(32);
+    for(const exclusions of [null,{},Array(33).fill(circle),[null],
+      [{...circle,center:[NaN,0]}],[{...circle,radius:0}],[{...circle,radius:256001}],
+      [{kind:'path',points:[[0,0]],width:2}],[{kind:'path',points:Array(65).fill([0,0]),width:2}],
+      [{kind:'path',points:[[0,0],[1,Infinity]],width:2}],[{kind:'path',points:[[0,0],[1,1]],width:1001}]
+    ]) expect(()=>validateEcologyRules([{...trees[0],exclusions}])).toThrow('invalid_ecology_rule');
+  });
+
+  it('keeps the candidate budget local and skips terrain work in fully excluded chunks', () => {
+    const rules=Array.from({length:8},(_,index):EcologyRule=>({...trees[0],id:'rule-'+index,spacing:6,
+      exclusions:Array.from({length:32},()=>({kind:'circle',center:[128,128],radius:1000}))}));
+    const sample=vi.fn(flat);
+    const result=generateEcologyChunk({...recipe,size:8000},rules,{x:0,z:0},{sample});
+    expect(result.instances).toHaveLength(0);
+    expect(result.candidateCount).toBeGreaterThan(0);
+    expect(result.candidateCount).toBeLessThanOrEqual(8*44*44);
+    expect(sample).not.toHaveBeenCalled();
+    expect(generateEcologyChunk({...recipe,size:256000},rules,{x:0,z:0},{sample})).toEqual(result);
+    expect(sample).not.toHaveBeenCalled();
+  });
+
   it('uses bounded procedural regions and keeps vegetation out of finite water', () => {
     const rule: EcologyRule = { ...trees[0], spacing: 6, region: { kind: 'circle', center: [128, 128], radius: 45 }, regionFeather: 10 };
     const result = generateEcologyChunk(recipe, [rule], { x: 0, z: 0 }, {

@@ -75,7 +75,7 @@ input, select, textarea { min-height: 32px; padding: 5px 7px; }
   border-top: 0;
 }
 .app[data-panel="none"] .editor-sidebar.right { display: none; }
-.app[data-panel="generate"] .editor-sidebar.right > :not(.inspector-heading):not(#map-ai-panel),
+.app[data-panel="generate"] .editor-sidebar.right > :not(.inspector-heading):not(#map-ai-panel):not(#map-design-panel),
 .app[data-panel="map"] .editor-sidebar.right > :not(.inspector-heading):not(#map-layout-panel):not(#map-inspector),
 .app[data-panel="object"] .editor-sidebar.right > :not(.inspector-heading):not(#object-inspector),
 .app[data-panel="asset"] .editor-sidebar.right > :not(.inspector-heading):not(#asset-panel),
@@ -207,7 +207,9 @@ input, select, textarea { min-height: 32px; padding: 5px 7px; }
 .editor-toolbar .engine-generate-trigger, .editor-toolbar #save-map { min-height: 30px; padding: 4px 13px; border: 1px solid #3d3d39; background: transparent; color: var(--text); font-size: 13px; font-weight: 400; }
 .editor-toolbar #save-map.dirty { border-color: var(--accent); color: #8dbbf3; }
 
-#map-ai-panel > .inspector-disclosure > summary { display: none; }
+#map-ai-panel > .inspector-disclosure > summary { display: flex; }
+#map-ai-panel details:not([open]) > :not(summary),
+#map-design-panel details:not([open]) > :not(summary) { display: none; }
 #map-ai-panel > .inspector-disclosure { border: 0; }
 #map-ai-panel .map-ai { gap: 8px; }
 #map-ai-panel #map-ai-prompt { min-height: 76px; line-height: 1.55; }

@@ -44,7 +44,8 @@ describe('map AI controls', () => {
     expect(source).toContain('id="map-ai-provider"');
     expect(source).toContain('id="map-ai-asset-provider"');
     expect(source).toContain('跟随规划模型');
-    expect(source.match(/assetProvider: this\.mapAiAssetProvider/g)).toHaveLength(3);
+    // The persistent conversation shares the same explicit asset provider as the three legacy calls.
+    expect(source.match(/assetProvider: this\.mapAiAssetProvider/g)).toHaveLength(4);
     expect(source).toContain("plan.options.provider ?? 'gpt'");
     expect(source).toContain("plan.options.assetProvider ?? ''");
     expect(httpSource).toContain('isModelProvider(body.assetProvider)');

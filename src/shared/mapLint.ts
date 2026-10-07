@@ -17,6 +17,7 @@ import { sampleMapGuide, type MapGuide, type MapGuideSample } from './mapGuide';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
 import { isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from './mapWater';
 import { evaluateSettlementQuality, isSettlementBuildingSemantic } from './settlementQuality';
+import type { WorldQualityCode } from './worldPlanning';
 
 export type MapLintSeverity = 'info' | 'warning' | 'error';
 
@@ -39,7 +40,7 @@ export interface MapLintIssue {
     | 'foundation.max-thickness' | 'scene.refine-scope'
     | 'settlement.building-coverage-low' | 'settlement.frontage-low'
     | 'settlement.unassigned-open-space'
-    | 'roadside.route-unbound' | 'roadside.route-bound';
+    | 'roadside.route-unbound' | 'roadside.route-bound' | WorldQualityCode;
   severity: MapLintSeverity;
   message: string;
   objectIds?: string[];
@@ -53,28 +54,29 @@ export interface MapLintResult {
 
 export function lintMap(
   map: EditableMap,
-  options: { repairableObjectIds?: ReadonlySet<string> } = {}
+  options: { repairableObjectIds?: ReadonlySet<string>; repair?: boolean } = {}
 ): MapLintResult {
   const issues: MapLintIssue[] = [];
   const repairOperations: MapOperation[] = [];
-  const removedIds = findExactDuplicates(map, issues, repairOperations);
-  lintInvalidSupports(map, removedIds, issues, repairOperations);
-  lintObjectPlacement(map, removedIds, issues, repairOperations);
+  const repairs = options.repair === false ? undefined : repairOperations;
+  const removedIds = findExactDuplicates(map, issues, repairs);
+  lintInvalidSupports(map, removedIds, issues, repairs);
+  lintObjectPlacement(map, removedIds, issues, repairs);
   let workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
-  lintSettlementRelations(workingMap, removedIds, issues, repairOperations, options.repairableObjectIds ?? new Set());
+  lintSettlementRelations(workingMap, removedIds, issues, repairs, options.repairableObjectIds ?? new Set());
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
-  lintOverlaps(workingMap, removedIds, issues, repairOperations, options.repairableObjectIds ?? new Set());
+  lintOverlaps(workingMap, removedIds, issues, repairs, options.repairableObjectIds ?? new Set());
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
-  lintRoomPaths(workingMap, issues, repairOperations);
+  lintRoomPaths(workingMap, issues, repairs);
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
-  lintOperationalClearance(workingMap, issues, repairOperations);
+  lintOperationalClearance(workingMap, issues, repairs);
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
-  lintSpawn(workingMap, issues, repairOperations);
-  lintWaterExposure(map, issues, repairOperations);
+  lintSpawn(workingMap, issues, repairs);
+  lintWaterExposure(map, issues, repairs);
   lintRaisedLakeShore(workingMap, issues);
-  lintFloatingObjects(workingMap, issues, repairOperations);
+  lintFloatingObjects(workingMap, issues, repairs);
   lintBuriedObjects(workingMap, removedIds, issues);
-  lintInteriorQuality(workingMap, issues, repairOperations);
+  lintInteriorQuality(workingMap, issues, repairs);
   issues.push(...evaluateSettlementQuality(workingMap).issues.map((issue) => ({
     code: issue.code,
     severity: 'warning' as const,
@@ -82,16 +84,36 @@ export function lintMap(
     objectIds: issue.objectIds,
     repaired: false
   })));
-  if (map.objects.length < Math.max(2, Math.floor(map.box.size[0] * map.box.size[2] / 3000))) {
+  const objectCount = map.objects.length + (map.world?.bundle.patches.reduce((count, patch) => count + patch.buildings.length, 0) ?? 0);
+  if (objectCount < Math.max(2, Math.floor(map.box.size[0] * map.box.size[2] / 3000))) {
     issues.push({
       code: 'scene.sparse',
       severity: 'info',
-      message: '场景空间内容较少，建议在 Refine 中补充地标或分区。',
+      message: `可编辑物体与城镇建筑共 ${objectCount} 个，按地图面积粗略估计可能偏少；请结合分区与游玩路线判断。`,
       repaired: false
     });
   }
-  return { issues, repairOperations };
+  return { issues: options.repair === false ? issues.map(issue => ({...issue, repaired:false,
+    message: DIAGNOSTIC_MESSAGES[issue.code] ?? issue.message})) : issues, repairOperations };
 }
+
+const DIAGNOSTIC_MESSAGES: Partial<Record<MapLintIssue['code'], string>> = {
+  'object.duplicate': '检测到位置完全重叠的重复物体。',
+  'object.invalid-support': '检测到叠放在床上的床垫或整套床品，支撑关系需要检查。',
+  'object.out-of-bounds': '物体超出地图或房间边界。',
+  'object.off-ground': '物体底部与地面高度不一致。',
+  'object.wall-mounted': '墙面物体的位置或挂载高度需要检查。',
+  'object.above-ceiling': '物体超过室内可用高度。',
+  'object.too-small': '物体相对角色及其语义尺度过小。',
+  'object.scale-mismatch': '室内家具的可见尺寸与角色尺度不协调。',
+  'object.overlap': '检测到物体实体重叠，请检查这些物体的相对位置和支撑关系。',
+  'interior.operational-clearance': '门或柜体开启面前存在遮挡。',
+  'interior.style-drift': '表面或地毯颜色偏离全局室内色板。',
+  'spawn.unsafe': '出生点不满足当前站立空间要求。',
+  'water.exposed-terrain': '水面与地形相交，请检查水道高程或河床。',
+  'object.waterline': '船只底部与所在水体的水面高度不一致。',
+  'roadside.route-bound': '沿路物体的位置或朝向与其来源街道边缘关系不一致。'
+};
 
 function lintBuriedObjects(map: EditableMap, removedIds: ReadonlySet<string>, issues: MapLintIssue[]): void {
   if (map.sceneMode !== 'outdoor') return;
@@ -161,7 +183,7 @@ function lintRaisedLakeShore(map: EditableMap, issues: MapLintIssue[]): void {
 function findExactDuplicates(
   map: EditableMap,
   issues: MapLintIssue[],
-  repairs: MapOperation[]
+  repairs: MapOperation[] | undefined
 ): Set<string> {
   const seen = new Map<string, string>();
   const removed = new Set<string>();
@@ -174,8 +196,8 @@ function findExactDuplicates(
       seen.set(key, object.id);
       continue;
     }
-    removed.add(object.id);
-    repairs.push({ type: 'object.remove', objectId: object.id });
+    if (repairs) removed.add(object.id);
+    repairs?.push({ type: 'object.remove', objectId: object.id });
     issues.push({
       code: 'object.duplicate',
       severity: 'warning',
@@ -191,7 +213,7 @@ function lintObjectPlacement(
   map: EditableMap,
   removedIds: Set<string>,
   issues: MapLintIssue[],
-  repairs: MapOperation[]
+  repairs: MapOperation[] | undefined
 ): void {
   const bounds = getMapBounds(map);
   const room = map.sceneMode === 'indoor' ? map.room : null;
@@ -215,7 +237,7 @@ function lintObjectPlacement(
     let nextX = clamp(position[0], minX + leftExtent, maxX - rightExtent);
     let nextZ = clamp(position[2], minZ + nearExtent, maxZ - farExtent);
     const fixedHeight = object.heightMode === 'fixed' || Boolean(object.roomOpeningId);
-    const floorY = room?.position[1] ?? sampleTerrainHeight(map, nextX, nextZ);
+    const floorY = room?.position[1] ?? sampleTerrainHeight(map, repairs ? nextX : position[0], repairs ? nextZ : position[2]);
     let nextY = fixedHeight ? position[1] : floorY;
     let nextScale = [...object.transform.scale] as [number, number, number];
     let aboveCeiling = false;
@@ -305,7 +327,7 @@ function lintObjectPlacement(
         scaleMismatch = true;
       }
       const ceilingFit = Math.max(0.05, (room.size[1] - 0.02) / currentHeight);
-      aboveCeiling = currentBounds.max[1] > ceilingY + 0.01 || currentHeight * verticalFit > room.size[1] - 0.02;
+      aboveCeiling = currentBounds.max[1] > ceilingY + 0.01 || Boolean(repairs) && currentHeight * verticalFit > room.size[1] - 0.02;
       verticalFit = Math.min(verticalFit, ceilingFit);
       if (Math.abs(horizontalFit - 1) > 0.001 || Math.abs(verticalFit - 1) > 0.001) {
         nextScale = [
@@ -345,10 +367,14 @@ function lintObjectPlacement(
         if (distances[0].wall === 'south') nextZ = position[2] + maxZ - scaled.maxZ;
       }
     }
-    const outOfBounds = Math.abs(nextX - position[0]) > 0.001 || Math.abs(nextZ - position[2]) > 0.001;
-    const offGround = Math.abs(nextY - position[1]) > 0.05 && !wallMountAdjusted;
+    const outOfBounds = repairs
+      ? Math.abs(nextX - position[0]) > 0.001 || Math.abs(nextZ - position[2]) > 0.001
+      : position[0] - leftExtent < minX - 0.001 || position[0] + rightExtent > maxX + 0.001
+        || position[2] - nearExtent < minZ - 0.001 || position[2] + farExtent > maxZ + 0.001;
+    const offGround = repairs ? Math.abs(nextY - position[1]) > 0.05 && !wallMountAdjusted
+      : !fixedHeight && !elevated && Math.abs((currentBounds?.min[1] ?? position[1]) - floorY) > 0.05;
     if (!outOfBounds && !offGround && !wallMountAdjusted && !aboveCeiling && !tooSmall && !scaleMismatch) continue;
-    repairs.push({
+    repairs?.push({
       type: 'object.update',
       objectId: object.id,
       patch: { transform: { position: [nextX, nextY, nextZ], scale: nextScale } }
@@ -384,7 +410,7 @@ function lintInvalidSupports(
   map: EditableMap,
   removed: Set<string>,
   issues: MapLintIssue[],
-  repairs: MapOperation[]
+  repairs: MapOperation[] | undefined
 ): void {
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const objects = new Map(map.objects.map((object) => [object.id, object]));
@@ -401,8 +427,8 @@ function lintInvalidSupports(
     const looseBedDecor = !explicitBedAssembly && /pillow|small folded throw|cushion|枕|折叠毯|抱枕/i.test(childSemantic);
     const childIsBedAssembly = /\bbed\b|mattress|bedding|bed[-_ ]?linen|床品|床铺|床垫|床架/i.test(childSemantic);
     if (!parentIsBed || looseBedDecor || !childIsBedAssembly) continue;
-    removed.add(child.id);
-    repairs.push({ type: 'object.remove', objectId: child.id });
+    if (repairs) removed.add(child.id);
+    repairs?.push({ type: 'object.remove', objectId: child.id });
     issues.push({
       code: 'object.invalid-support', severity: 'warning',
       message: '已移除叠放在床上的床垫或整套床品；床只承载枕头、折叠毯等小件。',
@@ -411,7 +437,7 @@ function lintInvalidSupports(
   }
 }
 
-function lintInteriorQuality(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintInteriorQuality(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[] | undefined): void {
   if (map.sceneMode !== 'indoor' || !map.room) return;
   const coverage = evaluateIndoorLightCoverage(map);
   if (coverage.ratio < 0.72) {
@@ -439,7 +465,7 @@ function lintInteriorQuality(map: EditableMap, issues: MapLintIssue[], repairs: 
     ])) as typeof art.surfaces,
     rugs: art.rugs.map((rug) => rugs.includes(rug) ? { ...rug, palette: art.palette } : rug)
   };
-  repairs.push({ type: 'interior.art-direction.set', artDirection: repairedArt });
+  repairs?.push({ type: 'interior.art-direction.set', artDirection: repairedArt });
   issues.push({
     code: 'interior.style-drift',
     severity: 'warning',
@@ -448,7 +474,7 @@ function lintInteriorQuality(map: EditableMap, issues: MapLintIssue[], repairs: 
   });
 }
 
-function lintOperationalClearance(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintOperationalClearance(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[] | undefined): void {
   const room = map.room;
   if (!room) return;
   const { radius, height } = getMapPlayerMetrics(map);
@@ -496,7 +522,7 @@ function lintOperationalClearance(map: EditableMap, issues: MapLintIssue[], repa
     ));
     if (!blockerBounds) continue;
     const blocker = map.objects.find((object) => object.id === blockerBounds.objectId);
-    const movable = blocker && !blocker.locked && !blocker.parentId && !blocker.roomOpeningId && !objectsWithChildren.has(blocker.id);
+    const movable = repairs && blocker && !blocker.locked && !blocker.parentId && !blocker.roomOpeningId && !objectsWithChildren.has(blocker.id);
     let destination: [number, number, number] | null = null;
     if (movable) {
       for (const position of roomEdgePositions(room, blocker.transform.position, blockerBounds, radius)) {
@@ -510,7 +536,7 @@ function lintOperationalClearance(map: EditableMap, issues: MapLintIssue[], repa
     }
     if (destination && blocker) {
       relocated.add(blocker.id);
-      repairs.push({ type: 'object.update', objectId: blocker.id, patch: { transform: { position: destination } } });
+      repairs?.push({ type: 'object.update', objectId: blocker.id, patch: { transform: { position: destination } } });
     }
     issues.push({
       code: 'interior.operational-clearance', severity: 'warning',
@@ -567,7 +593,7 @@ function hexRgb(color: string): [number, number, number] | null {
   return [value >> 16, value >> 8 & 255, value & 255];
 }
 
-function lintRoomPaths(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintRoomPaths(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[] | undefined): void {
   const room = map.room;
   if (!room) return;
   const doors = room.openings.filter((opening) => opening.kind === 'door');
@@ -586,14 +612,14 @@ function lintRoomPaths(map: EditableMap, issues: MapLintIssue[], repairs: MapOpe
       : allObstacles;
     const goal = roomDoorInsidePoint(room, door, radius);
     if (hasRoomPath(room, [start[0], start[2]], goal, obstacles, radius, height)) continue;
-    const relocation = findRoomPathRelocation(pathMap, room, [start[0], start[2]], goal, obstacles, radius, height);
+    const relocation = repairs ? findRoomPathRelocation(pathMap, room, [start[0], start[2]], goal, obstacles, radius, height) : null;
     if (relocation) {
       const operation: MapOperation = {
         type: 'object.update',
         objectId: relocation.objectId,
         patch: { transform: { position: relocation.position } }
       };
-      repairs.push(operation);
+      repairs?.push(operation);
       pathMap = applyMapOperations(pathMap, [operation]);
       issues.push({
         code: 'room.path-blocked',
@@ -766,21 +792,19 @@ function roomDoorInsidePoint(
   return [room.position[0] - room.size[0] / 2 + inset, room.position[2] + door.offset];
 }
 
-function lintSpawn(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintSpawn(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[] | undefined): void {
   const current = map.spawnPoints[0];
   if (!current || isSpawnPositionSafe(map, current[0], current[2])) return;
-  const [x, z] = findSafeSpawnPosition(map, current[0], current[2]);
-  repairs.push({
-    type: 'reference.set',
-    point: [x, sampleTerrainHeight(map, x, z), z],
-    yaw: map.spawnYaw
-  });
+  if (repairs) {
+    const [x, z] = findSafeSpawnPosition(map, current[0], current[2]);
+    repairs.push({type:'reference.set', point:[x, sampleTerrainHeight(map, x, z), z], yaw:map.spawnYaw});
+  }
   issues.push({
     code: 'spawn.unsafe', severity: 'error', message: '出生点已移动到附近可站立位置。', repaired: true
   });
 }
 
-function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[] | undefined): void {
   for (const water of map.waterBodies) {
     if (water.type === 'ocean') continue;
     let exposed = false;
@@ -799,14 +823,14 @@ function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: Ma
       issues.push({code:'water.exposed-terrain', severity:'warning', message:'结构承托的水道与地形相交；请检查水道高程或局部开口。', repaired:false});
       continue;
     }
-    repairs.push({ type: 'water.update', waterId: water.id, patch: {} });
+    repairs?.push({ type: 'water.update', waterId: water.id, patch: {} });
     issues.push({
       code: 'water.exposed-terrain', severity: 'error', message: '水体盆地或河床已重新刻蚀，修复水面穿地。', repaired: true
     });
   }
 }
 
-function lintFloatingObjects(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintFloatingObjects(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[] | undefined): void {
   if (map.sceneMode !== 'outdoor' || map.waterBodies.length === 0) return;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const objectBounds = aggregateObjectBounds(getMapObjectVisualAabbs(map));
@@ -822,7 +846,7 @@ function lintFloatingObjects(map: EditableMap, issues: MapLintIssue[], repairs: 
     const surfaceY = waterSurfaceLevelAt(water, x, z);
     const offset = surfaceY - bounds.min[1];
     if (Math.abs(offset) <= 0.01) continue;
-    repairs.push({
+    repairs?.push({
       type: 'object.update',
       objectId: object.id,
       patch: { transform: { position: [x, y + offset, z] } }
@@ -841,7 +865,7 @@ function lintSettlementRelations(
   map: EditableMap,
   removedIds: ReadonlySet<string>,
   issues: MapLintIssue[],
-  repairs: MapOperation[],
+  repairs: MapOperation[] | undefined,
   repairableObjectIds: ReadonlySet<string>
 ): void {
   if (map.sceneMode !== 'outdoor' || repairableObjectIds.size === 0) return;
@@ -863,7 +887,7 @@ function lintSettlementRelations(
     const hasChildren = map.objects.some((candidate) => candidate.parentId === object.id);
     const rotationY = hasChildren ? object.transform.rotation[1] : relation.rotationY;
     if (!relationChanged(object, relation.position, rotationY, nearest.guide.id)) continue;
-    repairs.push({
+    repairs?.push({
       type: 'object.update',
       objectId: object.id,
       patch: {
@@ -932,7 +956,7 @@ function lintOverlaps(
   map: EditableMap,
   removedIds: Set<string>,
   issues: MapLintIssue[],
-  repairs: MapOperation[],
+  repairs: MapOperation[] | undefined,
   repairableObjectIds: ReadonlySet<string>
 ): void {
   const room = map.room;
@@ -987,7 +1011,7 @@ function lintOverlaps(
     const movable = [rightBounds, leftBounds]
       .flatMap((bounds) => {
         const object = workingMap.objects.find((item) => item.id === bounds.objectId);
-        const canMove = room ? !object?.locked : repairableObjectIds.has(bounds.objectId);
+        const canMove = repairs && (room ? !object?.locked : repairableObjectIds.has(bounds.objectId));
         if (!object || !canMove || object.parentId || object.roomOpeningId || objectsWithChildren.has(object.id)) return [];
         return [{ object, bounds, area: footprintArea(bounds) }];
       })
@@ -1011,7 +1035,7 @@ function lintOverlaps(
       if (repair) break;
     }
     if (repair) {
-      repairs.push(repair);
+      repairs?.push(repair);
       workingMap = applyMapOperations(workingMap, [repair]);
     }
     issues.push({

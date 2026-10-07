@@ -13,7 +13,7 @@ export interface WorldPlan {
   towns: TownIntent[];
   roads: MapGuide[];
   whitebox?: true;
-  generationPolicy?: 'raw-first-call';
+  generationPolicy?: 'raw-first-call' | 'diagnostic';
   concept?: WorldConcept;
   featureGraph?: FeatureGraph;
   settlementPlan?: SettlementPlan;
@@ -142,6 +142,52 @@ const MAX_ROUTE_GRADE_POINTS = 64;
 const ROUTE_GRADE_SAMPLE_SPACING = 8;
 const byId = <T extends { id: string }>(a: T, b: T) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 function fail(code: string): never { throw new Error(code); }
+
+export type WorldQualityCode = 'world_town_extents_overlap' | 'world_town_core_not_land' | 'world_foundation_height_budget'
+  | 'world_town_transition_slope' | 'world_road_crosses_water' | 'world_road_cross_slope' | 'world_road_slope'
+  | 'world_buildings_overlap' | 'world_building_intersects_street' | 'world_building_intersects_road'
+  | 'world_streets_disconnected' | 'world_building_on_water' | 'world_building_earthwork_budget'
+  | 'world_road_earthwork_budget' | 'world_quality_diagnostics_truncated';
+export interface WorldQualityDiagnostic { code: WorldQualityCode; severity: 'warning'; message: string; repaired: false }
+type QualityReporter = (message: string, context?: Record<string, unknown>) => void;
+
+/** Diagnostic worlds remain loadable; collect measurements explicitly, rather than on every render/sample validation. */
+function qualityReporter(plan: WorldPlan, diagnostics?: WorldQualityDiagnostic[]): QualityReporter | undefined {
+  if (plan.generationPolicy !== 'diagnostic') return fail;
+  if (!diagnostics) return undefined;
+  const seen = new Set<string>();
+  return (message, context) => {
+    const code = message.split(':', 1)[0] as WorldQualityCode;
+    const key = JSON.stringify([code, context?.townId, context?.roadId, context?.buildingId, context?.otherId]);
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (diagnostics.length >= 256) {
+      if (diagnostics.length === 256) diagnostics.push({code:'world_quality_diagnostics_truncated', severity:'warning',
+        message:'Further quality findings are omitted after 256 entries; inspect affected regions.', repaired:false});
+      return;
+    }
+    diagnostics.push({code, severity:'warning', message: context ? message + ':' + JSON.stringify(context) : message, repaired:false});
+  };
+}
+
+export interface WorldRoadSlopeDiagnostic {
+  roadId: string;
+  townId?: string;
+  segmentIndex: number;
+  sampleIndex: number;
+  position: Point;
+  segment: [Point, Point];
+  grade: number;
+  sampleSpacing: number;
+  width: number;
+}
+
+function reportRoadSlope(report: QualityReporter, code: 'world_road_slope' | 'world_road_cross_slope', context: WorldRoadSlopeDiagnostic): void {
+  const detail = { ...context, maxGrade: MAX_ROAD_SLOPE, units: 'rise/run', coordinateSpace: 'world-XZ-metres' };
+  if (report === fail) fail(code + ':' + JSON.stringify(detail,
+    (_key, value) => typeof value === 'number' ? Number(value.toFixed(6)) : value));
+  else report(code, detail);
+}
 
 function record(input: unknown, code: string): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) fail(code);
@@ -553,7 +599,7 @@ function parseSemanticPlan(raw: Record<string, unknown>, bound: number, external
 }
 
 /** Reject invalid contracts instead of silently relocating an agent's work. */
-export function validateWorldPlan(input: unknown): WorldPlan {
+export function validateWorldPlan(input: unknown, diagnostics?: WorldQualityDiagnostic[]): WorldPlan {
   const raw = record(input, 'world_invalid_plan');
   keys(raw, ['version', 'id', 'revision', 'prompt', 'recipe', 'ecology', 'towns', 'roads', 'whitebox', 'generationPolicy', 'concept', 'featureGraph',
     'settlementPlan', 'mobilityPlan', 'explorationPlan', 'intentionalEmptyAreas'], 'world_unknown_plan_field');
@@ -640,7 +686,7 @@ export function validateWorldPlan(input: unknown): WorldPlan {
     plan.whitebox = true;
   }
   if (raw.generationPolicy !== undefined) {
-    if (raw.generationPolicy !== 'raw-first-call') fail('world_invalid_generation_policy');
+    if (raw.generationPolicy !== 'raw-first-call' && raw.generationPolicy !== 'diagnostic') fail('world_invalid_generation_policy');
     plan.generationPolicy = raw.generationPolicy;
   }
   const featureAnchorIds = new Set(plan.featureGraph?.anchors.map(anchor => anchor.id) ?? []);
@@ -649,13 +695,14 @@ export function validateWorldPlan(input: unknown): WorldPlan {
   }
   unique([plan.id, ...ecology.map(rule => rule.id), ...roads.map(road => road.id),
     ...towns.flatMap(town => [town.id, ...town.ports.map(port => port.id)])]);
+  const report = qualityReporter(plan, diagnostics);
   for (let i = 0; i < towns.length; i++) {
     const town = towns[i];
     for (const other of towns.slice(i + 1)) {
       // Construction cores remain separate; their soft transition collars may overlap.
       const reach = town.radius + other.radius;
       if (plan.generationPolicy !== 'raw-first-call' && Math.abs(town.center[0] - other.center[0]) < reach
-        && Math.abs(town.center[1] - other.center[1]) < reach) fail('world_town_extents_overlap');
+        && Math.abs(town.center[1] - other.center[1]) < reach) report?.('world_town_extents_overlap', {townId:town.id, otherId:other.id});
     }
     for (const port of town.ports) {
       const road = roads.find(candidate => candidate.id === port.guideId);
@@ -668,7 +715,14 @@ export function validateWorldPlan(input: unknown): WorldPlan {
     }
   }
   validateRoadGeometry(plan.roads, recipe.size);
-  if (!plan.whitebox && plan.generationPolicy !== 'raw-first-call') validateTerrain(plan);
+  if (report && (plan.generationPolicy === 'diagnostic' || !plan.whitebox && plan.generationPolicy !== 'raw-first-call')) {
+    validateTerrain(plan, report);
+  } else if (plan.generationPolicy === 'diagnostic') {
+    // Resource safety still applies when sampled quality measurements are not requested.
+    const count = plan.roads.filter(road => !road.tags.some(tag => /bridge/i.test(tag))).reduce((sum, road) => sum
+      + segments(road).reduce((count, [a, b]) => count + Math.ceil(Math.hypot(b[0]-a[0], b[1]-a[1]) / worldRoadSampleSpacing(recipe.size)) + 1, 0), 0);
+    if (count > 8192) fail('world_road_sampling_quota');
+  }
   return plan;
 }
 
@@ -850,7 +904,7 @@ export function createTownTasks(plan: WorldPlan): TownTask[] {
   });
 }
 
-function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch {
+function patchFor(plan: WorldPlan, input: unknown, worldKey: string, diagnostics?: WorldQualityDiagnostic[]): TownPatch {
   const raw = record(input, 'world_invalid_town_patch');
   keys(raw, ['townId', 'worldKey', 'summary', 'streets', 'buildings'], 'world_unknown_patch_field');
   const townId = text(raw.townId, 'world_invalid_patch_town');
@@ -890,25 +944,26 @@ function patchFor(plan: WorldPlan, input: unknown, worldKey: string): TownPatch 
     return building;
   }).sort(byId);
   unique([...streets.map(street => street.id), ...buildings.map(building => building.id)]);
-  validateStreetGraph(town, streets, plan.roads);
-  for (let i = 0; i < buildings.length; i++) {
+  const report = qualityReporter(plan, diagnostics);
+  validateStreetGraph(town, streets, plan.roads, report);
+  if (report) for (let i = 0; i < buildings.length; i++) {
     for (const other of buildings.slice(i + 1)) {
-      if (buildingsOverlap(buildings[i], other)) fail('world_buildings_overlap');
+      if (buildingsOverlap(buildings[i], other)) report('world_buildings_overlap', {townId:town.id, buildingId:buildings[i].id, otherId:other.id});
     }
     for (const street of streets) {
       if (segments(street).some(([p, q]) => segmentBuildingFootprint(p, q, buildings[i], street.width / 2))) {
-        fail('world_building_intersects_street');
+        report('world_building_intersects_street', {townId:town.id, buildingId:buildings[i].id, roadId:street.id});
       }
     }
     const worldBuilding = { ...buildings[i], x: buildings[i].x + town.center[0], z: buildings[i].z + town.center[1] };
     for (const road of plan.roads) {
       if (segments(road).some(([p, q]) => segmentBuildingFootprint(p, q, worldBuilding, road.width / 2))) {
-        fail('world_building_intersects_road');
+        report('world_building_intersects_road', {townId:town.id, buildingId:buildings[i].id, roadId:road.id});
       }
     }
   }
   const result = { townId, worldKey, summary: text(raw.summary, 'world_invalid_patch_summary', 4000, true), streets, buildings };
-  if (plan.generationPolicy !== 'raw-first-call') validatePatchTerrain(plan, town, result);
+  if (report && plan.generationPolicy !== 'raw-first-call') validatePatchTerrain(plan, town, result, report);
   return result;
 }
 
@@ -918,7 +973,7 @@ export function worldTownBuildingQuota(town: Pick<TownIntent, 'radius'> & Partia
 }
 
 /** A crossing counts as a junction only when both street graphs explicitly share a vertex. */
-function validateStreetGraph(town: TownIntent, streets: MapGuide[], authoredRoads: MapGuide[]): void {
+function validateStreetGraph(town: TownIntent, streets: MapGuide[], authoredRoads: MapGuide[], report: QualityReporter | undefined): void {
   const nodeKey = (p: Point) => JSON.stringify(p);
   for (const port of town.ports) {
     const touching = streets.filter(street => !street.closed
@@ -926,7 +981,7 @@ function validateStreetGraph(town: TownIntent, streets: MapGuide[], authoredRoad
     if (!touching.length) fail('world_street_port_missing');
     if (!touching.some(street => Math.abs(street.width - port.width) <= TOLERANCE)) fail('world_street_port_width_mismatch');
   }
-  if (!streets.length) return;
+  if (!streets.length || !report) return;
   const localGraph = new Map<string, Set<string>>();
   for (const street of streets) for (const [a, b] of segments(street)) {
     const ka = nodeKey(a), kb = nodeKey(b);
@@ -963,7 +1018,8 @@ function validateStreetGraph(town: TownIntent, streets: MapGuide[], authoredRoad
     if (reached.has(next)) continue;
     reached.add(next); queue.push(next);
   }
-  if (streets.some((_, index) => !reached.has(index))) fail('world_streets_disconnected');
+  if (streets.some((_, index) => !reached.has(index))) report('world_streets_disconnected', {townId:town.id,
+    roadIds:streets.filter((_, index) => !reached.has(index)).map(street => street.id)});
 }
 export function validateTownPatch(plan: WorldPlan, patch: unknown): TownPatch {
   const checked = validateWorldPlan(plan);
@@ -988,15 +1044,21 @@ function bundleIds(plan: WorldPlan, patches: TownPatch[]): void {
     ...plan.towns.flatMap(town => [town.id, ...town.ports.map(port => port.id)]),
     ...patches.flatMap(patch => [...patch.streets.map(street => street.id), ...patch.buildings.map(building => building.id)])]);
 }
-export function validateWorldBundle(input: unknown): WorldBundle {
+export function validateWorldBundle(input: unknown, diagnostics?: WorldQualityDiagnostic[]): WorldBundle {
   const raw = record(input, 'world_invalid_bundle');
   keys(raw, ['plan', 'patches'], 'world_unknown_bundle_field');
-  const plan = validateWorldPlan(raw.plan), key = keyOf(plan);
-  const patches = list(raw.patches, 12, 'world_patch_quota').map(patch => patchFor(plan, patch, key))
+  const plan = validateWorldPlan(raw.plan, diagnostics), key = keyOf(plan);
+  const patches = list(raw.patches, 12, 'world_patch_quota').map(patch => patchFor(plan, patch, key, diagnostics))
     .sort((a, b) => a.townId < b.townId ? -1 : a.townId > b.townId ? 1 : 0);
   unique(patches.map(patch => patch.townId), 'world_duplicate_town_patch');
   bundleIds(plan, patches);
   return { plan, patches };
+}
+/** Explicitly measure a persisted diagnostic-policy world. Legacy strict/raw validation behavior is unchanged. */
+export function diagnoseWorldBundle(bundle: WorldBundle): WorldQualityDiagnostic[] {
+  const diagnostics: WorldQualityDiagnostic[] = [];
+  validateWorldBundle(bundle, diagnostics);
+  return diagnostics;
 }
 export function mergeTownPatch(bundle: WorldBundle, patch: unknown): WorldBundle {
   const checked = validateWorldBundle(bundle);
@@ -1153,23 +1215,27 @@ export function createPlannedWorldTerrainContext(plan: WorldPlan, patches: TownP
   return { ...context, sample: conformSampler(context.sample, checked.plan, checked.patches) };
 }
 
-function validateTerrain(plan: WorldPlan): void {
+function validateTerrain(plan: WorldPlan, report: QualityReporter): void {
   const base = createWorldSampler(plan.recipe), platformTowns = plan.towns.filter(town => (town.terrainMode ?? 'platform') === 'platform');
   const planned = platformSampler(base, platformTowns);
   for (const town of plan.towns) {
     let drySamples = 0;
     for (let iz = -2; iz <= 2; iz++) for (let ix = -2; ix <= 2; ix++) {
-      const point = base(town.center[0] + ix * town.radius / 2, town.center[1] + iz * town.radius / 2);
+      const position: Point = [town.center[0] + ix * town.radius / 2, town.center[1] + iz * town.radius / 2];
+      const point = base(...position), context = {townId:town.id, position};
       if (point.waterLevel === null && point.height > 2) drySamples++;
       if ((town.terrainMode ?? 'platform') === 'platform') {
-        if (point.waterLevel !== null || point.height <= 2) fail('world_town_core_not_land');
-        if (Math.abs(point.height - town.foundation) > Math.min(350, town.blend * 0.2)) fail('world_foundation_height_budget');
+        if (point.waterLevel !== null || point.height <= 2) report('world_town_core_not_land', context);
+        if (Math.abs(point.height - town.foundation) > Math.min(350, town.blend * 0.2)) report('world_foundation_height_budget',
+          {...context, difference:Math.abs(point.height-town.foundation), limit:Math.min(350,town.blend*0.2)});
       }
     }
     if (town.terrainMode === 'conform') {
       const center = base(town.center[0], town.center[1]);
-      if (center.waterLevel !== null || center.height <= 2 || drySamples < 13) fail('world_town_core_not_land');
-      if (Math.abs(center.height - town.foundation) > Math.min(350, town.blend * 0.2)) fail('world_foundation_height_budget');
+      if (center.waterLevel !== null || center.height <= 2 || drySamples < 13) report('world_town_core_not_land',
+        {townId:town.id, position:town.center, drySamples, requiredDrySamples:13});
+      if (Math.abs(center.height - town.foundation) > Math.min(350, town.blend * 0.2)) report('world_foundation_height_budget',
+        {townId:town.id, position:town.center, difference:Math.abs(center.height-town.foundation), limit:Math.min(350,town.blend*0.2)});
     }
     if (town.terrainMode === 'conform') continue;
     // Bounded diagnostic stencil: 16 rays, nine samples in each transition collar.
@@ -1181,12 +1247,13 @@ function validateTerrain(plan: WorldPlan): void {
         const x = town.center[0] + dx / scale * distance, z = town.center[1] + dz / scale * distance;
         const gx = (planned(x + 2, z).height - planned(x - 2, z).height) / 4;
         const gz = (planned(x, z + 2).height - planned(x, z - 2).height) / 4;
-        if (Math.hypot(gx, gz) > MAX_TOWN_SLOPE) fail('world_town_transition_slope:' + town.id + ':' + Math.hypot(gx, gz).toFixed(3) + ':x=' + x.toFixed(1) + ':z=' + z.toFixed(1));
+        if (Math.hypot(gx, gz) > MAX_TOWN_SLOPE) report('world_town_transition_slope:' + town.id + ':' + Math.hypot(gx, gz).toFixed(3) + ':x=' + x.toFixed(1) + ':z=' + z.toFixed(1),
+          {townId:town.id, position:[x,z], grade:Math.hypot(gx,gz), maxGrade:MAX_TOWN_SLOPE});
       }
     }
   }
   let sampleBudget = 0;
-  for (const road of plan.roads) for (const [a, b] of segments(road)) {
+  for (const road of plan.roads) for (const [segmentIndex, [a, b]] of segments(road).entries()) {
     // Explicit bridge decks are elevated structures, not roads painted onto the sampled ground.
     if (road.tags.some(tag => /bridge/i.test(tag))) continue;
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.ceil(length / worldRoadSampleSpacing(plan.recipe.size));
@@ -1197,16 +1264,20 @@ function validateTerrain(plan: WorldPlan): void {
     for (let i = 0; i <= steps; i++) {
       const t = i / steps, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
       const cross = [-road.width / 2, 0, road.width / 2].map(offset => planned(x + nx * offset, z + nz * offset));
-      if (cross.some(point => point.waterLevel !== null)) fail('world_road_crosses_water');
+      if (cross.some(point => point.waterLevel !== null)) report('world_road_crosses_water', {roadId:road.id, position:[x,z]});
       const h = cross[1].height;
-      if ((Math.max(...cross.map(point => point.height)) - Math.min(...cross.map(point => point.height))) / road.width > MAX_ROAD_SLOPE) fail('world_road_cross_slope');
-      if (previous !== undefined && Math.abs(h - previous) / (length / steps) > MAX_ROAD_SLOPE) fail('world_road_slope');
+      const crossGrade = (Math.max(...cross.map(point => point.height)) - Math.min(...cross.map(point => point.height))) / road.width;
+      const grade = previous === undefined ? 0 : Math.abs(h - previous) / (length / steps);
+      const context = { roadId: road.id, segmentIndex, sampleIndex: i, position: [x, z] as Point,
+        segment: [a, b] as [Point, Point], sampleSpacing: length / steps, width: road.width };
+      if (crossGrade > MAX_ROAD_SLOPE) reportRoadSlope(report, 'world_road_cross_slope', { ...context, grade: crossGrade });
+      if (grade > MAX_ROAD_SLOPE) reportRoadSlope(report, 'world_road_slope', { ...context, grade });
       previous = h;
     }
   }
 }
 
-function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatch): void {
+function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatch, report: QualityReporter): void {
   if ((town.terrainMode ?? 'platform') !== 'conform') return;
   const base = createWorldSampler(plan.recipe);
   for (const building of patch.buildings) {
@@ -1214,15 +1285,18 @@ function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatc
     const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle), heights: number[] = [];
     for (const lx of [-building.width / 2, 0, building.width / 2]) for (const lz of [-building.depth / 2, 0, building.depth / 2]) {
       const point = base(centerX + lx * c + lz * s, centerZ - lx * s + lz * c);
-      if (point.waterLevel !== null) fail('world_building_on_water');
+      if (point.waterLevel !== null) report('world_building_on_water', {townId:town.id, buildingId:building.id,
+        position:[centerX+lx*c+lz*s, centerZ-lx*s+lz*c]});
       heights.push(point.height);
     }
     heights.sort((a, b) => a - b);
     const target = heights[Math.floor(heights.length / 2)];
-    if (heights.some(height => Math.abs(height - target) > MAX_BUILDING_CUT_FILL)) fail('world_building_earthwork_budget');
+    if (heights.some(height => Math.abs(height - target) > MAX_BUILDING_CUT_FILL)) report('world_building_earthwork_budget',
+      {townId:town.id, buildingId:building.id, position:[centerX,centerZ],
+        cutFill:Math.max(...heights.map(height=>Math.abs(height-target))), limit:MAX_BUILDING_CUT_FILL});
   }
   const adjusted = conformSampler(base, plan, [patch]);
-  for (const street of patch.streets) for (const [localA, localB] of segments(street)) {
+  for (const street of patch.streets) for (const [segmentIndex, [localA, localB]] of segments(street).entries()) {
     const a: Point = [localA[0] + town.center[0], localA[1] + town.center[1]];
     const b: Point = [localB[0] + town.center[0], localB[1] + town.center[1]];
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.max(1, Math.ceil(length / 12));
@@ -1233,11 +1307,16 @@ function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatc
       const cross = [-street.width / 2, 0, street.width / 2].map(offset => ({
         raw: base(x + nx * offset, z + nz * offset), adjusted: adjusted(x + nx * offset, z + nz * offset)
       }));
-      if (cross.some(point => point.raw.waterLevel !== null)) fail('world_road_crosses_water');
-      if (cross.some(point => Math.abs(point.adjusted.height - point.raw.height) > MAX_BUILDING_CUT_FILL)) fail('world_road_earthwork_budget');
+      if (cross.some(point => point.raw.waterLevel !== null)) report('world_road_crosses_water', {townId:town.id, roadId:street.id, position:[x,z]});
+      if (cross.some(point => Math.abs(point.adjusted.height - point.raw.height) > MAX_BUILDING_CUT_FILL)) report('world_road_earthwork_budget',
+        {townId:town.id, roadId:street.id, position:[x,z], cutFill:Math.max(...cross.map(point=>Math.abs(point.adjusted.height-point.raw.height))), limit:MAX_BUILDING_CUT_FILL});
       const heights = cross.map(point => point.adjusted.height), h = heights[1];
-      if ((Math.max(...heights) - Math.min(...heights)) / street.width > MAX_ROAD_SLOPE) fail('world_road_cross_slope');
-      if (previous !== undefined && Math.abs(h - previous) / (length / steps) > MAX_ROAD_SLOPE) fail('world_road_slope');
+      const crossGrade = (Math.max(...heights) - Math.min(...heights)) / street.width;
+      const grade = previous === undefined ? 0 : Math.abs(h - previous) / (length / steps);
+      const context = { roadId: street.id, townId: town.id, segmentIndex, sampleIndex: i, position: [x, z] as Point,
+        segment: [a, b] as [Point, Point], sampleSpacing: length / steps, width: street.width };
+      if (crossGrade > MAX_ROAD_SLOPE) reportRoadSlope(report, 'world_road_cross_slope', { ...context, grade: crossGrade });
+      if (grade > MAX_ROAD_SLOPE) reportRoadSlope(report, 'world_road_slope', { ...context, grade });
       previous = h;
     }
   }

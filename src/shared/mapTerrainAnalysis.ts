@@ -1,5 +1,5 @@
 import { sampleTerrainHeight, type EditableMap } from './map';
-import { mapGuidePolyline } from './mapGuide';
+import { mapGuidePolyline, type MapGuide } from './mapGuide';
 import { distanceToWater, isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
 import type { VisualZoneRegion } from './visualDirection';
 import { createWorldSeaProbeSampler, nearestWorldWater } from './worldEnvironmentEvidence';
@@ -31,21 +31,33 @@ export interface MapEnvironmentSampleOptions {
   waterId?: string;
 }
 
+export interface MapEnvironmentGuide extends MapGuide {
+  reference: string;
+  source: 'map-guide' | 'world-road' | 'world-feature' | 'town-street';
+}
+
+/** Canonical sampled geometry, including town-local streets translated to world coordinates. */
+export function mapEnvironmentGuides(map: EditableMap): MapEnvironmentGuide[] {
+  const world = map.world, plan = world?.bundle.plan;
+  return [
+    ...map.guides.map(guide => ({ ...guide, reference: `map:${guide.id}`, source: 'map-guide' as const, points: mapGuidePolyline(guide) })),
+    ...(plan?.roads ?? []).map(guide => ({ ...guide, reference: `world:${guide.id}`, source: 'world-road' as const, points: worldRoadPolyline(guide) })),
+    ...(plan?.featureGraph?.paths ?? []).map(path => ({ ...path, reference: `feature:${path.id}`, source: 'world-feature' as const,
+      tags: [path.kind], points: worldFeaturePathPolyline(path) })),
+    ...(world?.bundle.patches ?? []).flatMap(patch => {
+      const town = plan!.towns.find(candidate => candidate.id === patch.townId)!;
+      return patch.streets.map(street => ({ ...street, reference: `town:${town.id}:${street.id}`, source: 'town-street' as const, points: worldRoadPolyline(street).map(point =>
+        [point[0] + town.center[0], point[1] + town.center[1]] as [number, number]) }));
+    })
+  ].map(guide => ({ ...guide, curve: 'polyline' as const, closed: false }));
+}
+
 export function createMapEnvironmentSampler(
   map: EditableMap,
   options: MapEnvironmentSampleOptions = {}
 ): (x: number, z: number) => MapEnvironmentSample {
   const world = map.world, plan = world?.bundle.plan;
-  const guides = [
-    ...map.guides.map(guide => ({ ...guide, points: mapGuidePolyline(guide) })),
-    ...(plan?.roads ?? []).map(guide => ({ ...guide, points: worldRoadPolyline(guide) })),
-    ...(plan?.featureGraph?.paths ?? []).map(path => ({ ...path, points: worldFeaturePathPolyline(path) })),
-    ...(world?.bundle.patches ?? []).flatMap(patch => {
-      const town = plan!.towns.find(candidate => candidate.id === patch.townId)!;
-      return patch.streets.map(street => ({ ...street, points: worldRoadPolyline(street).map(point =>
-        [point[0] + town.center[0], point[1] + town.center[1]] as [number, number]) }));
-    })
-  ];
+  const guides = mapEnvironmentGuides(map);
   const selected = options.guideIds && options.guideIds.length > 0
     ? guides.filter((guide) => options.guideIds!.includes(guide.id))
     : guides;

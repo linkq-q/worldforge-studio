@@ -17,13 +17,10 @@ export function validateMapSuggestion(
   options: { repairableObjectIds?: ReadonlySet<string>; repair?: boolean } = {}
 ): ValidatedMapSuggestion {
   const candidate = applyMapOperations(map, suggestion.operations);
-  const lint = lintMap(candidate, { repairableObjectIds: options.repairableObjectIds });
-  const repairOperations = options.repair === false ? [] : lint.repairOperations;
+  const lint = lintMap(candidate, { repairableObjectIds: options.repairableObjectIds, repair: options.repair });
+  const repairOperations = lint.repairOperations;
   const operations = [...suggestion.operations, ...repairOperations];
-  const lintIssues = options.repair === false
-    ? lint.issues.map((issue) => ({ ...issue, repaired: false }))
-    : lint.issues;
-  const issues = [...(suggestion.diagnostics ?? []), ...lintIssues];
+  const issues = [...(suggestion.diagnostics ?? []), ...lint.issues];
   if (repairOperations.length > 0) applyMapOperations(map, operations);
   return {
     suggestion: { ...suggestion, operations, diagnostics: issues },
