@@ -599,6 +599,7 @@ declare module '@voxel-studio/render-runtime/utils/MaterialShaderPatchChain.js' 
     options?: { order?: number; cacheKey?: () => string }
   ): void;
   export function hasMaterialShaderPatch(material: import('three').Material, key: string): boolean;
+  export function removeMaterialShaderPatch(material: import('three').Material, key: string): boolean;
 }
 
 declare module '@voxel-studio/render-runtime/model/material-tags-v1.json' {

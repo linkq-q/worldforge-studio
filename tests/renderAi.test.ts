@@ -243,6 +243,7 @@ describe('render AI adapter', () => {
       'runtime.material-theme',
       'runtime.light-rig',
       'runtime.post-quality',
+      'runtime.outdoor-lighting',
       'runtime.terrain-materials',
       'runtime.weather',
       'runtime.atmosphere-fx',

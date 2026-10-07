@@ -133,6 +133,7 @@ export class FoliageLayer extends EffectLayer {
    */
   getFragmentBody() {
     return [
+      '// wf-foliage-begin',
       '// ── 1) 局部面投影：从 bbox 表面判断当前 box 面，旋转部件也不依赖世界轴投影 ──',
       'vec3 foliage01 = (vEffLayerLocalPos - uEffLayerBoundsMin) / max(uEffLayerBoundsSize, vec3(0.0001));',
       'vec2 foliageFaceUv; float foliageFaceId;',
@@ -157,6 +158,7 @@ export class FoliageLayer extends EffectLayer {
       'float foliageCenterMass = smoothstep(0.035, 0.18, foliageFaceEdge);',
       'float foliageCoverage = max(foliageLeafMask, foliageCenterMass);',
       'if (foliageCoverage < uFoliageCutoutThreshold) discard;',
+      '// wf-foliage-mask-end',
       '',
       '// ── 3) 同一片叶的颜色语言：leaf id 决定色差，leaf local 决定中脉与轻微左右折面 ──',
       'float foliageLeafJit = (effFoliageHash21(foliageCellId + vec2(foliageFaceId * 5.71, 5.3)) - 0.5) * 2.0 * uFoliageClusterVariance;',
@@ -178,6 +180,7 @@ export class FoliageLayer extends EffectLayer {
       'vec3 foliageHeightTint = mix(vec3(0.94, 0.985, 1.055), vec3(1.055, 1.025, 0.91), clamp(foliage01.y, 0.0, 1.0));',
       'foliageHeightTint = mix(vec3(1.0), foliageHeightTint, uFoliageAoStrength * 0.55);',
       'gl_FragColor.rgb *= foliageFacetedShade * foliageLeafTint * foliageHeightTint;',
+      '// wf-foliage-albedo-end',
       '',
       '// 叶片 V 形折面：主脉两侧各是一块低频平面，打散 box 面统一法线。',
       'vec3 foliageBaseViewNormal = normalize(mat3(viewMatrix) * vEffLayerWorldNormal);',
@@ -200,6 +203,7 @@ export class FoliageLayer extends EffectLayer {
       '  - foliageLeafTangentView * foliageFoldSlopeFace.x * uFoliagePuffiness',
       '  - foliageLeafBitangentView * foliageFoldSlopeFace.y * uFoliagePuffiness',
       ');',
+      '// wf-foliage-normal-end',
       '',
       '// 主光与视线：复用 renderer 已有方向光，无方向光时回退到 Y-up。',
       'vec3 foliageLightDirection = normalize(mat3(viewMatrix) * vec3(-0.32, 0.91, 0.26));',
@@ -233,6 +237,7 @@ export class FoliageLayer extends EffectLayer {
       '  * foliageTransmissionMask * uFoliageTransmission;',
       'gl_FragColor.rgb += max(gl_FragColor.rgb, vec3(0.05))',
       '  * vec3(0.30, 0.72, 0.08) * foliageTransmissionGlow * 0.72;',
+      '// wf-foliage-end',
     ].join('\n');
   }
 

@@ -52,6 +52,7 @@ import {
   type UnderwaterWaveProfile
 } from './underwaterRuntime';
 import type { VolumetricLightRuntime } from './volumetricLightRuntime';
+import { OutdoorSunShaftPass } from './outdoorSunShaftPass';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -132,6 +133,16 @@ export class RenderRuntimeAdapter {
   private pixelRatio = 0;
   private postProcessingBypassed = false;
   private volumetricLight: VolumetricLightRuntime | null = null;
+  private readonly outdoorSunPass = new OutdoorSunShaftPass();
+  private outdoorSun: THREE.DirectionalLight | null = null;
+
+  applyOutdoorLighting(sun: THREE.DirectionalLight | null, haze = 0, quality = 1): void {
+    this.outdoorSun = sun;
+    this.outdoorSunPass.apply(sun ? haze : 0, sun ? quality : 1);
+    this.frameCoordinator.setPassEnabled('outdoorSun', Boolean(sun) && (haze > 0 || quality >= 2));
+  }
+
+  disposeOutdoorLighting(): void { this.outdoorSunPass.dispose(); }
 
   setVolumetricLight(runtime: VolumetricLightRuntime): void {
     this.volumetricLight = runtime;
@@ -185,6 +196,7 @@ export class RenderRuntimeAdapter {
     });
     this.frameCoordinator.registerPass(new RenderPass(scene, camera), 'scene', 0, true);
     this.frameCoordinator.registerPass(this.ssaoPass, 'ssao', 10, false);
+    this.frameCoordinator.registerPass(this.outdoorSunPass, 'outdoorSun', 19, false);
     this.frameCoordinator.registerPass(this.toneMapPass, 'toneMap', 20, false);
     // Stylization stays last so bloom cannot soften finished ink/sketch lines.
     this.frameCoordinator.registerPass(this.bloomPass, 'bloom', 30, false);
@@ -863,6 +875,7 @@ export class RenderRuntimeAdapter {
     const needsComicEdge = this.comicPass.enabled
       && Number(this.comicPass.uniforms.uLineBoost?.value ?? 0) > 0;
     return this.volumetricLight?.group.visible === true
+      || this.outdoorSunPass?.enabled === true
       || this.waterBindings.some((binding) => binding.usesSceneDepth)
       || this.inkPass.enabled
       || needsComicEdge
@@ -879,6 +892,10 @@ export class RenderRuntimeAdapter {
     this.renderNormalDepth(this.contentRoot);
     const normalTexture = this.normalTarget.texture;
     const depthTexture = this.normalTarget.depthTexture;
+    if (this.outdoorSun && this.outdoorSunPass.enabled) {
+      this.camera.updateMatrixWorld();
+      this.outdoorSunPass.bindFrame(this.camera, this.outdoorSun, depthTexture);
+    }
     if (depthTexture && this.volumetricLight?.group.visible) {
       this.volumetricLight.bindDepth(depthTexture, this.camera, this.normalTarget.width, this.normalTarget.height);
     }
@@ -1011,6 +1028,10 @@ export class RenderRuntimeAdapter {
     const previousClearAlpha = this.renderer.getClearAlpha();
     const previousShadowAutoUpdate = this.renderer.shadowMap.autoUpdate;
     const layerMasks = meshes.map((mesh) => mesh.layers.mask);
+    const useSurfaceNormals = meshes.some(mesh => mesh.userData.outdoorNormalMaterial);
+    const surfaceMaterials = meshes.map(mesh => mesh.material);
+    const beforeRenderCallbacks = meshes.map(mesh => mesh.onBeforeRender);
+    const normalBiases = new Map<THREE.Material, Pick<THREE.Material, 'polygonOffset' | 'polygonOffsetFactor' | 'polygonOffsetUnits'>>();
     const lightLayers: Array<{ light: THREE.Light; mask: number }> = [];
     this.scene.traverse((object) => {
       const light = object as THREE.Light;
@@ -1019,6 +1040,24 @@ export class RenderRuntimeAdapter {
 
     try {
       meshes.forEach((mesh) => mesh.layers.enable(NORMAL_PREPASS_LAYER));
+      // Shared normal materials must use the same depth layers as each main-pass
+      // surface. Set raster state per draw, including individual material groups.
+      meshes.forEach((mesh, index) => {
+        mesh.onBeforeRender = function (renderer, scene, camera, geometry, material, group) {
+          beforeRenderCallbacks[index].call(this, renderer, scene, camera, geometry, material, group);
+          const original = surfaceMaterials[index];
+          const materialIndex = (group as unknown as { materialIndex?: number } | null)?.materialIndex ?? 0;
+          const source = Array.isArray(original) ? original[materialIndex] : original;
+          if (!normalBiases.has(material)) normalBiases.set(material, {
+            polygonOffset: material.polygonOffset,
+            polygonOffsetFactor: material.polygonOffsetFactor,
+            polygonOffsetUnits: material.polygonOffsetUnits
+          });
+          material.polygonOffset = source.polygonOffset;
+          material.polygonOffsetFactor = source.polygonOffsetFactor;
+          material.polygonOffsetUnits = source.polygonOffsetUnits;
+        };
+      });
       // This pass shares the main scene's WebGLLights state. Hiding its lights
       // invalidates every lit material's program cache again on the main pass.
       // Keep exactly the main camera's light selection, including custom layers.
@@ -1028,14 +1067,26 @@ export class RenderRuntimeAdapter {
       }
       this.camera.layers.set(NORMAL_PREPASS_LAYER);
       this.renderer.shadowMap.autoUpdate = false;
-      this.scene.overrideMaterial = this.normalMaterial;
+      if (useSurfaceNormals) {
+        meshes.forEach((mesh, index) => {
+          const normal = mesh.userData.outdoorNormalMaterial ?? this.normalMaterial;
+          const original = surfaceMaterials[index];
+          mesh.material = Array.isArray(original) ? original.map(() => normal) : normal;
+        });
+      }
+      this.scene.overrideMaterial = useSurfaceNormals ? null : this.normalMaterial;
       this.scene.background = null;
       this.renderer.setRenderTarget(this.normalTarget);
       this.renderer.setClearColor(0x000000, 0);
       this.renderer.clear(true, true, true);
       this.renderer.render(this.scene, this.camera);
     } finally {
-      meshes.forEach((mesh, index) => { mesh.layers.mask = layerMasks[index]; });
+      meshes.forEach((mesh, index) => {
+        mesh.layers.mask = layerMasks[index];
+        mesh.onBeforeRender = beforeRenderCallbacks[index];
+        if (useSurfaceNormals) mesh.material = surfaceMaterials[index];
+      });
+      for (const [material, bias] of normalBiases) Object.assign(material, bias);
       lightLayers.forEach(({ light, mask }) => { light.layers.mask = mask; });
       this.renderer.shadowMap.autoUpdate = previousShadowAutoUpdate;
       this.renderer.setRenderTarget(previousTarget);

@@ -23,6 +23,7 @@ export type RenderModuleId =
   | 'runtime.grass-style'
   | 'runtime.material-theme'
   | 'runtime.light-rig'
+  | 'runtime.outdoor-lighting'
   | 'runtime.post-quality'
   | 'runtime.terrain-materials'
   | 'runtime.weather'
@@ -594,6 +595,28 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       bloomStrength: { type: 'number', min: 0, max: 1.5, default: 0.4 },
       ssao: { type: 'enum', values: ['off', 'soft', 'strong'], default: 'off' },
       depthOfField: { type: 'enum', values: ['off', 'soft', 'portrait'], default: 'off' }
+    }
+  },
+  {
+    id: 'runtime.outdoor-lighting',
+    label: '室外阳光与空气',
+    priority: 'P1',
+    availability: 'ready',
+    availabilityNote: '太阳投影、程序天空与云、阴影驱动空气散射、庭院环境探针及保留纹理的表面响应。',
+    params: {
+      quality: { type: 'number', min: 1, max: 2, default: 1 },
+      edgeSoftening: { type: 'number', min: 0, max: 0.15, default: 0 },
+      skyQuality: { type: 'number', min: 1, max: 4, default: 1 },
+      shadowQuality: { type: 'number', min: 1, max: 2, default: 1 },
+      roughnessScale: { type: 'number', min: 0.5, max: 1.5, default: 1 },
+      sunAzimuth: { type: 'number', min: -180, max: 180, default: -45 },
+      sunElevation: { type: 'number', min: 5, max: 85, default: 32 },
+      shadowSoftness: { type: 'number', min: 0, max: 1, default: 0.45 },
+      haze: { type: 'number', min: 0, max: 1, default: 0.24 },
+      clouds: { type: 'number', min: 0, max: 1, default: 0.4 },
+      bounce: { type: 'number', min: 0, max: 1, default: 0.25 },
+      materialDetail: { type: 'number', min: 0, max: 1, default: 0.65 },
+      reflections: { type: 'number', min: 0, max: 1, default: 0.6 }
     }
   },
   {

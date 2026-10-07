@@ -80,4 +80,56 @@ describe('normal/depth pass light-state stability', () => {
     expect(h.renderer.shadowMap.autoUpdate).toBe(true);
     expect(h.scene.overrideMaterial).toBeNull();
   });
+
+  it.each([false, true])('keeps each surface depth bias in the normal pass (foliage=%s)', (foliage) => {
+    const h = createHarness();
+    const wall = h.mesh.material as THREE.Material;
+    const panel = new THREE.MeshStandardMaterial({ polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+    const layered = new THREE.Mesh(new THREE.BoxGeometry(), [wall, panel]);
+    h.root.add(layered);
+    const foliageNormal = new THREE.MeshNormalMaterial();
+    if (foliage) h.mesh.userData.outdoorNormalMaterial = foliageNormal;
+    const originalBeforeRender = layered.onBeforeRender;
+    const originals = [h.mesh.material, layered.material];
+    const observed: Array<[boolean, number, number]> = [];
+    h.renderer.render.mockImplementation(() => {
+      // WebGLRenderer only submits geometry groups when the material stays an array.
+      expect(Array.isArray(layered.material)).toBe(true);
+      for (const [mesh, materialIndex] of [[layered, 1], [h.mesh, 0], [layered, 0]] as const) {
+        const material = h.scene.overrideMaterial
+          ?? (Array.isArray(mesh.material) ? mesh.material[materialIndex] : mesh.material);
+        mesh.onBeforeRender(h.renderer as never, h.scene, h.camera, mesh.geometry, material, { start: 0, count: 6, materialIndex } as never);
+        observed.push([material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits]);
+      }
+    });
+    h.adapter.renderNormalDepth(h.root);
+    expect(observed).toEqual([[true, -3, -3], [false, 0, 0], [false, 0, 0]]);
+    expect([h.mesh.material, layered.material]).toEqual(originals);
+    expect(layered.onBeforeRender).toBe(originalBeforeRender);
+    expect([panel.polygonOffset, panel.polygonOffsetFactor, panel.polygonOffsetUnits]).toEqual([true, -3, -3]);
+    expect(foliageNormal.polygonOffset).toBe(false);
+  });
+
+  it('restores callbacks and shared normal material bias when a layered draw throws', () => {
+    const h = createHarness();
+    const original = h.mesh.material as THREE.Material;
+    original.polygonOffset = true;
+    original.polygonOffsetFactor = -2;
+    original.polygonOffsetUnits = -2;
+    const callback = vi.fn();
+    h.mesh.onBeforeRender = callback;
+    let normal: THREE.Material | null = null;
+    h.renderer.render.mockImplementation(() => {
+      normal = h.scene.overrideMaterial;
+      h.mesh.onBeforeRender(h.renderer as never, h.scene, h.camera, h.mesh.geometry, normal!, null as never);
+      expect(normal!.polygonOffsetUnits).toBe(-2);
+      throw new Error('layered draw failed');
+    });
+    expect(() => h.adapter.renderNormalDepth(h.root)).toThrow('layered draw failed');
+    expect(h.mesh.onBeforeRender).toBe(callback);
+    expect(callback).toHaveBeenCalledOnce();
+    expect(h.mesh.material).toBe(original);
+    expect(normal!.polygonOffset).toBe(false);
+    expect(normal!.polygonOffsetUnits).toBe(0);
+  });
 });

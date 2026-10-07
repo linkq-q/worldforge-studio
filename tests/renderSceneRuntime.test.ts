@@ -285,6 +285,80 @@ describe('applyRenderScheme', () => {
 });
 
 describe('RenderSceneRuntime sizing', () => {
+  it('forwards shadow quality to the sun fit and restores the original bias when switching back', () => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(96, 48, 96));
+    mesh.castShadow = mesh.receiveShadow = true;
+    const group = new THREE.Group().add(mesh);
+    const sun = new THREE.DirectionalLight();
+    const target = new THREE.Object3D();
+    new THREE.Scene().add(group, sun, target);
+    const settings = { sunAzimuth: -48, sunElevation: 38, shadowSoftness: 0.5, shadowQuality: 2 };
+    const runtime = Object.assign(Object.create(RenderSceneRuntime.prototype), {
+      rendered: { group }, sunLight: sun, sunTarget: target,
+      renderer: { capabilities: { maxTextureSize: 8192 } },
+      baseSunPosition: new THREE.Vector3(), outdoorSettings: settings
+    }) as RenderSceneRuntime;
+    runtime.updateLighting();
+    expect(sun.shadow.bias * (sun.shadow.camera.far - sun.shadow.camera.near)).toBeCloseTo(-0.002, 12);
+    expect(sun.shadow.normalBias).toBe(0.003);
+    expect(sun.shadow.mapSize.x).toBe(8192);
+    settings.shadowQuality = 1;
+    runtime.updateLighting();
+    expect(sun.shadow.bias).toBe(-0.00008);
+    expect(sun.shadow.normalBias).toBe(0.02);
+    expect(sun.shadow.mapSize.x).toBe(4096);
+    mesh.geometry.dispose();
+    (mesh.material as THREE.Material).dispose();
+  });
+
+  it('invalidates untagged and shared materials only when the shadow filter changes', () => {
+    const { targets, adapter, rendered } = createTargets();
+    const material = new THREE.MeshStandardMaterial();
+    const second = new THREE.MeshStandardMaterial();
+    const geometry = new THREE.BoxGeometry();
+    const modelsRoot = new THREE.Group().add(
+      new THREE.Mesh(geometry, material),
+      new THREE.Mesh(geometry, [material, second])
+    );
+    const group = new THREE.Group().add(modelsRoot);
+    const outdoorShadows = { clear: vi.fn(), apply: vi.fn() };
+    const runtime = Object.assign(Object.create(RenderSceneRuntime.prototype), targets, {
+      renderer: { shadowMap: { type: THREE.PCFSoftShadowMap } },
+      rendered: { ...rendered, group, modelsRoot },
+      adapter: { ...adapter, applyOutdoorLighting: vi.fn() },
+      outdoorMaterials: { clear: vi.fn(), apply: vi.fn() },
+      outdoorProbe: { clear: vi.fn() },
+      outdoorSpatial: { clear: vi.fn(), apply: vi.fn() },
+      outdoorShadows,
+      outdoorEdges: { clear: vi.fn(), apply: vi.fn() },
+      outdoorAtmosphere: { clear: vi.fn(), apply: vi.fn() },
+      outdoorSunDirection: new THREE.Vector3(),
+      sunTarget: new THREE.Object3D(),
+      weather: { apply: vi.fn() },
+      applySurfaceCapabilities: vi.fn(), captureWeatherBase: vi.fn(), syncAtmosphereFx: vi.fn()
+    }) as RenderSceneRuntime;
+    const scheme = createRenderScheme({ name: 'sunlit filter', settings: PLAIN_SCHEME.settings,
+      renderPlan: { version: 2, baseSchemeId: PLAIN_SCHEME.id, modules: [{
+        id: 'runtime.outdoor-lighting', params: { quality: 2, shadowQuality: 2, shadowSoftness: 0.5,
+          materialDetail: 0, reflections: 0, bounce: 0 }
+      }] }
+    });
+    const version = material.version;
+    runtime.applyScheme(scheme);
+    expect(runtime.renderer.shadowMap.type).toBe(THREE.PCFShadowMap);
+    expect(material.version).toBe(version + 1);
+    expect(second.version).toBe(1);
+    expect(outdoorShadows.apply).toHaveBeenLastCalledWith(group, targets.sunLight, 0.5, 2);
+    runtime.applyScheme(scheme);
+    expect(material.version).toBe(version + 1);
+    runtime.applyScheme(null);
+    expect(runtime.renderer.shadowMap.type).toBe(THREE.PCFSoftShadowMap);
+    expect(material.version).toBe(version + 2);
+    runtime.applyScheme(null);
+    expect(material.version).toBe(version + 2);
+    material.dispose(); second.dispose(); geometry.dispose();
+  });
+
   it('does not reset the WebGL canvas when its size is unchanged', () => {
     let pixelRatio = 2;
     const camera = {

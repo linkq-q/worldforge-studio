@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { RenderStyleManager } from '@voxel-studio/render-runtime';
-import { configureSunLight } from './lighting';
+import { configureSunLight, configureOutdoorSunLight } from './lighting';
+import { OutdoorAtmosphereRuntime } from './outdoorAtmosphereRuntime';
+import { OutdoorMaterialRuntime } from './outdoorMaterialRuntime';
+import { OutdoorEnvironmentProbe } from './outdoorEnvironmentProbe';
+import { OutdoorSpatialLighting } from './outdoorSpatialLighting';
+import { OutdoorShadowRuntime } from './outdoorShadowRuntime';
+import { OutdoorEdgeNormals } from './outdoorEdgeNormals';
+import { compileOutdoorLighting, type OutdoorLightingSettings } from '../shared/outdoorLighting';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import { AtmosphereFxRuntime } from './atmosphereFxRuntime';
 import { VolumetricLightRuntime } from './volumetricLightRuntime';
@@ -113,6 +120,15 @@ export class RenderSceneRuntime {
   readonly atmosphereFx: AtmosphereFxRuntime;
   readonly volumetricLight: VolumetricLightRuntime;
   readonly weather: WeatherRuntime;
+  readonly outdoorAtmosphere: OutdoorAtmosphereRuntime;
+  private readonly outdoorMaterials = new OutdoorMaterialRuntime();
+  private readonly outdoorProbe: OutdoorEnvironmentProbe;
+  private readonly outdoorSpatial = new OutdoorSpatialLighting();
+  private readonly outdoorShadows = new OutdoorShadowRuntime();
+  private readonly outdoorEdges = new OutdoorEdgeNormals();
+  private outdoorSettings: OutdoorLightingSettings | null = null;
+  private probeFrames = 0;
+  private readonly outdoorSunDirection = new THREE.Vector3();
 
   /** Source of truth for sun placement and shadow fit. */
   map: EditableMap | null = null;
@@ -174,10 +190,22 @@ export class RenderSceneRuntime {
     this.volumetricLight = new VolumetricLightRuntime(this.scene);
     this.adapter.setVolumetricLight(this.volumetricLight);
     this.weather = new WeatherRuntime(this.scene, this.camera, this.renderer);
+    this.outdoorAtmosphere = new OutdoorAtmosphereRuntime(this.renderer, this.scene,
+      (environment, panorama) => this.adapter.syncEnvironment(environment, panorama));
+    this.outdoorProbe = new OutdoorEnvironmentProbe(this.renderer, this.scene,
+      environment => this.adapter.syncEnvironment(environment, null));
   }
 
   /** Re-fits the sun and its shadow camera to the current map. */
   updateLighting(): void {
+    if (this.outdoorSettings && this.rendered) {
+      const style = this.outdoorSettings;
+      configureOutdoorSunLight(this.sunLight, this.sunTarget, this.rendered.group,
+        style.sunAzimuth, style.sunElevation, style.shadowSoftness, style.shadowQuality,
+        this.renderer.capabilities?.maxTextureSize ?? 4096);
+      this.baseSunPosition.copy(this.sunLight.position);
+      return;
+    }
     if (this.map) configureSunLight(
       this.sunLight,
       this.sunTarget,
@@ -192,6 +220,11 @@ export class RenderSceneRuntime {
    * needs to control that around undo.
    */
   attach(rendered: RenderedMap | null): void {
+    this.outdoorMaterials.clear();
+    this.outdoorProbe.clear();
+    this.outdoorSpatial.clear();
+    this.outdoorShadows.clear();
+    this.outdoorEdges.clear();
     this.unsubscribeContentChanges?.();
     this.unsubscribeContentChanges = null;
     this.volumetricLight?.clear();
@@ -234,6 +267,20 @@ export class RenderSceneRuntime {
   renderFrame(deltaTime: number, elapsedSeconds: number): void {
     const weatherFrame = this.weather.update(deltaTime);
     this.applyWeatherFrame(weatherFrame);
+    if (this.outdoorSettings) {
+      this.outdoorSpatial.update(20);
+      this.outdoorShadows.update();
+      this.adapter.applyDistanceFog(this.baseFogColor, 0);
+      this.outdoorAtmosphere.update(this.camera, elapsedSeconds);
+      this.outdoorMaterials.setSunDirection(this.outdoorSunDirection.subVectors(this.sunLight.position, this.sunTarget.position).normalize());
+      if (this.probeFrames > 0 && (this.outdoorSettings.quality < 2 || this.outdoorSpatial.getProgress() === 1)
+        && --this.probeFrames === 0 && this.rendered) {
+        const { group } = this.rendered;
+        const settings = this.outdoorSettings;
+        this.outdoorAtmosphere.withBaselineSkyForCapture(() => this.outdoorProbe.capture(group,
+          settings.quality >= 2 ? 0 : settings.bounce, settings.reflections, settings.quality));
+      }
+    }
     this.updateRainRipples(weatherFrame, deltaTime, elapsedSeconds);
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
@@ -259,16 +306,63 @@ export class RenderSceneRuntime {
    * scheme is `null`.
    */
   applyScheme(scheme: RenderScheme | null): void {
+    const previousShadowType = this.renderer.shadowMap.type;
+    this.outdoorMaterials.clear();
+    this.outdoorProbe.clear();
+    this.outdoorSpatial.clear();
+    this.outdoorShadows.clear();
+    this.outdoorEdges.clear();
+    this.outdoorAtmosphere.clear();
+    this.outdoorSettings = null;
+    this.probeFrames = 0;
+    this.adapter.applyOutdoorLighting(null);
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.currentScheme = scheme;
     applyRenderScheme(this, scheme);
-    this.captureWeatherBase(scheme);
     this.weather.apply(compileRuntimeWeather(scheme?.renderPlan));
     this.applySurfaceCapabilities();
+    this.outdoorSettings = compileOutdoorLighting(scheme?.renderPlan);
+    if (this.outdoorSettings && this.rendered) {
+      this.hdriSky.clear();
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+      this.updateLighting();
+      this.outdoorMaterials.apply(this.rendered.modelsRoot, this.outdoorSettings.materialDetail,
+        this.outdoorSunDirection.subVectors(this.sunLight.position, this.sunTarget.position).normalize(), this.outdoorSettings.quality);
+      this.outdoorAtmosphere.apply(this.sunLight, this.outdoorSettings);
+      this.adapter.applyDistanceFog('#b6cee5', 0);
+      this.adapter.applyOutdoorLighting(this.sunLight, this.outdoorSettings.haze, this.outdoorSettings.quality);
+      if (this.outdoorSettings.quality >= 2) {
+        this.outdoorSpatial.apply(this.rendered.modelsRoot, this.sunLight, this.outdoorSettings.bounce,
+          this.rendered.group, this.scene.environment);
+        this.outdoorShadows.apply(this.rendered.group, this.sunLight,
+          this.outdoorSettings.shadowSoftness, this.outdoorSettings.shadowQuality);
+        this.outdoorEdges.apply(this.rendered.modelsRoot, this.outdoorSettings.edgeSoftening, this.outdoorSettings.roughnessScale);
+      }
+      this.probeFrames = 3;
+    } else this.updateLighting();
+    if (this.renderer.shadowMap.type !== previousShadowType) {
+      // Three r160 doesn't invalidate compiled materials when the filter changes.
+      const materials = new Set<THREE.Material>();
+      this.rendered?.group.traverse(object => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+          if (material) materials.add(material);
+        }
+      });
+      for (const material of materials) material.needsUpdate = true;
+    }
+    this.captureWeatherBase(scheme);
     this.syncAtmosphereFx();
   }
 
   getAtmosphereFxStats(): { particles: number; drawCalls: number; quality: number } {
     return this.atmosphereFx.getStats();
+  }
+
+  getOutdoorLightingProgress(): number {
+    if (this.outdoorSettings?.quality === 2) return this.outdoorSpatial.getProgress() * (this.probeFrames ? 0.99 : 1);
+    return 1;
   }
 
   setAtmosphereFxQuality(quality: number): void {
@@ -300,6 +394,13 @@ export class RenderSceneRuntime {
     this.weather.dispose();
     this.atmosphereFx.dispose();
     this.volumetricLight?.dispose();
+    this.outdoorMaterials.dispose();
+    this.outdoorProbe.dispose();
+    this.outdoorSpatial.dispose();
+    this.outdoorShadows.dispose();
+    this.outdoorEdges.dispose();
+    this.outdoorAtmosphere.dispose();
+    this.adapter.disposeOutdoorLighting();
     this.hdriSky.dispose();
     this.renderer.dispose();
   }

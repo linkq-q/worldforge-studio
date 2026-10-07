@@ -318,6 +318,7 @@ export class TriplanarLayer extends EffectLayer {
 
   getFragmentBody() {
     return [
+      '// wf-triplanar-color-begin',
       'vec3 triWp = vEffLayerWorldPos;',
       'vec3 triWn = normalize(vEffLayerWorldNormal);',
       'vec2 triUv = triplanarDominantUv(triWp, triWn);',
@@ -581,6 +582,7 @@ export class TriplanarLayer extends EffectLayer {
       'vec3 triLighting = clamp(gl_FragColor.rgb / max(diffuseColor.rgb, vec3(0.08)), vec3(0.0), vec3(3.0));',
       'vec3 triResult = mix(gl_FragColor.rgb * triTint, triTint * triLighting, triPatternIsAbsolute);',
       'gl_FragColor.rgb = mix(gl_FragColor.rgb, triResult, clamp(uTriplanarStrength, 0.0, 1.0));',
+      '// wf-triplanar-color-end',
     ].join('\n');
   }
 
