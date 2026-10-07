@@ -154,7 +154,7 @@ it('upgrades saved tool instructions without replacing the user and tool convers
   await recovered.settled(session.id);
   const upgraded=JSON.parse(await readFile(file,'utf8'));
   expect(upgraded.instructionHistory[0].content).toContain('OLD TOOL CONTRACT');
-  expect(upgraded.capabilityVersion).toBe(3);
+  expect(upgraded.capabilityVersion).toBe(4);
 });
 
 it('does not report an already adopted complete draft as unapplied when its observation fails', async () => {

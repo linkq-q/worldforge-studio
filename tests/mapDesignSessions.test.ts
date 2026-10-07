@@ -31,6 +31,27 @@ async function until(predicate: () => boolean | Promise<boolean>) {
 }
 
 describe('ongoing map design sessions', () => {
+  it('lets the model edit a failed submitted program after restart while retaining the complete draft', async () => {
+    const {store,map}=await setup();
+    const firstResponses=[{action:'execute',code:'valid'}, {action:'execute',code:'radius=40'}, {action:'finish',outcome:'blocked',summary:'Radius needs repair'}];
+    const first=new MapDesignSessionManager(store,{
+      chat:async()=>JSON.stringify(firstResponses.shift()),
+      execute:async input=>{if(input.code==='radius=40')throw new Error('world_invalid_town_radius');return suggestion('Retained scene');}
+    });
+    const session=await first.create(map.id,{prompt:'Town',expectedVersion:map.version});
+    await first.settled(session.id);
+    expect((await first.draft(session.id)).map.name).toBe('Retained scene');
+    const nextResponses=[{action:'execute',edits:[{old:'radius=40',new:'radius=60'}]}, {action:'finish'}];
+    const resumed=new MapDesignSessionManager(store,{
+      chat:async()=>JSON.stringify(nextResponses.shift()),
+      execute:async input=>{expect(input.code).toBe('radius=60');return suggestion('Repaired scene');}
+    });
+    await resumed.resume(session.id);
+    await resumed.settled(session.id);
+    expect((await resumed.draft(session.id)).map.name).toBe('Repaired scene');
+    expect((await resumed.get(session.id)).outcome).toBe('completed');
+  });
+
   it('honors 22..36 actual new assets, rejects premature completion, and returns whole-map feedback in the same context', async () => {
     const {store,map}=await setup();
     const responses=[{action:'execute',code:'21'}, {action:'finish'}, {action:'execute',code:'22'}, {action:'finish'}];
