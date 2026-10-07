@@ -78,7 +78,7 @@ export function createTerrainProgramApi(seed: number, size: number, resolution: 
     observations.push(report);
     return {...report, samples: [...report.samples]};
   };
-  return {seed, size, resolution, noise, map, sample, inspect, erode,
+  return {seed, size, resolution, spacing: size / (resolution - 1), noise, map, sample, inspect, erode,
     ridge: (points: ProfilePoint[], options: {base?: number} = {}) => profile(points, false, 1, options.base ?? 0),
     channel: (points: ProfilePoint[], options: {bankSlope?: number} = {}) => profile(points, true, options.bankSlope ?? 0.7, 0),
     result: () => ({heights, observations})};

@@ -1,3 +1,16 @@
+export const TERRAIN_PROGRAM_MIN_RESOLUTION = 33;
+export const TERRAIN_PROGRAM_MAX_RESOLUTION = 513;
+export const TERRAIN_PROGRAM_DEFAULT_RESOLUTION = 257;
+
+/** At most 263169 samples. Never clamp a requested precision or resample a saved field. */
+export function validateTerrainProgramResolution(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < TERRAIN_PROGRAM_MIN_RESOLUTION) {
+    throw new Error('invalid_terrain_program_resolution');
+  }
+  if (value > TERRAIN_PROGRAM_MAX_RESOLUTION) throw new Error('terrain_program_resolution_out_of_budget');
+  return value;
+}
+
 /** Compiled once on the server; clients sample data and never execute the source. */
 export interface TerrainProgramField {
   version: 1;
@@ -10,7 +23,8 @@ export interface TerrainProgramField {
 export function validateTerrainProgramField(value: TerrainProgramField): TerrainProgramField {
   if (!value || value.version !== 1 || typeof value.source !== 'string' || !value.source.trim()
     || value.source.length > 60000 || !Number.isInteger(value.resolution)
-    || value.resolution < 33 || value.resolution > 257 || !Array.isArray(value.heights)
+    || value.resolution < TERRAIN_PROGRAM_MIN_RESOLUTION || value.resolution > TERRAIN_PROGRAM_MAX_RESOLUTION
+    || !Array.isArray(value.heights)
     || value.heights.length !== value.resolution ** 2
     || !value.heights.every(h => Number.isFinite(h) && h >= -500 && h <= 500)
     || !Array.isArray(value.observations) || value.observations.length > 32

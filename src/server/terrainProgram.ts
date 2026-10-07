@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { Worker } from 'node:worker_threads';
 import ts from 'typescript';
-import { validateTerrainProgramField, type TerrainProgramField } from '../shared/terrainProgramField';
+import { TERRAIN_PROGRAM_DEFAULT_RESOLUTION, validateTerrainProgramResolution,
+  validateTerrainProgramField, type TerrainProgramField } from '../shared/terrainProgramField';
 
 // Compile the same erosion implementation used by the editor, without passing
 // host functions into generated code. The worker has a heap limit and a deadline.
@@ -14,11 +15,11 @@ const kernel = ts.transpileModule(`const TERRAIN_MIN_HEIGHT = -16;\n${kernelSour
 
 export async function compileTerrainProgram(source: string,
   options: {seed: number; size: number; resolution?: number}, timeoutMs = 12000): Promise<TerrainProgramField> {
-  const resolution = options.resolution ?? 257;
+  const resolution = validateTerrainProgramResolution(options.resolution === undefined
+    ? TERRAIN_PROGRAM_DEFAULT_RESOLUTION : options.resolution);
   if (typeof source !== 'string' || !source.trim() || source.length > 60000
     || !Number.isInteger(options.seed) || options.seed < 0 || options.seed > 0xffffffff
-    || !Number.isFinite(options.size) || options.size < 500 || options.size > 256000
-    || !Number.isInteger(resolution) || resolution < 33 || resolution > 257) throw new Error('invalid_terrain_program');
+    || !Number.isFinite(options.size) || options.size < 500 || options.size > 256000) throw new Error('invalid_terrain_program');
   const setup = `const terrain = (() => {
       const {Float64Array, Float32Array, Int32Array} = globalThis;
       ${kernel}
@@ -44,7 +45,7 @@ export async function compileTerrainProgram(source: string,
         });
         vm.runInContext(workerData.setup, context, {timeout:workerData.timeout});
         const value = vm.runInContext(workerData.script, context, {timeout:workerData.timeout});
-        if (typeof value !== 'string' || value.length > 4000000) throw new Error('terrain_program_output_too_large');
+        if (typeof value !== 'string' || Buffer.byteLength(value, 'utf8') > 8 * 1024 * 1024) throw new Error('terrain_program_output_too_large');
         parentPort.postMessage({value});
       } catch (error) {parentPort.postMessage({error:String(error.message).slice(0,1000)});}`,
       {eval: true, workerData: {setup, script, timeout: timeoutMs}, resourceLimits: {maxOldGenerationSizeMb: 128, stackSizeMb: 4}});
