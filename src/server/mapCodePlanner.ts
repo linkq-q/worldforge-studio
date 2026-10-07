@@ -1309,12 +1309,27 @@ function executeMapCodePlanInternal(
   let cachedEnvironmentOperationCount = -1;
   let cachedEnvironmentMap: EditableMap | null = null;
   let cachedExistingVisualAabbs: MapObjectAabb[] | null = null;
+  const incrementalWorldOperations = new Set<MapOperation['type']>([
+    'world.set', 'terrain.surface', 'guide.upsert', 'guide.remove',
+    'grass.layer.add', 'grass.layer.update', 'grass.layer.remove', 'grass.fill',
+    'grass.density.set', 'grass.brush', 'grass.generate',
+    'object.add', 'object.update', 'object.remove', 'reference.set', 'sun.set', 'map.update'
+  ]);
   const currentEnvironmentMap = (): EditableMap => {
     if (cachedEnvironmentOperationCount !== sceneOperations.length) {
-      cachedEnvironmentOperationCount = sceneOperations.length;
-      cachedEnvironmentMap = sceneOperations.length > 0
-        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
+      const appended = sceneOperations.slice(Math.max(0, cachedEnvironmentOperationCount));
+      // This list is append-only. Replaying its prefix re-rasterized every grass
+      // field after each road/object edit. Keep a private materialized prefix;
+      // legacy height/water transactions still require whole-list semantics.
+      const incremental = cachedEnvironmentMap?.world
+        && appended.every(operation => incrementalWorldOperations.has(operation.type));
+      const next = sceneOperations.length > 0
+        ? applyMapOperations(incremental ? cachedEnvironmentMap! : { ...map, assets: [...assets] },
+          incremental ? appended : sceneOperations)
         : map;
+      // A failed append must not mark unexecuted operations as materialized.
+      cachedEnvironmentMap = next;
+      cachedEnvironmentOperationCount = sceneOperations.length;
     }
     return cachedEnvironmentMap ?? map;
   };
@@ -1358,8 +1373,9 @@ function executeMapCodePlanInternal(
     issueKey: string
   ): ReturnType<typeof normalizeTerrainSurfaceParams> => {
     const material = resolveCodeSurfaceMaterial(value.material, issueKey);
+    const environmentMap = authoredWorldState || map.world ? currentEnvironmentMap() : map;
     try {
-      return normalizeTerrainSurfaceParams({ ...value, material }, map);
+      return normalizeTerrainSurfaceParams({ ...value, material }, environmentMap);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (!message.startsWith('invalid_terrain_surface_material:') || material === 'default') throw error;
@@ -1370,7 +1386,7 @@ function executeMapCodePlanInternal(
         message: `铺装材质 ${material} 与 surface 不兼容，已按材质改用 ${surface}。`,
         repaired: true
       });
-      return normalizeTerrainSurfaceParams({ ...value, surface }, map);
+      return normalizeTerrainSurfaceParams({ ...value, surface }, environmentMap);
     }
   };
   let sceneIntent: CodeSceneIntent | undefined;
@@ -1389,7 +1405,8 @@ function executeMapCodePlanInternal(
     const id = cleanId(input.id, 'route');
     const points = codePointArray(input.points, 'invalid_map_code_route_points').slice(0, MAX_MAP_GUIDE_POINTS);
     if (points.length < 2) throw new Error('invalid_map_code_route_points');
-    const width = clampFinite(input.width ?? 1.5, 0.2, Math.min(map.box.size[0], map.box.size[2]));
+    const routeMap = authoredWorldState || map.world ? currentEnvironmentMap() : map;
+    const width = clampFinite(input.width ?? 1.5, 0.2, Math.min(routeMap.box.size[0], routeMap.box.size[2]));
     const guide = {
       id,
       name: cleanText(input.name ?? id, 80),

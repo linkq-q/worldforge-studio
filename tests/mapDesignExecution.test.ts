@@ -6,6 +6,7 @@ import {worldPlanKey} from '../src/shared/worldPlanning';
 import {buildMapDesignExecutionPrompt, executeMapDesignProgram} from '../src/server/mapDesignExecution';
 import {executeMapCodePlan} from '../src/server/mapCodePlanner';
 import type {MapDesignToolObservation} from '../src/shared/mapDesignFeedback';
+import * as grassOperations from '../src/shared/mapGrass';
 
 const mocks = vi.hoisted(() => ({llmChat: vi.fn()}));
 vi.mock('../src/server/modelApi', async original => ({...await original<typeof import('../src/server/modelApi')>(), llmChat:mocks.llmChat}));
@@ -24,6 +25,52 @@ const worldMap = () => {
 
 describe('design-session scene execution', () => {
   beforeEach(() => vi.clearAllMocks());
+  it('keeps far-world authored surfaces inside the new extent instead of clipping to the blank base', async () => {
+    const baseMap=createEmptyMap(),original=structuredClone(baseMap);
+    const suggestion=await executeMapDesignProgram({baseMap,assets:[],maxNewAssets:0,
+      code:`function plan(api){
+        api.createWorld({recipe:{version:1,seed:api.seed,size:2400,constraints:[{region:'center',biome:'grassland'}]}});
+        api.surface({id:'distant-court',surface:'paving',material:'concrete',region:{kind:'circle',center:[900,700],radius:80}});
+        api.route({id:'distant-road',points:[[800,700],[1000,700]],width:60,surface:'paving',material:'concrete'});
+      }`});
+    const result=applyMapOperations(baseMap,suggestion.operations);
+    expect(result.visualSemantics.zones.find(zone=>zone.id==='code:distant-court')?.region)
+      .toEqual({kind:'circle',x:900,z:700,radius:80});
+    expect(result.visualSemantics.zones.find(zone=>zone.id==='code:route:distant-road')?.region)
+      .toEqual({kind:'path',points:[[800,700],[1000,700]],width:60});
+    expect(baseMap).toEqual(original);
+  });
+  it('materializes appended world edits without regenerating earlier grass and reads new world heights', async () => {
+    const baseMap=createEmptyMap(), original=structuredClone(baseMap);
+    const grassSpy=vi.spyOn(grassOperations,'generateGrassRegionInPlace');
+    const materializations:number[]=[], heights:number[]=[];
+    try {
+      const suggestion=await executeMapDesignProgram({baseMap,assets:[],maxNewAssets:0,
+        terrainProgram:{size:500,resolution:33,source:'function generate(t){t.map(()=>3)}'},
+        onToolObservation:observation=>{if(observation.tool==='report'){
+          materializations.push(grassSpy.mock.calls.length);heights.push(observation.result as number);
+        }},
+        code:`function plan(api){
+          api.createWorld({recipe:{version:1,seed:api.seed,size:500,constraints:[{region:'center',biome:'grassland'}],terrainProgram:api.terrainProgram()}});
+          api.grass('patch',{kind:'circle',center:[0,0],radius:8},{density:0.5});
+          api.report('initial',api.environmentSample([0,0]).height);
+          for(let i=0;i<4;i++){
+            api.route({id:'path-'+i,points:[[i*5,15],[i*5,25]],width:2,surface:'soil'});
+            api.report('after-route-'+i,api.environmentSample([0,0]).height);
+          }
+          api.editWorld(world=>{world.bundle.plan.recipe.terrainProgram.heights.fill(9);});
+          api.report('updated-world',api.environmentSample([0,0]).height);
+        }`});
+      expect(materializations).toEqual([1,1,1,1,1,1]);
+      expect(heights).toEqual([3,3,3,3,3,9]);
+      expect(baseMap).toEqual(original);
+      const result=applyMapOperations(baseMap,suggestion.operations);
+      expect(result.guides).toHaveLength(4);
+      expect(result.grassLayers[0].densities.some(value=>value>0)).toBe(true);
+      expect(result.world!.bundle.plan.recipe.terrainProgram!.heights.every(value=>value===9)).toBe(true);
+      expect(suggestion.operations.filter(operation=>operation.type==='grass.generate')).toHaveLength(1);
+    } finally {grassSpy.mockRestore();}
+  });
   it.each([false, true])('executes documented spatial reads and retains their real phases (new asset %s)', async generated => {
     const observations: MapDesignToolObservation[] = [];
     await executeMapDesignProgram({baseMap:generated?worldMap():createEmptyMap(),assets:[],maxNewAssets:generated?1:0,
