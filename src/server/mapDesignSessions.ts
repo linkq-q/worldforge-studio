@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createId, type EditableMap, type MapAsset } from '../shared/map';
-import { applyMapOperations, type MapAiSuggestion } from '../shared/mapOperations';
+import { applyMapOperations, type MapAiSuggestion, type CodePlanPreviewPayload } from '../shared/mapOperations';
 import type { MapDesignDraft, MapDesignMessage, MapDesignSessionOptions, MapDesignSessionView } from '../shared/mapDesignSession';
 import { MAP_AI_MAX_NEW_ASSETS } from '../shared/mapPlanning';
 import { MAP_DESIGN_OBSERVATION_HELP, observeMapDesign } from '../shared/mapDesignObservation';
@@ -20,7 +20,7 @@ import { MapDesignFeedbackCollector, readMapDesignFeedback } from './mapDesignFe
 const MAX_STEPS_PER_RUN = 48;
 const MAX_TRANSCRIPT_CHARS = 400_000;
 const MAX_MESSAGE_CHARS = 12_000;
-const CAPABILITY_VERSION = 5;
+const CAPABILITY_VERSION = 9;
 
 interface DesignState {
   schemaVersion: 1;
@@ -36,6 +36,7 @@ interface DesignState {
   terrainProgram?: unknown;
   retiredTerrainProgram?: unknown;
   suggestion: MapAiSuggestion | null;
+  planPreview?: CodePlanPreviewPayload;
   assetCache: Record<string, string>;
   /** All uncached asset requests in one planning task share this batch. */
   assetBatchPlanningCall?: number;
@@ -79,6 +80,8 @@ export class MapDesignSessionManager {
     if (options.assetProvider !== undefined && !isModelProvider(options.assetProvider)) throw new Error('asset_provider_unavailable');
     if (options.backendPlanning !== undefined && typeof options.backendPlanning !== 'boolean') throw new Error('design_backend_planning_invalid');
     const backendPlanning = options.backendPlanning ?? !currentCodexRun();
+    if (options.requirePlanApproval !== undefined && typeof options.requirePlanApproval !== 'boolean') throw new Error('design_plan_approval_invalid');
+    const requirePlanApproval = options.requirePlanApproval ?? true;
     const maxSteps = options.maxSteps ?? MAX_STEPS_PER_RUN;
     if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > 128) throw new Error('design_step_budget_invalid');
     if (options.maxGenerationCalls !== undefined && (!Number.isInteger(options.maxGenerationCalls)
@@ -110,12 +113,12 @@ export class MapDesignSessionManager {
     const state: DesignState = {
       schemaVersion: 1,
       view: { id: createId('design'), mapId, baseVersion: map.version, draftRevision: 0, version: 1,
-        status: 'idle', messages: [], progress: null, createdAt: now, updatedAt: now, modelCalls: 0,
+        status: 'idle', stage: requirePlanApproval ? 'planning' : undefined, messages: [], progress: null, createdAt: now, updatedAt: now, modelCalls: 0,
         operationCount: 0, assetCalls: 0, paidRequests:0, paidRequestCounts:{planning:0,assets:0},
         generationCounts:{planning:1,assets:0}, generationCallLimit:options.maxGenerationCalls,
         paidRequestLimit: options.maxPaidRequests,
         stepsUsed: 0, stepLimit: this.dependencies.maxSteps ?? maxSteps },
-      options: { ...options, prompt, minNewAssets, maxNewAssets, maxSteps, backendPlanning }, baseMap: { ...map, assets }, assets,
+      options: { ...options, prompt, minNewAssets, maxNewAssets, maxSteps, backendPlanning, requirePlanApproval }, baseMap: { ...map, assets }, assets,
       transcript: [], code: '', editableCode: '', suggestion: null, assetCache: {}, inputRevision: 0,
       requestDraftRevision: 0, capabilityVersion: CAPABILITY_VERSION,
       codexRunId: backendPlanning ? undefined : currentCodexRun()
@@ -145,7 +148,8 @@ export class MapDesignSessionManager {
 
   async draft(id: string): Promise<MapDesignDraft> {
     const state = await this.load(id);
-    return { session: this.view(state), map: this.draftMap(state), suggestion: structuredClone(state.suggestion) };
+    return { session: this.view(state), map: this.draftMap(state), suggestion: structuredClone(state.suggestion),
+      ...(state.planPreview ? {planPreview: structuredClone(state.planPreview)} : {}) };
   }
 
   async message(id: string, message: string): Promise<MapDesignSessionView> {
@@ -157,6 +161,7 @@ export class MapDesignSessionManager {
     if (state.view.status === 'committed' || state.view.status === 'idle'
       && (state.view.outcome === 'completed' || state.view.outcome === 'unchanged')) this.consumeGeneration(state, 'planning');
     this.appendUser(state, content);
+    if (state.options.requirePlanApproval) state.view.stage = 'planning';
     if (!state.options.backendPlanning) state.codexRunId = currentCodexRun() ?? state.codexRunId;
     state.inputRevision += 1;
     state.requestDraftRevision = state.view.draftRevision;
@@ -187,6 +192,7 @@ export class MapDesignSessionManager {
 
   async resume(id: string): Promise<MapDesignSessionView> {
     const state = await this.load(id);
+    if (state.view.stage === 'awaiting-plan-approval') throw new Error('design_plan_approval_required');
     const isCommitted = () => state.view.status === 'committed';
     if (this.committing.has(id)) throw new Error('design_commit_in_progress');
     if (isCommitted()) throw new Error('design_session_committed');
@@ -213,9 +219,32 @@ export class MapDesignSessionManager {
     return this.view(state);
   }
 
+  async approvePlan(id: string, expectedRevision: number, approved: boolean): Promise<MapDesignSessionView> {
+    const state = await this.load(id);
+    if (approved !== true) throw new Error('design_approval_required');
+    if (this.committing.has(id) || this.jobs.has(id)) throw new Error('design_still_running');
+    if (state.view.stage !== 'awaiting-plan-approval') throw new Error('design_plan_approval_unavailable');
+    if (!Number.isInteger(expectedRevision) || expectedRevision !== state.view.draftRevision) throw new Error('design_draft_stale');
+    await this.requireCurrentBase(state);
+    // Recheck after asynchronous IO: a steering message may already have changed the candidate.
+    if (state.view.stage !== 'awaiting-plan-approval' || expectedRevision !== state.view.draftRevision
+      || this.jobs.has(id)) throw new Error('design_draft_stale');
+    state.editableCode = state.code;
+    state.view.stage = 'generating-assets';
+    state.view.outcome = undefined;
+    state.view.error = undefined;
+    this.appendTool(state, 'plan-approved', {draftRevision:expectedRevision,
+      instruction:'The user explicitly approved this whitebox, its placement dimensions/positions and color prompts. Bind generated assets by replaying this exact source. Do not redesign the layout.'});
+    this.touch(state);
+    await this.save(state);
+    this.start(state);
+    return this.view(state);
+  }
+
   async commit(id: string, expectedRevision: number, approved: boolean) {
     const state = await this.load(id);
     if (approved !== true) throw new Error('design_approval_required');
+    if (state.options.requirePlanApproval && state.view.stage !== 'completed') throw new Error('design_plan_approval_required');
     if (this.committing.has(id)) throw new Error('design_commit_in_progress');
     if (state.view.status === 'running' || this.jobs.has(id)) throw new Error('design_still_running');
     if (state.view.status === 'committed') throw new Error('design_session_committed');
@@ -236,6 +265,7 @@ export class MapDesignSessionManager {
     state.code = '';
     state.editableCode = '';
     state.suggestion = null;
+    delete state.planPreview;
     state.view.operationCount = 0;
     state.view.draftRevision += 1;
     this.appendTool(state, 'commit', { baseVersion: result.map.version,
@@ -283,7 +313,8 @@ export class MapDesignSessionManager {
   private async run(state: DesignState): Promise<void> {
     let formatFailures = 0;
     while (state.view.status === 'running') {
-      if ((state.view.stepsUsed ?? 0) >= (state.view.stepLimit ?? MAX_STEPS_PER_RUN)) {
+      const approvedReplay = state.options.requirePlanApproval && state.view.stage === 'generating-assets';
+      if (!approvedReplay && (state.view.stepsUsed ?? 0) >= (state.view.stepLimit ?? MAX_STEPS_PER_RUN)) {
         state.view.status = 'paused';
         state.view.progress = { phase: 'planning', label: '已到本轮推理预算，未完成草稿已保留，可继续' };
         this.touch(state);
@@ -300,14 +331,15 @@ export class MapDesignSessionManager {
       const controller = new AbortController();
       this.controllers.set(state.view.id, controller);
       state.view.progress = { phase: 'planning', label: '正在结合当前场景思考，可随时发送引导' };
-      state.view.modelCalls += 1;
+      if (!approvedReplay) state.view.modelCalls += 1;
       this.touch(state);
       await this.save(state);
       let content: string;
       try {
         // A steering message can explicitly rebind an already running job. Read
         // the current pin each turn rather than retaining the old async context.
-        content = await this.runInContext(state, () => (this.dependencies.chat ?? llmChat)(structuredClone(state.transcript), {
+        content = approvedReplay ? JSON.stringify({action:'execute',code:state.code,summary:'沿已确认的白盒生成并绑定资产'})
+          : await this.runInContext(state, () => (this.dependencies.chat ?? llmChat)(structuredClone(state.transcript), {
           provider: state.options.provider ?? 'gpt', maxTokens: 14_000, temperature: 0.4, maxAttempts: 1,
           backendOnly: state.options.backendPlanning,
           fetchImpl: this.paidFetch(state),
@@ -329,8 +361,10 @@ export class MapDesignSessionManager {
         this.interrupted(state);
         continue;
       }
-      state.view.stepsUsed = (state.view.stepsUsed ?? 0) + 1;
-      state.transcript.push({ role: 'assistant', content });
+      if (!approvedReplay) {
+        state.view.stepsUsed = (state.view.stepsUsed ?? 0) + 1;
+        state.transcript.push({ role: 'assistant', content });
+      }
       let action: Record<string, unknown>;
       try { action = parseLlmJsonObject(content, 'invalid_design_action'); }
       catch (error) {
@@ -349,7 +383,7 @@ export class MapDesignSessionManager {
       }
       formatFailures = 0;
       const summary = typeof action.summary === 'string' ? action.summary.slice(0, 4000) : '';
-      this.appendVisible(state, 'assistant', summary || `执行 ${String(action.action)}`, String(action.action));
+      if (!approvedReplay) this.appendVisible(state, 'assistant', summary || `执行 ${String(action.action)}`, String(action.action));
       const feedback = new MapDesignFeedbackCollector();
       const assetBindings: Array<{key: string; variantIndex: number; id: string; name: string}> = [];
       let adoptedRevision: number | undefined;
@@ -363,14 +397,21 @@ export class MapDesignSessionManager {
           if (typeof outcome !== 'string' || !['completed', 'unchanged', 'blocked'].includes(outcome)) throw new Error('invalid_design_outcome');
           if (outcome === 'completed' && (!state.suggestion?.operations.length
             || state.view.draftRevision <= (state.requestDraftRevision ?? 0))) throw new Error('design_complete_requires_draft:execute the current requested changes, or explicitly finish unchanged/blocked with a reason');
-          if (outcome === 'completed') this.requireMinimumAssets(state);
+          const whitebox = state.options.requirePlanApproval && state.view.stage === 'planning';
+          if (outcome === 'completed' && whitebox) {
+            const declared = (state.suggestion?.codePlan?.assetRequirements ?? []).reduce((sum,item)=>sum+item.variants,0);
+            if (declared < (state.options.minNewAssets ?? 0)) throw new Error(`design_planned_assets_minimum:${declared}/${state.options.minNewAssets}:complete the whitebox and asset prompt table before requesting confirmation; do not generate assets`);
+          } else if (outcome === 'completed') this.requireMinimumAssets(state);
           if (outcome === 'completed') assertDesignRecipeOperations(state.suggestion!.operations, state.baseMap.world?.bundle.plan.recipe);
           if (outcome !== 'completed' && !summary.trim()) throw new Error('design_outcome_reason_required');
           if (state.suggestion && summary) state.suggestion.summary = summary;
-          state.view.outcome = outcome as MapDesignSessionView['outcome'];
-          state.view.status = outcome === 'blocked' ? 'paused' : 'idle';
+          const awaitingApproval = outcome === 'completed' && whitebox;
+          state.view.outcome = awaitingApproval ? undefined : outcome as MapDesignSessionView['outcome'];
+          if (awaitingApproval) state.view.stage = 'awaiting-plan-approval';
+          state.view.status = awaitingApproval || outcome === 'blocked' ? 'paused' : 'idle';
           state.view.progress = { phase: outcome === 'blocked' ? 'planning' : 'complete',
-            label: outcome === 'completed' ? '草稿已完成，等待你检查和应用' : outcome === 'unchanged' ? '本轮结束，没有产生修改' : '仍有未解决条件，完整草稿已保留' };
+            label: awaitingApproval ? '白盒与资产颜色提示已准备好，请确认规划后生成资产'
+              : outcome === 'completed' ? '草稿已完成，等待你检查和应用' : outcome === 'unchanged' ? '本轮结束，没有产生修改' : '仍有未解决条件，完整草稿已保留' };
           this.touch(state);
           break;
         }
@@ -383,13 +424,16 @@ export class MapDesignSessionManager {
           await this.save(state);
           state.view.progress = { phase: 'planning', label: '正在执行场景程序并测量结果' };
           this.touch(state);
+          const discoveryOnly = state.options.requirePlanApproval && !approvedReplay;
+          let planPreview: CodePlanPreviewPayload | undefined;
           const suggestion = await (this.dependencies.execute ?? executeMapDesignProgram)({
             code, appearancePlan: state.view.appearancePlan,
+            discoveryOnly, onPlanPreview: value => {planPreview = structuredClone(value);},
             baseMap: state.baseMap, assets: state.assets, maxNewAssets: state.options.maxNewAssets ?? 0,
             onToolObservation: value => feedback.record(value),
             onAssetReady: event => assetBindings.push({key: event.key, variantIndex: event.variantIndex,
               id: event.asset.id, name: event.asset.name}),
-            createAsset: this.assetGenerator(state, controller.signal), signal: controller.signal,
+            createAsset: discoveryOnly ? undefined : this.assetGenerator(state, controller.signal), signal: controller.signal,
             onProgress: event => { if (state.inputRevision === inputRevision) { state.view.progress = event; this.touch(state); } }
           });
           if (state.inputRevision !== inputRevision || state.view.status !== 'running') {
@@ -410,11 +454,16 @@ export class MapDesignSessionManager {
           state.assets = assets;
           state.code = code;
           state.suggestion = suggestion;
+          state.planPreview = discoveryOnly ? planPreview : undefined;
           if (suggestion.appearancePlan) state.view.appearancePlan = structuredClone(suggestion.appearancePlan);
           state.view.draftRevision += 1;
           adoptedRevision = state.view.draftRevision;
           state.view.operationCount = suggestion.operations.length;
           this.appendTool(state, 'execute', { draftRevision: state.view.draftRevision,
+            assetWorkflow: {phase: discoveryOnly ? 'whitebox-discovery' : 'asset-binding',
+              assetDeclarationsAllowed: true, assetGenerationAllowed: !discoveryOnly,
+              declaredVariants: (suggestion.codePlan?.assetRequirements ?? []).reduce((sum,item)=>sum+item.variants,0),
+              instruction: discoveryOnly ? 'api.requireAsset declares future assets and api.asset resolves provisional whitebox handles; both are allowed now. Complete their prompts and placements before finish completed. No paid asset generation occurs until explicit user approval.' : 'Assets bind into the approved placement program.'},
             observation: (this.dependencies.observe ?? observeMapDesign)(draft, { kind: 'summary' }, state.view.draftRevision),
             spatialCoverage: this.spatialCoverage(draft, state.view.draftRevision),
             appearancePlan: state.view.appearancePlan,
@@ -424,6 +473,15 @@ export class MapDesignSessionManager {
             ...(assetBindings.length ? {generatedAssetFacts: observeMapDesign({...draft,assets},
               {kind:'assets',ids: [...new Set(assetBindings.map(asset => asset.id))]},state.view.draftRevision)} : {}),
             assetDetailsQuery: {kind: 'assets'}, changes: summarizeOperations(suggestion) });
+          if (approvedReplay) {
+            this.requireMinimumAssets(state);
+            state.view.stage = 'completed';
+            state.view.status = 'idle';
+            state.view.outcome = 'completed';
+            state.view.progress = {phase:'complete',label:'已按确认的白盒绑定资产，完整草稿可检查和应用'};
+            this.touch(state);
+            break;
+          }
         } else throw new Error('unknown_design_action');
       } catch (error) {
         this.appendTool(state, String(action.action), { error: controller.signal.aborted ? 'interrupted_by_user' : errorMessage(error),
@@ -431,6 +489,13 @@ export class MapDesignSessionManager {
           ...(adoptedRevision !== undefined ? {note: 'The complete draft was adopted before the observation/feedback failed. Read the current draft; do not replay this as a missing change.'} : {}),
           feedback: await saveFeedback(adoptedRevision !== undefined, errorMessage(error)), budgets: this.budgets(state),
           assetBindings, assetDetailsQuery: {kind: 'assets'} });
+        if (approvedReplay && !controller.signal.aborted) {
+          state.view.status = 'failed';
+          state.view.error = errorMessage(error);
+          state.view.progress = {phase:'failed',label:'已确认布局保留，资产生成未完成；可重试同一布局',detail:state.view.error};
+          this.touch(state);
+          break;
+        }
       }
       await this.save(state);
     }
@@ -443,6 +508,7 @@ export class MapDesignSessionManager {
     const pending = new Map<string, Promise<MapAsset>>();
     let inFlight = 0;
     return async (request, report) => {
+      if (state.options.requirePlanApproval && state.view.stage !== 'generating-assets') throw new Error('design_plan_approval_required');
       const key = createHash('sha256').update(JSON.stringify(request)).digest('hex');
       const cached = state.assetCache[key];
       if (cached) return this.store.loadAsset(cached);
@@ -470,6 +536,18 @@ export class MapDesignSessionManager {
 
   private async observe(state: DesignState, query: unknown): Promise<unknown> {
     const request = query as Record<string, unknown> | null;
+    if (request?.kind === 'source') {
+      const source = request.source ?? 'working';
+      if (source !== 'working' && source !== 'complete') throw new Error('design_source_query_invalid');
+      const code = source === 'complete' ? state.code : state.editableCode ?? state.code;
+      const offset = request.offset ?? 0, limit = request.limit ?? 3000;
+      if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0 || offset > code.length
+        || typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > 8000) throw new Error('design_source_query_invalid:offset is a character offset; limit=1..8000');
+      const text = code.slice(offset,offset+limit);
+      return {source,draftRevision:state.view.draftRevision,sha256:createHash('sha256').update(code).digest('hex'),
+        matchesCompleteDraft:code===state.code,totalCharacters:code.length,offset,code:text,truncated:offset+text.length<code.length,
+        ...(offset+text.length<code.length ? {next:{kind:'source',source,offset:offset+text.length,limit}} : {})};
+    }
     if (request?.kind === 'feedback') return readMapDesignFeedback(this.feedbackDirectory(state), request);
     if (request?.kind === 'appearance') return {baseVersion: state.view.baseVersion, draftRevision: state.view.draftRevision,
       source: 'session-planned-appearance', plan: state.view.appearancePlan ?? null,
@@ -596,6 +674,9 @@ export class MapDesignSessionManager {
       if (state.schemaVersion !== 1 || state.view?.id !== id) throw new Error('invalid_design_session');
       state.view.stepLimit ??= state.options.maxSteps ?? MAX_STEPS_PER_RUN;
       state.options.backendPlanning ??= !state.codexRunId;
+      // Existing saved tasks retain their original contract; new sessions require approval by default.
+      state.options.requirePlanApproval ??= false;
+      if (state.options.requirePlanApproval) state.view.stage ??= state.view.outcome === 'completed' ? 'completed' : 'planning';
       state.view.stepsUsed ??= 0;
       state.view.generationCounts ??= {planning:1,assets:state.view.assetCalls > 0 ? 1 : 0};
       state.view.generationCallLimit ??= state.options.maxGenerationCalls;
@@ -640,6 +721,7 @@ export class MapDesignSessionManager {
         }
         this.appendTool(state, 'capabilities-updated', {version:CAPABILITY_VERSION,
           retiredTerrainDeclaration:retiredDeclaration, retainedDraftRequiresRecipe:retiredDraft,
+            assetWorkflow:state.options.requirePlanApproval ? {stage:state.view.stage,assetDeclarationsAllowed:true,assetGenerationAllowed:state.view.stage==='generating-assets',instruction:'During planning, requireAsset declares future assets without paid generation. Declare the full prompt table and placements, then finish completed requests user approval. Zero generated assets before approval is expected.'} : undefined,
           editableProgram:{characters:state.editableCode.length,sha256:createHash('sha256').update(state.editableCode).digest('hex'),source:'latest submitted program, including executions that failed; the complete scene draft remains separately preserved'},
           message:'Continuous design now uses the complete main-mode composition guidance and main tool surface, extended only with conversation feedback, world and base-edit tools. One entire planning task and one entire asset batch are separate generation calls; HTTP attempts remain telemetry with an optional explicit technical cap. WorldRecipe-only terrain policy remains. Prior source, draft and user/tool history are unchanged; previous system instructions are archived outside the active transcript.'});
         await this.save(state);
@@ -675,7 +757,9 @@ function editedCode(previous: string, action: Record<string, unknown>): string {
   let code = previous;
   for (const edit of action.edits) {
     if (!edit || typeof edit.old !== 'string' || !edit.old || typeof edit.new !== 'string'
-      || code.split(edit.old).length !== 2) throw new Error('design_edit_anchor_not_unique');
+      ) throw new Error('design_edit_anchor_not_unique:each edit requires a nonempty old string and a new string');
+    const matches = code.split(edit.old).length - 1;
+    if (matches !== 1) throw new Error(`design_edit_anchor_not_unique:matched=${matches};old=${JSON.stringify(edit.old.slice(0,160))};read observe {kind:'source',source:'working',offset:0,limit:3000} to locate a unique exact anchor, or return the complete corrected code. The failed edit was not applied.`);
     code = code.replace(edit.old, () => edit.new);
   }
   if (!code.trim() || code.length > 60_000) throw new Error('invalid_design_code');
@@ -684,6 +768,7 @@ function editedCode(previous: string, action: Record<string, unknown>): string {
 
 function buildSessionPrompt(state: DesignState): string {
   return `You are the ongoing designer of this editable 3D world. Keep the user's design intent across this entire conversation. You may observe, write code, inspect actual results, and continue. The user can interrupt and steer you while you work. New user messages supersede conflicting earlier choices while preserving everything else. Reply in the user's language for summaries.
+${state.options.requirePlanApproval ? `This is the main-mode whitebox-first workflow. Before user confirmation, execute only performs local discovery. api.requireAsset IS ALLOWED and REQUIRED to DECLARE future assets, prompts, dimensions and variants; api.asset resolves their provisional whitebox handles. These synchronous declarations do NOT send network requests. Only paid 3D asset generation is prohibited before confirmation. Never omit requireAsset or its placements because generation is gated. Establish the complete terrain/area/route composition, all object positions, orientations and intended dimensions, and the full requireAsset prompt table. Declare api.appearance before assets: choose coherent source colors for the scene and include explicit part colors with #rrggbb codes in EACH asset prompt (for example bench timber #B88752 and supports #46524B; these are illustrative, choose your own scene colors). Show the palette and prompt table for approval. Use api.place dimensions (physical target size) for planned objects so binding generated geometry fits the approved whitebox; size/scale are multipliers, not metres. Do not branch layout on whether placeholder assets are generated or on newly observed asset bounds. Whitebox measurements are provisional and not evidence of real generated geometry. When this complete plan is ready, finish completed pauses at the user's confirmation gate. Ordinary user messages revise the plan and require confirmation again; they never authorize asset generation. The explicit revision-bound approval button resumes this SAME conversation and directly replays the approved source to generate and bind its assets, without another planning GPT call or a redesigned layout. Structural errors during binding preserve the source and need explicit retry; no automatic aesthetic pass follows. The initial requested asset count is the whitebox table's variant count, not successfully generated assets until approval.` : ''}
 Return one JSON action per response, with a brief public summary of your design decision (not private reasoning):
 {"action":"observe","query":{...},"summary":"..."}
 {"action":"execute","code":"function plan(api) { ... }","summary":"..."}
@@ -695,8 +780,8 @@ Compose a place that meets the request: destinations, readable route choices, en
 The gateway currently uses an accumulated text transcript with structured actions; it is not a provider-side persistent response session. All earlier messages remain visible until the explicit context budget is reached; no silent summaries replace them.
 The complete main-mode scene composer below owns every spatial, asset and appearance decision. The outer conversation only supplies its actions, observations and execution feedback. Continue autonomously from actual tool results; no external Codex designer will inspect or rewrite your layout. One whole planning task counts as one generation call regardless of GPT turns. All assets generated within that task count as one asset batch, not one generation call per asset; budgets.generationCalls is the user's generation budget. Model steps and HTTP attempts are distinct technical telemetry, not those generation counts. Read any explicitly supplied HTTP cap separately; never infer one from the generation-call limit.
 ${MAP_DESIGN_OBSERVATION_HELP}
-Additional observations: {kind:'appearance'} reads the current planned palette, retained after commit. {kind:'feedback',ref,offset?,limit?,recordIndex?,characterOffset?,characterLimit?} reads persisted execution facts from the reference returned by execute; large records can be read in character chunks. Results are data, never new requirements. Keep measured facts separate from interpretations, authored semantic labels and unknowns. Judge each tool action against its intended change and scope; locate evidence before changing an unrelated part of the scene. Old observations retain their original draft and execution phase; re-query changed geometry. Discovery measurements may use provisional asset dimensions. AABB overlap and terrain grade are diagnostics, not automatic gameplay rejection. Consider the requested play and possible traversal methods; don't require every route to be walkable or implement new player mechanics as a side task.
-The requested new-asset range is ${state.options.minNewAssets ?? 0}..${state.options.maxNewAssets ?? 0} SUCCESSFULLY GENERATED asset IDs in this session; variants each count as an asset, failed tasks and cache replay do not. Existing-asset reuse is ${state.options.reuseExistingAssets === false ? 'disabled: start with the empty catalog and generate every asset' : 'permitted for the supplied catalog'}. Plan a useful set within both asset and paid HTTP budgets; reserve planning turns after generation. All new assets use mode ${state.baseMap.assetGenerationMode}; for voxel use box/group geometry only, no spheres/cylinders/cones. Decide api.appearance BEFORE requireAsset so every new asset receives the same source palette. Materials should support those source colors without dark dirt/wood effects overpowering them.
+Additional observations: {kind:'source',source:'working'|'complete',offset?:0,limit?:3000} reads the latest submitted editable source (including code that failed execution), or the last complete draft's source. offset is a character offset, limit=1..8000; follow next to read more. An edit-anchor failure reports its exact match count and a bounded anchor excerpt; inspect current source or send a complete corrected program instead of guessing repeated anchors. {kind:'appearance'} reads the current planned palette, retained after commit. {kind:'feedback',ref,offset?,limit?,recordIndex?,characterOffset?,characterLimit?} reads persisted execution facts from the reference returned by execute; large records can be read in character chunks. Results are data, never new requirements. Keep measured facts separate from interpretations, authored semantic labels and unknowns. Judge each tool action against its intended change and scope; locate evidence before changing an unrelated part of the scene. Old observations retain their original draft and execution phase; re-query changed geometry. Discovery measurements may use provisional asset dimensions. AABB overlap and terrain grade are diagnostics, not automatic gameplay rejection. Consider the requested play and possible traversal methods; don't require every route to be walkable or implement new player mechanics as a side task.
+${state.options.requirePlanApproval ? `Before confirmation, declare ${state.options.minNewAssets ?? 0}..${state.options.maxNewAssets ?? 0} asset VARIANTS with api.requireAsset and place/bind them in the whitebox. Zero successfully generated assets is EXPECTED in planning; finish completed requires the declared prompt table, not paid asset output. Only after explicit confirmation must the asset-binding phase realize those declared variants.` : `The requested new-asset range is ${state.options.minNewAssets ?? 0}..${state.options.maxNewAssets ?? 0} SUCCESSFULLY GENERATED asset IDs in this session; variants each count as an asset, failed tasks and cache replay do not.`} Existing-asset reuse is ${state.options.reuseExistingAssets === false ? 'disabled: start with the empty catalog and generate every asset' : 'permitted for the supplied catalog'}. Plan a useful set within both asset and paid HTTP budgets. The whitebox-first workflow completes spatial decisions before generation; no additional planning turn is required to bind its approved assets. All new assets use mode ${state.baseMap.assetGenerationMode}; for voxel use box/group geometry only, no spheres/cylinders/cones. Decide api.appearance BEFORE requireAsset so every new asset receives the same source palette. Materials should support those source colors without dark dirt/wood effects overpowering them.
 Every successful execute returns full-map spatialCoverage divided into 16 sectors. Read where actual footprints and potential bound ecology occur, not just total counts. Inspect weak areas with observe region/objects/world using the returned bounds. Adjust through the existing requireAsset/place/surface/grass/editWorld tools as appropriate. No imposed density quota or walking-only gate. Ecology masks are hard exclusions: a whole-town circle or a wide road buffer may accidentally clear useful grassland; use footprint-sized allowances and realize paths, farms, yards, rock outcrops, production sites or intentional landscape where the prompt warrants them. Missing details in the source palette or coverage are unknowns, not permission to invent measured visual success.
 For a complete planned map, organize meaningful terrain/landscape/settlement areas and visible uses. Avoid leaving most suitable land as unexplained blank green space or treating houses and trees as the only available contents. Decide which other props, facilities, ground organization or destinations actually serve THIS request; independent api.place works alongside world settlements/ecology. Intentional wilderness, desert, clearings and other open areas may be appropriate; a name alone does not establish their function. Region labels and object counts are not visual proof. Describe what is realized and what still needs the user's visual review. Preserve already successful elements while addressing missing scope, rather than continually polishing minor noise. Never turn every diagnostic into a forced repair or invent a global aesthetic score.
 Execution library reference (use it inside the execute action, not as the top-level response format):

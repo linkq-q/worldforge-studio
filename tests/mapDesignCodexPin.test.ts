@@ -43,7 +43,7 @@ it('pins the Codex executor across no-header UI continuation, reload, expiration
   }
   try {
     const first=await run();
-    const created=await post(`/maps/${map.id}/design-sessions`,{prompt:'Keep terrain and connect the entrance',expectedVersion:map.version},first);
+    const created=await post(`/maps/${map.id}/design-sessions`,{prompt:'Keep terrain and connect the entrance',requirePlanApproval:false,expectedVersion:map.version},first);
     expect(created.status).toBe(201);
     sessionId=(await created.json()).session.id;
     await respond(first,(await next(first)).id,{action:'execute',code:"function plan(api){api.route({id:'entry',points:[[-8,0],[8,0]],width:2});}"});

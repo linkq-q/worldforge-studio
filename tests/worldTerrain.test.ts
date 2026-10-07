@@ -8,6 +8,17 @@ import { riverEdgePairs, riverPathSamples, waterBoundaryContainsPoint, waterBoun
 import { findWorldSiteCandidates } from '../src/shared/worldSiting';
 
 describe('continuous biome world experiment', () => {
+  it('identifies invalid and duplicate recipe IDs without renaming any authored data',()=>{
+    const recipe={version:1 as const,seed:47,size:500,constraints:[{region:'center' as const,biome:'grassland' as const}],waterBodies:[
+      {id:'主河流',type:'lake',region:{kind:'circle',center:[0,0],radius:20},levels:[0],depth:2}
+    ]};
+    const original=structuredClone(recipe);
+    expect(()=>validateWorldRecipe(recipe as WorldRecipe)).toThrow('invalid_world_terrain_id:invalid_format:"主河流":use 1..96 ASCII');
+    expect(recipe).toEqual(original);
+    expect(()=>validateWorldRecipe({...recipe,waterBodies:[{...recipe.waterBodies[0],id:'shared'}],biomePatches:[
+      {id:'shared',region:{kind:'circle',center:[0,0],radius:20},biome:'forest'}
+    ]} as WorldRecipe)).toThrow('invalid_world_terrain_id:duplicate:shared:IDs must be unique across');
+  });
   it('summarizes the observed dry surface in nine regions without replacing detailed samples', () => {
     const evidence = createWorldTerrainEvidence(validateWorldRecipe({ version: 1, seed: 2041111,
       size: 500, reliefProfile: 'compact', constraints: [

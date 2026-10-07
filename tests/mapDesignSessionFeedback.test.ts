@@ -53,7 +53,7 @@ it('returns real in-program observations to the next model turn and reads failed
         return JSON.stringify({action:'finish',summary:'Keep the valid draft; the later site change failed.'});
     }
   }});
-  const session = await manager.create(map.id,{prompt:'Keep the river valley and define its entrance',expectedVersion:map.version});
+  const session = await manager.create(map.id,{requirePlanApproval:false,prompt:'Keep the river valley and define its entrance',expectedVersion:map.version});
   await manager.settled(session.id);
   expect((await manager.get(session.id)).draftRevision).toBe(1);
   expect((await manager.draft(session.id)).map.guides.some(g => g.id === 'entry')).toBe(true);
@@ -81,7 +81,7 @@ it('continues past twelve steps from one request and never calls an empty draft 
     expect(results(messages).at(-1).result.error).toContain('design_complete_requires_draft');
     return JSON.stringify({action:'finish',outcome:'blocked',summary:'No town has been created.'});
   }});
-  const session=await manager.create(map.id,{prompt:'Create a town',expectedVersion:map.version});
+  const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Create a town',expectedVersion:map.version});
   await manager.settled(session.id);
   expect(calls).toBe(15);
   expect(await manager.get(session.id)).toMatchObject({status:'paused',outcome:'blocked',draftRevision:0,stepLimit:48,stepsUsed:15});
@@ -96,7 +96,7 @@ it('keeps a model-owned appearance across commit and subsequent same-session exe
     {action:'finish'}, {action:'observe',query:{kind:'appearance'}},
     {action:'execute',code:'function plan(api){api.route({id:"second",points:[[-8,5],[8,5]],width:2});}'}, {action:'finish'}];
   const manager=new MapDesignSessionManager(store,{chat:async()=>JSON.stringify(actions.shift())});
-  const session=await manager.create(map.id,{prompt:'A coordinated town',expectedVersion:map.version});
+  const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'A coordinated town',expectedVersion:map.version});
   await manager.settled(session.id);
   const committed=await manager.commit(session.id,1,true);
   expect(committed.session.appearancePlan).toEqual(appearance);
@@ -122,7 +122,7 @@ it('retains a procedural recipe through code edits without starting another plan
       default:return JSON.stringify({action:'finish',summary:'The recipe and its revised classification are retained.'});
     }
   }});
-  const session=await manager.create(map.id,{prompt:'Create a large world',expectedVersion:map.version});
+  const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Create a large world',expectedVersion:map.version});
   await manager.settled(session.id);
   const draft=await manager.draft(session.id);
   expect(call).toBe(3);
@@ -135,7 +135,7 @@ it('retains a procedural recipe through code edits without starting another plan
 it('upgrades saved tool instructions without replacing the user and tool conversation', async () => {
   const {store,map}=await setup();
   const original=new MapDesignSessionManager(store,{chat:async()=>JSON.stringify({action:'finish',outcome:'unchanged',summary:'Inspection only'})});
-  const session=await original.create(map.id,{prompt:'Keep my broad mountain shape',expectedVersion:map.version});
+  const session=await original.create(map.id,{requirePlanApproval:false,prompt:'Keep my broad mountain shape',expectedVersion:map.version});
   await original.settled(session.id);
   const file=path.join(store.rootDir,'design-sessions',`${session.id}.json`);
   const saved=JSON.parse(await readFile(file,'utf8'));
@@ -154,7 +154,7 @@ it('upgrades saved tool instructions without replacing the user and tool convers
   await recovered.settled(session.id);
   const upgraded=JSON.parse(await readFile(file,'utf8'));
   expect(upgraded.instructionHistory[0].content).toContain('OLD TOOL CONTRACT');
-  expect(upgraded.capabilityVersion).toBe(5);
+  expect(upgraded.capabilityVersion).toBe(9);
 });
 
 it('does not report an already adopted complete draft as unapplied when its observation fails', async () => {
@@ -172,7 +172,7 @@ it('does not report an already adopted complete draft as unapplied when its obse
       return JSON.stringify({action:'finish',summary:'Geometry is retained; observation unavailable.'});
     }
   });
-  const session=await manager.create(map.id,{prompt:'Build an entrance',expectedVersion:map.version});
+  const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Build an entrance',expectedVersion:map.version});
   await manager.settled(session.id);
   expect((await manager.draft(session.id)).map.guides.some(g=>g.id==='entry')).toBe(true);
 });
@@ -186,7 +186,7 @@ it('requires a fresh complete execution for a new user change request, not an ol
     expect(results(messages).at(-1).result.error).toContain('design_complete_requires_draft');
     return JSON.stringify({action:'finish',outcome:'unchanged',summary:'The new shop has not been added.'});
   }});
-  const session=await manager.create(map.id,{prompt:'Build an entrance',expectedVersion:map.version});
+  const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Build an entrance',expectedVersion:map.version});
   await manager.settled(session.id);
   await manager.message(session.id,'Add a shop');
   await manager.settled(session.id);
@@ -203,7 +203,7 @@ it('caps actual upstream dispatches across concurrent requests and restores the 
       .toEqual(['design_paid_request_budget_exhausted','design_paid_request_budget_exhausted']);
     return JSON.stringify({action:'finish',outcome:'unchanged',summary:'Request budget test'});
   }});
-  const session=await manager.create(map.id,{prompt:'Read only',expectedVersion:map.version,maxPaidRequests:2});
+  const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Read only',expectedVersion:map.version,maxPaidRequests:2});
   await manager.settled(session.id);
   expect(upstream).toHaveBeenCalledTimes(2);
   expect(await manager.get(session.id)).toMatchObject({paidRequests:2,paidRequestLimit:2,paidRequestCounts:{planning:2,assets:0}});

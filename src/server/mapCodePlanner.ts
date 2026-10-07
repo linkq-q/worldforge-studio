@@ -3907,6 +3907,8 @@ function withCodePlanDetails(
       assetRequirements: requirements.map((requirement) => ({
         key: requirement.key,
         name: requirement.name,
+        prompt: requirement.prompt,
+        ...(requirement.variantPrompts ? {variantPrompts: requirement.variantPrompts} : {}),
         variants: generatedVariantCount(requirement),
         ...(requirement.dimensions ? { dimensions: requirement.dimensions } : {}),
         ...(requirement.role ? { role: requirement.role } : {}),

@@ -37,7 +37,7 @@ it('runs a persistent design through the HTTP/Codex bridge, including steering, 
     runId = (await (await post('/codex-runs', {}, false)).json()).runId;
     const invalid = await post(`/maps/${map.id}/design-sessions`, { prompt: 'Town' });
     expect(invalid.status).toBe(400);
-    const created = await post(`/maps/${map.id}/design-sessions`, { prompt: 'Keep the terrain, add a walking route', expectedVersion: map.version });
+    const created = await post(`/maps/${map.id}/design-sessions`, { prompt: 'Keep the terrain, add a walking route', requirePlanApproval:false,expectedVersion: map.version });
     expect(created.status).toBe(201);
     id = (await created.json()).session.id;
     const interrupted = await next();

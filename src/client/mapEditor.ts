@@ -171,6 +171,7 @@ import {
 } from '../shared/mapOperations';
 import { createGenerationPreviewOverlay, type GenerationPreviewOverlay } from './generationPreviewOverlay';
 import { MapDesignConversation, MapDesignSessionClient } from './mapDesignConversation';
+import { isCodePlanPlaceholderAssetId } from '../shared/mapOperations';
 import './mapDesignConversation.css';
 
 interface WorldWhiteboxPreviewDetails {
@@ -1855,6 +1856,8 @@ export class MapEditor {
             || this.pendingMapDraftRecovery || this.mapAiPreviewMap && this.mapPreviewKind !== 'conversation') return false;
           this.mapAiComparisonMap ??= cloneMap(this.state.map);
           this.mapAiPreviewMap = normalizeMap(draft.map);
+          if (draft.planPreview) this.mapAiPreviewMap.objects = this.mapAiPreviewMap.objects.filter(object =>
+            !object.assetId || !isCodePlanPlaceholderAssetId(object.assetId));
           this.mapAiSuggestion = draft.suggestion;
           this.mapPreviewKind = 'conversation';
           this.state.selectedObjectId = null;
@@ -1864,8 +1867,11 @@ export class MapEditor {
             this.designWorldPreviewFrame = {sessionId: draft.session.id, handled: false,
               position: this.camera.position.clone(), quaternion: this.camera.quaternion.clone(), target: this.orbit.target.clone()};
           }
-          void this.refreshScene().then(() => {
+          const rendering = this.refreshScene().then(() => {
             if (this.state.map?.id !== draft.session.mapId) return;
+            if (draft.planPreview) this.generationPreview?.showPlan(draft.planPreview,
+              assetId => this.state.assets.find(asset => asset.id === assetId));
+            else this.generationPreview?.clear();
             const framing = this.designWorldPreviewFrame;
             if (framing?.sessionId === draft.session.id && !framing.handled && this.displayedMap() === preview) {
               framing.handled = true;
@@ -1882,7 +1888,9 @@ export class MapEditor {
               this.state.message = `草稿已保留，但场景显示失败：${error instanceof Error ? error.message : String(error)}`;
               this.updateToolbarState();
             }
+            if (draft.planPreview) throw error;
           });
+          if (draft.planPreview) await rendering;
           this.renderPanels();
           return true;
         },
@@ -1919,6 +1927,7 @@ export class MapEditor {
       });
       this.designConversation = new MapDesignConversation(host, this.designClient, () => ({
         backendPlanning: true,
+        requirePlanApproval: true,
         provider: this.mapAiProvider,
         assetProvider: this.mapAiAssetProvider || 'deepseek',
         minNewAssets: this.mapAiMinNewAssets,

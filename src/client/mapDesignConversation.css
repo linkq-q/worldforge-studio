@@ -29,3 +29,7 @@
 .design-appearance li { display: flex; align-items: center; gap: 7px; }
 .design-appearance i { width: 18px; height: 18px; flex: 0 0 18px; border: 1px solid #0002; border-radius: 3px; }
 .design-appearance small { color: var(--muted, #756e64); }
+.design-asset-prompts { font-size: 12px; line-height: 1.6; }
+.design-asset-prompts details { margin-top: 8px; }
+.design-asset-prompts summary { cursor: pointer; }
+.design-asset-prompts pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }

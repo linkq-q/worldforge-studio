@@ -299,7 +299,10 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
   }
   const ids = new Set<string>();
   const safeId = (value: unknown) => {
-    if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(value) || ids.has(value)) throw new Error('invalid_world_terrain_id');
+    if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(value)) {
+      throw new Error(`invalid_world_terrain_id:invalid_format:${typeof value === 'string' ? JSON.stringify(value.slice(0,128)) : typeof value}:use 1..96 ASCII letters/digits/_/-, starting with a letter/digit; display names may be Chinese`);
+    }
+    if (ids.has(value)) throw new Error(`invalid_world_terrain_id:duplicate:${value}:IDs must be unique across terrainBrushes, waterBodies and biomePatches; keep reference IDs consistent`);
     ids.add(value);
     return value;
   };

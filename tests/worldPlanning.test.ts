@@ -40,6 +40,25 @@ function patch(plan: WorldPlan, index: number): TownPatch {
 }
 
 describe('hierarchical world planning contracts', () => {
+  it('returns the actual world/local endpoints and numeric range needed to repair a rejected connection',()=>{
+    const plan=fixture();
+    plan.towns[0].ports[0].position=[200,25];
+    const original=structuredClone(plan);
+    expect(()=>validateWorldPlan(plan)).toThrow('"requiredWorldEndpoint":[-1800,25]');
+    expect(()=>validateWorldPlan(plan)).toThrow('"actualEndpoints":[[-1800,0],[1800,0]]');
+    expect(plan).toEqual(original);
+    plan.towns[0].radius=50;
+    expect(()=>validateWorldPlan(plan)).toThrow('world_invalid_town_radius:received=50;expected finite number in [100,1000]');
+  });
+  it('reports the actual invalid town ID while allowing a Chinese display name',()=>{
+    const plan=fixture();
+    plan.towns[0].id='石脊聚落';plan.towns[0].name='石脊聚落';
+    const original=structuredClone(plan);
+    expect(()=>validateWorldPlan(plan)).toThrow('world_invalid_town_id:invalid_id:"石脊聚落":use 1..96 ASCII');
+    expect(plan).toEqual(original);
+    plan.towns[0].id='town-0';
+    expect(validateWorldPlan(plan).towns[0].name).toBe('石脊聚落');
+  });
   function constructedRoutePlan(options: {
     points: Array<[number, number]>;
     heights: number[];

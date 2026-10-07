@@ -88,6 +88,8 @@ export interface MapAiCodePlan {
   assetRequirements?: Array<{
     key: string;
     name: string;
+    prompt?: string;
+    variantPrompts?: string[];
     variants: number;
     dimensions?: [number, number, number];
     role?: 'structure' | 'environment' | 'functional' | 'decor';

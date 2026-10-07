@@ -40,6 +40,7 @@ export async function handleMapDesignHttp(
       if (parts[4] === 'messages') return send(res, 200, { session: await manager.message(id, input.message as string) });
       if (parts[4] === 'pause') return send(res, 200, { session: await manager.pause(id) });
       if (parts[4] === 'resume') return send(res, 200, { session: await manager.resume(id) });
+      if (parts[4] === 'approve-plan') return send(res, 200, { session: await manager.approvePlan(id, input.expectedRevision as number, input.approved === true) });
       if (parts[4] === 'commit') return send(res, 200, await manager.commit(id, input.expectedRevision as number, input.approved === true));
     }
     return send(res, 404, { error: 'not_found' });

@@ -26,8 +26,12 @@ export class MapDesignSessionClient {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private draft: MapDesignDraft | null = null;
   private displayedRevision = -1;
+  private readyPlanRevision = -1;
 
   constructor(private request: Request, private hooks: DesignHooks, private pollMs = 1_000) {}
+
+  get assetRequirements() { return this.draft?.suggestion?.codePlan?.assetRequirements ?? []; }
+  get planDisplayed(): boolean { return this.readyPlanRevision === this.session?.draftRevision; }
 
   get blocked(): string {
     const liveBlock = this.hooks.blocked?.();
@@ -91,6 +95,7 @@ export class MapDesignSessionClient {
     this.session = null;
     this.draft = null;
     this.displayedRevision = -1;
+    this.readyPlanRevision = -1;
     this.pending = false;
     this.loading = false;
     this.recoveryPending = false;
@@ -129,7 +134,7 @@ export class MapDesignSessionClient {
 
   async control(command: 'pause' | 'resume'): Promise<boolean> {
     const session = this.session;
-    if (!session || this.pending || command === 'resume' && this.blocked) return false;
+    if (!session || this.pending || command === 'resume' && (this.blocked || session.stage === 'awaiting-plan-approval')) return false;
     return this.action(async epoch => {
       const { session: next } = await this.request<{ session: MapDesignSessionView }>(this.path(session.id, `/${command}`), post({}));
       await this.accept(next, epoch);
@@ -139,7 +144,7 @@ export class MapDesignSessionClient {
   async commit(): Promise<boolean> {
     const session = this.session;
     if (!session || this.blocked || this.pending || session.status === 'running' || session.status === 'committed'
-      || session.operationCount <= 0) return false;
+      || session.operationCount <= 0 || session.stage && session.stage !== 'completed') return false;
     return this.action(async epoch => {
       const result = await this.request<CommitResult>(this.path(session.id, '/commit'),
         post({ expectedRevision: session.draftRevision, approved: true }));
@@ -151,6 +156,16 @@ export class MapDesignSessionClient {
       this.displayedRevision = -1;
       await this.hooks.committed(result);
       if (epoch === this.epoch) this.hooks.changed();
+    });
+  }
+
+  async approvePlan(): Promise<boolean> {
+    const session = this.session;
+    if (!session || this.pending || this.blocked || session.stage !== 'awaiting-plan-approval' || !this.planDisplayed) return false;
+    return this.action(async epoch => {
+      const {session:next} = await this.request<{session:MapDesignSessionView}>(this.path(session.id,'/approve-plan'),
+        post({expectedRevision:session.draftRevision,approved:true}));
+      await this.accept(next,epoch);
     });
   }
 
@@ -174,6 +189,7 @@ export class MapDesignSessionClient {
   invalidateDraft(draftRevision: number): void {
     if (this.draft?.session.draftRevision === draftRevision && this.displayedRevision === draftRevision) {
       this.displayedRevision = -1;
+      this.readyPlanRevision = -1;
     }
   }
 
@@ -219,6 +235,10 @@ export class MapDesignSessionClient {
     try {
       const accepted = await this.hooks.draft(draft);
       if (!accepted && epoch === this.epoch) this.displayedRevision = -1;
+      if (accepted && epoch === this.epoch) {
+        this.readyPlanRevision = draft.session.draftRevision;
+        this.hooks.changed();
+      }
     } catch (error) {
       if (epoch === this.epoch) this.displayedRevision = -1;
       throw error;
@@ -259,6 +279,13 @@ export function renderDesignAppearance(plan?: SceneAppearancePlan): string {
   ).join('')}</ul><small>新生成资产继承这些源色；复用资产保留原色。地表与环境配色在确认地图后进入渲染草稿。</small>`;
 }
 
+export function renderDesignAssetPrompts(requirements: NonNullable<NonNullable<MapDesignDraft['suggestion']>['codePlan']>['assetRequirements']): string {
+  if (!requirements?.length) return '';
+  return `<strong>已规划的资产提示表</strong><p>尺寸单位为米；颜色提示随已确认的规划发送给资产模型。</p>${requirements.map(item=>
+    `<details><summary>${escape(item.name)} · ${item.variants} 个${item.dimensions ? ` · ${item.dimensions.join(' × ')} m` : ''}</summary><pre>${escape(item.prompt ?? '此旧规划没有保存提示文本')}${item.variantPrompts ? '\n'+item.variantPrompts.map(escape).join('\n') : ''}</pre></details>`
+  ).join('')}`;
+}
+
 export function designGenerationStatus(session: MapDesignSessionView): string {
   const counts = session.generationCounts;
   const generation = counts ? `整轮规划 ${counts.planning} 次 · 资产整批 ${counts.assets} 次${
@@ -278,10 +305,12 @@ export class MapDesignConversation {
     options: () => Omit<MapDesignSessionOptions, 'prompt' | 'expectedVersion'>,
     compare: (after: boolean) => void, private showingDraft: () => boolean) {
     host.innerHTML = `<section class="map-design-conversation" aria-label="地图设计对话">
-      <header><div><strong>主模式 · 持续设计</strong><p>描述整个场景，后端 AI 自主规划；执行中可以补充要求</p></div><div><span data-design-status></span><button type="button" class="secondary small" data-design-new hidden>新对话</button></div></header>
+      <header><div><strong>主模式 · 持续设计</strong><p>先检查白盒、尺寸与配色；你确认后，同一会话生成资产</p></div><div><span data-design-status></span><button type="button" class="secondary small" data-design-new hidden>新对话</button></div></header>
       <div class="design-messages" data-design-messages role="log" aria-label="对话与执行记录"></div>
       <div class="design-progress" data-design-progress role="status"></div>
       <aside class="design-appearance" data-design-appearance hidden></aside>
+      <aside class="design-asset-prompts" data-design-asset-prompts hidden></aside>
+      <button type="button" data-design-approve-plan hidden>确认白盒与配色，开始生成资产</button>
       <p class="design-error" data-design-error role="alert" hidden></p>
       <div class="design-preview-actions" data-design-preview hidden>
         <button type="button" class="secondary" data-design-before>修改前</button>
@@ -308,6 +337,7 @@ export class MapDesignConversation {
       void client.control(client.session?.status === 'running' ? 'pause' : 'resume');
     });
     host.querySelector('[data-design-commit]')!.addEventListener('click', () => void client.commit());
+    host.querySelector('[data-design-approve-plan]')!.addEventListener('click', () => void client.approvePlan());
     host.querySelector('[data-design-new]')!.addEventListener('click', () => client.fresh());
     host.querySelector('[data-design-before]')!.addEventListener('click', () => { compare(false); this.renderControls(); });
     host.querySelector('[data-design-after]')!.addEventListener('click', () => { compare(true); this.renderControls(); });
@@ -327,6 +357,10 @@ export class MapDesignConversation {
     const appearanceHtml = renderDesignAppearance(session?.appearancePlan);
     if (appearance.innerHTML !== appearanceHtml) appearance.innerHTML = appearanceHtml;
     appearance.hidden = !appearanceHtml;
+    const prompts = this.host.querySelector<HTMLElement>('[data-design-asset-prompts]')!;
+    const promptsHtml = renderDesignAssetPrompts(this.client.assetRequirements);
+    if (prompts.innerHTML !== promptsHtml) prompts.innerHTML = promptsHtml;
+    prompts.hidden = !promptsHtml;
     const key = `${session?.id}:${JSON.stringify(session?.messages ?? [])}`;
     if (key !== this.messageKey) {
       this.messageKey = key;
@@ -343,7 +377,8 @@ export class MapDesignConversation {
   private renderControls(): void {
     const { session, pending, loading, blocked, error } = this.client;
     const status = session?.status;
-    this.host.querySelector('[data-design-status]')!.textContent = loading ? '恢复对话…'
+    const awaitingPlan = session?.stage === 'awaiting-plan-approval';
+    this.host.querySelector('[data-design-status]')!.textContent = loading ? '恢复对话…' : awaitingPlan ? '等待确认白盒'
       : ({ running: '正在制作', paused: '已暂停', failed: '需要处理', committed: '已应用', idle: '等待你的想法' }[status ?? 'idle']);
     const progress = this.host.querySelector('[data-design-progress]')!;
     const progressText = session ? [session.progress?.label, session.progress?.detail,
@@ -357,7 +392,7 @@ export class MapDesignConversation {
     send.disabled = pending || loading || Boolean(blocked) || !this.input.value.trim() || !this.client.context;
     send.textContent = status === 'running' ? '发送并调整' : '发送';
     const control = this.host.querySelector<HTMLButtonElement>('[data-design-control]')!;
-    control.hidden = !status || status === 'idle' || status === 'committed';
+    control.hidden = awaitingPlan || !status || status === 'idle' || status === 'committed';
     control.disabled = pending || status !== 'running' && Boolean(blocked);
     control.textContent = status === 'running' ? '暂停' : '继续';
     const fresh = this.host.querySelector<HTMLButtonElement>('[data-design-new]')!;
@@ -366,7 +401,11 @@ export class MapDesignConversation {
     this.host.querySelector<HTMLElement>('[data-design-preview]')!.hidden = !session?.operationCount || status === 'committed';
     this.host.querySelector('[data-design-before]')!.setAttribute('aria-pressed', String(!this.showingDraft()));
     this.host.querySelector('[data-design-after]')!.setAttribute('aria-pressed', String(this.showingDraft()));
-    this.host.querySelector<HTMLButtonElement>('[data-design-commit]')!.disabled = pending || status === 'running' || Boolean(blocked);
+    this.host.querySelector<HTMLButtonElement>('[data-design-commit]')!.disabled = pending || status === 'running' || Boolean(blocked)
+      || Boolean(session?.stage && session.stage !== 'completed');
+    const approve = this.host.querySelector<HTMLButtonElement>('[data-design-approve-plan]')!;
+    approve.hidden = !awaitingPlan;
+    approve.disabled = pending || Boolean(blocked) || !this.client.planDisplayed;
     this.renderElapsed();
   }
 

@@ -14,6 +14,8 @@ export interface MapDesignExecutionInput {
   onToolObservation?: MapCodePlannerOptions['onToolObservation'];
   onAssetReady?: MapCodePlannerOptions['onAssetReady'];
   appearancePlan?: MapCodePlannerOptions['appearancePlan'];
+  discoveryOnly?: boolean;
+  onPlanPreview?: MapCodePlannerOptions['onPlanPreview'];
 }
 
 /** Every candidate is a complete program over the session's immutable base, never the previous draft. */
@@ -22,6 +24,8 @@ export async function executeMapDesignProgram(input: MapDesignExecutionInput): P
   rejectDesignTerrainProgram(input);
   return generateMapCodeSuggestion('Execute the current design-session program.', input.baseMap, input.assets, {
     approvedCode: input.code,
+    discoveryOnly: input.discoveryOnly,
+    onPlanPreview: input.onPlanPreview,
     mode: 'generate',
     scope: 'scene',
     promptMode: 'main',
@@ -63,7 +67,7 @@ ${map.sceneMode === 'outdoor' ? `${worldReference}\n${MAP_DESIGN_RECIPE_REFERENC
 Reusable asset IDs (use exactly): ${JSON.stringify(catalog)}`;
 }
 
-const worldReference = `Outdoor maps can use ordinary scene APIs or a streamed WorldPlan. If there is no world yet, api.createWorld({recipe,prompt?,id?,ecology?:[],roads?:[],towns?:[],patches?:[],assets?:[],concept?,featureGraph?,settlementPlan?,mobilityPlan?,explorationPlan?,intentionalEmptyAreas?}) initializes one explicitly. The WorldRecipe contract appears below. No ecology, town or template is added implicitly. Server owns plan.version/revision and patch.worldKey. createWorld requires no existing world, and its full declaration remains in every replay until commit. api.bounds and api.seed then reflect the new world; its box expands to recipe.size. Existing manual objects remain. In a streamed world, edit its recipe parameters, streamed ecology, settlements and world roads through api.editWorld. Ordinary api.surface, api.grass and api.route can additionally author localized ground uses, grass layers and surfaced paths in world metres; streamed tiles preserve these overlays. Ordinary terrain/brush/ramp height declarations target the separate small-map heightfield and cannot modify a streamed world. Raw paint strokes are not streamed-world surface tools; use api.surface. A guide alone does not create pavement; api.route authors its ground surface.
+const worldReference = `Outdoor maps can use ordinary scene APIs or a streamed WorldPlan. All internal world identifiers must match /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/ and cannot be Windows reserved names. This includes the world id, recipe brush/water/biome IDs, towns, ports, roads, ecology, patches, buildings, graph regions/paths/anchors and semantic references. Use Chinese in name/prompt/summary/purpose, never in these ID tokens; references use the exact matching token. If there is no world yet, api.createWorld({recipe,prompt?,id?,ecology?:[],roads?:[],towns?:[],patches?:[],assets?:[],concept?,featureGraph?,settlementPlan?,mobilityPlan?,explorationPlan?,intentionalEmptyAreas?}) initializes one explicitly. The WorldRecipe contract appears below. No ecology, town or template is added implicitly. Server owns plan.version/revision and patch.worldKey. createWorld requires no existing world, and its full declaration remains in every replay until commit. api.bounds and api.seed then reflect the new world; its box expands to recipe.size. Existing manual objects remain. In a streamed world, edit its recipe parameters, streamed ecology, settlements and world roads through api.editWorld. Ordinary api.surface, api.grass and api.route can additionally author localized ground uses, grass layers and surfaced paths in world metres; streamed tiles preserve these overlays. Ordinary terrain/brush/ramp height declarations target the separate small-map heightfield and cannot modify a streamed world. Raw paint strokes are not streamed-world surface tools; use api.surface. A guide alone does not create pavement; api.route authors its ground surface.
 api.worldState() returns a detached local copy of {bundle:{plan,patches},assets,review?}. Large height arrays stay inside the execution tool; do not copy them into model messages.
 Main urbanLayout waterfront, bridge and waterPoint tools read the prepared river/lake geometry from this world's recipe, including terrain-fit profiles; their read-only view does not create duplicate water overlays. Preserve an existing world recipe unless the user requests changes. Ordinary terrain/sculpt/ramp tools apply to small-map heightfields; for a streamed world use editWorld recipe landforms/terrainBrushes. Town declarations require ports:[] even when no external ports are intended; do not omit the field. An empty ports array is valid. construction.maxGrade is permitted only for terrain:'grade'; omit it for terrain:'follow'. These are schema rules, not permission to remove intended settlements or destinations to bypass an error.
 api.editWorld(state => { ... }) edits that world copy synchronously, or may return a replacement state. Preserve unrelated fields. The executor validates the resulting world.set, increments plan.revision and refreshes patch.worldKey; do not invent either. It preserves original terrain data and asset bindings unless your code changes them.

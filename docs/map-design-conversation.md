@@ -4,6 +4,8 @@
 
 ## 运行方式
 
+新会话默认先完成白盒、位置与物理尺寸、源色卡和逐项资产提示表。此时 `requireAsset` 声明未来资产，`asset` 解析占位引用，执行不会生成资产。`finish completed` 检查声明数量后暂停在 `awaiting-plan-approval`。用户点击当前草稿版本的确认按钮，服务器直接重放同一程序生成与绑定资产；不会新增 GPT 规划调用。普通消息会重新进入规划，不能代替批准。旧的未设置 `requirePlanApproval` 的已保存会话保留其原有流程。
+
 模型每轮选择一个动作：
 
 - `observe`：读取当前完整草稿的概况、点、区域、路径、物体、资产、世界语义、地形、色卡或按引用保存的执行事实。
@@ -43,11 +45,14 @@
 | `POST /design-sessions/:id/messages` | `{ "message": "保留山体，只修改林缘" }`，自动引导当前运行 |
 | `POST /design-sessions/:id/pause` | 暂停 |
 | `POST /design-sessions/:id/resume` | 继续 |
+| `POST /design-sessions/:id/approve-plan` | `{ "expectedRevision": 2, "approved": true }`，批准当前白盒并开始资产绑定 |
 | `POST /design-sessions/:id/commit` | `{ "expectedRevision": 2, "approved": true }`，原子应用 |
 
 前端用 `?sinceVersion=N` 按状态版本更新记录，未变化时返回 `{ "session": null, "version": N }`，只在草稿版本改变后读取并重建场景。首次恢复遇到临时网络错误会重试，期间不另建会话；确认没有历史会话后停止恢复轮询。切换地图、迟到响应和未保存编辑不会覆盖当前场景。
 
 ## 模型连接的实际边界
+
+编辑器的持续设计入口使用 `backendPlanning:true`，规划走实验室 GPT 后端 API，资产走所选独立生成后端。本轮为 DeepSeek。它不会因当前 Codex 连接而转入 bridge。工具内部的计算结果与下一轮模型可读的反馈应分别检查，不能把执行器局部变量当成已经回传的上下文。
 
 当前普通模型网关接受累计 `messages`。这里实现的是持久的逻辑对话：需求、操作与事实保留在同一个消息历史中；并未实现服务商保存的 KV 状态，也不能保证网络上不重传历史或自动获得缓存折扣。工具结果通过明确的 JSON 文本封装传回，尚不是服务商原生 function-call 协议。
 

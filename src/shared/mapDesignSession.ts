@@ -1,4 +1,4 @@
-import type { MapAiSuggestion } from './mapOperations';
+import type { MapAiSuggestion, CodePlanPreviewPayload } from './mapOperations';
 import type { EditableMap } from './map';
 import type { AgentProgressEvent, ChatProvider, ModelProvider } from './protocol';
 
@@ -21,6 +21,7 @@ export interface MapDesignSessionView {
   draftRevision: number;
   version: number;
   status: MapDesignSessionStatus;
+  stage?: 'planning' | 'awaiting-plan-approval' | 'generating-assets' | 'completed';
   messages: MapDesignMessage[];
   progress: AgentProgressEvent | null;
   createdAt: number;
@@ -49,6 +50,8 @@ export interface MapDesignSessionOptions {
   assetProvider?: ModelProvider;
   /** The editor uses its configured GPT API, without substituting a Codex executor. */
   backendPlanning?: boolean;
+  /** New conversations stop at a whitebox; only explicit revision-bound approval starts assets. */
+  requirePlanApproval?: boolean;
   minNewAssets?: number;
   maxNewAssets?: number;
   /** Exclude pre-existing library assets from a fresh design; generated assets remain available on replay. */
@@ -66,4 +69,5 @@ export interface MapDesignDraft {
   session: MapDesignSessionView;
   map: EditableMap;
   suggestion: MapAiSuggestion | null;
+  planPreview?: CodePlanPreviewPayload;
 }

@@ -202,11 +202,15 @@ function text(input: unknown, code: string, max = 96, empty = false): string {
 }
 function safeId(input: unknown, code: string): string {
   const value = text(input, code);
-  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(value) || /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(value)) fail(code);
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(value) || /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(value)) {
+    fail(`${code}:invalid_id:${JSON.stringify(value.slice(0,128))}:use 1..96 ASCII letters/digits/_/-, starting with a letter/digit; exclude Windows reserved names; display names may be Chinese`);
+  }
   return value;
 }
 function number(input: unknown, min: number, max: number, code: string): number {
-  if (typeof input !== 'number' || !Number.isFinite(input) || input < min || input > max) fail(code);
+  if (typeof input !== 'number' || !Number.isFinite(input) || input < min || input > max) {
+    fail(`${code}:received=${typeof input === 'number' ? input : typeof input};expected finite number in [${min},${max}]`);
+  }
   return Object.is(input, -0) ? 0 : input as number;
 }
 function list(input: unknown, max: number, code: string): unknown[] {
@@ -627,7 +631,7 @@ export function validateWorldPlan(input: unknown, diagnostics?: WorldQualityDiag
         keys(p, ['id', 'guideId', 'position', 'width'], 'world_unknown_port_field');
         const position = point(p.position, radius, 'world_port_outside');
         if (Math.abs(Math.max(Math.abs(position[0]), Math.abs(position[1])) - radius) > TOLERANCE) {
-          fail('world_port_not_on_core_boundary');
+          fail(`world_port_not_on_core_boundary:${JSON.stringify({townId:item.id,portId:p.id,localPosition:position,radius})}:require max(abs(x),abs(z))=radius on the SQUARE core boundary; coordinate changes must also update the matching road endpoint and patch street`);
         }
         return {
           id: text(p.id, 'world_invalid_port_id'),
@@ -706,12 +710,12 @@ export function validateWorldPlan(input: unknown, diagnostics?: WorldQualityDiag
     }
     for (const port of town.ports) {
       const road = roads.find(candidate => candidate.id === port.guideId);
-      if (!road) fail('world_port_unknown_road');
+      if (!road) fail(`world_port_unknown_road:${JSON.stringify({townId:town.id,portId:port.id,guideId:port.guideId,availableRoadIds:roads.map(road=>road.id)})}`);
       const world: Point = [town.center[0] + port.position[0], town.center[1] + port.position[1]];
       if (road.closed || ![road.points[0], road.points[road.points.length - 1]].some(p => samePoint(p, world))) {
-        fail('world_port_endpoint_mismatch');
+        fail(`world_port_endpoint_mismatch:${JSON.stringify({townId:town.id,portId:port.id,roadId:road.id,townCenter:town.center,localPort:port.position,requiredWorldEndpoint:world,actualEndpoints:[road.points[0],road.points[road.points.length-1]],roadClosed:road.closed})}:the connected world road must be open and one endpoint must equal town.center+port.position; preserve the intended route and coordinate its corresponding local patch street`);
       }
-      if (Math.abs(road.width - port.width) > TOLERANCE) fail('world_port_width_mismatch');
+      if (Math.abs(road.width - port.width) > TOLERANCE) fail(`world_port_width_mismatch:${JSON.stringify({townId:town.id,portId:port.id,roadId:road.id,portWidth:port.width,roadWidth:road.width})}:use the same authored width for the port, world road and matching local patch street`);
     }
   }
   validateRoadGeometry(plan.roads, recipe.size);

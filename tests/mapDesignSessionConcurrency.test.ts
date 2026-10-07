@@ -53,8 +53,8 @@ describe('design-session interruption and persistence boundaries',()=>{
     const chat=vi.fn(async()=>JSON.stringify({action:'finish',outcome:'unchanged',summary:'No changes requested'}));
     const manager=new MapDesignSessionManager(store,{chat});
     const results=await Promise.allSettled([
-      manager.create(map.id,{prompt:'First request',expectedVersion:map.version}),
-      manager.create(map.id,{prompt:'Duplicate request',expectedVersion:map.version})
+      manager.create(map.id,{requirePlanApproval:false,prompt:'First request',expectedVersion:map.version}),
+      manager.create(map.id,{requirePlanApproval:false,prompt:'Duplicate request',expectedVersion:map.version})
     ]);
     for(const result of results) if(result.status==='fulfilled') await manager.settled(result.value.id);
     expect(results[0].status).toBe('fulfilled');
@@ -71,7 +71,7 @@ describe('design-session interruption and persistence boundaries',()=>{
     const manager=new MapDesignSessionManager(store,{chat,execute:async input=>{
       bases.push(input.baseMap.name);return suggestion(input.code);
     }});
-    const session=await manager.create(map.id,{prompt:'Town',expectedVersion:map.version});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Town',expectedVersion:map.version});
     await manager.settled(session.id);
     const reading=deferred(),releaseRead=deferred(),committing=deferred(),releaseCommit=deferred();
     const originalLoad=store.loadMap.bind(store),originalCommit=store.commitTransaction.bind(store);
@@ -109,7 +109,7 @@ describe('design-session interruption and persistence boundaries',()=>{
     const bases:string[]=[];
     const manager=new MapDesignSessionManager(store,{chat:async()=>JSON.stringify(responses.shift()),
       execute:async input=>{bases.push(input.baseMap.name);return suggestion(input.code);}});
-    const session=await manager.create(map.id,{prompt:'Town',expectedVersion:map.version});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Town',expectedVersion:map.version});
     await manager.settled(session.id);
     const writing=deferred(),release=deferred();
     io.holdNextDesignWrite={entered:writing.resolve,release:release.promise};
@@ -149,7 +149,7 @@ describe('design-session interruption and persistence boundaries',()=>{
         return suggestion(input.code);
       }
     });
-    const session=await manager.create(map.id,{prompt:'A village',expectedVersion:map.version});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'A village',expectedVersion:map.version});
     await manager.settled(session.id);
     expect((await manager.draft(session.id)).map.name).toBe('good');
     await manager.message(session.id,'Try a new plan');
@@ -173,7 +173,7 @@ describe('design-session interruption and persistence boundaries',()=>{
     const manager=new MapDesignSessionManager(store,{
       chat:async()=>JSON.stringify(actions.shift()),execute:async()=>suggestion('Good draft')
     });
-    const session=await manager.create(map.id,{prompt:'Town',expectedVersion:map.version});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Town',expectedVersion:map.version});
     await manager.settled(session.id);
     io.failNextDesignWrite=true;
     await expect(manager.pause(session.id)).rejects.toThrow('temporary disk failure');
@@ -192,7 +192,7 @@ describe('design-session interruption and persistence boundaries',()=>{
     const actions=[{action:'execute',code},{action:'execute',code:code.replace('[2,3]','[4,5]')},{action:'finish'}];
     const createAsset=vi.fn(async()=>store.saveAsset({name:'树',prompt:'A tree',tags:['tree'],mode:'voxel',modelJson:{nodes:[]}}));
     const manager=new MapDesignSessionManager(store,{chat:async()=>JSON.stringify(actions.shift()),createAsset});
-    const session=await manager.create(map.id,{prompt:'Place a tree',expectedVersion:map.version,maxNewAssets:1});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'Place a tree',expectedVersion:map.version,maxNewAssets:1});
     await manager.settled(session.id);
     const draft=await manager.draft(session.id);
     expect(createAsset).toHaveBeenCalledTimes(1);

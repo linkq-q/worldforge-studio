@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MapDesignSessionClient, renderDesignMessages, renderDesignAppearance, designGenerationStatus } from '../src/client/mapDesignConversation';
+import { MapDesignSessionClient, renderDesignMessages, renderDesignAppearance, renderDesignAssetPrompts, designGenerationStatus } from '../src/client/mapDesignConversation';
 import type { MapDesignDraft, MapDesignSessionView } from '../src/shared/mapDesignSession';
 import { createEmptyMap } from '../src/shared/map';
 
@@ -25,6 +25,29 @@ function setup(request: (path: string, init?: RequestInit) => Promise<unknown>, 
 }
 
 describe('persistent map design conversation client', () => {
+  it('requires a displayed whitebox and sends revision-bound approval without treating resume or commit as approval', async()=>{
+    const waiting=session({status:'paused',stage:'awaiting-plan-approval',operationCount:1,draftRevision:3});
+    const rendering=deferred<boolean>();
+    const preview=draft(waiting);
+    preview.suggestion={summary:'Bench',operations:[],generatedAssets:[],renderPromptSuggestions:[],codePlan:{code:'function plan(api){}',placementCount:1,functions:[],assetRequirements:[{key:'bench',name:'<Bench>',variants:1,dimensions:[2,1,1],prompt:'Timber #B88752; metal #46524B'}]}};
+    const request=vi.fn(async(path:string,init?:RequestInit)=>path.endsWith('/draft')?preview:init?{session:{...waiting,status:'running',stage:'generating-assets',version:2}}:{sessions:[waiting]});
+    const {client,hooks}=setup(request);
+    hooks.draft.mockImplementation(()=>rendering.promise);
+    const connected=client.connect({mapId:'map-a',version:1});
+    await vi.waitFor(()=>expect(hooks.draft).toHaveBeenCalled());
+    expect(client.planDisplayed).toBe(false);
+    expect(await client.approvePlan()).toBe(false);
+    expect(await client.control('resume')).toBe(false);
+    expect(await client.commit()).toBe(false);
+    rendering.resolve(true);
+    await connected;
+    expect(client.planDisplayed).toBe(true);
+    const table=renderDesignAssetPrompts(client.assetRequirements);
+    expect(table).toContain('&lt;Bench&gt;');expect(table).toContain('#B88752');expect(table).toContain('2 × 1 × 1');
+    expect(await client.approvePlan()).toBe(true);
+    expect(request.mock.calls.at(-1)).toEqual(['/api/editor/design-sessions/design-a/approve-plan',expect.objectContaining({body:JSON.stringify({expectedRevision:3,approved:true})})]);
+    client.disconnect();
+  });
   it('distinguishes a whole planning task and asset batch from internal calls', () => {
     const text=designGenerationStatus(session({generationCounts:{planning:1,assets:1},generationCallLimit:2,
       modelCalls:12,assetCalls:30,paidRequests:42}));

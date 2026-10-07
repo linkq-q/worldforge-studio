@@ -100,7 +100,7 @@ describe('continuous design WorldRecipe policy',()=>{
     const rootDir=await mkdtemp(path.join(os.tmpdir(),'worldforge-recipe-policy-'));directories.push(rootDir);
     const store=new MapStore({rootDir}),map=await store.createMap({name:'Baseline',size:[48,32,48]});
     const initial=new MapDesignSessionManager(store,{chat:async()=>JSON.stringify({action:'finish',outcome:'unchanged',summary:'Inspect only'})});
-    const session=await initial.create(map.id,{prompt:'Preserve the approved recipe',expectedVersion:map.version});await initial.settled(session.id);
+    const session=await initial.create(map.id,{requirePlanApproval:false,prompt:'Preserve the approved recipe',expectedVersion:map.version});await initial.settled(session.id);
     const file=path.join(rootDir,'design-sessions',session.id+'.json'),saved=JSON.parse(await readFile(file,'utf8'));
     saved.capabilityVersion=2;saved.terrainProgram={source:field.source,size:500,resolution:33};
     saved.code=`function plan(api){${createProgram}}`;

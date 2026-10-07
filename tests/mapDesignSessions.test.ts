@@ -43,7 +43,7 @@ describe('ongoing map design sessions', () => {
       },
       execute:async input=>({...suggestion(input.code),generatedAssets:[await input.createAsset!({name:'Tree',prompt:'New tree',tags:[],mode:'voxel'},()=>{})]})
     });
-    const session=await manager.create(map.id,{prompt:'An orchard',expectedVersion:map.version,minNewAssets:1,maxNewAssets:1,maxGenerationCalls:2});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'An orchard',expectedVersion:map.version,minNewAssets:1,maxNewAssets:1,maxGenerationCalls:2});
     await manager.settled(session.id);
     expect(await manager.get(session.id)).toMatchObject({outcome:'completed',generationCounts:{planning:1,assets:1},assetCalls:2});
     expect((await manager.draft(session.id)).map.assets).toHaveLength(1);
@@ -66,7 +66,7 @@ describe('ongoing map design sessions', () => {
       }
     });
     try {
-      const session=await manager.create(map.id,{prompt:'A harbor town',expectedVersion:map.version,maxNewAssets:36,maxGenerationCalls:2});
+      const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'A harbor town',expectedVersion:map.version,maxNewAssets:36,maxGenerationCalls:2});
       await manager.settled(session.id);
       expect(await manager.get(session.id)).toMatchObject({outcome:'completed',generationCounts:{planning:1,assets:1},generationCallLimit:2,paidRequests:3,assetCalls:24});
       expect(transcript).toContain('## Architectural composition');
@@ -86,7 +86,7 @@ describe('ongoing map design sessions', () => {
       chat:async()=>JSON.stringify(firstResponses.shift()),
       execute:async input=>{if(input.code==='radius=40')throw new Error('world_invalid_town_radius');return suggestion('Retained scene');}
     });
-    const session=await first.create(map.id,{prompt:'Town',expectedVersion:map.version});
+    const session=await first.create(map.id,{requirePlanApproval:false,prompt:'Town',expectedVersion:map.version});
     await first.settled(session.id);
     expect((await first.draft(session.id)).map.name).toBe('Retained scene');
     const nextResponses=[{action:'execute',edits:[{old:'radius=40',new:'radius=60'}]}, {action:'finish'}];
@@ -114,7 +114,7 @@ describe('ongoing map design sessions', () => {
         return {...suggestion('All-new draft'),generatedAssets:made};
       }
     });
-    const session=await manager.create(map.id,{prompt:'New voxel world',expectedVersion:map.version,provider:'gpt',assetProvider:'deepseek',minNewAssets:22,maxNewAssets:36,reuseExistingAssets:false});
+    const session=await manager.create(map.id,{requirePlanApproval:false,prompt:'New voxel world',expectedVersion:map.version,provider:'gpt',assetProvider:'deepseek',minNewAssets:22,maxNewAssets:36,reuseExistingAssets:false});
     await manager.settled(session.id);
     const result=await manager.get(session.id);
     expect(result.outcome).toBe('completed');
@@ -130,8 +130,8 @@ describe('ongoing map design sessions', () => {
     const {store,map}=await setup();
     let calls=0;
     const manager=new MapDesignSessionManager(store,{chat:async()=>{calls++;return '{}';}});
-    await expect(manager.create(map.id,{prompt:'New only',expectedVersion:map.version,minNewAssets:37,maxNewAssets:36})).rejects.toThrow('design_asset_range_invalid');
-    await expect(manager.create(map.id,{prompt:'New only',expectedVersion:map.version,reuseExistingAssets:false,assetIds:['old']})).rejects.toThrow('design_new_assets_conflicts_with_library_selection');
+    await expect(manager.create(map.id,{requirePlanApproval:false,prompt:'New only',expectedVersion:map.version,minNewAssets:37,maxNewAssets:36})).rejects.toThrow('design_asset_range_invalid');
+    await expect(manager.create(map.id,{requirePlanApproval:false,prompt:'New only',expectedVersion:map.version,reuseExistingAssets:false,assetIds:['old']})).rejects.toThrow('design_new_assets_conflicts_with_library_selection');
     expect(calls).toBe(0);
   });
 
@@ -150,7 +150,7 @@ describe('ongoing map design sessions', () => {
       execute: async input => { bases.push(input.baseMap.name); return suggestion(input.code); },
       observe: (current, _query, revision) => ({ currentName: current.name, draftRevision: revision }) as never
     });
-    const session = await manager.create(map.id, { prompt: 'A village along the river', expectedVersion: map.version });
+    const session = await manager.create(map.id, {requirePlanApproval:false, prompt: 'A village along the river', expectedVersion: map.version });
     await manager.settled(session.id);
     expect(bases).toEqual(['Original', 'Original']);
     expect(conversations[1].map(message => message.content).join('\n')).toContain('"currentName":"first"');
@@ -178,7 +178,7 @@ describe('ongoing map design sessions', () => {
         return JSON.stringify({ action: 'finish', outcome: 'unchanged', summary: 'Keep the mountain and move only the shops' });
       }
     });
-    const session = await manager.create(map.id, { prompt: 'Create a mountain village', expectedVersion: map.version });
+    const session = await manager.create(map.id, {requirePlanApproval:false, prompt: 'Create a mountain village', expectedVersion: map.version });
     await until(() => calls === 1);
     await manager.message(session.id, '保留原山形，只调整商铺');
     await manager.settled(session.id);
@@ -201,7 +201,7 @@ describe('ongoing map design sessions', () => {
       chat: async messages => { lastTranscript = JSON.stringify(messages); return JSON.stringify(responses.shift()); },
       execute: async input => { if (input.code === 'invalid') throw new Error('invalid_geometry'); return suggestion('Good draft'); }
     });
-    const session = await manager.create(map.id, { prompt: 'Town', expectedVersion: map.version });
+    const session = await manager.create(map.id, {requirePlanApproval:false, prompt: 'Town', expectedVersion: map.version });
     await manager.settled(session.id);
     expect(lastTranscript).toContain('invalid_geometry');
     expect(lastTranscript).toContain('invalid');
@@ -220,7 +220,7 @@ describe('ongoing map design sessions', () => {
       chat: async messages => { latest = JSON.stringify(messages); return JSON.stringify(responses.shift()); },
       execute: async input => { bases.push(input.baseMap.name); return suggestion(input.code); }
     });
-    const session = await manager.create(map.id, { prompt: 'First layout', expectedVersion: map.version });
+    const session = await manager.create(map.id, {requirePlanApproval:false, prompt: 'First layout', expectedVersion: map.version });
     await manager.settled(session.id);
     await manager.commit(session.id, 1, true);
     await manager.message(session.id, 'Now improve the entrance');
@@ -238,7 +238,7 @@ describe('ongoing map design sessions', () => {
     const manager = new MapDesignSessionManager(store, {
       chat: async () => JSON.stringify(responses.shift()), execute: async () => suggestion('Draft')
     });
-    const session = await manager.create(map.id, { prompt: 'Town', expectedVersion: map.version });
+    const session = await manager.create(map.id, {requirePlanApproval:false, prompt: 'Town', expectedVersion: map.version });
     await manager.settled(session.id);
     await expect(manager.commit(session.id, 0, true)).rejects.toThrow('design_draft_stale');
     await store.replaceMap(map.id, { ...map, name: 'Manual edit' });
@@ -254,12 +254,12 @@ describe('ongoing map design sessions', () => {
     const manager = new MapDesignSessionManager(store, { maxSteps: 2,
       chat: async () => { calls++; return JSON.stringify({ action: 'observe', query: { kind: 'summary' } }); }
     });
-    const session = await manager.create(map.id, { prompt: 'Observe', expectedVersion: map.version });
+    const session = await manager.create(map.id, {requirePlanApproval:false, prompt: 'Observe', expectedVersion: map.version });
     await manager.settled(session.id);
     expect(calls).toBe(2);
     expect((await manager.get(session.id)).status).toBe('paused');
     const invalid = new MapDesignSessionManager(store, { chat: async () => 'not a JSON action' });
-    const failed = await invalid.create(map.id, { prompt: 'Observe again', expectedVersion: map.version });
+    const failed = await invalid.create(map.id, {requirePlanApproval:false, prompt: 'Observe again', expectedVersion: map.version });
     await invalid.settled(failed.id);
     expect((await invalid.get(failed.id)).status).toBe('failed');
     expect((await invalid.get(failed.id)).modelCalls).toBe(3);
