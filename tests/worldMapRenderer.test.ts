@@ -9,6 +9,7 @@ import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { createPlannedWorldSampler, validateWorldBundle } from '../src/shared/worldPlanning';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
 import { selectWorldTiles, WORLD_BIOMES, type WorldTileData } from '../src/shared/worldTerrain';
+import { compileTerrainProgram } from '../src/server/terrainProgram';
 
 const bundle = validateWorldBundle(JSON.parse(readFileSync(
   new URL('../scripts/fixtures/hierarchical-world.json', import.meta.url),
@@ -60,6 +61,30 @@ function sampleOceanFloor(
 }
 
 describe('main editor streamed world renderer', () => {
+  it('keeps a narrow 513-field crest in actual streamed mesh vertices within the existing tile budget', async () => {
+    const source = 'function generate(t){t.map((x,z)=>40+10*Math.exp(-(((x-0.9765625)/0.35)**2)))}';
+    const terrainProgram = await compileTerrainProgram(source, {seed:47,size:500,resolution:513});
+    const reviewBundle = validateWorldBundle({plan:{version:1,id:'precision-review',revision:1,prompt:'precision review',
+      recipe:{version:1,seed:47,size:500,constraints:[{region:'center',biome:'grassland'}],terrainProgram},
+      ecology:[],towns:[],roads:[]},patches:[]});
+    const map = createEmptyMap();
+    map.world = {bundle:reviewBundle,assets:[]};
+    map.box.size = [500,4096,500];
+    const rendered = await buildEditableMapGroup(map, {worldInitialView:{x:0,z:0,distance:50}});
+    try {
+      await waitFor(() => rendered.getDebugStats().streaming?.terrainTiles === 64
+        && rendered.getDebugStats().streaming?.pendingTiles === 0, 1000);
+      const tile = rendered.group.getObjectByName('world-tile:0:0:62.5')!;
+      const terrain = tile.getObjectByName('terrain') as THREE.Mesh;
+      const positions = terrain.geometry.getAttribute('position');
+      expect(positions.count).toBe(65*65);
+      rendered.group.updateMatrixWorld(true);
+      const crest = terrain.localToWorld(new THREE.Vector3(positions.getX(1),positions.getY(1),positions.getZ(1)));
+      expect(crest.x).toBeCloseTo(0.9765625,8);
+      expect(crest.y).toBeCloseTo(50,5);
+      expect(crest.z).toBeCloseTo(0,8);
+    } finally { rendered.dispose(); }
+  }, 20000);
   it('renders whitebox semantic paths and anchors above sampled terrain', () => {
     const plan = structuredClone(smallBundle.plan);
     plan.whitebox = true;

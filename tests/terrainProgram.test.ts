@@ -1,9 +1,49 @@
 import { describe, expect, it } from 'vitest';
 import { compileTerrainProgram } from '../src/server/terrainProgram';
 import { createWorldSampler, validateWorldRecipe } from '../src/shared/worldTerrain';
+import { sampleTerrainProgramField } from '../src/shared/terrainProgramField';
 
 const request = {seed: 47, size: 500, resolution: 65};
 describe('terrain programs', () => {
+  it('reduces narrow ridge error with 513 samples while preserving legacy 257 fields exactly', async () => {
+    const source = 'function generate(t){t.map((x,z)=>40+10*Math.exp(-(((x-0.9765625)/0.35)**2)))}';
+    const coarse = await compileTerrainProgram(source, {...request, resolution: 257});
+    const fine = await compileTerrainProgram(source, {...request, resolution: 513});
+    expect(50 - sampleTerrainProgramField(coarse, 500, 0.9765625, 0)).toBeGreaterThan(9);
+    expect(sampleTerrainProgramField(fine, 500, 0.9765625, 0)).toBeCloseTo(50, 8);
+    for (const field of [coarse, fine]) {
+      const saved = JSON.parse(JSON.stringify({version: 1, seed: 47, size: 500,
+        constraints: [{region: 'center', biome: 'grassland'}], terrainProgram: field}));
+      const loaded = validateWorldRecipe(saved);
+      expect(loaded.terrainProgram).toEqual(field);
+      expect(createWorldSampler(loaded)(0.9765625, 0).height)
+        .toBeCloseTo(sampleTerrainProgramField(field, 500, 0.9765625, 0), 8);
+    }
+  });
+  it('preserves the default sampling budget for existing programs', async () => {
+    const field = await compileTerrainProgram('function generate(t){t.map(()=>t.spacing)}', {seed:47,size:500});
+    expect(field.resolution).toBe(257);
+    expect(field.heights[0]).toBe(1.953125);
+  });
+  it('accepts explicit sub-metre spacing and a rich field over the old output cap', async () => {
+    const field = await compileTerrainProgram(`function generate(t){
+      t.map((x,z)=>40+Math.sin(x*0.13)+Math.cos(z*0.17));
+      t.inspect('spacing', [[0,0]]);
+      if(t.spacing !== 0.9765625 || t.resolution !== 513) throw new Error('wrong_sampling_context');
+    }`, {seed:47,size:500,resolution:513});
+    expect(field.resolution).toBe(513);
+    expect(field.heights).toHaveLength(263169);
+    expect(Buffer.byteLength(JSON.stringify(field))).toBeGreaterThan(4000000);
+  });
+  it('rejects a requested resolution beyond the sample budget before executing code', async () => {
+    await expect(compileTerrainProgram('function generate(){throw new Error("executed")}',
+      {...request, resolution: 1025})).rejects.toThrow('terrain_program_resolution_out_of_budget');
+    await expect(compileTerrainProgram('function generate(){}',
+      {...request, resolution: 513.5})).rejects.toThrow('invalid_terrain_program_resolution');
+    await expect(compileTerrainProgram('function generate(){}',
+      {...request, resolution: null} as never).then(field => field.resolution))
+      .rejects.toThrow('invalid_terrain_program_resolution');
+  });
   it('runs custom numerical composition and persists the exact field through the shared sampler', async () => {
     const source = `function generate(t) {
       const plane = (x,z) => 40 + x * 0.04 - z * 0.02;
