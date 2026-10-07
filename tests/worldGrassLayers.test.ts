@@ -25,10 +25,10 @@ describe('world grass fields', () => {
   it('preserves a local grass region through actual design execution on a new world', async () => {
     const base = createEmptyMap();
     const result = await executeMapDesignProgram({ baseMap: base, assets: [], maxNewAssets: 0,
-      terrainProgram: { source: 'function generate(t){t.map(()=>30)}', size: 500, seed: 9, resolution: 33 },
       code: `function plan(api) {
-        api.createWorld({recipe:{version:1,seed:9,size:500,constraints:[{region:'center',biome:'grassland'}],
-          terrainProgram:api.terrainProgram()}});
+        api.createWorld({recipe:{version:1,seed:9,size:500,reliefProfile:'compact',heightScale:0.11,
+          constraints:[{region:'center',biome:'grassland'}],
+          terrainBrushes:[{id:'local-field',mode:'flatten',region:{kind:'circle',center:[64,40],radius:60},height:30,feather:8}]}});
         api.grass({id:'orchard',preset:'farm',region:{kind:'circle',center:[64,40],radius:18},
           density:1,variation:0,softness:0});
       }` });

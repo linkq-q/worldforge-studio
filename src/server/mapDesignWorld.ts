@@ -1,50 +1,32 @@
-import {createHash} from 'node:crypto';
-import type {TerrainProgramField} from '../shared/terrainProgramField';
-import {TERRAIN_PROGRAM_DEFAULT_RESOLUTION, validateTerrainProgramResolution} from '../shared/terrainProgramField';
-import {compileTerrainProgram} from './terrainProgram';
+import {isDeepStrictEqual} from 'node:util';
+import type {WorldRecipe} from '../shared/worldTerrain';
+import type {MapOperation} from '../shared/mapOperations';
 
-export interface MapDesignTerrainProgram {
-  source: string;
-  size: number;
-  seed?: number;
-  resolution?: number;
+export const RETIRED_DESIGN_TERRAIN_ERROR = 'design_terrain_program_retired:continuous design uses WorldRecipe; remove the execute terrainProgram field and author recipe parameters instead';
+
+export function rejectDesignTerrainProgram(input: object): void {
+  if ('terrainProgram' in input) throw new Error(RETIRED_DESIGN_TERRAIN_ERROR);
 }
 
-export interface CompiledMapDesignTerrain {
-  seed: number;
-  size: number;
-  field: TerrainProgramField;
-}
-
-// A replay needs no model request or second terrain compilation. Bound retained fields,
-// including pending workers; restarted sessions simply recompile their saved source.
-const terrainCache = new Map<string, Promise<CompiledMapDesignTerrain>>();
-
-export async function compileMapDesignTerrain(input: MapDesignTerrainProgram, fallbackSeed: number,
-  signal?: AbortSignal): Promise<CompiledMapDesignTerrain> {
-  signal?.throwIfAborted();
-  if (!input || typeof input !== 'object' || Array.isArray(input)
-    || Object.keys(input).some(key => !['source', 'size', 'seed', 'resolution'].includes(key))
-    || typeof input.source !== 'string' || !input.source.trim() || input.source.length > 60_000
-    || !Number.isFinite(input.size) || input.size < 500 || input.size > 256_000) {
-    throw new Error('invalid_design_terrain_program');
+/** Existing persisted fields may be retained, or explicitly removed, but never authored here. */
+export function assertDesignRecipeTerrain(recipe: WorldRecipe, base?: WorldRecipe): void {
+  if (recipe.terrainProgram === undefined) return;
+  if (!base?.terrainProgram || recipe.size !== base.size || recipe.seed !== base.seed
+    || !isDeepStrictEqual(structuredClone(recipe.terrainProgram), structuredClone(base.terrainProgram))) {
+    throw new Error(RETIRED_DESIGN_TERRAIN_ERROR);
   }
-  const seed = input.seed ?? fallbackSeed;
-  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error('invalid_design_terrain_seed');
-  const resolution = validateTerrainProgramResolution(input.resolution ?? TERRAIN_PROGRAM_DEFAULT_RESOLUTION);
-  const key = createHash('sha256').update(JSON.stringify([input.source, seed, input.size, resolution])).digest('hex');
-  let pending = terrainCache.get(key);
-  if (!pending) {
-    pending = compileTerrainProgram(input.source, {seed, size: input.size, resolution})
-      .then(field => ({seed, size: input.size, field}));
-    terrainCache.set(key, pending);
-    while (terrainCache.size > 4) terrainCache.delete(terrainCache.keys().next().value!);
-    void pending.catch(() => { if (terrainCache.get(key) === pending) terrainCache.delete(key); });
-  }
-  const compiled = await pending;
-  signal?.throwIfAborted();
-  return compiled;
 }
 
-export const MAP_DESIGN_TERRAIN_REFERENCE = `Optional execute field terrainProgram:{source:"function generate(t){...}",size:500..256000,seed?:uint32,resolution?:33..513} compiles a model-authored height algorithm before the scene program. Default resolution is 257; spacing=size/(resolution-1), so a larger map needs a conscious precision choice. It is the same conversation, with no extra model call. The current declaration persists across execute actions when omitted; terrainProgram:null clears it. Compiled source/seed/size/resolution is cached for replay. In plan(api), api.terrainProgram() returns the compiled field; assign it explicitly to recipe.terrainProgram, using the same recipe.size and recipe.seed. Large arrays remain local. Omit this field to use a normal WorldRecipe instead.
-Terrain source uses generate(t), ordinary JavaScript arrays, functions and Math; no imports/network/files/async/Math.random/binary buffers. t.seed,t.size,t.resolution,t.spacing describe the field. t.map((x,z,previousHeight)=>height) evaluates any algorithm over the grid; t.sample(x,z) reads the previous field during a pass. t.noise(x,z,wavelengthMetres=50,octaves=1) returns seeded smooth noise -1..1. Optional t.ridge([[x,z,crestHeight,halfWidth],...],{base:0}) raises connected ridges; t.channel([[x,z,bedHeight,floorWidth],...],{bankSlope:0.7}) cuts a valley; t.erode({iterations:0..40,thermal:0..1,drainage:0..1,talus:5..80}) relaxes/incises existing relief. These helpers are optional; define your own low/mid/high-frequency forms, warps, masks and bounded algorithms. t.inspect(label,[[x,z],...]) records at most32 observations of up to256 heights. Finite heights -500..500; 12s/128MiB/8MiB limits. Resolution is sampling precision, not mesh LOD or proof of detail. Design traversals and obstacles for the requested movement/play, not a mandatory walking-grade template.`;
+export function assertDesignRecipeOperations(operations: readonly MapOperation[], base?: WorldRecipe): void {
+  for (const operation of operations) {
+    if (operation.type === 'world.set') assertDesignRecipeTerrain(operation.world.bundle.plan.recipe, base);
+  }
+}
+
+export const MAP_DESIGN_RECIPE_REFERENCE = `Continuous-world terrain uses the existing procedural WorldRecipe. Its compact profile combines broad relief, warped detail and landform drainage; generated JavaScript can calculate recipe parameters, control points and local refinements. Use api.environmentSample and api.report to retain actual measurements. A terrain program or a new sampled-height field cannot be supplied in this session. Saved legacy fields remain readable and may be preserved during other edits, or explicitly removed to restore their recipe; while retaining a field, preserve its data, source, size and seed.
+Recipe contract (all distances/elevations in metres, X/Z centered on the world, north -Z, Y up, sea level 0): {version:1,seed:uint32,size:500..256000,reliefProfile?:'compact'|'legacy',heightScale?:0.02..4,constraints:[{region,biome}],landforms?,terrainBrushes?,waterBodies?,biomePatches?}. Select reliefProfile:'compact' explicitly for compact-world relief; omission retains the historical legacy profile. heightScale scales procedural relief, not the metre-valued landform/brush heights. It defaults to1, not a small-map calibration; inspect resulting heights before deciding scale. constraints contains1..9 unique regions west/east/north/south/northwest/northeast/southwest/southeast/center; biomes ocean/grassland/forest/desert/mountains/snow. A forest biome selects terrain/climate/material weights, not tree assets. Sea comes from sampled terrain below zero.
+landforms:[{center:[x,z],radius:[radiusX,radiusZ],height}] has at most32 entries; centers lie inside +/-size/2, radii10..size, height -500..500. These are smooth overlapping elliptical contributions on the procedural terrain; centers/radii/heights are your design, not a fixed scene template.
+The shared bounded region shape is {kind:'circle',center:[x,z],radius:1..size} or {kind:'path',points:[[x,z],...],width:1..1000}. Paths have2..64 points; centers/control points lie inside the world. feather is a transition distance0..2000 metres, not a 0..1 ratio. Every brush, water body and biome patch needs a unique id across those three collections, matching /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.
+terrainBrushes has at most32 entries, applied in order: {id,mode:'raise'|'lower',region,amount:>0..1000,feather?}; {id,mode:'crater',region:CIRCLE,depth:>0..1000,rimHeight:>0..1000,feather?}; {id,mode:'flatten',region,height:-1000..5000,strength?:0..1,feather?}; {id,mode:'grade',region:PATH,heights:[one per path point],strength?:0..1,feather?}. grade heights are absolute elevations -1000..5000. Flatten and grade replace local elevations toward their target, so large full-strength regions remove underlying relief. Use measured local refinements when preserving coarse mountains; do not assume a wide flatten region only affects buildings.
+waterBodies has at most32 entries: {id,type:'lake',region:CIRCLE,levels:[surfaceElevation],depth:0.1..500,...} or {id,type:'river',region:PATH,levels:[one surfaceElevation per point],depth:0.1..500,widths?:[one width1..1000 per point],...}. Authored levels are -1000..5000; optional river surfaceMode:'authored' is equivalent to omission. Alternatively a river may use surfaceMode:'terrain-fit' with no levels; its points run upstream to downstream and the shared sampler computes surface levels. terrain-fit alone allows waterfallAfterPointIndices:[unique segment indices], at most16. Water options: shorelineSmoothness?:0..1,shorelineIrregularity?:0..1,shorelineProfile?:'steep'|'gentle',seed?:uint32. Water changes the river/lake bed and banks as well as the visible surface; sample actual terrain and water after editing.
+biomePatches:[{id,region,biome,feather?}] has at most32 entries, using the same biome enum and metre-valued transition distance. It changes local biome blending, not the actual contents of a functional area. Realize those uses with surfaces, routes, town patches and ordinary assets. Choose your own shape, scale, routes and purpose; this contract does not require a village, river or island.`;

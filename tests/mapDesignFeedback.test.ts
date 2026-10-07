@@ -32,6 +32,45 @@ describe('persisted execution feedback', () => {
     }
   });
 
+  it('returns whole small environment readings and admits when middle measurements are omitted', async () => {
+    const collector = new MapDesignFeedbackCollector(), root = await directory();
+    const result = { x: -94, z: 107, height: 20.901971298311548, slope: 1.248674891208517,
+      waterDistance: 108.29571201155436, guideDistance: 2.779861295241842 };
+    collector.record({ phase: 'final', step: 56, tool: 'environmentSample', args: [[-94, 107]], result });
+    const one = await collector.save(root, metadata);
+    expect(one.summaryTruncated).toBe(false);
+    expect(one.groups[0].first).toMatchObject({ truncated: false, observation: { result } });
+    collector.record({ phase: 'final', step: 57, tool: 'environmentSample', args: [[10, 20]], result: { slope: 47 } });
+    collector.record({ phase: 'final', step: 58, tool: 'environmentSample', args: [[30, 40]], result: { slope: 2 } });
+    const many = await collector.save(root, metadata);
+    expect(many.summaryTruncated).toBe(true);
+    expect(await readMapDesignFeedback(root, many.read)).toMatchObject({ items: [
+      { index: 0 }, { index: 1, observation: { result: { slope: 47 } } }, { index: 2 }
+    ] });
+  });
+
+  it('identifies an omitted large record without returning a misleading partial JSON value', async () => {
+    const collector = new MapDesignFeedbackCollector(), root = await directory();
+    collector.record({ phase: 'final', step: 1, tool: 'assetSpace', args: ['asset-a'], result: { parts: 'x'.repeat(3000) } });
+    const summary = await collector.save(root, metadata), first = summary.groups[0].first;
+    expect(summary.summaryTruncated).toBe(true);
+    expect(first).toMatchObject({ truncated: true, tool: 'assetSpace', read: { recordIndex: 0 } });
+    expect(first).not.toHaveProperty('text');
+    expect(await readMapDesignFeedback(root, first.read)).toMatchObject({ nextCharacterOffset: null });
+  });
+
+  it('does not call removing duplicate group previews a loss of fully returned reports', async () => {
+    const collector = new MapDesignFeedbackCollector(), root = await directory();
+    for (let step = 0; step < 6; step++) {
+      collector.record({ phase: 'final', step, tool: 'report', args: ['measurements'], result: 'x'.repeat(900) });
+    }
+    const summary = await collector.save(root, { ...metadata, error: 'e'.repeat(1300) });
+    expect(JSON.stringify(summary).length).toBeLessThanOrEqual(10_000);
+    expect(summary.reports).toHaveLength(6);
+    expect(summary.groups).toHaveLength(0);
+    expect(summary.summaryTruncated).toBe(false);
+  });
+
   it('returns a summary matching the saved snapshot even if another fact arrives during the disk write', async () => {
     const collector = new MapDesignFeedbackCollector(), root = await directory();
     collector.record({ phase: 'final', step: 1, tool: 'environmentSample', args: {}, result: 1 });

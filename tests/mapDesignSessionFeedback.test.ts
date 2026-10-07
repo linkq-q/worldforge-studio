@@ -108,25 +108,26 @@ it('keeps a model-owned appearance across commit and subsequent same-session exe
   expect(draft.session.messages.some(m => m.role==='tool' && m.content.includes('session-planned-appearance'))).toBe(true);
 });
 
-it('retains an explicit terrain program through code edits without starting another planner', async () => {
+it('retains a procedural recipe through code edits without starting another planner', async () => {
   const {store,map}=await setup();
-  const terrainProgram={source:'function generate(t){t.map(()=>4);t.inspect("level",[[0,0]]);}',size:500,resolution:33};
-  const code=`function plan(api){api.createWorld({recipe:{version:1,seed:api.seed,size:500,constraints:[{region:'center',biome:'grassland'}],terrainProgram:api.terrainProgram()}});}`;
+  const code=`function plan(api){api.createWorld({recipe:{version:1,seed:api.seed,size:500,reliefProfile:'compact',heightScale:0.11,
+    constraints:[{region:'center',biome:'grassland'}],landforms:[{center:[30,20],radius:[80,100],height:18}]}});}`;
   let call=0;
   const manager=new MapDesignSessionManager(store,{chat:async messages => {
     switch (++call) {
-      case 1:return JSON.stringify({action:'execute',code,terrainProgram});
+      case 1:return JSON.stringify({action:'execute',code});
       case 2:
-        expect(results(messages).at(-1).result.terrainProgram).toMatchObject({size:500,resolution:33,sourceRetained:true});
+        expect(results(messages).at(-1).result.terrainProgram).toBeUndefined();
         return JSON.stringify({action:'execute',edits:[{old:"biome:'grassland'",new:"biome:'forest'"}]});
-      default:return JSON.stringify({action:'finish',summary:'The compiled field and its revised classification are retained.'});
+      default:return JSON.stringify({action:'finish',summary:'The recipe and its revised classification are retained.'});
     }
   }});
   const session=await manager.create(map.id,{prompt:'Create a large world',expectedVersion:map.version});
   await manager.settled(session.id);
   const draft=await manager.draft(session.id);
   expect(call).toBe(3);
-  expect(draft.map.world?.bundle.plan.recipe.terrainProgram?.heights[0]).toBe(4);
+  expect(draft.map.world?.bundle.plan.recipe.terrainProgram).toBeUndefined();
+  expect(draft.map.world?.bundle.plan.recipe.landforms).toEqual([{center:[30,20],radius:[80,100],height:18}]);
   expect(draft.map.world?.bundle.plan.recipe.constraints[0].biome).toBe('forest');
   expect(draft.session.draftRevision).toBe(2);
 },20000);
@@ -153,7 +154,7 @@ it('upgrades saved tool instructions without replacing the user and tool convers
   await recovered.settled(session.id);
   const upgraded=JSON.parse(await readFile(file,'utf8'));
   expect(upgraded.instructionHistory[0].content).toContain('OLD TOOL CONTRACT');
-  expect(upgraded.capabilityVersion).toBe(2);
+  expect(upgraded.capabilityVersion).toBe(3);
 });
 
 it('does not report an already adopted complete draft as unapplied when its observation fails', async () => {

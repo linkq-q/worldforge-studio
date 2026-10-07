@@ -13,13 +13,13 @@ import { llmChat, type ChatMessage } from './modelApi';
 import { parseLlmJsonObject } from './llmJson';
 import type { MapStore } from './mapStore';
 import { currentCodexRun, withCodexRun } from './codexBridge';
-import type { MapDesignTerrainProgram } from './mapDesignWorld';
+import {assertDesignRecipeOperations, rejectDesignTerrainProgram, RETIRED_DESIGN_TERRAIN_ERROR} from './mapDesignWorld';
 import { MapDesignFeedbackCollector, readMapDesignFeedback } from './mapDesignFeedback';
 
 const MAX_STEPS_PER_RUN = 48;
 const MAX_TRANSCRIPT_CHARS = 400_000;
 const MAX_MESSAGE_CHARS = 12_000;
-const CAPABILITY_VERSION = 2;
+const CAPABILITY_VERSION = 3;
 
 interface DesignState {
   schemaVersion: 1;
@@ -29,7 +29,9 @@ interface DesignState {
   assets: MapAsset[];
   transcript: ChatMessage[];
   code: string;
-  terrainProgram?: MapDesignTerrainProgram | null;
+  /** Read only during migration; this retired declaration is never executed. */
+  terrainProgram?: unknown;
+  retiredTerrainProgram?: unknown;
   suggestion: MapAiSuggestion | null;
   assetCache: Record<string, string>;
   inputRevision: number;
@@ -199,6 +201,7 @@ export class MapDesignSessionManager {
     if (state.view.status === 'committed') throw new Error('design_session_committed');
     if (!Number.isInteger(expectedRevision) || state.view.draftRevision !== expectedRevision) throw new Error('design_draft_stale');
     if (!state.suggestion?.operations.length) throw new Error('design_empty_draft');
+    assertDesignRecipeOperations(state.suggestion.operations, state.baseMap.world?.bundle.plan.recipe);
     this.committing.add(id);
     try {
     const result = await this.store.commitTransaction(state.view.mapId, {
@@ -210,7 +213,6 @@ export class MapDesignSessionManager {
     state.baseMap = { ...result.map, assets: state.assets };
     state.view.baseVersion = result.map.version;
     state.code = '';
-    state.terrainProgram = null;
     state.suggestion = null;
     state.view.operationCount = 0;
     state.view.draftRevision += 1;
@@ -338,6 +340,7 @@ export class MapDesignSessionManager {
           if (typeof outcome !== 'string' || !['completed', 'unchanged', 'blocked'].includes(outcome)) throw new Error('invalid_design_outcome');
           if (outcome === 'completed' && (!state.suggestion?.operations.length
             || state.view.draftRevision <= (state.requestDraftRevision ?? 0))) throw new Error('design_complete_requires_draft:execute the current requested changes, or explicitly finish unchanged/blocked with a reason');
+          if (outcome === 'completed') assertDesignRecipeOperations(state.suggestion!.operations, state.baseMap.world?.bundle.plan.recipe);
           if (outcome !== 'completed' && !summary.trim()) throw new Error('design_outcome_reason_required');
           if (state.suggestion && summary) state.suggestion.summary = summary;
           state.view.outcome = outcome as MapDesignSessionView['outcome'];
@@ -350,12 +353,12 @@ export class MapDesignSessionManager {
         if (action.action === 'observe') {
           this.appendTool(state, 'observe', await this.observe(state, action.query));
         } else if (action.action === 'execute') {
+          rejectDesignTerrainProgram(action);
           const code = editedCode(state.code, action);
-          const terrainProgram = action.terrainProgram === undefined ? state.terrainProgram : action.terrainProgram as MapDesignTerrainProgram | null;
           state.view.progress = { phase: 'planning', label: '正在执行场景程序并测量结果' };
           this.touch(state);
           const suggestion = await (this.dependencies.execute ?? executeMapDesignProgram)({
-            code, terrainProgram, appearancePlan: state.view.appearancePlan,
+            code, appearancePlan: state.view.appearancePlan,
             baseMap: state.baseMap, assets: state.assets, maxNewAssets: state.options.maxNewAssets ?? 0,
             onToolObservation: value => feedback.record(value),
             onAssetReady: event => assetBindings.push({key: event.key, variantIndex: event.variantIndex,
@@ -376,10 +379,10 @@ export class MapDesignSessionManager {
             continue;
           }
           const assets = [...new Map([...state.assets, ...generated].map(asset => [asset.id, asset])).values()];
+          assertDesignRecipeOperations(suggestion.operations, state.baseMap.world?.bundle.plan.recipe);
           const draft = applyMapOperations({ ...state.baseMap, assets }, suggestion.operations);
           state.assets = assets;
           state.code = code;
-          state.terrainProgram = terrainProgram;
           state.suggestion = suggestion;
           if (suggestion.appearancePlan) state.view.appearancePlan = structuredClone(suggestion.appearancePlan);
           state.view.draftRevision += 1;
@@ -388,8 +391,6 @@ export class MapDesignSessionManager {
           this.appendTool(state, 'execute', { draftRevision: state.view.draftRevision,
             observation: (this.dependencies.observe ?? observeMapDesign)(draft, { kind: 'summary' }, state.view.draftRevision),
             appearancePlan: state.view.appearancePlan,
-            terrainProgram: terrainProgram ? {size: terrainProgram.size, seed: terrainProgram.seed ?? state.baseMap.seed,
-              resolution: terrainProgram.resolution ?? 257, sourceRetained: true} : null,
             feedback: await saveFeedback(true), budgets: this.budgets(state),
             diagnostics: suggestion.diagnostics ?? [], generatedAssets: suggestion.generatedAssets.map(asset => ({ id: asset.id, name: asset.name })),
             assetBindings,
@@ -541,6 +542,15 @@ export class MapDesignSessionManager {
       state.view.stepsUsed ??= 0;
       state.requestDraftRevision ??= 0;
       if ((state.capabilityVersion ?? 1) < CAPABILITY_VERSION) {
+        const retiredDeclaration = state.terrainProgram !== undefined && state.terrainProgram !== null;
+        if (retiredDeclaration) state.retiredTerrainProgram = state.terrainProgram;
+        delete state.terrainProgram;
+        let retiredDraft = false;
+        try { assertDesignRecipeOperations(state.suggestion?.operations ?? [], state.baseMap.world?.bundle.plan.recipe); }
+        catch (error) {
+          if (errorMessage(error) !== RETIRED_DESIGN_TERRAIN_ERROR) throw error;
+          retiredDraft = true;
+        }
         const original = state.transcript[0];
         state.instructionHistory ??= [];
         if (original?.role === 'system') {
@@ -548,8 +558,15 @@ export class MapDesignSessionManager {
           state.transcript[0] = {role:'system',content:buildSessionPrompt(state)};
         } else state.transcript.unshift({role:'system',content:buildSessionPrompt(state)});
         state.capabilityVersion = CAPABILITY_VERSION;
+        if (retiredDeclaration || retiredDraft) {
+          state.view.status = 'paused';
+          state.view.outcome = undefined;
+          state.view.error = RETIRED_DESIGN_TERRAIN_ERROR;
+          state.view.progress = {phase:'planning',label:'已停用整场高度替换；原草稿保留，请改用 WorldRecipe 后继续'};
+        }
         this.appendTool(state, 'capabilities-updated', {version:CAPABILITY_VERSION,
-          message:'The tool contract was updated for world creation, appearance, retained execution facts and the current budget. User messages and prior execution history are unchanged; old system instructions are archived outside the active transcript.'});
+          retiredTerrainDeclaration:retiredDeclaration, retainedDraftRequiresRecipe:retiredDraft,
+          message:'Continuous design now authors WorldRecipe terrain only. The outer terrainProgram declaration and compiled-field API are retired; any prior declaration is archived as retiredTerrainProgram and will not replay. Prior code, draft and user/tool history are unchanged. A draft that introduces or replaces a sampled field cannot finish completed or commit; revise the complete program to use recipe parameters. Existing base-map fields remain readable and can be preserved during ordinary edits, or explicitly removed. Previous system instructions are archived outside the active transcript.'});
         await this.save(state);
       }
       if (state.view.status === 'running') {

@@ -46,19 +46,20 @@ describe('design-session scene execution', () => {
     const materializations:number[]=[], heights:number[]=[];
     try {
       const suggestion=await executeMapDesignProgram({baseMap,assets:[],maxNewAssets:0,
-        terrainProgram:{size:500,resolution:33,source:'function generate(t){t.map(()=>3)}'},
         onToolObservation:observation=>{if(observation.tool==='report'){
           materializations.push(grassSpy.mock.calls.length);heights.push(observation.result as number);
         }},
         code:`function plan(api){
-          api.createWorld({recipe:{version:1,seed:api.seed,size:500,constraints:[{region:'center',biome:'grassland'}],terrainProgram:api.terrainProgram()}});
+          api.createWorld({recipe:{version:1,seed:api.seed,size:500,reliefProfile:'compact',heightScale:0.11,
+            constraints:[{region:'center',biome:'grassland'}],
+            terrainBrushes:[{id:'ground',mode:'flatten',region:{kind:'circle',center:[0,0],radius:100},height:3,feather:4}]}});
           api.grass('patch',{kind:'circle',center:[0,0],radius:8},{density:0.5});
           api.report('initial',api.environmentSample([0,0]).height);
           for(let i=0;i<4;i++){
             api.route({id:'path-'+i,points:[[i*5,15],[i*5,25]],width:2,surface:'soil'});
             api.report('after-route-'+i,api.environmentSample([0,0]).height);
           }
-          api.editWorld(world=>{world.bundle.plan.recipe.terrainProgram.heights.fill(9);});
+          api.editWorld(world=>{world.bundle.plan.recipe.terrainBrushes[0].height=9;});
           api.report('updated-world',api.environmentSample([0,0]).height);
         }`});
       expect(materializations).toEqual([1,1,1,1,1,1]);
@@ -67,7 +68,7 @@ describe('design-session scene execution', () => {
       const result=applyMapOperations(baseMap,suggestion.operations);
       expect(result.guides).toHaveLength(4);
       expect(result.grassLayers[0].densities.some(value=>value>0)).toBe(true);
-      expect(result.world!.bundle.plan.recipe.terrainProgram!.heights.every(value=>value===9)).toBe(true);
+      expect(result.world!.bundle.plan.recipe.terrainBrushes![0]).toMatchObject({mode:'flatten',height:9});
       expect(suggestion.operations.filter(operation=>operation.type==='grass.generate')).toHaveLength(1);
     } finally {grassSpy.mockRestore();}
   });

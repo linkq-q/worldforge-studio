@@ -549,6 +549,8 @@ export class MapEditor {
   private mapPreviewKind: 'ai' | 'terrain' | 'draft' | 'conversation' = 'ai';
   private designClient: MapDesignSessionClient | null = null;
   private designConversation: MapDesignConversation | null = null;
+  private designWorldPreviewFrame: { sessionId: string; handled: boolean; position: THREE.Vector3;
+    quaternion: THREE.Quaternion; target: THREE.Vector3 } | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiPreviewVisible = true;
   private mapAiComparisonMap: EditableMap | null = null;
@@ -1425,6 +1427,7 @@ export class MapEditor {
     const draftRecovery = await this.prepareBrowserMapDraftRecovery(savedMap);
     this.clearMapAiPreview();
     this.state.map = savedMap;
+    this.designWorldPreviewFrame = null;
     this.worldPlaySpawn = null;
     if (savedMap.world) this.worldWidth = savedMap.world.bundle.plan.recipe.size;
     if (savedMap.world && ['terrain', 'grass', 'paint'].includes(this.state.tool)) this.state.tool = 'select';
@@ -1855,8 +1858,24 @@ export class MapEditor {
           this.mapAiSuggestion = draft.suggestion;
           this.mapPreviewKind = 'conversation';
           this.state.selectedObjectId = null;
+          const preview = this.mapAiPreviewMap;
+          if (!this.state.map.world && preview.world && this.camera && this.orbit
+            && this.designWorldPreviewFrame?.sessionId !== draft.session.id) {
+            this.designWorldPreviewFrame = {sessionId: draft.session.id, handled: false,
+              position: this.camera.position.clone(), quaternion: this.camera.quaternion.clone(), target: this.orbit.target.clone()};
+          }
           void this.refreshScene().then(() => {
-            if (this.state.map?.id === draft.session.mapId) this.renderPanels();
+            if (this.state.map?.id !== draft.session.mapId) return;
+            const framing = this.designWorldPreviewFrame;
+            if (framing?.sessionId === draft.session.id && !framing.handled && this.displayedMap() === preview) {
+              framing.handled = true;
+              // Never replace camera input made while a heavy first draft was building.
+              if (this.camera && this.orbit && !this.playMode?.isActive
+                && this.camera.position.distanceToSquared(framing.position) < 1e-8
+                && this.camera.quaternion.angleTo(framing.quaternion) < 1e-7
+                && this.orbit.target.distanceToSquared(framing.target) < 1e-8) this.frameMap(preview, VIEW_DIRECTIONS.perspective);
+            }
+            this.renderPanels();
           }).catch(error => {
             if (this.state.map?.id === draft.session.mapId) {
               this.designClient?.invalidateDraft(draft.session.draftRevision);
@@ -6830,7 +6849,7 @@ export class MapEditor {
       editorHelpers: true,
       scene: this.scene,
       renderer: this.renderer ?? undefined,
-      ...(this.state.map.world && this.orbit && this.camera ? {
+      ...(displayed?.world && this.orbit && this.camera ? {
         worldInitialView: { x: this.orbit.target.x, z: this.orbit.target.z,
           distance: Math.abs(this.camera.position.y - this.orbit.target.y) }
       } : {})
@@ -7818,12 +7837,12 @@ export class MapEditor {
     this.setViewName(town.name);
   }
 
-  private frameMap(): void {
-    if (!this.state.map) return;
-    const bounds = getMapBounds(this.state.map);
-    if (this.state.map.world) {
-      const size = this.state.map.world.bundle.plan.recipe.size;
-      this.frameBox(new THREE.Box3(new THREE.Vector3(-size / 2, -16, -size / 2), new THREE.Vector3(size / 2, size * 0.15, size / 2)));
+  private frameMap(map = this.state.map, direction?: THREE.Vector3): void {
+    if (!map) return;
+    const bounds = getMapBounds(map);
+    if (map.world) {
+      const size = map.world.bundle.plan.recipe.size;
+      this.frameBox(new THREE.Box3(new THREE.Vector3(-size / 2, -16, -size / 2), new THREE.Vector3(size / 2, size * 0.15, size / 2)), direction);
       this.setViewName('世界全景');
       return;
     }
@@ -7831,7 +7850,7 @@ export class MapEditor {
       new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
       new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
     );
-    this.frameBox(box);
+    this.frameBox(box, direction);
     this.setViewName('全景视图');
   }
 

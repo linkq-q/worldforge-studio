@@ -3,24 +3,24 @@ import {createEmptyMap, sampleTerrainHeight, type MapAsset} from '../src/shared/
 import {applyMapOperations} from '../src/shared/mapOperations';
 import {executeMapDesignProgram} from '../src/server/mapDesignExecution';
 import type {MapDesignToolObservation} from '../src/shared/mapDesignFeedback';
-import {compileMapDesignTerrain} from '../src/server/mapDesignWorld';
 import {normalizeSceneAppearancePlan} from '../src/shared/sceneAppearance';
 
 const mocks = vi.hoisted(() => ({llmChat:vi.fn()}));
 vi.mock('../src/server/modelApi', async original => ({...await original<typeof import('../src/server/modelApi')>(),llmChat:mocks.llmChat}));
 const baseMap = () => createEmptyMap('blank', 'blank-world', [48, 32, 48]);
-const terrainProgram = {source:'function generate(t){t.map((x,z)=>12+x/100);t.inspect("center",[[0,0]]);}',seed:47,size:1200,resolution:33};
-const create = `api.createWorld({recipe:{version:1,seed:47,size:1200,constraints:[{region:'center',biome:'grassland'}],terrainProgram:api.terrainProgram()}});`;
+const create = `api.createWorld({recipe:{version:1,seed:47,size:1200,reliefProfile:'compact',heightScale:0.11,
+  constraints:[{region:'center',biome:'grassland'}],landforms:[{center:[300,90],radius:[180,130],height:12}],
+  terrainBrushes:[{id:'facility-pad',mode:'flatten',region:{kind:'circle',center:[400,90],radius:20},height:16,strength:1,feather:4}]}});`;
 const asset: MapAsset = {id:'standalone-equipment',name:'缆车站',prompt:'cable car station',tags:['equipment'],
   modelJson:{nodes:[]},colliderPlan:{version:1,boxes:[],sourceMeshCount:0,candidateCount:0,fallbackUsed:true},
   mode:'voxel',createdAt:1,updatedAt:1};
 
 describe('new worlds in the ongoing design execution', () => {
   beforeEach(() => vi.clearAllMocks());
-  it('creates a larger world from authored terrain, exposes new bounds, and places a standalone facility on it', async () => {
+  it('creates a larger world from an authored recipe, exposes new bounds, and places a standalone facility on it', async () => {
     const observations: MapDesignToolObservation[] = [];
     const map = baseMap();
-    const result = await executeMapDesignProgram({baseMap:map,assets:[asset],maxNewAssets:0,terrainProgram,
+    const result = await executeMapDesignProgram({baseMap:map,assets:[asset],maxNewAssets:0,
       onToolObservation:item=>observations.push(item),code:`function plan(api){${create}
       const p=[400,90]; api.report('actual bounds',api.bounds);api.environmentSample(p);
       api.place({assetId:'standalone-equipment',name:'缆车站',position:p,dimensions:[12,9,10]});}`});
@@ -37,8 +37,7 @@ describe('new worlds in the ongoing design execution', () => {
     expect(sampleTerrainHeight(draft,400,90)).toBeCloseTo(16);
     expect(map.world).toBeUndefined();
     expect(observations.find(item=>item.tool==='report')?.result).toMatchObject({minX:-600,maxX:600});
-    expect(observations.find(item=>item.tool==='terrainProgram')?.result).toMatchObject({terrainRevision:1,
-      observations:[{terrainRevision:1,points:[[0,0]]}]});
+    expect(draft.world!.bundle.plan.recipe.terrainProgram).toBeUndefined();
     expect((observations.find(item=>item.tool==='environmentSample')?.result as {height:number}).height).toBeCloseTo(16);
     expect(mocks.llmChat).not.toHaveBeenCalled();
   });
@@ -58,7 +57,7 @@ describe('new worlds in the ongoing design execution', () => {
 
   it('replays a new world with generated ecology and separate equipment, retaining actual asset bindings', async () => {
     const createAsset=vi.fn().mockResolvedValue(asset), observations:MapDesignToolObservation[]=[];
-    const result=await executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:1,createAsset,terrainProgram,
+    const result=await executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:1,createAsset,
       onToolObservation:item=>observations.push(item),code:`function plan(api){
       const key=api.requireAsset({key:'station',name:'缆车站',prompt:'A standalone cable car station',dimensions:[12,9,10],role:'structure'});
       ${create} api.editWorld(w=>{w.assets=[{key:'station',assetId:api.asset(key),role:'landmark'}];});
@@ -71,13 +70,13 @@ describe('new worlds in the ongoing design execution', () => {
     expect(mocks.llmChat).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid world replacement and terrain coordinate contexts without losing the base', async () => {
-    const initial=await executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:0,terrainProgram,code:`function plan(api){${create}}`});
+  it('rejects invalid world replacement and recipe sizes without losing the base', async () => {
+    const initial=await executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:0,code:`function plan(api){${create}}`});
     const existing=applyMapOperations(baseMap(),initial.operations);
-    await expect(executeMapDesignProgram({baseMap:existing,assets:[],maxNewAssets:0,terrainProgram,
+    await expect(executeMapDesignProgram({baseMap:existing,assets:[],maxNewAssets:0,
       code:`function plan(api){${create}}`})).rejects.toThrow('map_code_world_already_exists');
-    await expect(executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:0,terrainProgram,
-      code:`function plan(api){${create.replace('size:1200','size:600')}}`})).rejects.toThrow('map_code_terrain_program_context_mismatch');
+    await expect(executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:0,
+      code:`function plan(api){${create.replace('size:1200','size:499')}}`})).rejects.toThrow('无效世界配方');
     expect(existing.world!.bundle.plan.recipe.size).toBe(1200);
   });
 
@@ -96,15 +95,6 @@ describe('new worlds in the ongoing design execution', () => {
   it.each(['{invalid:NaN}', '{invalid:()=>1}', '(()=>{const x={};x.x=x;return x;})()'])('rejects non-JSON authored reports %s', async value => {
     await expect(executeMapDesignProgram({baseMap:baseMap(),assets:[],maxNewAssets:0,
       code:`function plan(api){api.report('bad',${value});}`})).rejects.toThrow('invalid_map_code_report_json');
-  });
-
-  it('reuses compiled fields across replay and checks cancellation and explicit precision', async () => {
-    const first=await compileMapDesignTerrain(terrainProgram,1), second=await compileMapDesignTerrain(terrainProgram,2);
-    expect(second).toBe(first);
-    expect(first.field.resolution).toBe(33);
-    const controller=new AbortController();controller.abort();
-    await expect(compileMapDesignTerrain(terrainProgram,1,controller.signal)).rejects.toThrow();
-    await expect(compileMapDesignTerrain({...terrainProgram,resolution:514},1)).rejects.toThrow('terrain_program_resolution_out_of_budget');
   });
 
   it('inherits the same appearance after a commit and lets one explicit declaration replace it for all new assets', async () => {

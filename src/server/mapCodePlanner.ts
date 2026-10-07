@@ -104,7 +104,7 @@ import { runAssetGenerationPool, type AssetTaskReporter } from './assetGeneratio
 import type { AssetGenerationRequest } from './mapAi';
 import { normalizeSceneAppearancePlan, SCENE_APPEARANCE_CONTRACT, type SceneAppearancePlan } from '../shared/sceneAppearance';
 import type {MapDesignToolObservation} from '../shared/mapDesignFeedback';
-import type {CompiledMapDesignTerrain} from './mapDesignWorld';
+import {assertDesignRecipeTerrain} from './mapDesignWorld';
 import {mapCodeObservedApi, validateMapCodeReport} from './mapCodeObservations';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
@@ -195,7 +195,7 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   /** Enable only the four documented local spatial reads for continuous design sessions. */
   spatialObservationApis?: boolean;
   appearancePlan?: SceneAppearancePlan;
-  compiledTerrain?: CompiledMapDesignTerrain;
+  worldTerrainPolicy?: 'recipe';
   onToolObservation?: (observation: MapDesignToolObservation) => void;
   apiBase?: string;
   provider?: ChatProvider;
@@ -600,7 +600,7 @@ interface CodeAssetRequirementInput {
 interface CodeExecutionOptions {
   spatialObservationApis?: boolean;
   appearancePlan?: SceneAppearancePlan;
-  compiledTerrain?: CompiledMapDesignTerrain;
+  worldTerrainPolicy?: 'recipe';
   onToolObservation?: (observation: MapDesignToolObservation) => void;
   stablePlacementIds?: boolean;
   worldEditPolicy?: 'diagnostic';
@@ -638,7 +638,7 @@ interface CodeExecutionIssue {
 
 interface MapCodeReplayContext {
   spatialObservationApis?: boolean;
-  compiledTerrain?: CompiledMapDesignTerrain;
+  worldTerrainPolicy?: 'recipe';
   onToolObservation?: (observation: MapDesignToolObservation) => void;
   stablePlacementIds?: boolean;
   worldEditPolicy?: 'diagnostic';
@@ -895,7 +895,7 @@ export async function generateMapCodeSuggestion(
     spatialObservationApis: options.spatialObservationApis,
     stablePlacementIds: options.stablePlacementIds,
     worldEditPolicy: options.worldEditPolicy,
-    compiledTerrain: options.compiledTerrain,
+    worldTerrainPolicy: options.worldTerrainPolicy,
     onToolObservation: options.onToolObservation,
     mapId: map.id,
     mapVersion: map.version,
@@ -1003,7 +1003,7 @@ async function adaptMapCodeToGeneratedAssets(
       legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       worldEditPolicy: options.worldEditPolicy,
-      compiledTerrain: options.compiledTerrain,
+      worldTerrainPolicy: options.worldTerrainPolicy,
       onToolObservation: options.onToolObservation,
       appearancePlan: options.appearancePlan,
       executionTimeoutMs: clampInteger(
@@ -1040,7 +1040,7 @@ async function adaptMapCodeToGeneratedAssets(
       legacyApis: options.legacyApis,
       spatialPolicy: options.spatialPolicy,
       worldEditPolicy: options.worldEditPolicy,
-      compiledTerrain: options.compiledTerrain,
+      worldTerrainPolicy: options.worldTerrainPolicy,
       onToolObservation: options.onToolObservation,
       appearancePlan: options.appearancePlan,
       executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? MAP_CODE_FINAL_TIMEOUT_MS, 1, MAP_CODE_FINAL_TIMEOUT_MS),
@@ -1147,7 +1147,7 @@ function executeFinalMapCodeReplay(
     spatialObservationApis: context.spatialObservationApis,
     stablePlacementIds: context.stablePlacementIds,
     worldEditPolicy: context.worldEditPolicy,
-    compiledTerrain: context.compiledTerrain,
+    worldTerrainPolicy: context.worldTerrainPolicy,
     onToolObservation: context.onToolObservation,
     appearancePlan: context.appearancePlan,
     refineScope: context.refineScope,
@@ -1573,10 +1573,7 @@ function executeMapCodePlanInternal(
       || !Array.isArray(candidate.assets)) throw new Error('invalid_map_code_world_edit');
     const plan = validateWorldPlan({...candidate.bundle.plan, revision,
       ...(options.worldEditPolicy ? {generationPolicy:options.worldEditPolicy} : {})});
-    if (options.compiledTerrain && plan.recipe.terrainProgram?.source === options.compiledTerrain.field.source
-      && (plan.recipe.size !== options.compiledTerrain.size || plan.recipe.seed !== options.compiledTerrain.seed)) {
-      throw new Error('map_code_terrain_program_context_mismatch');
-    }
+    if (options.worldTerrainPolicy === 'recipe') assertDesignRecipeTerrain(plan.recipe, map.world?.bundle.plan.recipe);
     const worldKey = worldPlanKey(plan);
     const originalBindings = candidate.assets.filter(binding =>
       typeof binding?.assetId !== 'string' || !isCodeMissingAsset(binding.assetId));
@@ -1609,11 +1606,6 @@ function executeMapCodePlanInternal(
     PHI: (1 + Math.sqrt(5)) / 2,
     get seed() { return currentEnvironmentMap().seed; },
     get bounds() { return Object.freeze(getMapBounds(currentEnvironmentMap())); },
-    terrainProgram() {
-      record('terrainProgram');
-      if (!options.compiledTerrain) throw new Error('map_code_terrain_program_unavailable');
-      return structuredClone(options.compiledTerrain.field);
-    },
     createWorld(input: unknown): void {
       record('createWorld');
       if (map.sceneMode !== 'outdoor') throw new Error('world_requires_outdoor_map');
@@ -4640,7 +4632,7 @@ function runFirstPassMapCodeDiscovery(
       spatialObservationApis: options.spatialObservationApis,
       stablePlacementIds: options.stablePlacementIds,
       worldEditPolicy: options.worldEditPolicy,
-      compiledTerrain: options.compiledTerrain,
+      worldTerrainPolicy: options.worldTerrainPolicy,
       onToolObservation: options.onToolObservation,
       appearancePlan: options.appearancePlan,
       refineScope: options.mode === 'refine' ? options : undefined,
@@ -4700,7 +4692,7 @@ async function discoverMapCodeWithRepairs(
         legacyApis: options.legacyApis,
         spatialPolicy: options.spatialPolicy,
         worldEditPolicy: options.worldEditPolicy,
-        compiledTerrain: options.compiledTerrain,
+        worldTerrainPolicy: options.worldTerrainPolicy,
         onToolObservation: options.onToolObservation,
         appearancePlan: options.appearancePlan,
         executionTimeoutMs: clampInteger(

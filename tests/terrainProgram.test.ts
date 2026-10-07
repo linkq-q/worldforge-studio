@@ -5,6 +5,31 @@ import { sampleTerrainProgramField, validateTerrainProgramField } from '../src/s
 
 const request = {seed: 47, size: 500, resolution: 65};
 describe('terrain programs', () => {
+  it('replaces earlier noise where the fixed ridge profile wins and preserves explicitly added later detail', async () => {
+    const points: Array<[number, number]> = [[-31.25, -15.625], [31.25, -15.625], [-31.25, 15.625], [31.25, 15.625]];
+    const result = await compileTerrainProgram(`function generate(t) {
+      const points = ${JSON.stringify(points)};
+      const detail = (x,z) => 3 * t.noise(x+17,z+23,32,2);
+      t.map((x,z) => 10 + detail(x,z));
+      t.inspect('before-ridge', points);
+      t.ridge([[0,-250,80,100],[0,250,80,100]], {base:5});
+      t.inspect('after-ridge', points);
+      t.map((x,z,h) => h + detail(x,z));
+      t.inspect('after-detail', points);
+    }`, request);
+    const [before, ridge, detailed] = result.observations;
+    const profile = 5 + 75 * (1 - 31.25 / 100) ** 1.6;
+    expect(new Set(before.samples).size).toBeGreaterThan(1);
+    expect(result.observations.map(report => report.terrainRevision)).toEqual([1, 2, 3]);
+    const world = createWorldSampler({version:1, seed:47, size:500, reliefProfile:'compact',
+      constraints:[{region:'center',biome:'mountains'}], terrainProgram:result});
+    for (let index = 0; index < points.length; index++) {
+      expect(ridge.samples[index]).toBeCloseTo(profile, 10);
+      expect(detailed.samples[index]).toBeCloseTo(profile + before.samples[index] - 10, 10);
+      expect(world(...points[index]).height).toBeCloseTo(detailed.samples[index], 10);
+    }
+  });
+
   it('retains inspection coordinates and actual terrain revisions with immutable report snapshots', async () => {
     const result = await compileTerrainProgram(`function generate(t) {
       const points = [[-100,0],[100,0]];

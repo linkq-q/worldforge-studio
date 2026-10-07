@@ -75,21 +75,34 @@ export class MapDesignFeedbackCollector {
       if (item.tool === 'report') explicit.push(index);
     });
     const allGroups = [...groups.values()];
+    // Return complete small measurements, not the opening characters of their JSON.
+    // A large fact has an explicit address; its partial prefix is not useful evidence.
+    const recordSummary = (index: number, characterLimit: number) => {
+      const observation = observations[index], totalCharacters = JSON.stringify(observation).length;
+      const read = { kind: 'feedback', ref: identity.ref, recordIndex: index, characterOffset: 0, characterLimit: 4000 };
+      return totalCharacters <= characterLimit
+        ? { index, observation, truncated: false, totalCharacters, read }
+        : { index, phase: observation.phase, step: observation.step, tool: observation.tool,
+          truncated: true, totalCharacters, read };
+    };
     const summary = { ...identity, complete: !overflow, overflow, recordCount: observations.length,
       capturedBytes, budgets: { maxRecords: this.maxRecords, maxBytes: this.maxBytes },
-      explicitReportCount: explicit.length, reports: explicit.slice(-6).map(index => ({ index,
-        phase: observations[index].phase, step: observations[index].step, ...preview(observations[index], 550) })),
+      explicitReportCount: explicit.length, reports: explicit.slice(-6).map(index => recordSummary(index, 1500)),
       groups: allGroups.slice(0, 10).map(group => ({ ...group,
-        first: preview(observations[group.firstIndex], 180), last: preview(observations[group.lastIndex], 180) })),
-      summaryTruncated: explicit.length > 6 || allGroups.length > 10,
+        first: recordSummary(group.firstIndex, 1000), last: recordSummary(group.lastIndex, 1000) })),
+      summaryTruncated: false,
       read: { kind: 'feedback', ref: identity.ref, offset: 0, limit: 16 },
       limits: ['Discovery facts can use provisional assets. Only applied metadata binds the execution to a completed draft.',
-        'Preview text may end mid-JSON; read the reference for complete records. Non-finite automatic readings use explicit $nonFinite markers.'] };
+        'Groups contain their first and last records only. Read the reference for middle or large records; summaryTruncated includes those omissions. Non-finite automatic readings use explicit $nonFinite markers.'] };
     while (JSON.stringify(summary).length > 10_000 && (summary.groups.length || summary.reports.length)) {
       if (summary.groups.length) summary.groups.pop();
       else summary.reports.shift();
-      summary.summaryTruncated = true;
     }
+    const included = new Set<number>();
+    for (const entry of [...summary.reports, ...summary.groups.flatMap(group => [group.first, group.last])]) {
+      if (!entry.truncated) included.add(entry.index);
+    }
+    summary.summaryTruncated = included.size < observations.length;
     return summary;
   }
 }

@@ -21,12 +21,6 @@ export function mapCodeObservedApi<T extends object>(api: T, phase: MapDesignToo
           revision:world.bundle.plan.revision, size:world.bundle.plan.recipe.size, seed:world.bundle.plan.recipe.seed,
           note:'Full mutable copy remains inside execution. Use observe or report for bounded details.'}});
       }
-      if (emit && tool === 'terrainProgram') {
-        const field = result as {resolution:number;terrainRevision?:number;observations:unknown[]};
-        emit(structuredClone({phase, step: order, tool, args: [], result: {resolution:field.resolution,
-          terrainRevision:field.terrainRevision ?? null,
-          observations:field.observations, note:'Height array remains inside execution.'}}));
-      }
       return result;
     };
   }
