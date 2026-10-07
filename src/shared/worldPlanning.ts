@@ -1057,7 +1057,7 @@ function roadGradeAt(grade: RoadGrade, x: number, z: number): { distance: number
   return nearest;
 }
 function buildingLocal(building: TownBuilding, worldX: number, worldZ: number, centerX: number, centerZ: number): Point {
-  const angle = -(building.rotation ?? 0), c = Math.cos(angle), s = Math.sin(angle);
+  const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle);
   const dx = worldX - centerX, dz = worldZ - centerZ;
   return [dx * c - dz * s, dx * s + dz * c];
 }
@@ -1077,7 +1077,7 @@ function conformSampler(base: WorldSampler, plan: WorldPlan, patches: TownPatch[
       const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle);
       const samples: number[] = [];
       for (const lx of [-building.width / 2, 0, building.width / 2]) for (const lz of [-building.depth / 2, 0, building.depth / 2]) {
-        samples.push(shapedBase(centerX + lx * c - lz * s, centerZ + lx * s + lz * c).height);
+        samples.push(shapedBase(centerX + lx * c + lz * s, centerZ - lx * s + lz * c).height);
       }
       samples.sort((a, b) => a - b);
       pads.push({ building, x: centerX, z: centerZ, target: samples[Math.floor(samples.length / 2)] });
@@ -1213,7 +1213,7 @@ function validatePatchTerrain(plan: WorldPlan, town: TownIntent, patch: TownPatc
     const centerX = town.center[0] + building.x, centerZ = town.center[1] + building.z;
     const angle = building.rotation ?? 0, c = Math.cos(angle), s = Math.sin(angle), heights: number[] = [];
     for (const lx of [-building.width / 2, 0, building.width / 2]) for (const lz of [-building.depth / 2, 0, building.depth / 2]) {
-      const point = base(centerX + lx * c - lz * s, centerZ + lx * s + lz * c);
+      const point = base(centerX + lx * c + lz * s, centerZ - lx * s + lz * c);
       if (point.waterLevel !== null) fail('world_building_on_water');
       heights.push(point.height);
     }

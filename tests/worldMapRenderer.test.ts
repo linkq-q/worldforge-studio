@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
 import { buildMapGrassField } from '../src/client/mapGrassRenderer';
+import * as grassRenderer from '../src/client/mapGrassRenderer';
+import { worldBridgeDeck } from '../src/client/worldContent';
 import { getCollisionMeshBvhBuildStats, resetCollisionMeshBvhBuildStats } from '../src/client/mapMeshCollision';
 import { buildWorldWhiteboxOverlay, worldBuildPaintIntervals, worldCoastalSandWeight, worldGrassChunkBudget, worldGrassLayers, worldOceanAnchor, worldRoadSurfaceMaterial, worldRoadSurfaceStyle, worldTileSurfaceWeight, yieldWorldBuild } from '../src/client/worldMapRenderer';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
@@ -60,6 +62,111 @@ function sampleOceanFloor(
 }
 
 describe('main editor streamed world renderer', () => {
+  it.each([0, 0.2])('keeps streamed street surfaces on visible terrain through tile refinement (slope %s)', async (slope) => {
+    const roadBundle = validateWorldBundle({
+      plan: {
+        version: 1, id: 'street-grounding', revision: 1, prompt: 'street across small mounds',
+        generationPolicy: 'raw-first-call',
+        recipe: { version: 1, seed: 17, size: 500,
+          constraints: [{ region: 'center', biome: 'grassland' }],
+          terrainBrushes: [
+            { id: 'ground', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 400 }, height: 10 },
+            ...(slope ? [{ id: 'slope', mode: 'grade', region: { kind: 'path',
+              points: [[-200, 0], [200, 0]], width: 500 }, heights: [20, 100], feather: 0 }] : []),
+            ...(slope ? [] : [[25.5, 18.75], [62.5, 37.25]].map((center, index) => ({
+              id: `mound-${index}`, mode: 'raise', region: { kind: 'circle', center, radius: 1 }, amount: 1, feather: 1
+            })))
+          ] },
+        ecology: [], towns: [], roads: [{ id: 'street', name: 'Street',
+          points: [[12, 12], [80, 46]], curve: 'polyline', closed: false, width: 4, tags: ['settlement'] }, {
+          id: 'stone-edge', name: 'Stone edge', points: [[12, 16], [80, 50]], curve: 'polyline',
+          closed: false, width: 4, tags: ['working-waterfront'] }, {
+          id: 'hill-trail', name: 'Hill trail', points: [[15, 80], [80, 80]], curve: 'polyline',
+          closed: false, width: 2, tags: ['footpath'] }]
+      }, patches: []
+    });
+    const map = createEmptyMap();
+    map.world = { bundle: roadBundle, assets: [] };
+    map.box.size = [500, 4096, 500];
+    map.spawnPoints = [[30, 12, 20]];
+    const grassSpy = vi.spyOn(grassRenderer, 'buildMapGrassField');
+    const rendered = await buildEditableMapGroup(map);
+    const assertRoadClearance = () => {
+      rendered.group.updateMatrixWorld(true);
+      const terrain: THREE.Mesh[] = [], streets: THREE.Mesh[] = [], soilTrails: THREE.Mesh[] = [];
+      rendered.group.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || !object.visible) return;
+        if (object.name === 'terrain') terrain.push(object);
+        if (object.name.startsWith('brick-road-surface:world-road:street:')) streets.push(object);
+        if (object.name.startsWith('road-surface:world-road:hill-trail:')) soilTrails.push(object);
+      });
+      expect(streets.length).toBeGreaterThan(0);
+      const tileSize = 500 / Math.sqrt(terrain.length);
+      const matrix = new THREE.Matrix4();
+      let stoneCount = 0;
+      rendered.group.traverse(object => {
+        if (!(object instanceof THREE.InstancedMesh) || object.name !== 'road-bodies:cobblestone') return;
+        stoneCount += object.count;
+        for (let index = 0; index < object.count; index += 1) {
+          object.getMatrixAt(index, matrix);
+          expect(Math.abs(matrix.elements[12])).toBeLessThanOrEqual(tileSize / 2);
+          expect(Math.abs(matrix.elements[14])).toBeLessThanOrEqual(tileSize / 2);
+        }
+      });
+      expect(stoneCount).toBeGreaterThan(0);
+      const ray = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
+      let minimumClearance = Infinity;
+      let maximumClearance = -Infinity;
+      let minimumAt: number[] = [];
+      for (let x = 22; x <= 67; x += 0.1) for (const across of [-1.5, 0, 1.5]) {
+        ray.ray.origin.set(x - across / Math.sqrt(5), 100, 6 + x / 2 + across * 2 / Math.sqrt(5));
+        const ground = ray.intersectObjects(terrain, false)[0];
+        const street = ray.intersectObjects(streets, false)[0];
+        expect(ground).toBeDefined();
+        expect(street).toBeDefined();
+        if (street.point.y - ground.point.y < minimumClearance) minimumAt = [ray.ray.origin.x, ray.ray.origin.z];
+        minimumClearance = Math.min(minimumClearance, street.point.y - ground.point.y);
+        maximumClearance = Math.max(maximumClearance, street.point.y - ground.point.y);
+      }
+      expect(minimumClearance, JSON.stringify(minimumAt)).toBeGreaterThan(0);
+      if (slope) expect(maximumClearance).toBeLessThan(0.05);
+      for (const x of [20, 40, 62.4, 62.6, 70]) {
+        ray.ray.origin.set(x, 100, 80);
+        const ground = ray.intersectObjects(terrain, false)[0];
+        const trail = ray.intersectObjects(soilTrails, false)[0];
+        expect(trail).toBeDefined();
+        expect(trail.point.y - ground.point.y).toBeGreaterThan(0);
+        expect(trail.point.y - ground.point.y).toBeLessThan(0.05);
+      }
+    };
+    try {
+      assertRoadClearance();
+      await waitFor(() => rendered.group.children.filter(child => child.name.startsWith('world-tile:')).length === 64
+        && rendered.getDebugStats().streaming?.pendingTiles === 0, 1_000);
+      assertRoadClearance();
+      const content = grassSpy.mock.calls.map(([grassMap]) => grassMap)
+        .find(grassMap => grassMap.id.endsWith(':content:0:0'))!;
+      expect(content).toBeDefined();
+      expect(content.grassLayers[0].densities[5 * 65 + 5]).toBe(0);
+      expect(content.grassLayers[0].densities[25 * 65 + 25]).toBeGreaterThan(0);
+      expect(content.visualSemantics.zones.some(zone => zone.tags.includes('soil'))).toBe(true);
+      const terrainMaps = grassSpy.mock.calls.map(([grassMap]) => grassMap)
+        .filter(grassMap => grassMap.id.includes(':world:'));
+      expect(terrainMaps.length).toBeGreaterThan(0);
+      expect(terrainMaps.flatMap(tileMap => tileMap.visualSemantics.zones)
+        .some(zone => zone.material === 'compacted-earth')).toBe(true);
+      const soilSurfaces: THREE.Mesh[] = [];
+      rendered.group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.name.startsWith('road-surface:world-road:hill-trail:')) soilSurfaces.push(object);
+      });
+      expect(soilSurfaces.length).toBeGreaterThan(0);
+      expect((soilSurfaces[0].material as THREE.MeshStandardMaterial).color.getHexString()).toBe('967c60');
+    } finally {
+      rendered.dispose();
+      grassSpy.mockRestore();
+    }
+  }, 30_000);
+
   it('renders whitebox semantic paths and anchors above sampled terrain', () => {
     const plan = structuredClone(smallBundle.plan);
     plan.whitebox = true;
@@ -827,6 +934,63 @@ describe('main editor streamed world renderer', () => {
         [0, 8, 0], [0, -1, 0], 10, new Set(['scene'])
       );
       expect(hit?.meshId).toContain('world-bridge:island-bridge');
+      const groundSurfaces: string[] = [];
+      rendered.group.traverse(object => {
+        if (object.name.includes('road-surface:world-road:island-bridge:')
+          || object.name === 'road-bodies:cobblestone') groundSurfaces.push(object.name);
+      });
+      expect(groundSurfaces).toEqual([]);
+    } finally {
+      rendered.dispose();
+    }
+  }, 30_000);
+
+  it('aligns sloped bridge slab corners with both authored bank tops at arbitrary headings', async () => {
+    const previewBundle = structuredClone(smallBundle);
+    previewBundle.plan.recipe.terrainBrushes = [
+      { id: 'flat', mode: 'flatten', region: { kind: 'circle', center: [0, 0], radius: 400 }, height: 40, feather: 0 },
+      { id: 'slope', mode: 'grade', region: { kind: 'path', points: [[-200, -200], [200, 200]], width: 500 },
+        heights: [10, 70], feather: 0 }
+    ];
+    previewBundle.plan.recipe.waterBodies = [{ id: 'bridge-lake', type: 'lake',
+      region: { kind: 'circle', center: [0, 0], radius: 10 }, levels: [30], depth: 3 }];
+    previewBundle.plan.roads = [[1, 0], [0, 1], [0.8, 0.6], [-0.6, 0.8]].flatMap(([dx, dz], heading) =>
+      [-1, 1].map(sign => ({ id: `sloped-bridge-${heading}-${sign}`, name: 'Sloped bridge',
+        points: [[-dx * 30 * sign, -dz * 30 * sign], [dx * 30 * sign, dz * 30 * sign]] as [number, number][],
+        width: 4, curve: 'polyline' as const, closed: false, tags: ['walking-bridge'] })));
+    const map = createEmptyMap();
+    map.world = { bundle: previewBundle, assets: [] };
+    map.box.size = [500, 4096, 500];
+    map.spawnPoints = [[0, 35, 0]];
+    const sample = createPlannedWorldSampler(previewBundle.plan, previewBundle.patches);
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      await waitFor(() => previewBundle.plan.roads.every(road => rendered.objectGroups.has(`world-bridge:${road.id}`)));
+      rendered.group.updateMatrixWorld(true);
+      let maximumCornerError = 0, cornersOutsideCollision = 0;
+      for (const road of previewBundle.plan.roads) {
+        const deck = worldBridgeDeck(road, sample)!;
+        expect(deck).toBeDefined();
+        const bridge = rendered.objectGroups.get(`world-bridge:${road.id}`)!;
+        const dx = deck.to[0] - deck.from[0], dz = deck.to[1] - deck.from[1];
+        const forward = new THREE.Vector3(dx, deck.toHeight - deck.fromHeight, dz).normalize();
+        const right = new THREE.Vector3(dz, 0, -dx).normalize();
+        const up = forward.clone().cross(right);
+        const collider = rendered.getCollisionWorld!()!.instances.find(instance => instance.id.endsWith(`map:world-bridge:${road.id}`));
+        expect(collider).toBeDefined();
+        const bounds = collider!.bounds.clone().expandByScalar(1e-5);
+        for (const x of [-0.5, 0.5]) for (const y of [0, 1]) for (const z of [-0.5, 0.5]) {
+          const endpoint = z < 0 ? deck.from : deck.to;
+          const height = z < 0 ? deck.fromHeight : deck.toHeight;
+          const expected = new THREE.Vector3(endpoint[0], height, endpoint[1])
+            .addScaledVector(right, x * deck.width).addScaledVector(up, (y - 1) * 0.3);
+          const actual = bridge.localToWorld(new THREE.Vector3(x, y, z));
+          maximumCornerError = Math.max(maximumCornerError, actual.distanceTo(expected));
+          if (!bounds.containsPoint(actual)) cornersOutsideCollision++;
+        }
+      }
+      expect(maximumCornerError, JSON.stringify({ cornersOutsideCollision })).toBeLessThan(1e-5);
+      expect(cornersOutsideCollision).toBe(0);
     } finally {
       rendered.dispose();
     }

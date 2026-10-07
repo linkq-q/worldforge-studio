@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { Vector3 } from 'three';
 import type { MapGuide } from '../src/shared/mapGuide';
 import { createWorldSampler, type WorldRecipe } from '../src/shared/worldTerrain';
 import {
@@ -618,6 +619,34 @@ describe('organic settlement integration',()=>{
     expect(sample(bx+4,bz+4).height).toBeCloseTo(h,10);
     expect(sample(town.center[0]+100,5).height).toBeCloseTo(sample(town.center[0]+100,-5).height,10);
     expect(sample(town.center[0]+150,150)).toEqual(base(town.center[0]+150,150));
+  });
+  function rotatedPadFixture(height:(x:number,z:number)=>number,rotation:number):{plan:WorldPlan;local:TownPatch} {
+    const recipe:WorldRecipe={version:1,seed:42,size:500,constraints:[{region:'center',biome:'grassland'}],
+      terrainProgram:{version:1,source:'Analytic grounding test surface',resolution:33,observations:[],
+        heights:Array.from({length:33*33},(_,i)=>height(-250+i%33*500/32,-250+Math.floor(i/33)*500/32))}};
+    const plan:WorldPlan={version:1,id:'rotated-pad-world',revision:1,prompt:'A rotated house on local terrain',recipe,
+      ecology:[],roads:[],towns:[{id:'town',name:'Town',prompt:'Town',center:[0,0],radius:50,blend:40,
+        foundation:height(0,0),terrainMode:'conform',ports:[]}]};
+    return {plan,local:{townId:'town',worldKey:worldPlanKey(plan),summary:'One rotated rectangular house',streets:[],
+      buildings:[{id:'house',x:0,z:0,width:24,depth:4,height:6,use:'home',rotation}]}};
+  }
+  it.each([[Math.PI/4,9.86],[-Math.PI/4,10.14],[0,10]])(
+    'grounds the rendered rectangle at yaw %s on its own median footprint height', (rotation,target)=>{
+      const {plan,local}=rotatedPadFixture((x,z)=>10+.002*x*z,rotation);
+      const sample=createPlannedWorldSampler(plan,[local]);
+      // The analytic saddle gives these medians by hand. Three.js supplies the
+      // actual rendered footprint, independently of the planning transforms.
+      for(const x of [-12,0,12])for(const z of [-2,0,2]){
+        const corner=new Vector3(x,0,z).applyAxisAngle(new Vector3(0,1,0),rotation);
+        expect(sample(corner.x,corner.z).height).toBeCloseTo(target,10);
+      }
+      expect(sample(30,30).height).toBeCloseTo(11.8,10);
+    });
+  it('rejects earthwork exceeding the budget under the rendered rotated footprint',()=>{
+    const {plan,local}=rotatedPadFixture((x,z)=>10+.15*(x-z),Math.PI/4);
+    // The 24m axis runs along this slope: its corners differ by 2.55m from
+    // the center, while the mirrored footprint would incorrectly see 0.42m.
+    expect(()=>validateTownPatch(plan,local)).toThrow('world_building_earthwork_budget');
   });
   it('keeps a short street playable where its centerline leaves another street endpoint cap',()=>{
     const recipe:WorldRecipe={version:1,seed:2309,size:1600,heightScale:.12,constraints:[
