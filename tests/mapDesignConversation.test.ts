@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MapDesignSessionClient, renderDesignMessages, renderDesignAppearance } from '../src/client/mapDesignConversation';
+import { MapDesignSessionClient, renderDesignMessages, renderDesignAppearance, designGenerationStatus } from '../src/client/mapDesignConversation';
 import type { MapDesignDraft, MapDesignSessionView } from '../src/shared/mapDesignSession';
 import { createEmptyMap } from '../src/shared/map';
 
@@ -25,6 +25,15 @@ function setup(request: (path: string, init?: RequestInit) => Promise<unknown>, 
 }
 
 describe('persistent map design conversation client', () => {
+  it('distinguishes a whole planning task and asset batch from internal calls', () => {
+    const text=designGenerationStatus(session({generationCounts:{planning:1,assets:1},generationCallLimit:2,
+      modelCalls:12,assetCalls:30,paidRequests:42}));
+    expect(text).toContain('整轮规划 1 次');
+    expect(text).toContain('资产整批 1 次');
+    expect(text).toContain('生成次数 2/2');
+    expect(text).toContain('内部 GPT 往返 12 次');
+    expect(text).not.toContain('付费请求');
+  });
   it('explains an oversized asset library without sending or silently truncating it', async () => {
     const request=vi.fn(async () => ({sessions:[]}));
     const {client}=setup(request);

@@ -76,7 +76,7 @@ import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
 import { distanceToWater, isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
 import { createMapStreetGrid, mapGuidePolyline, sampleMapGuide, type MapPlannedBlock } from '../shared/mapGuide';
 import { createUrbanLayout, type UrbanLayoutOptions } from '../shared/mapUrbanLayout';
-import { validateWorldMapState, type WorldMapState } from '../shared/worldMapState';
+import { validateWorldMapState, worldMapTerrainContext, type WorldMapState } from '../shared/worldMapState';
 import { diagnoseWorldBundle, validateWorldPlan, worldPlanKey } from '../shared/worldPlanning';
 import { createWaterfrontUrbanLayout, type WaterfrontUrbanLayoutOptions } from '../shared/mapWaterfrontLayout';
 import {
@@ -192,6 +192,8 @@ type CodeAssetRole = 'structure' | 'environment' | 'functional' | 'decor';
 type CodeSceneIntent = 'natural' | 'authored';
 
 export interface MapCodePlannerOptions extends MapRefineScope {
+  /** Main-mode planning with explicit world, feedback and base-edit tools for an ongoing conversation. */
+  continuousSession?: boolean;
   /** Enable only the four documented local spatial reads for continuous design sessions. */
   spatialObservationApis?: boolean;
   appearancePlan?: SceneAppearancePlan;
@@ -598,6 +600,7 @@ interface CodeAssetRequirementInput {
 }
 
 interface CodeExecutionOptions {
+  continuousSession?: boolean;
   spatialObservationApis?: boolean;
   appearancePlan?: SceneAppearancePlan;
   worldTerrainPolicy?: 'recipe';
@@ -637,6 +640,7 @@ interface CodeExecutionIssue {
 }
 
 interface MapCodeReplayContext {
+  continuousSession?: boolean;
   spatialObservationApis?: boolean;
   worldTerrainPolicy?: 'recipe';
   onToolObservation?: (observation: MapDesignToolObservation) => void;
@@ -892,6 +896,7 @@ export async function generateMapCodeSuggestion(
   });
   const failedTasks = tasks.filter((_task, index) => generatedResults[index] === null);
   const replayContext: Omit<MapCodeReplayContext, 'expiresAt'> = {
+    continuousSession: options.continuousSession,
     spatialObservationApis: options.spatialObservationApis,
     stablePlacementIds: options.stablePlacementIds,
     worldEditPolicy: options.worldEditPolicy,
@@ -992,6 +997,7 @@ async function adaptMapCodeToGeneratedAssets(
     }), true);
     if (candidateCode === code) return { code, discovery };
     const candidateDiscovery = runMapCodePlan(candidateCode, map, assets, {
+      continuousSession: options.continuousSession,
       spatialObservationApis: options.spatialObservationApis,
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'discovery',
@@ -1029,6 +1035,7 @@ async function adaptMapCodeToGeneratedAssets(
       )].join(',')}`);
     }
     const candidateFinal = runMapCodePlan(candidateCode, map, assets, {
+      continuousSession: options.continuousSession,
       spatialObservationApis: options.spatialObservationApis,
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'final',
@@ -1144,6 +1151,7 @@ function executeFinalMapCodeReplay(
   executionTimeoutMs: number
 ): MapAiSuggestion {
   const final = runMapCodePlan(context.code, context.planningMap, context.assets, {
+    continuousSession: context.continuousSession,
     spatialObservationApis: context.spatialObservationApis,
     stablePlacementIds: context.stablePlacementIds,
     worldEditPolicy: context.worldEditPolicy,
@@ -1290,8 +1298,8 @@ function executeMapCodePlanInternal(
     && options.scope === 'scene';
   const mainMode = options.promptMode === 'main'
     && map.sceneMode === 'outdoor'
-    && (options.requestMode ?? 'generate') === 'generate'
-    && options.scope === 'scene';
+    && (options.continuousSession || ((options.requestMode ?? 'generate') === 'generate'
+      && options.scope === 'scene'));
 
   const placements: PlacementIntent[] = [];
   const sceneOperations: MapOperation[] = [];
@@ -1332,6 +1340,14 @@ function executeMapCodePlanInternal(
       cachedEnvironmentOperationCount = sceneOperations.length;
     }
     return cachedEnvironmentMap ?? map;
+  };
+  // Tool-only view of the actual prepared world water; never copy it into persisted map overlays.
+  const currentWaterMap = (): EditableMap => {
+    const environmentMap = currentEnvironmentMap();
+    if (!environmentMap.world) return environmentMap;
+    const prepared = worldMapTerrainContext(environmentMap.world).waterBodies.map(water => water.mapWater);
+    return {...environmentMap, waterBodies:[...new Map([...prepared, ...environmentMap.waterBodies]
+      .map(water => [water.id, water])).values()]};
   };
   const existingVisualAabbs = (): MapObjectAabb[] => (
     cachedExistingVisualAabbs ??= getMapObjectVisualAabbs(map)
@@ -1636,7 +1652,7 @@ function executeMapCodePlanInternal(
     urbanLayout(options: UrbanLayoutOptions | WaterfrontUrbanLayoutOptions = {}) {
       record('urbanLayout');
       if (options.pattern === 'waterfront') {
-        const environmentMap = currentEnvironmentMap();
+        const environmentMap = currentWaterMap();
         const waterId = resolveWaterId(String(options.waterId ?? ''));
         const water = environmentMap.waterBodies.find(candidate => candidate.id === waterId);
         if (!water) throw new Error(`unknown_map_code_water:${waterId}`);
@@ -1743,12 +1759,12 @@ function executeMapCodePlanInternal(
     },
     noChange(reason = '当前地图已满足调整要求'): void {
       record('noChange');
-      if (requestMode !== 'refine') throw new Error('map_code_no_change_outside_refine');
+      if (requestMode !== 'refine' && !options.continuousSession) throw new Error('map_code_no_change_outside_refine');
       noChangeReason = cleanText(reason, 160);
     },
     move(input: MoveObjectInput): string {
       record('move');
-      if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
+      if (requestMode !== 'refine' && !options.continuousSession) throw new Error('map_code_refine_api_outside_refine');
       const objectId = String(input?.objectId ?? '').trim();
       const workingMap = currentEnvironmentMap();
       const object = workingMap.objects.find((item) => item.id === objectId);
@@ -1769,7 +1785,7 @@ function executeMapCodePlanInternal(
     },
     removeObject(objectIdValue: string): string {
       record('removeObject');
-      if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
+      if (requestMode !== 'refine' && !options.continuousSession) throw new Error('map_code_refine_api_outside_refine');
       const objectId = String(objectIdValue ?? '').trim();
       const workingMap = currentEnvironmentMap();
       const object = workingMap.objects.find((item) => item.id === objectId);
@@ -1780,7 +1796,7 @@ function executeMapCodePlanInternal(
     },
     updateWater(input: Record<string, unknown>): string {
       record('updateWater');
-      if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
+      if (requestMode !== 'refine' && !options.continuousSession) throw new Error('map_code_refine_api_outside_refine');
       const form = codeObject(input, 'invalid_map_code_water_update');
       const waterId = resolveWaterId(String(form.waterId ?? form.id ?? ''));
       const workingMap = currentEnvironmentMap();
@@ -1802,7 +1818,7 @@ function executeMapCodePlanInternal(
     },
     removeWater(waterIdValue: string): string {
       record('removeWater');
-      if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
+      if (requestMode !== 'refine' && !options.continuousSession) throw new Error('map_code_refine_api_outside_refine');
       const waterId = resolveWaterId(String(waterIdValue ?? ''));
       const workingMap = currentEnvironmentMap();
       if (!workingMap.waterBodies.some((item) => item.id === waterId)) throw new Error(`unknown_map_code_water:${waterId}`);
@@ -2583,7 +2599,7 @@ function executeMapCodePlanInternal(
       record('waterPoint');
       const waterId = resolveWaterId(String(waterIdValue ?? ''));
       const point = point2(pointValue);
-      const environmentMap = currentEnvironmentMap();
+      const environmentMap = currentWaterMap();
       const water = environmentMap.waterBodies.find((candidate) => candidate.id === waterId);
       if (!water) throw new Error(`unknown_map_code_water:${waterId}`);
       if (!isPointInsideWaterBody(water, point[0], point[1], environmentMap)) {
@@ -3127,7 +3143,7 @@ function executeMapCodePlanInternal(
       let replacementAssetId: string | undefined;
       let replacementObjectId: string | undefined;
       if (input.replaceObjectId !== undefined) {
-        if (requestMode !== 'refine') throw new Error('map_code_bridge_replace_outside_refine');
+        if (requestMode !== 'refine' && !options.continuousSession) throw new Error('map_code_bridge_replace_outside_refine');
         const objectId = String(input.replaceObjectId).trim();
         const workingMap = currentEnvironmentMap();
         const object = workingMap.objects.find((item) => item.id === objectId);
@@ -3141,7 +3157,7 @@ function executeMapCodePlanInternal(
         replacementObjectId = objectId;
       }
       const waterId = resolveWaterId(String(input.waterId ?? ''));
-      const environmentMap = currentEnvironmentMap();
+      const environmentMap = currentWaterMap();
       const water = environmentMap.waterBodies.find((item) => item.id === waterId);
       if (!water) {
         reportIssue({
@@ -3407,6 +3423,10 @@ function executeMapCodePlanInternal(
 
   const exposedKeys = minimalMode ? new Set<string>(MINIMAL_MAP_CODE_API_KEYS)
     : mainMode ? new Set<string>(MAIN_MAP_CODE_API_KEYS) : null;
+  if (mainMode && options.continuousSession) {
+    for (const key of ['report', 'createWorld', 'worldState', 'editWorld', 'move', 'removeObject',
+      'updateWater', 'removeWater', 'noChange', 'waterPoint']) exposedKeys!.add(key);
+  }
   const spatialReadKeys = new Set(['assetSpace', 'sightline', 'passage', 'connectionGap']);
   const sandboxApi = mapCodeObservedApi(Object.defineProperties({}, Object.fromEntries(
     Object.entries(Object.getOwnPropertyDescriptors(api)).filter(([key]) =>
@@ -3748,7 +3768,7 @@ function executeMapCodePlanInternal(
     : [];
   operations.push(...clearanceOperations);
   recordGenerationTrace('layout.clearance', { operations: clearanceOperations });
-  if (map.sceneMode === 'outdoor' && ((requestMode === 'generate' && scope === 'scene') || spawnRequest)) {
+  if (map.sceneMode === 'outdoor' && ((requestMode === 'generate' && scope === 'scene' && !options.continuousSession) || spawnRequest)) {
     const candidate = applyMapOperations(planningMap, operations);
     const requestedSpawn = spawnRequest?.point
       ?? (map.spawnPoints[0] ? [map.spawnPoints[0][0], map.spawnPoints[0][2]] satisfies Point2 : [0, 0]);
@@ -4258,9 +4278,12 @@ api.appearance(plan) may be declared once to coordinate new asset source colors 
 Declare ${minNewAssets}..${maxNewAssets} requireAsset families and place every declared variant at least once. Each asset prompt describes one standalone reusable object and follows this orientation contract: Y+ up, Z+ front/entrance, X+ right. Keep all coordinates inside the map bounds and return the complete function plan(api).`;
 }
 
-function buildMainMapCodePlannerSystemPrompt(map: EditableMap, minNewAssets: number, maxNewAssets: number): string {
+export function buildMainMapCodePlannerSystemPrompt(map: EditableMap, minNewAssets: number, maxNewAssets: number,
+  responseFormat: 'code' | 'session' = 'code'): string {
   const bounds = getMapBounds(map);
-  return `You are an outdoor 3D scene composer. Return one complete synchronous JavaScript function: function plan(api) { ... }. No Markdown, imports, async, eval, network, timers or global state. Local helpers, arrays, loops, branches and Math are available; Math.random is seeded. Use finite numbers and bounded work.
+  return `You are an outdoor 3D scene composer. ${responseFormat === 'code'
+    ? 'Return one complete synchronous JavaScript function: function plan(api) { ... }. No Markdown, imports, async, eval, network, timers or global state.'
+    : 'Follow the ongoing conversation action protocol. Inside each execute action, write one complete synchronous function plan(api) { ... }; no imports, async, eval, network, timers or global state.'} Local helpers, arrays, loops, branches and Math are available; Math.random is seeded. Use finite numbers and bounded work.
 
 Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}; seed=${map.seed}; map height=${map.box.size[1]}m. Y is up; horizontal planning uses [x,z]. Position [x,z] samples the current terrain; [x,y,z] is fixed height unless terrain:true, in which case y is an offset above terrain. The model's local Z+ is its front and rotationY is in radians.
 
@@ -4295,7 +4318,7 @@ Where grass belongs, first cover broad suitable ground with one or more habitat-
 
 ${URBAN_LAYOUT_CONTRACT}
 
-The sandbox exposes exactly these 21 keys; write your own other helpers:
+${responseFormat === 'code' ? 'The sandbox exposes exactly these 21 keys' : 'The main composer provides these 21 keys; the explicit conversation tools below extend this set'}; write your own other helpers:
 - Data: api.seed, api.bounds.
 - Land: api.terrain(preset,{amplitude?,roughness?,seed?}) with preset 'plain'|'hills'|'mountains'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'; api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,access?:'walkable'|'scenic'}); api.sculptTerrain({mode:'raise'|'lower'|'flatten'|'smooth',point:[x,z],radius?,strength?,targetHeight?}); api.rampTerrain({start:[x,z],end:[x,z],width,startHeight?,endHeight?,softness?,strength?}). Keep ramp softness and strength between 0 and 1.
 - Cover and water: api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving'|'snow',material?,region,intensity?}) paints existing land; api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,height?,mix?:{short?,tall?,flowers?},habitat?}). Grass regions can be a circle, a path with points/width, or a polygon with points; use kind, never type.
@@ -4306,7 +4329,7 @@ The sandbox exposes exactly these 21 keys; write your own other helpers:
 Use one object for surface, for example api.surface({id:'court',surface:'paving',region:{kind:'circle',center:[0,0],radius:6}}). Water returns its actual ID: const stream = api.water('stream',{type:'river',points:[[-10,0],[10,0]],width:3}); use {waterId:stream} in later observations and bridges. Keep display names separate from IDs and reuse returned IDs instead of rewriting them.
 ${CODE_ASSET_PROMPT_CONTRACT}
 api.appearance(plan) may be declared once to coordinate new asset source colors and a companion render draft. ${SCENE_APPEARANCE_CONTRACT}
-Declare ${minNewAssets}..${maxNewAssets} useful asset families and place every declared variant at least once. Asset prompts describe one standalone reusable object in English, with Y+ up, Z+ front/entrance and X+ right; names are short Simplified Chinese. Keep every placement inside bounds. Do not invent API names or asset IDs. Return the function only.`;
+Declare ${minNewAssets}..${maxNewAssets} useful asset families and place every declared variant at least once. Asset prompts describe one standalone reusable object in English, with Y+ up, Z+ front/entrance and X+ right; names are short Simplified Chinese. Keep every placement inside bounds. Do not invent API names or asset IDs.${responseFormat === 'code' ? ' Return the function only.' : ''}`;
 }
 
 export function buildMapCodePlannerSystemPrompt(
@@ -4629,6 +4652,7 @@ function runFirstPassMapCodeDiscovery(
 ): { code: string; discovery: CodeExecutionResult; repairAttempts: number } {
   try {
     const discovery = runMapCodePlan(code, map, assets, {
+      continuousSession: options.continuousSession,
       spatialObservationApis: options.spatialObservationApis,
       stablePlacementIds: options.stablePlacementIds,
       worldEditPolicy: options.worldEditPolicy,
@@ -4681,6 +4705,7 @@ async function discoverMapCodeWithRepairs(
   while (true) {
     try {
       const discovery = runMapCodePlan(code, map, assets, {
+        continuousSession: options.continuousSession,
         spatialObservationApis: options.spatialObservationApis,
         refineScope: options.mode === 'refine' ? options : undefined,
         mode: 'discovery',

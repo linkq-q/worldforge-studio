@@ -259,6 +259,14 @@ export function renderDesignAppearance(plan?: SceneAppearancePlan): string {
   ).join('')}</ul><small>新生成资产继承这些源色；复用资产保留原色。地表与环境配色在确认地图后进入渲染草稿。</small>`;
 }
 
+export function designGenerationStatus(session: MapDesignSessionView): string {
+  const counts = session.generationCounts;
+  const generation = counts ? `整轮规划 ${counts.planning} 次 · 资产整批 ${counts.assets} 次${
+    session.generationCallLimit === undefined ? '' : ` · 生成次数 ${counts.planning + counts.assets}/${session.generationCallLimit}`}` : '';
+  return [generation, `内部 GPT 往返 ${session.modelCalls} 次 · 单个资产尝试 ${session.assetCalls} 个`,
+    session.paidRequestLimit === undefined ? '' : `底层 HTTP 请求 ${session.paidRequests ?? 0}/${session.paidRequestLimit}`].filter(Boolean).join(' · ');
+}
+
 /** Mount once. Only messages and status update, so typing and IME composition survive polling. */
 export class MapDesignConversation {
   private mapId = '';
@@ -270,7 +278,7 @@ export class MapDesignConversation {
     options: () => Omit<MapDesignSessionOptions, 'prompt' | 'expectedVersion'>,
     compare: (after: boolean) => void, private showingDraft: () => boolean) {
     host.innerHTML = `<section class="map-design-conversation" aria-label="地图设计对话">
-      <header><div><strong>一起设计地图</strong><p>边讨论，边查看场景变化</p></div><div><span data-design-status></span><button type="button" class="secondary small" data-design-new hidden>新对话</button></div></header>
+      <header><div><strong>主模式 · 持续设计</strong><p>描述整个场景，后端 AI 自主规划；执行中可以补充要求</p></div><div><span data-design-status></span><button type="button" class="secondary small" data-design-new hidden>新对话</button></div></header>
       <div class="design-messages" data-design-messages role="log" aria-label="对话与执行记录"></div>
       <div class="design-progress" data-design-progress role="status"></div>
       <aside class="design-appearance" data-design-appearance hidden></aside>
@@ -338,8 +346,8 @@ export class MapDesignConversation {
     this.host.querySelector('[data-design-status]')!.textContent = loading ? '恢复对话…'
       : ({ running: '正在制作', paused: '已暂停', failed: '需要处理', committed: '已应用', idle: '等待你的想法' }[status ?? 'idle']);
     const progress = this.host.querySelector('[data-design-progress]')!;
-    const progressText = session?.progress ? [session.progress.label, session.progress.detail,
-      session.paidRequestLimit !== undefined ? `付费请求 ${session.paidRequests ?? 0}/${session.paidRequestLimit}` : null].filter(Boolean).join(' · ') : '';
+    const progressText = session ? [session.progress?.label, session.progress?.detail,
+      designGenerationStatus(session)].filter(Boolean).join(' · ') : '';
     if (progress.textContent !== progressText) progress.textContent = progressText;
     const issue = this.host.querySelector<HTMLElement>('[data-design-error]')!;
     const issueText = blocked || error || session?.error || '';

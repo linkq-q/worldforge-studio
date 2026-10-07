@@ -1,6 +1,6 @@
 import {getMapBounds, type EditableMap, type MapAsset} from '../shared/map';
 import type {MapAiSuggestion} from '../shared/mapOperations';
-import {buildMapCodePlannerSystemPrompt, generateMapCodeSuggestion, type MapCodePlannerOptions} from './mapCodePlanner';
+import {buildMainMapCodePlannerSystemPrompt, buildMapCodePlannerSystemPrompt, generateMapCodeSuggestion, type MapCodePlannerOptions} from './mapCodePlanner';
 import {MAP_DESIGN_RECIPE_REFERENCE, rejectDesignTerrainProgram} from './mapDesignWorld';
 
 export interface MapDesignExecutionInput {
@@ -22,9 +22,11 @@ export async function executeMapDesignProgram(input: MapDesignExecutionInput): P
   rejectDesignTerrainProgram(input);
   return generateMapCodeSuggestion('Execute the current design-session program.', input.baseMap, input.assets, {
     approvedCode: input.code,
-    mode: 'refine',
-    scope: 'general',
-    promptMode: 'standard',
+    mode: 'generate',
+    scope: 'scene',
+    promptMode: 'main',
+    continuousSession: true,
+    reuseExistingAssets: true,
     revisionMode: 'first-pass',
     spatialPolicy: 'diagnose',
     worldEditPolicy: 'diagnostic',
@@ -44,10 +46,11 @@ export async function executeMapDesignProgram(input: MapDesignExecutionInput): P
 
 /** Capability reference only: the caller owns the conversation's observe/execute/finish response protocol. */
 export function buildMapDesignExecutionPrompt(map: EditableMap, assets: MapAsset[], maxNewAssets: number): string {
-  const legacy = buildMapCodePlannerSystemPrompt(map, assets, 0, maxNewAssets, 'scene', 'generate', '', [], 'main');
+  const legacy = map.sceneMode === 'indoor'
+    ? buildMapCodePlannerSystemPrompt(map, assets, 0, maxNewAssets, 'scene', 'generate', '', [], 'main') : '';
   const reference = map.sceneMode === 'indoor'
     ? legacy.slice(legacy.indexOf('## Indoor structural contract'), legacy.indexOf('## Final self-check'))
-    : legacy.slice(legacy.indexOf('- Data:'), legacy.lastIndexOf('Declare '));
+    : buildMainMapCodePlannerSystemPrompt(map, 0, maxNewAssets, 'session');
   const catalog = assets.slice(0, 96).map(asset => ({id:asset.id, name:asset.name, tags:asset.tags, mode:asset.mode}));
   return `Execution tool reference. This section describes code inside an execute action, not the outer response format.
 Write a complete synchronous function plan(api) { ... }. It runs from the original session base on every execute: revise the complete program rather than append a delta to the previous draft. Keep prior intended edits in that program. Existing base-map content remains unless you explicitly change it. Preserve existing terrain unless the user requests terrain changes.
@@ -62,6 +65,7 @@ Reusable asset IDs (use exactly): ${JSON.stringify(catalog)}`;
 
 const worldReference = `Outdoor maps can use ordinary scene APIs or a streamed WorldPlan. If there is no world yet, api.createWorld({recipe,prompt?,id?,ecology?:[],roads?:[],towns?:[],patches?:[],assets?:[],concept?,featureGraph?,settlementPlan?,mobilityPlan?,explorationPlan?,intentionalEmptyAreas?}) initializes one explicitly. The WorldRecipe contract appears below. No ecology, town or template is added implicitly. Server owns plan.version/revision and patch.worldKey. createWorld requires no existing world, and its full declaration remains in every replay until commit. api.bounds and api.seed then reflect the new world; its box expands to recipe.size. Existing manual objects remain. In a streamed world, edit its recipe parameters, streamed ecology, settlements and world roads through api.editWorld. Ordinary api.surface, api.grass and api.route can additionally author localized ground uses, grass layers and surfaced paths in world metres; streamed tiles preserve these overlays. Ordinary terrain/brush/ramp height declarations target the separate small-map heightfield and cannot modify a streamed world. Raw paint strokes are not streamed-world surface tools; use api.surface. A guide alone does not create pavement; api.route authors its ground surface.
 api.worldState() returns a detached local copy of {bundle:{plan,patches},assets,review?}. Large height arrays stay inside the execution tool; do not copy them into model messages.
+Main urbanLayout waterfront, bridge and waterPoint tools read the prepared river/lake geometry from this world's recipe, including terrain-fit profiles; their read-only view does not create duplicate water overlays. Preserve an existing world recipe unless the user requests changes. Ordinary terrain/sculpt/ramp tools apply to small-map heightfields; for a streamed world use editWorld recipe landforms/terrainBrushes. Town declarations require ports:[] even when no external ports are intended; do not omit the field. An empty ports array is valid. construction.maxGrade is permitted only for terrain:'grade'; omit it for terrain:'follow'. These are schema rules, not permission to remove intended settlements or destinations to bypass an error.
 api.editWorld(state => { ... }) edits that world copy synchronously, or may return a replacement state. Preserve unrelated fields. The executor validates the resulting world.set, increments plan.revision and refreshes patch.worldKey; do not invent either. It preserves original terrain data and asset bindings unless your code changes them.
 This session persists generationPolicy:'diagnostic' on world edits. Structural contracts (finite values, bounds, quotas, IDs/references, patch identity and declared port endpoints/widths) still reject invalid edits. Terrain slope, water/earthwork, overlapping construction and disconnected street networks return quality warnings with repaired:false; their authored geometry is preserved. Read these diagnostics to decide whether to revise the complete program. This mode does not imply that the draft is playable or visually accepted.
 plan contains recipe, ecology, roads, towns and optional featureGraph, settlementPlan, mobilityPlan, explorationPlan and intentionalEmptyAreas. Edit their actual existing IDs after observation. recipe holds biomePatches, landforms, terrainBrushes, waterBodies and other validated terrain parameters. World roads are {id,name,points:[[x,z],...],curve:'polyline'|'catmull-rom',closed,width,tags}; keep terrain and playable access relationships in mind. Ecology rules are {id,kind:'broadleaf'|'pine'|'shrub'|'rock',biome,density:0..1,spacing:6..100,maxSlope:0..60,scale:[min,max],region?,regionFeather?,waterDistance?,waterSource?}; a region is {kind:'circle',center,radius} or {kind:'path',points,width}.

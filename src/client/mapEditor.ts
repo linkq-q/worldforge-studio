@@ -1918,8 +1918,9 @@ export class MapEditor {
         }
       });
       this.designConversation = new MapDesignConversation(host, this.designClient, () => ({
+        backendPlanning: true,
         provider: this.mapAiProvider,
-        assetProvider: this.mapAiAssetProvider || undefined,
+        assetProvider: this.mapAiAssetProvider || 'deepseek',
         minNewAssets: this.mapAiMinNewAssets,
         maxNewAssets: this.mapAiMaxNewAssets,
         reuseExistingAssets: this.mapAiReuseExistingAssets,

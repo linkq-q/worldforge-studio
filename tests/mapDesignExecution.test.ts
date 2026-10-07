@@ -245,4 +245,54 @@ describe('design-session scene execution', () => {
       }
     }
   });
+
+  it('retains the complete main-mode composition and urban tool guidance in continuous conversations', () => {
+    const prompt = buildMapDesignExecutionPrompt(worldMap(), [], 36);
+    for (const instruction of ['## Architectural composition', '## Settlement formation', '## Ground cover',
+      'Urban morphology: api.urbanLayout', "pattern:'waterfront'", 'Inspect parcels and adjust dimensions',
+      'Declare terrain and water before sampling candidate sites', 'api.sampleProbabilityField']) {
+      expect(prompt).toContain(instruction);
+    }
+    expect(prompt).not.toContain('Return the function only');
+  });
+
+  it('uses the main API surface with explicit conversation tools and preserves supplied asset bindings', async () => {
+    const baseMap = createEmptyMap();
+    const result = await executeMapDesignProgram({baseMap, assets:[asset], maxNewAssets:0,
+      code:`function plan(api) {
+        if(typeof api.TAU!=='undefined') throw new Error('standard-mode API leaked');
+        if(typeof api.urbanLayout!=='function') throw new Error('missing main urban tool');
+        api.place({assetId:'generated-tree',position:[2,3]});
+        api.report('height',api.environmentSample([2,3]).height);
+      }`});
+    expect(result.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({type:'object.add',object:expect.objectContaining({assetId:asset.id})})
+    ]));
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+  });
+
+  it('uses prepared continuous-world rivers in main waterfront layouts, bridges and water positioning without persisting duplicate water', async () => {
+    const baseMap=worldMap(), recipe=baseMap.world!.bundle.plan.recipe;
+    recipe.terrainBrushes=[{id:'flat',mode:'flatten',region:{kind:'circle',center:[0,0],radius:240},height:3,strength:1,feather:0}];
+    recipe.waterBodies=[{id:'world-river',type:'river',region:{kind:'path',points:[[-70,0],[70,0]],width:12},levels:[2,2],depth:2}];
+    baseMap.world=validateWorldMapState(baseMap.world);
+    const original=structuredClone(baseMap), observations:MapDesignToolObservation[]=[];
+    const result=await executeMapDesignProgram({baseMap,assets:[],maxNewAssets:0,onToolObservation:v=>observations.push(v),
+      code:`function plan(api) {
+        const layout=api.urbanLayout({pattern:'waterfront',waterId:'world-river',bankDepth:40,seed:api.seed});
+        api.report('layout',{roads:layout.roads.length,parcels:layout.parcels.length});
+        api.report('water',api.waterPoint('world-river',[0,0]));
+        api.bridge({waterId:'world-river',crossingCenter:[0,0],direction:[0,1],dimensions:[4,1,22]});
+      }`});
+    const layout=observations.find(v=>v.tool==='report'&&(v.args as string[])[0]==='layout')!.result as {roads:number;parcels:number};
+    expect(layout.roads).toBeGreaterThan(0);
+    expect(layout.parcels).toBeGreaterThan(0);
+    expect(observations.find(v=>v.tool==='report'&&(v.args as string[])[0]==='water')!.result).toEqual([0,2,0]);
+    const draft=applyMapOperations(baseMap,result.operations);
+    expect(draft.objects.length).toBeGreaterThan(0);
+    expect(draft.waterBodies).toEqual([]);
+    expect(draft.world).toEqual(original.world);
+    expect(baseMap).toEqual(original);
+    expect(mocks.llmChat).not.toHaveBeenCalled();
+  });
 });

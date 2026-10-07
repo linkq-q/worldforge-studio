@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import {createCodexRun,closeCodexRun,withCodexRun,pendingCodexRequests} from '../src/server/codexBridge';
 import {
   ChatPartialResponseError,
   generateModel,
@@ -13,6 +14,18 @@ import {
 } from '../src/server/modelApi';
 
 describe('model API adapter', () => {
+  it('keeps backend-owned planning on GPT even when a Codex bridge is present', async () => {
+    const run=createCodexRun();
+    const fetchImpl=vi.fn().mockResolvedValue(new Response(JSON.stringify({ok:true,content:'Backend plan'})));
+    try {
+      expect(await withCodexRun(run,()=>llmChat([{role:'user',content:'Harbor town'}],{
+        provider:'gpt',backendOnly:true,fetchImpl,maxAttempts:1
+      }))).toBe('Backend plan');
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fetchImpl.mock.calls[0][1].body).provider).toBe('gpt');
+      expect(pendingCodexRequests(run)).toEqual([]);
+    } finally {closeCodexRun(run);}
+  });
   it('uses the existing mount contract without mutating the source or retrying unsupported backends', async () => {
     const primary = { nodes: [{ id: 'host' }] };
     const combined = { nodes: [{ id: 'host' }, { id: 'accessory', mounted: true }] };

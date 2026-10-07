@@ -48,6 +48,8 @@ export type ChatMessageContentPart =
   | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } };
 
 export interface ChatApiOptions {
+  /** Keep a backend-owned conversation on the configured chat API even inside a Codex bridge context. */
+  backendOnly?: boolean;
   apiBase?: string;
   provider?: ChatProvider;
   temperature?: number;
@@ -287,7 +289,7 @@ export async function refineModel(modelJson: unknown, description: string, optio
 }
 
 export async function llmChat(messages: readonly ChatMessage[], options: ChatApiOptions = {}): Promise<string> {
-  if (currentCodexRun()) {
+  if (currentCodexRun() && !options.backendOnly) {
     const stage = options.traceStage ?? 'chat';
     recordGenerationTrace('chat.codex.request', { stage, messages });
     const content = await requestCodexCompletion(messages, stage, options.signal);

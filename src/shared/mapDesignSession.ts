@@ -28,6 +28,9 @@ export interface MapDesignSessionView {
   modelCalls: number;
   operationCount: number;
   assetCalls: number;
+  /** Whole design tasks and whole asset batches, independent of model turns and individual assets. */
+  generationCounts?: {planning: number; assets: number};
+  generationCallLimit?: number;
   paidRequests?: number;
   paidRequestLimit?: number;
   paidRequestCounts?: {planning: number; assets: number};
@@ -44,13 +47,17 @@ export interface MapDesignSessionOptions {
   expectedVersion: number;
   provider?: ChatProvider;
   assetProvider?: ModelProvider;
+  /** The editor uses its configured GPT API, without substituting a Codex executor. */
+  backendPlanning?: boolean;
   minNewAssets?: number;
   maxNewAssets?: number;
   /** Exclude pre-existing library assets from a fresh design; generated assets remain available on replay. */
   reuseExistingAssets?: boolean;
   /** Model actions per uninterrupted task run; reaching it preserves an unfinished draft. */
   maxSteps?: number;
-  /** Total upstream HTTP attempts for planning and assets, including retries; Codex bridge turns are excluded. */
+  /** Whole planning tasks plus whole asset batches; all model turns/assets within a task share its count. */
+  maxGenerationCalls?: number;
+  /** Optional explicit technical HTTP-attempt cap, separate from user-facing generation counts. */
   maxPaidRequests?: number;
   assetIds?: string[];
 }

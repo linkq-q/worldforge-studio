@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MapStore } from '../src/server/mapStore';
 import { MapDesignSessionManager } from '../src/server/mapDesignSessions';
 import type { ChatMessage } from '../src/server/modelApi';
@@ -31,6 +31,54 @@ async function until(predicate: () => boolean | Promise<boolean>) {
 }
 
 describe('ongoing map design sessions', () => {
+  it('lets the backend retry a failed asset within the same batch without consuming a successful-asset slot', async () => {
+    const {store,map}=await setup();
+    const actions=[{action:'execute',code:'first'},{action:'execute',code:'retry'},{action:'finish'}];
+    let attempts=0;
+    const manager=new MapDesignSessionManager(store,{
+      chat:async()=>JSON.stringify(actions.shift()),
+      createAsset:async request=>{
+        if(++attempts===1) throw new Error('asset_service_failure');
+        return store.saveAsset({name:request.name,prompt:request.prompt,tags:[],mode:'voxel',modelJson:{nodes:[]}});
+      },
+      execute:async input=>({...suggestion(input.code),generatedAssets:[await input.createAsset!({name:'Tree',prompt:'New tree',tags:[],mode:'voxel'},()=>{})]})
+    });
+    const session=await manager.create(map.id,{prompt:'An orchard',expectedVersion:map.version,minNewAssets:1,maxNewAssets:1,maxGenerationCalls:2});
+    await manager.settled(session.id);
+    expect(await manager.get(session.id)).toMatchObject({outcome:'completed',generationCounts:{planning:1,assets:1},assetCalls:2});
+    expect((await manager.draft(session.id)).map.assets).toHaveLength(1);
+  });
+  it('counts a whole autonomous planning task and all of its assets as two generation calls', async () => {
+    const {store,map}=await setup();
+    const upstream=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('{}'));
+    const actions=[{action:'execute',code:'first'},{action:'execute',code:'second'},{action:'finish'}];
+    let transcript='';
+    const manager=new MapDesignSessionManager(store,{
+      chat:async (messages,options)=>{
+        transcript=JSON.stringify(messages);
+        await options!.fetchImpl!('https://model.example/api/chat');
+        return JSON.stringify(actions.shift());
+      },
+      createAsset:async request=>store.saveAsset({name:request.name,prompt:request.prompt,tags:[],mode:'voxel',modelJson:{nodes:[]}}),
+      execute:async input=>{
+        const assets=await Promise.all(Array.from({length:24},(_,i)=>input.createAsset!({name:`Asset ${i}`,prompt:`New ${i}`,tags:[],mode:'voxel'},()=>{})));
+        return {...suggestion(input.code),generatedAssets:assets};
+      }
+    });
+    try {
+      const session=await manager.create(map.id,{prompt:'A harbor town',expectedVersion:map.version,maxNewAssets:36,maxGenerationCalls:2});
+      await manager.settled(session.id);
+      expect(await manager.get(session.id)).toMatchObject({outcome:'completed',generationCounts:{planning:1,assets:1},generationCallLimit:2,paidRequests:3,assetCalls:24});
+      expect(transcript).toContain('## Architectural composition');
+      expect(transcript).toContain('Urban morphology: api.urbanLayout');
+      const recovered=new MapDesignSessionManager(store);
+      expect(await recovered.get(session.id)).toMatchObject({generationCounts:{planning:1,assets:1}});
+      await manager.commit(session.id,2,true);
+      await expect(manager.message(session.id,'Another completed task')).rejects.toThrow('design_generation_budget_exhausted');
+      expect(upstream).toHaveBeenCalledTimes(3);
+    } finally { upstream.mockRestore(); }
+  });
+
   it('lets the model edit a failed submitted program after restart while retaining the complete draft', async () => {
     const {store,map}=await setup();
     const firstResponses=[{action:'execute',code:'valid'}, {action:'execute',code:'radius=40'}, {action:'finish',outcome:'blocked',summary:'Radius needs repair'}];
