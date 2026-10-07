@@ -17,6 +17,7 @@ type Footprint = { reference: string; id: string; source: string; name: string; 
 export const MAP_DESIGN_OBSERVATION_HELP = `observe reads the CURRENT complete draft without changing it. Query JSON:
 {kind:'summary',offset?:0,limit?:32} lists paged regions, ecology rules, biome patches, grass-layer styles and density resolution/spacing, routes, settlements (including town-local ports and district offsets), groups and declared entrances; totals are unpaged.
 {kind:'points',points:[[x,z],...],guideIds?:['id'],waterId?:'sea|existing-water-id'}: 1..128 samples.
+{kind:'coverage',grid?:17,offset?:0,limit?:16}: reads the ENTIRE map in 16 spatial sectors with physical footprint counts, sample coverage and ecology masks. Semantic names and intentional open-area claims remain separate from actual contents.
 {kind:'region',bounds:[minX,minZ,maxX,maxZ],grid?:9,offset?:0,limit?:64}: grid 2..17; sampled coverage, biome/forest-mask relationships and paged grid cells. Bounds must lie inside the map.
 {kind:'path',pathId:'reference from summary OR unique route id',spacing?:4,maxGrade?:0.15,offset?:0,limit?:64}; alternatively supply points:[[x,z],...],curve?:'polyline'|'catmull-rom',closed?:false,width?:2 instead of pathId. At most 512 profile samples; actual spacing is reported. maxGrade is an optional designer-selected rise/run threshold, not a walkability rule. Reports terrain longitudinal grades, water transitions, threshold crossings, corridor endpoint gaps and declared access distances; it does NOT sample a bridge deck or prove controller traversal.
 {kind:'objects',ids?:['exact reference OR id'],bounds?:[minX,minZ,maxX,maxZ],offset?:0,limit?:32}: object visual AABB footprints and town building planned oriented footprints, sampled ground relief/support and route gaps; full footprints, not center-only tests. Missing actual doorway data stays unknown.
@@ -31,7 +32,7 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
   const query = record(input), kind = query.kind ?? 'summary';
   const allowed: Record<string, string[]> = {
     summary: ['offset', 'limit'], points: ['points', 'guideIds', 'waterId'],
-    region: ['bounds', 'grid', 'offset', 'limit'],
+    region: ['bounds', 'grid', 'offset', 'limit'], coverage: ['grid', 'offset', 'limit'],
     path: ['pathId', 'points', 'curve', 'closed', 'width', 'spacing', 'maxGrade', 'offset', 'limit'],
     objects: ['ids', 'bounds', 'offset', 'limit'], assets: ['ids', 'section', 'offset', 'limit'],
     world: ['section', 'offset', 'limit'], terrain: ['section', 'offset', 'limit']
@@ -98,8 +99,8 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
         'Semantic destinations and town ports are not measured doorways. Use objects and path queries for local geometry.'] };
   } else if (kind === 'points') {
     data = { samples: points(query.points, map, 128).map(sample) };
-  } else if (kind === 'region') {
-    const bounds = queryBounds(query.bounds, map), grid = integer(query.grid, 2, 17, 9);
+  } else if (kind === 'region' || kind === 'coverage') {
+    const bounds = queryBounds(kind === 'coverage' ? [-map.box.size[0]/2, -map.box.size[2]/2, map.box.size[0]/2, map.box.size[2]/2] : query.bounds, map), grid = integer(query.grid, 2, 17, kind === 'coverage' ? 17 : 9);
     const all = footprints().filter(item => intersectsBounds(item.polygon, bounds));
     const samples = Array.from({ length: grid * grid }, (_, index) => {
       const point: Point = [bounds[0] + (index % grid) * (bounds[2] - bounds[0]) / (grid - 1),
@@ -110,7 +111,27 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
           Math.max(0, ...map.visualSemantics.zones.filter(zone => zone.tags.includes(tag as never)).map(zone => visualZoneWeight(zone, ...point)))])) };
     });
     const fraction = (predicate: (value: typeof samples[number]) => boolean) => samples.filter(predicate).length / samples.length;
-    data = { bounds, grid, spacing: [(bounds[2] - bounds[0]) / (grid - 1), (bounds[3] - bounds[1]) / (grid - 1)],
+    const sectors = kind === 'coverage' ? Array.from({length:16}, (_, index) => {
+      const col=index%4, row=Math.floor(index/4), dx=(bounds[2]-bounds[0])/4, dz=(bounds[3]-bounds[1])/4;
+      const box:Bounds=[bounds[0]+col*dx,bounds[1]+row*dz,bounds[0]+(col+1)*dx,bounds[1]+(row+1)*dz];
+      const inside = (x:number,z:number) => x>=box[0] && z>=box[1] && (x<box[2] || col===3 && x===box[2]) && (z<box[3] || row===3 && z===box[3]);
+      const readings=samples.filter(item=>inside(item.x,item.z));
+      const objects=all.filter(item=>intersectsBounds(item.polygon,box));
+      const fraction=(test:(reading:typeof samples[number])=>boolean)=>readings.length ? readings.filter(test).length/readings.length : null;
+      const rules=(plan?.ecology ?? []).filter(rule=>world!.assets.some(asset=>asset.role==='tree' && (asset.ecologyRuleId===rule.id || !asset.ecologyRuleId && asset.ecologyKind===rule.kind)));
+      const regions=(plan?.featureGraph?.regions ?? []).filter(region=>region.center[0]+region.radius>=box[0] && region.center[0]-region.radius<=box[2] && region.center[1]+region.radius>=box[1] && region.center[1]-region.radius<=box[3]);
+      return {id:`sector-${col}-${row}`,bounds:box,sampleCount:readings.length,
+        height:stats(readings.map(item=>item.height)),slopeDegrees:stats(readings.map(item=>item.slope)),waterFraction:fraction(item=>item.water!==null),
+        physicalFootprints:objects.length,assetIds:[...new Set(objects.flatMap(item=>item.assetId ? [item.assetId] : []))],
+        footprintSampleFraction:fraction(item=>item.occupiedFootprintCount>0),
+        dryWithoutFootprintOrGuideFraction:fraction(item=>item.water===null && !item.occupiedFootprintCount && item.guideDistance>0),
+        ecologyPotentialFraction:fraction(item=>item.water===null && rules.some(rule=>rule.density>0 && item.biomeWeights![rule.biome]>0 && item.slope<=rule.maxSlope && (!rule.region || worldRegionWeight(rule.region,item.x,item.z,rule.regionFeather)>0) && !(rule.exclusions ?? []).some(region=>worldRegionWeight(region,item.x,item.z)>0))),
+        ecologyExcludedFraction:fraction(item=>rules.some(rule=>(!rule.region || worldRegionWeight(rule.region,item.x,item.z,rule.regionFeather)>0) && (rule.exclusions ?? []).some(region=>worldRegionWeight(region,item.x,item.z)>0))),
+        declaredRegions:regions.map(region=>({id:region.id,name:region.name})),
+        declaredOpenAreas:(plan?.intentionalEmptyAreas ?? []).filter(area=>regions.some(region=>region.id===area.regionId)),
+        inspect:{kind:'region',bounds:box,grid:9}};
+    }) : null;
+    data = { ...(sectors ? {sectors:page(sectors)} : {}), bounds, grid, spacing: [(bounds[2] - bounds[0]) / (grid - 1), (bounds[3] - bounds[1]) / (grid - 1)],
       sampleCount: samples.length, height: stats(samples.map(item => item.height)), slopeDegrees: stats(samples.map(item => item.slope)),
       sampledCoverage: { waterFraction: fraction(item => item.water !== null), footprintFraction: fraction(item => item.occupiedFootprints.length > 0),
         guideCorridorFraction: fraction(item => item.guideDistance === 0),
@@ -130,6 +151,7 @@ export function observeMapDesign(map: EditableMap, input: unknown, draftRevision
         'At most eight overlapping footprint references are listed per cell; occupiedFootprintCount is complete.',
         'Guides include semantic paths such as watercourses; corridor coverage is not exclusively built roads.',
         'Unoccupied samples do not prove playable empty space. Streamed ecology instances, overhangs and visibility are not evaluated.',
+        'Sector footprints may intersect multiple sectors. Ecology potential means a bound rule has region/biome/slope support, not a rendered canopy count; water-distance habitat and renderer object masks are not evaluated. Region/open-area names are claims, not realized contents. Read inspect bounds for local detail.',
         'Ecology region/biome/slope factors are separate observations, not acceptance probabilities or rendered counts.'] };
   } else if (kind === 'objects') {
     const ids = query.ids === undefined ? undefined : strings(query.ids, 64);

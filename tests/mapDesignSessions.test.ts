@@ -31,6 +31,41 @@ async function until(predicate: () => boolean | Promise<boolean>) {
 }
 
 describe('ongoing map design sessions', () => {
+  it('honors 22..36 actual new assets, rejects premature completion, and returns whole-map feedback in the same context', async () => {
+    const {store,map}=await setup();
+    const responses=[{action:'execute',code:'21'}, {action:'finish'}, {action:'execute',code:'22'}, {action:'finish'}];
+    let transcript='';
+    const manager=new MapDesignSessionManager(store,{
+      chat:async messages=>{transcript=JSON.stringify(messages);return JSON.stringify(responses.shift());},
+      createAsset:async request=>store.saveAsset({name:request.name,prompt:request.prompt,tags:[],mode:'voxel',provider:'deepseek',modelJson:{nodes:[{id:'box',mesh:{type:'box',params:{width:1,height:1,depth:1},material:{color:'#826044'}}}]}}),
+      execute:async input=>{
+        expect(input.assets.every(asset=>asset.provider==='deepseek')).toBe(true);
+        const made=[];
+        for(let i=0;i<Number(input.code);i++) made.push(await input.createAsset!({name:`Asset ${i}`,prompt:`New ${i}`,tags:[],mode:'voxel'},()=>{}));
+        return {...suggestion('All-new draft'),generatedAssets:made};
+      }
+    });
+    const session=await manager.create(map.id,{prompt:'New voxel world',expectedVersion:map.version,provider:'gpt',assetProvider:'deepseek',minNewAssets:22,maxNewAssets:36,reuseExistingAssets:false});
+    await manager.settled(session.id);
+    const result=await manager.get(session.id);
+    expect(result.outcome).toBe('completed');
+    expect(result.assetCalls).toBe(22);
+    expect(transcript).toContain('design_new_assets_minimum:21/22');
+    expect(transcript).toContain('spatialCoverage');
+    expect(transcript).toContain('sector-3-3');
+    expect(transcript).toContain('disabled: start with the empty catalog');
+    expect((await manager.draft(session.id)).map.assets).toHaveLength(22);
+  });
+
+  it('rejects conflicting reuse and asset ranges before sending a model request', async () => {
+    const {store,map}=await setup();
+    let calls=0;
+    const manager=new MapDesignSessionManager(store,{chat:async()=>{calls++;return '{}';}});
+    await expect(manager.create(map.id,{prompt:'New only',expectedVersion:map.version,minNewAssets:37,maxNewAssets:36})).rejects.toThrow('design_asset_range_invalid');
+    await expect(manager.create(map.id,{prompt:'New only',expectedVersion:map.version,reuseExistingAssets:false,assetIds:['old']})).rejects.toThrow('design_new_assets_conflicts_with_library_selection');
+    expect(calls).toBe(0);
+  });
+
   it('feeds executed facts to the same transcript, replaces drafts, and commits one undoable result', async () => {
     const { store, map } = await setup();
     const conversations: readonly ChatMessage[][] = [];

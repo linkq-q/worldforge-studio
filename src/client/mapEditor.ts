@@ -1920,7 +1920,9 @@ export class MapEditor {
       this.designConversation = new MapDesignConversation(host, this.designClient, () => ({
         provider: this.mapAiProvider,
         assetProvider: this.mapAiAssetProvider || undefined,
+        minNewAssets: this.mapAiMinNewAssets,
         maxNewAssets: this.mapAiMaxNewAssets,
+        reuseExistingAssets: this.mapAiReuseExistingAssets,
         assetIds: this.mapAiReuseExistingAssets ? this.state.libraryAssets.map(asset => asset.id) : undefined
       }), after => {
         if (this.mapPreviewKind !== 'conversation') return;

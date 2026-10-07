@@ -48,7 +48,7 @@ export function buildMapDesignExecutionPrompt(map: EditableMap, assets: MapAsset
   const reference = map.sceneMode === 'indoor'
     ? legacy.slice(legacy.indexOf('## Indoor structural contract'), legacy.indexOf('## Final self-check'))
     : legacy.slice(legacy.indexOf('- Data:'), legacy.lastIndexOf('Declare '));
-  const catalog = assets.slice(0, 96).map(asset => ({id:asset.id, name:asset.name, tags:asset.tags}));
+  const catalog = assets.slice(0, 96).map(asset => ({id:asset.id, name:asset.name, tags:asset.tags, mode:asset.mode}));
   return `Execution tool reference. This section describes code inside an execute action, not the outer response format.
 Write a complete synchronous function plan(api) { ... }. It runs from the original session base on every execute: revise the complete program rather than append a delta to the previous draft. Keep prior intended edits in that program. Existing base-map content remains unless you explicitly change it. Preserve existing terrain unless the user requests terrain changes.
 Use bounded ordinary JavaScript functions, arrays, loops, branches and Math; no imports, files, network, async, timers or eval. Math.random is seeded. Y is up; distances are metres, rotationY radians; x/z bounds=${JSON.stringify(getMapBounds(map))}, seed=${map.seed}.

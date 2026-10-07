@@ -55,7 +55,7 @@ function observeAssets(map: EditableMap, query: RecordValue, offset: number, lim
   const assets = available.filter(asset => !Array.isArray(ids) || ids.includes(asset.id));
   const records: unknown[] = [];
   for (const asset of assets) {
-    const identity = { assetId: asset.id, assetUpdatedAt: asset.updatedAt };
+    const identity = { assetId: asset.id, assetUpdatedAt: asset.updatedAt, generationMode:asset.mode, provider:asset.provider ?? null };
     const meta = record(record(asset.modelJson)?._meta);
     if (selectedSection === 'semantic') {
       const snapshot = record(meta?.semanticSnapshot), text = typeof snapshot?.text === 'string' ? snapshot.text : '';
@@ -78,6 +78,11 @@ function observeAssets(map: EditableMap, query: RecordValue, offset: number, lim
       geometry: { evidence: space.evidence, interior: space.interior, localBounds: space.localBounds,
         size: space.localBounds ? space.localBounds.max.map((value, axis) => value - space.localBounds!.min[axis]) : null,
         coordinateSpace: 'centered-XZ, floor-aligned model-local; before instance transform',
+        primitiveCounts: Object.fromEntries((Array.isArray(record(asset.modelJson)?.nodes) ? record(asset.modelJson)!.nodes as unknown[] : []).reduce((counts: Map<string,number>, node) => {
+          const type = record(record(node)?.mesh)?.type;
+          if (typeof type === 'string') counts.set(type, (counts.get(type) ?? 0) + 1);
+          return counts;
+        }, new Map<string,number>())),
         partCount: space.parts.length, supportCandidateCount: space.supportSurfaces.length },
       semantic: { available: typeof snapshot?.text === 'string',
         totalCharacters: typeof snapshot?.text === 'string' ? snapshot.text.length : 0 },

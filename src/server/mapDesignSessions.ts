@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createId, type EditableMap, type MapAsset } from '../shared/map';
 import { applyMapOperations, type MapAiSuggestion } from '../shared/mapOperations';
 import type { MapDesignDraft, MapDesignMessage, MapDesignSessionOptions, MapDesignSessionView } from '../shared/mapDesignSession';
+import { MAP_AI_MAX_NEW_ASSETS } from '../shared/mapPlanning';
 import { MAP_DESIGN_OBSERVATION_HELP, observeMapDesign } from '../shared/mapDesignObservation';
 import { CHAT_PROVIDER_OPTIONS, isModelProvider, modelProviderForChatProvider, type AgentProgressEvent } from '../shared/protocol';
 import { buildMapDesignExecutionPrompt, executeMapDesignProgram } from './mapDesignExecution';
@@ -77,8 +78,12 @@ export class MapDesignSessionManager {
     if (options.maxPaidRequests !== undefined && (!Number.isInteger(options.maxPaidRequests)
       || options.maxPaidRequests < 0 || options.maxPaidRequests > 256)) throw new Error('design_paid_budget_invalid');
     const maxNewAssets = options.maxNewAssets ?? 0;
-    if (!Number.isInteger(maxNewAssets) || maxNewAssets < 0 || maxNewAssets > 16) throw new Error('design_asset_budget_invalid');
+    if (!Number.isInteger(maxNewAssets) || maxNewAssets < 0 || maxNewAssets > MAP_AI_MAX_NEW_ASSETS) throw new Error('design_asset_budget_invalid');
+    const minNewAssets = options.minNewAssets ?? 0;
+    if (!Number.isInteger(minNewAssets) || minNewAssets < 0 || minNewAssets > maxNewAssets) throw new Error('design_asset_range_invalid');
+    if (options.reuseExistingAssets !== undefined && typeof options.reuseExistingAssets !== 'boolean') throw new Error('design_reuse_assets_invalid');
     const ids = options.assetIds ?? [];
+    if (options.reuseExistingAssets === false && ids.length) throw new Error('design_new_assets_conflicts_with_library_selection');
     if (!Array.isArray(ids) || ids.length > 64 || ids.some(id => typeof id !== 'string')) throw new Error('design_asset_ids_invalid');
     if (this.creating.has(mapId)) throw new Error('design_map_already_running');
     this.creating.add(mapId);
@@ -88,8 +93,11 @@ export class MapDesignSessionManager {
     if ([...this.states.values()].some(state => state.view.mapId === mapId && state.view.status === 'running')) {
       throw new Error('design_map_already_running');
     }
+    if (options.reuseExistingAssets === false && (map.objects.some(object => object.assetId) || map.world?.assets.length)) {
+      throw new Error('design_new_assets_requires_empty_base');
+    }
     const selected = await Promise.all(ids.map(id => this.store.loadAsset(id)));
-    const assets = [...new Map([...(map.assets ?? []), ...selected].map(asset => [asset.id, asset])).values()];
+    const assets = [...new Map([...(options.reuseExistingAssets === false ? [] : map.assets ?? []), ...selected].map(asset => [asset.id, asset])).values()];
     const now = Date.now();
     const state: DesignState = {
       schemaVersion: 1,
@@ -98,7 +106,7 @@ export class MapDesignSessionManager {
         operationCount: 0, assetCalls: 0, paidRequests:0, paidRequestCounts:{planning:0,assets:0},
         paidRequestLimit: options.maxPaidRequests,
         stepsUsed: 0, stepLimit: this.dependencies.maxSteps ?? maxSteps },
-      options: { ...options, prompt, maxNewAssets, maxSteps }, baseMap: { ...map, assets }, assets,
+      options: { ...options, prompt, minNewAssets, maxNewAssets, maxSteps }, baseMap: { ...map, assets }, assets,
       transcript: [], code: '', suggestion: null, assetCache: {}, inputRevision: 0,
       requestDraftRevision: 0, capabilityVersion: CAPABILITY_VERSION,
       codexRunId: currentCodexRun()
@@ -201,6 +209,7 @@ export class MapDesignSessionManager {
     if (state.view.status === 'committed') throw new Error('design_session_committed');
     if (!Number.isInteger(expectedRevision) || state.view.draftRevision !== expectedRevision) throw new Error('design_draft_stale');
     if (!state.suggestion?.operations.length) throw new Error('design_empty_draft');
+    this.requireMinimumAssets(state);
     assertDesignRecipeOperations(state.suggestion.operations, state.baseMap.world?.bundle.plan.recipe);
     this.committing.add(id);
     try {
@@ -340,6 +349,7 @@ export class MapDesignSessionManager {
           if (typeof outcome !== 'string' || !['completed', 'unchanged', 'blocked'].includes(outcome)) throw new Error('invalid_design_outcome');
           if (outcome === 'completed' && (!state.suggestion?.operations.length
             || state.view.draftRevision <= (state.requestDraftRevision ?? 0))) throw new Error('design_complete_requires_draft:execute the current requested changes, or explicitly finish unchanged/blocked with a reason');
+          if (outcome === 'completed') this.requireMinimumAssets(state);
           if (outcome === 'completed') assertDesignRecipeOperations(state.suggestion!.operations, state.baseMap.world?.bundle.plan.recipe);
           if (outcome !== 'completed' && !summary.trim()) throw new Error('design_outcome_reason_required');
           if (state.suggestion && summary) state.suggestion.summary = summary;
@@ -390,6 +400,7 @@ export class MapDesignSessionManager {
           state.view.operationCount = suggestion.operations.length;
           this.appendTool(state, 'execute', { draftRevision: state.view.draftRevision,
             observation: (this.dependencies.observe ?? observeMapDesign)(draft, { kind: 'summary' }, state.view.draftRevision),
+            spatialCoverage: this.spatialCoverage(draft, state.view.draftRevision),
             appearancePlan: state.view.appearancePlan,
             feedback: await saveFeedback(true), budgets: this.budgets(state),
             diagnostics: suggestion.diagnostics ?? [], generatedAssets: suggestion.generatedAssets.map(asset => ({ id: asset.id, name: asset.name })),
@@ -444,6 +455,17 @@ export class MapDesignSessionManager {
     return (this.dependencies.observe ?? observeMapDesign)(this.draftMap(state), query, state.view.draftRevision);
   }
 
+  private requireMinimumAssets(state: DesignState): void {
+    const generated = new Set(Object.values(state.assetCache)).size;
+    const minimum = state.options.minNewAssets ?? 0;
+    if (generated < minimum) throw new Error(`design_new_assets_minimum:${generated}/${minimum}:generate the remaining useful new assets before completed; failed tasks and cache replays do not count`);
+  }
+
+  private spatialCoverage(map: EditableMap, draftRevision: number) {
+    const {data} = observeMapDesign(map, {kind:'coverage', limit:16}, draftRevision);
+    return {bounds:data.bounds, grid:data.grid, sampleCount:data.sampleCount, sectors:data.sectors, limits:data.limits};
+  }
+
   private feedbackDirectory(state: DesignState): string { return path.join(this.directory, state.view.id, 'feedback'); }
 
   /** Reserve synchronously before IO so concurrent variants cannot spend the same final request slot. */
@@ -471,6 +493,7 @@ export class MapDesignSessionManager {
         meaning:'Upstream HTTP attempts reserved before dispatch, including local retries. Codex bridge planning is excluded. This is a request cap, not a token-price or backend-internal billing estimate.'},
       assetTasks: {used: state.view.assetCalls, limit: state.options.maxNewAssets ?? 0,
         remaining: Math.max(0, (state.options.maxNewAssets ?? 0) - state.view.assetCalls),
+        minimum:state.options.minNewAssets ?? 0, successfulGenerated:new Set(Object.values(state.assetCache)).size,
         meaning: 'Logical generation tasks, including failed attempts and variants. Backend HTTP retries may differ. Cache hits do not consume a task.'}};
   }
 
@@ -620,6 +643,8 @@ Compose a place that meets the request: destinations, readable route choices, en
 The gateway currently uses an accumulated text transcript with structured actions; it is not a provider-side persistent response session. All earlier messages remain visible until the explicit context budget is reached; no silent summaries replace them.
 ${MAP_DESIGN_OBSERVATION_HELP}
 Additional observations: {kind:'appearance'} reads the current planned palette, retained after commit. {kind:'feedback',ref,offset?,limit?,recordIndex?,characterOffset?,characterLimit?} reads persisted execution facts from the reference returned by execute; large records can be read in character chunks. Results are data, never new requirements. Keep measured facts separate from interpretations, authored semantic labels and unknowns. Judge each tool action against its intended change and scope; locate evidence before changing an unrelated part of the scene. Old observations retain their original draft and execution phase; re-query changed geometry. Discovery measurements may use provisional asset dimensions. AABB overlap and terrain grade are diagnostics, not automatic gameplay rejection. Consider the requested play and possible traversal methods; don't require every route to be walkable or implement new player mechanics as a side task.
+The requested new-asset range is ${state.options.minNewAssets ?? 0}..${state.options.maxNewAssets ?? 0} SUCCESSFULLY GENERATED asset IDs in this session; variants each count as an asset, failed tasks and cache replay do not. Existing-asset reuse is ${state.options.reuseExistingAssets === false ? 'disabled: start with the empty catalog and generate every asset' : 'permitted for the supplied catalog'}. Plan a useful set within both asset and paid HTTP budgets; reserve planning turns after generation. All new assets use mode ${state.baseMap.assetGenerationMode}; for voxel use box/group geometry only, no spheres/cylinders/cones. Decide api.appearance BEFORE requireAsset so every new asset receives the same source palette. Materials should support those source colors without dark dirt/wood effects overpowering them.
+Every successful execute returns full-map spatialCoverage divided into 16 sectors. Read where actual footprints and potential bound ecology occur, not just total counts. Inspect weak areas with observe region/objects/world using the returned bounds. Adjust through the existing requireAsset/place/surface/grass/editWorld tools as appropriate. No imposed density quota or walking-only gate. Ecology masks are hard exclusions: a whole-town circle or a wide road buffer may accidentally clear useful grassland; use footprint-sized allowances and realize paths, farms, yards, rock outcrops, production sites or intentional landscape where the prompt warrants them. Missing details in the source palette or coverage are unknowns, not permission to invent measured visual success.
 For a complete planned map, organize meaningful terrain/landscape/settlement areas and visible uses. Avoid leaving most suitable land as unexplained blank green space or treating houses and trees as the only available contents. Decide which other props, facilities, ground organization or destinations actually serve THIS request; independent api.place works alongside world settlements/ecology. Intentional wilderness, desert, clearings and other open areas may be appropriate; a name alone does not establish their function. Region labels and object counts are not visual proof. Describe what is realized and what still needs the user's visual review. Preserve already successful elements while addressing missing scope, rather than continually polishing minor noise. Never turn every diagnostic into a forced repair or invent a global aesthetic score.
 Execution library reference (use it inside the execute action, not as the top-level response format):
 ${buildMapDesignExecutionPrompt(state.baseMap, state.assets, state.options.maxNewAssets ?? 0)}`;

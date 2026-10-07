@@ -44,7 +44,10 @@ export interface MapDesignSessionOptions {
   expectedVersion: number;
   provider?: ChatProvider;
   assetProvider?: ModelProvider;
+  minNewAssets?: number;
   maxNewAssets?: number;
+  /** Exclude pre-existing library assets from a fresh design; generated assets remain available on replay. */
+  reuseExistingAssets?: boolean;
   /** Model actions per uninterrupted task run; reaching it preserves an unfinished draft. */
   maxSteps?: number;
   /** Total upstream HTTP attempts for planning and assets, including retries; Codex bridge turns are excluded. */

@@ -23,6 +23,34 @@ function route(id: string, points: [number, number][], width = 4): MapGuide {
 }
 
 describe('versioned map design observations', () => {
+  it('surveys edge sectors and separates named regions from physically realized content', () => {
+    const map=world();
+    map.objects.push({...createMapObject('Edge destination'),transform:{position:[220,0,220],rotation:[0,0,0],scale:[1,1,1],size:[6,6,6]}});
+    map.world!.bundle.plan.featureGraph={regions:[{id:'empty-orchard',kind:'agriculture',name:'Orchard',center:[-200,-200],radius:20}],anchors:[],paths:[],relations:[]};
+    map.world!.bundle.plan.intentionalEmptyAreas=[{id:'claim',regionId:'empty-orchard',purpose:'Claimed orchard clearing'}];
+    const before=JSON.stringify(map), observation=observeMapDesign(map,{kind:'coverage'},5);
+    expect(observation).toMatchObject({draftRevision:5,kind:'coverage'});
+    expect(observation.data.bounds).toEqual([-250,-250,250,250]);
+    expect(observation.data.sectors.total).toBe(16);
+    expect(observation.data.sectors.items.find((cell:any)=>cell.id==='sector-3-3').physicalFootprints).toBe(1);
+    const empty=observation.data.sectors.items.find((cell:any)=>cell.id==='sector-0-0');
+    expect(empty).toMatchObject({physicalFootprints:0,declaredRegions:[{id:'empty-orchard',name:'Orchard'}],declaredOpenAreas:[{id:'claim'}]});
+    expect(empty.inspect.bounds).toEqual([-250,-250,-125,-125]);
+    expect(JSON.stringify(map)).toBe(before);
+  });
+
+  it('reports broad exclusion masks despite a bound forest asset, rather than claiming forest coverage', () => {
+    const map=world(()=>30);
+    map.world!.bundle.plan.ecology=[{id:'forest',kind:'broadleaf',biome:'grassland',density:1,spacing:10,maxSlope:45,scale:[1,1],exclusions:[{kind:'circle',center:[0,0],radius:200}]}];
+    map.world!.assets=[{key:'tree',role:'tree',assetId:'tree',ecologyRuleId:'forest'}];
+    const result=observeMapDesign(map,{kind:'coverage'},6);
+    const center=result.data.sectors.items.find((cell:any)=>cell.id==='sector-2-2');
+    expect(center.ecologyExcludedFraction).toBe(1);
+    expect(center.ecologyPotentialFraction).toBe(0);
+    const ordinary=observeMapDesign(createEmptyMap(),{kind:'coverage',grid:2},0);
+    expect(ordinary.data.sectors.items.some((cell:any)=>cell.sampleCount===0 && cell.ecologyPotentialFraction===null)).toBe(true);
+  });
+
   it('pages stored grass style and density precision without arrays or invented rendered coverage', () => {
     const map = applyMapOperations(world(), [
       { type: 'grass.layer.add', layer: { id: 'orchard', preset: 'farm', height: 0.6,
