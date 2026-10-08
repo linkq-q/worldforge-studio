@@ -20,6 +20,7 @@
     <div>
       <button data-view="harbor">港湾全景</button><button data-view="boat">近船</button>
       <button data-view="low">低视角</button><button data-view="underwater">水下</button>
+      <button data-view="sea">外海浪形</button>
       <button id="motion" aria-pressed="false">固定轨迹运动</button>
     </div>
     <div>
@@ -28,7 +29,12 @@
       <button id="step">推进 0.8 秒</button><button id="sample">采样 10 秒</button>
       <button id="download">下载当前截图</button>
     </div>
+    <div>
+      <button data-sea-state="custom">上一版轻微起伏</button><button data-sea-state="light">轻浪</button>
+      <button data-sea-state="moderate">中浪</button><button data-sea-state="large">大浪</button>
+    </div>
     <small>两个选项共用当前 shader；最初参数参考仅回拨参数。历史版本请对照已保存的同机位截图。</small>
+    <small>海况只在此页预览，不保存地图或方案。中浪与大浪在外海明显，进入浅岸后衰减。</small>
     <div id="status">读取真实海港地图和渲染方案…</div>
     <div id="stats"></div>
     <div id="sample-result"></div>
@@ -36,6 +42,7 @@
   </aside>
   <script type="module">
     import { createMapViewer } from '/src/client/mapViewer.ts';
+    import { normalizeRenderPlan } from '/src/shared/renderPlan.ts';
 
     const query = new URLSearchParams(location.search);
     const api = query.get('api') || 'http://127.0.0.1:8797';
@@ -78,10 +85,13 @@
         harbor: { position: [65, 14, 7], target: [-5, 1.8, 0] },
         boat: { position: [30, 4.5, -2], target: [10, 0.8, -12] },
         low: { position: [42, 0.65, 9], target: [5, 1.1, 5] },
-        underwater: { position: [25, -1.1, -7], target: [15, 0.1, -12] }
+        underwater: { position: [25, -1.1, -7], target: [15, 0.1, -12] },
+        sea: { position: [78, 4.5, 35], target: [116, 0, -25] }
       };
       let view = shots[query.get('view')] ? query.get('view') : 'harbor';
       let mode = query.get('mode') === 'baseline' ? 'baseline' : 'current';
+      const seaStateLabels = { custom: '上一版轻微起伏', light: '轻浪', moderate: '中浪', large: '大浪' };
+      let seaState = Object.hasOwn(seaStateLabels, query.get('seaState')) ? query.get('seaState') : 'moderate';
       let elapsed = 12, paused = false, moving = false, motionTime = 0;
       let previous = performance.now(), frameSum = 0, cpuSum = 0, samples = 0, lastReport = previous;
       let sampling = null;
@@ -97,6 +107,27 @@
       };
       // Parameter reference only: both options keep the current shader code.
       // This page never saves a map or scheme.
+      function applySeaState() {
+        const preview = structuredClone(scheme);
+        if (seaState !== 'custom') {
+          const plan = preview.renderPlan ?? { version: 2, baseSchemeId: preview.id, modules: [] };
+          let waters = plan.modules.filter(module => module.id === 'runtime.water-style');
+          if (!waters.length) {
+            waters = [{ id: 'runtime.water-style', params: {} }];
+            plan.modules.push(...waters);
+          }
+          for (const water of waters) Object.assign(water.params, {
+            seaState, waveStrength: 0.35, waveSpeed: 0.3, waveScale: 1.3,
+            foamStrength: 0.8, shoreFoamWidth: 0.12
+          });
+          preview.renderPlan = normalizeRenderPlan(plan);
+        }
+        viewer.setRenderScheme(preview);
+        baselines.clear();
+        applyComparison();
+        document.querySelectorAll('[data-sea-state]').forEach(button =>
+          button.setAttribute('aria-pressed', button.dataset.seaState === seaState));
+      }
       function applyComparison() {
         if (adapter.waterReflection) adapter.waterReflection.enabled = mode === 'current';
         for (const { surface } of adapter.waterBindings) {
@@ -122,7 +153,7 @@
         camera.updateMatrixWorld();
       }
       function updateLabel() {
-        status.textContent = `${mode === 'baseline' ? '最初参数参考' : '本轮优化'} · ${view} · 波浪 t=${elapsed.toFixed(2)} 秒 · ${paused ? '已冻结' : '播放中'}`;
+        status.textContent = `${mode === 'baseline' ? '最初参数参考' : '本轮优化'} · ${seaStateLabels[seaState]} · ${view} · 波浪 t=${elapsed.toFixed(2)} 秒 · ${paused ? '已冻结' : '播放中'}`;
       }
       function draw(delta = 0) {
         setCamera();
@@ -153,6 +184,10 @@
         cancelSampling();
         mode = button.dataset.mode; applyComparison(); resetSamples(); draw(); updateLabel();
       });
+      document.querySelectorAll('[data-sea-state]').forEach(button => button.onclick = () => {
+        cancelSampling();
+        seaState = button.dataset.seaState; applySeaState(); resetSamples(); draw(); updateLabel();
+      });
       const pause = document.querySelector('#pause'), motion = document.querySelector('#motion');
       pause.onclick = () => {
         cancelSampling();
@@ -174,13 +209,13 @@
         draw(); resetSamples();
         sampling = { start: 0, frameTimes: [], cpuSum: 0,
           captures: adapter.waterReflection?.getStats().renderCount ?? 0,
-          label: `${view} · ${mode === 'baseline' ? '最初参数参考' : '本轮优化'} · ${moving ? '运动镜头' : '固定镜头'} · ${paused ? '冻结波浪' : '播放波浪'}` };
+          label: `${view} · ${seaStateLabels[seaState]} · ${mode === 'baseline' ? '最初参数参考' : '本轮优化'} · ${moving ? '运动镜头' : '固定镜头'} · ${paused ? '冻结波浪' : '播放波浪'}` };
         sampleButton.disabled = true;
         sampleResult.textContent = `从 t=12 秒开始采样 10 秒 · ${sampling.label}`;
       };
       document.querySelector('#download').onclick = () => {
         draw();
-        const filename = `harbor-water-${view}-${mode}-t${elapsed.toFixed(2)}.png`;
+        const filename = `harbor-water-${view}-${mode}-${seaState}-t${elapsed.toFixed(2)}.png`;
         canvas.toBlob(blob => {
           if (!blob) { status.textContent = '截图失败'; return; }
           const link = document.querySelector('#screenshot-download');
@@ -195,9 +230,9 @@
       };
       addEventListener('resize', () => viewer.setSize(innerWidth, innerHeight));
       viewer.setSize(innerWidth, innerHeight);
-      applyComparison(); draw(); updateLabel();
+      applySeaState(); draw(); updateLabel();
       window.viewer = viewer;
-      window.review = { shots, draw, get state() { return { view, mode, elapsed, paused, moving }; } };
+      window.review = { shots, draw, get state() { return { view, mode, seaState, elapsed, paused, moving }; } };
       window.ready = true;
       function frame(now) {
         const interval = now - previous; previous = now;

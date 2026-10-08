@@ -48,6 +48,7 @@ import {
   advanceUnderwaterBlend,
   bindUnderwaterDepth,
   configureUnderwaterPass,
+  isInsideUnderwaterShoreMask,
   underwaterSurfaceLevel,
   underwaterWaveProfileFromUniforms,
   type UnderwaterWaveProfile
@@ -67,6 +68,8 @@ import type {
 
 const NORMAL_PREPASS_LAYER = 29;
 const _waterWorldPosition = new THREE.Vector3();
+const _underwaterBounds = new THREE.Box3();
+const _underwaterRay = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
 
 interface MaterialBaseline {
   material: THREE.Material;
@@ -832,6 +835,16 @@ export class RenderRuntimeAdapter {
           surface.material.polygonOffsetFactor = 1;
           surface.material.polygonOffsetUnits = 1;
         }
+        if (mesh.userData.waterBodyType === 'ocean') {
+          surface.setOceanSeaState(style?.seaState ?? 'custom', {
+            strength: style?.waveStrength ?? 0.35,
+            speed: style?.waveSpeed ?? 0.3,
+            scale: style?.waveScale ?? 1.3,
+            direction: waveDirection,
+            sharpness: style?.waveSharpness,
+            foamStrength
+          });
+        }
       }
       const uniforms = surface.material.uniforms;
       if (style && uniforms.uOpacity) uniforms.uOpacity.value = style.opacity ?? recipe.opacity;
@@ -1119,14 +1132,45 @@ export class RenderRuntimeAdapter {
   private resolveUnderwaterWaveProfile(waterLevel: number): UnderwaterWaveProfile {
     let closest: WaterSurface | null = null;
     let closestDistance = Number.POSITIVE_INFINITY;
+    let closestIsOcean = false;
     for (const binding of this.waterBindings ?? []) {
       if (!(binding.surface instanceof WaterSurface)) continue;
+      const type = binding.mesh.userData.waterBodyType;
+      const ocean = type === 'ocean';
+      if (type) {
+        if (!binding.mesh.geometry.boundingBox) binding.mesh.geometry.computeBoundingBox();
+        binding.mesh.updateWorldMatrix(true, false);
+        _underwaterBounds.copy(binding.mesh.geometry.boundingBox!).applyMatrix4(binding.mesh.matrixWorld);
+        const { x, z } = this.camera.position;
+        if (x < _underwaterBounds.min.x || x > _underwaterBounds.max.x
+          || z < _underwaterBounds.min.z || z > _underwaterBounds.max.z) continue;
+        // Lake grids are clipped in the fragment shader; use their actual mask.
+        // Rivers use bounded path geometry. Never raycast the large ocean.
+        if (!ocean) {
+          const shore = binding.mesh.userData.waterShore as WaterShoreBinding | undefined;
+          if (shore?.worldSpace === false) {
+            if (!isInsideUnderwaterShoreMask(x, z, shore, binding.surface.material.uniforms)) continue;
+          } else {
+            _underwaterRay.ray.origin.set(x, _underwaterBounds.max.y + 1, z);
+            if (!_underwaterRay.intersectObject(binding.mesh, false).length) continue;
+          }
+        }
+      }
       const distance = Math.abs(binding.mesh.getWorldPosition(_waterWorldPosition).y - waterLevel);
-      if (distance >= closestDistance) continue;
+      if (distance > closestDistance + 0.001
+        || (Math.abs(distance - closestDistance) <= 0.001 && !(closestIsOcean && !ocean))) continue;
       closestDistance = distance;
       closest = binding.surface;
+      closestIsOcean = ocean;
     }
-    return underwaterWaveProfileFromUniforms(closest?.material.uniforms);
+    const profile = underwaterWaveProfileFromUniforms(closest?.material.uniforms);
+    if (profile.oceanUniforms) {
+      // Newly created surfaces start their own clock. The prepass/CPU crossing
+      // sample the time that updateWater will display later in this frame.
+      profile.timeOffset = Number(closest!.material.uniforms.uTime.value)
+        + this.pendingDeltaTime - this.pendingElapsedSeconds;
+    }
+    return profile;
   }
 
   private setUnderwaterPassActive(active: boolean): void {

@@ -77,10 +77,11 @@ const PARAMETER_LABELS: Record<string, string> = {
   shallowColor: '浅水颜色',
   depthColor: '深水颜色',
   foamColor: '泡沫颜色',
-  waveStrength: '波纹强度',
-  waveSpeed: '波纹速度',
-  waveScale: '波纹尺度',
-  waveDirection: '波纹方向',
+  waveStrength: '波浪强度',
+  seaState: '海况（海洋）',
+  waveSpeed: '波浪速度',
+  waveScale: '波浪尺度',
+  waveDirection: '波浪方向',
   waveSharpness: '波峰锐度',
   foamStrength: '泡沫强度',
   shoreFoamWidth: '岸边泡沫宽度',
@@ -524,6 +525,10 @@ function parameterLabel(parameter: string): string {
 }
 
 function optionLabel(option: string, moduleId?: string, parameter?: string): string {
+  if (moduleId === 'runtime.water-style' && parameter === 'seaState') {
+    const seaStateLabels: Record<string, string> = { custom: '保持当前参数', light: '轻浪', moderate: '中浪', large: '大浪' };
+    return escapeHtml(seaStateLabels[option] ?? option);
+  }
   const scoped = moduleId === 'runtime.underwater' && parameter === 'mode' && option === 'clear'
     ? '清澈水下'
     : undefined;

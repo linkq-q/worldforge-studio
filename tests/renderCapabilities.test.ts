@@ -436,4 +436,20 @@ describe('RenderPlan V2 capabilities', () => {
 
     expect(plan.modules[0]?.params).toEqual({ environmentReflectionStrength: 0.2 });
   });
+
+  it('round-trips ocean sea states without changing legacy water plans or authored zero strength', () => {
+    for (const seaState of ['custom', 'light', 'moderate', 'large']) {
+      const plan = normalizeRenderPlan({ version: 2, baseSchemeId: 'render-natural-day',
+        modules: [{ id: 'runtime.water-style', params: { seaState, waveStrength: 0 } }] });
+      expect(plan.modules[0]?.params).toMatchObject({ seaState, waveStrength: 0 });
+      expect(compileRuntimeWaterStyles(plan)[0]).toMatchObject({ seaState, waveStrength: 0 });
+    }
+    const legacy = normalizeRenderPlan({ version: 2, baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'runtime.water-style', params: { recipe: 'calm-lake' } }] });
+    expect(legacy.modules[0]?.params).toEqual({ recipe: 'calm-lake' });
+    expect(compileRuntimeWaterStyles(legacy)[0]?.seaState).toBe('custom');
+    expect(() => normalizeRenderPlan({ version: 2, baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'runtime.water-style', params: { seaState: 'tsunami' } }] }))
+      .toThrow('invalid_render_enum:runtime.water-style.seaState');
+  });
 });

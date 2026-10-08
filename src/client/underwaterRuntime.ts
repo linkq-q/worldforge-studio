@@ -1,16 +1,38 @@
 import * as THREE from 'three';
 import { absorptionFromTransmittance } from '@voxel-studio/render-runtime/postprocess';
+import { bindOceanWaveUniforms, sampleOceanWaveHeight } from '@voxel-studio/render-runtime/environment';
 import type { EditableMap } from '../shared/map';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from '../shared/mapWater';
 import { mapOceanCoast, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import type { RuntimeUnderwaterStyle } from '../shared/renderPlan';
 import { worldMapSampler } from '../shared/worldMapState';
+import type { WaterShoreBinding } from './renderEnvironmentBridge';
 
 interface UnderwaterPassLike {
   uniforms: Record<string, { value: unknown }>;
 }
 
 const oceanCoastCache = new WeakMap<EditableMap, OceanCoastField | null>();
+
+export function isInsideUnderwaterShoreMask(
+  x: number, z: number, shore: WaterShoreBinding, uniforms: Record<string, { value: unknown }>
+): boolean {
+  const image = shore.texture.image as { data?: ArrayLike<number>; width: number; height: number };
+  if (!image?.data) return true;
+  const u = (x - shore.center[0]) / shore.size + 0.5;
+  const v = (shore.center[1] - z) / shore.size + 0.5;
+  if (u < 0 || u > 1 || v < 0 || v > 1) return false;
+  const gx = THREE.MathUtils.clamp(u * image.width - 0.5, 0, image.width - 1);
+  const gz = THREE.MathUtils.clamp(v * image.height - 0.5, 0, image.height - 1);
+  const ix = Math.floor(gx), iz = Math.floor(gz), fx = gx - ix, fz = gz - iz;
+  const texel = (cx: number, cz: number) => Number(image.data![Math.min(cz, image.height - 1) * image.width + Math.min(cx, image.width - 1)]);
+  let distance = THREE.MathUtils.lerp(
+    THREE.MathUtils.lerp(texel(ix, iz), texel(ix + 1, iz), fx),
+    THREE.MathUtils.lerp(texel(ix, iz + 1), texel(ix + 1, iz + 1), fx), fz
+  ) / (image.data instanceof Uint8Array ? 255 : 1);
+  if (uniforms.uInvertShoreDistance?.value) distance = 1 - distance;
+  return distance * Number(uniforms.uShoreDistanceScale?.value ?? 1) >= Number(uniforms.uShoreClipThreshold?.value ?? 0.002);
+}
 
 export interface UnderwaterWaveProfile {
   amplitude: number;
@@ -20,6 +42,8 @@ export interface UnderwaterWaveProfile {
   secondaryDirection: [number, number];
   foamColor: string;
   edgeStrength: number;
+  oceanUniforms?: Record<string, { value: unknown }>;
+  timeOffset?: number;
 }
 
 export const DEFAULT_UNDERWATER_WAVE_PROFILE: UnderwaterWaveProfile = {
@@ -76,6 +100,7 @@ export function sampleUnderwaterWaveOffset(
   x = finiteNumber(x, 0);
   z = finiteNumber(z, 0);
   elapsedSeconds = finiteNumber(elapsedSeconds, 0);
+  if (profile.oceanUniforms) return sampleOceanWaveHeight(profile.oceanUniforms, x, z, elapsedSeconds + (profile.timeOffset ?? 0));
   const primary = normalizedDirection(profile.primaryDirection, [1, 0.25]);
   const secondary = normalizedDirection(profile.secondaryDirection, [-0.35, 1]);
   const detail = normalizedDirection(
@@ -109,14 +134,17 @@ export function underwaterWaveProfileFromUniforms(
   const foam = uniforms.uFoamColor?.value;
   const foamStrength = finiteNumber(uniforms.uFoamStrength?.value, 1);
   const shoreStrength = finiteNumber(uniforms.uShoreWaveStrength?.value, 0);
+  const oceanSpectrum = uniforms.uOceanSpectrumEnabled?.value === true;
   return {
-    amplitude: THREE.MathUtils.clamp(finiteNumber(uniforms.uWaveHeight?.value, DEFAULT_UNDERWATER_WAVE_PROFILE.amplitude), 0, 0.5),
+    amplitude: oceanSpectrum ? Math.max(0, finiteNumber(uniforms.uOceanSpectrumHeight?.value, 0))
+      : THREE.MathUtils.clamp(finiteNumber(uniforms.uWaveHeight?.value, DEFAULT_UNDERWATER_WAVE_PROFILE.amplitude), 0, 0.5),
     scale: THREE.MathUtils.clamp(finiteNumber(uniforms.uWaveScale?.value, DEFAULT_UNDERWATER_WAVE_PROFILE.scale), 0.001, 8),
     speed: THREE.MathUtils.clamp(finiteNumber(uniforms.uWaveSpeed?.value, DEFAULT_UNDERWATER_WAVE_PROFILE.speed), -4, 4),
     primaryDirection: primary,
     secondaryDirection: secondary,
     foamColor: foam instanceof THREE.Color ? `#${foam.getHexString()}` : DEFAULT_UNDERWATER_WAVE_PROFILE.foamColor,
-    edgeStrength: THREE.MathUtils.clamp(0.45 + foamStrength * 0.25 + shoreStrength * 0.12, 0, 1.5)
+    edgeStrength: THREE.MathUtils.clamp(0.45 + foamStrength * 0.25 + shoreStrength * 0.12, 0, 1.5),
+    ...(oceanSpectrum ? { oceanUniforms: uniforms } : {})
   };
 }
 
@@ -145,7 +173,12 @@ export function bindUnderwaterDepth(
   pass.uniforms.uCameraFar.value = camera.far;
   pass.uniforms.uWaterLevel.value = waterLevel;
   pass.uniforms.uSubmersion.value = submersion;
-  if (pass.uniforms.uTime) pass.uniforms.uTime.value = elapsedSeconds;
+  if (pass.uniforms.uTime) pass.uniforms.uTime.value = elapsedSeconds + (wave.timeOffset ?? 0);
+  bindOceanWaveUniforms(pass.uniforms, wave.oceanUniforms);
+  if (pass.uniforms.uCameraSurfaceHeight) {
+    const position = pass.uniforms.uCameraPosition.value as THREE.Vector3;
+    pass.uniforms.uCameraSurfaceHeight.value = underwaterSurfaceLevel(waterLevel, position.x, position.z, elapsedSeconds, wave);
+  }
   if (pass.uniforms.uWaveHeight) pass.uniforms.uWaveHeight.value = Math.max(0, wave.amplitude);
   if (pass.uniforms.uWaveScale) pass.uniforms.uWaveScale.value = Math.max(0.001, wave.scale);
   if (pass.uniforms.uWaveSpeed) pass.uniforms.uWaveSpeed.value = wave.speed;

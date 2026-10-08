@@ -173,6 +173,7 @@ export interface RuntimeColorGrade {
 export interface RuntimeWaterStyle {
   scope: RenderModuleScope;
   recipe: 'calm-lake' | 'clear-river' | 'stylized' | 'stormy';
+  seaState?: 'custom' | 'light' | 'moderate' | 'large';
   opacity?: number;
   color?: string;
   shallowColor?: string;
@@ -477,13 +478,14 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     priority: 'P1',
     repeatable: true,
     availability: 'ready',
-    availabilityNote: '作用于结构化湖泊/河流和带 water 标签的模型水面。',
+    availabilityNote: '作用于结构化湖泊/河流和带 water 标签的模型水面；海况档位仅作用于海洋。',
     params: {
       recipe: {
         type: 'enum',
         values: ['calm-lake', 'clear-river', 'stylized', 'stormy'],
         default: 'calm-lake'
       },
+      seaState: { type: 'enum', values: ['custom', 'light', 'moderate', 'large'], default: 'custom' },
       opacity: { type: 'number', min: 0.25, max: 1, default: 0.62 },
       color: { type: 'color', default: '#347f7c' },
       shallowColor: { type: 'color', default: '#67aaa0' },
@@ -964,6 +966,7 @@ export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[]
   return modules.map((item) => ({
       scope: item.scope ?? { target: 'water', tag: 'water' },
       recipe: enumValue(item.params.recipe, ['calm-lake', 'clear-river', 'stylized', 'stormy'], 'calm-lake'),
+      seaState: enumValue<NonNullable<RuntimeWaterStyle['seaState']>>(item.params.seaState, ['custom', 'light', 'moderate', 'large'], 'custom'),
       opacity: numericValue(item.params.opacity),
       color: stringValue(item.params.color) ?? directed?.color,
       shallowColor: stringValue(item.params.shallowColor) ?? directed?.shallowColor,

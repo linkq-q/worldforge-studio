@@ -113,8 +113,27 @@ describe('render-plan water ownership', () => {
     expect(authored.uShoreFoamStrength.value).toBe(0);
     expect(authored.uContactFoamStrength.value).toBe(0);
     expect(authored.uShoreFoamWidth.value).toBe(0.03);
+    expect(authored.uOceanSpectrumEnabled.value).toBe(false);
+
+    const lake = new THREE.Mesh(new THREE.PlaneGeometry(), originalMaterial);
+    lake.userData.materialTags = ['water'];
+    lake.userData.waterBodyType = 'lake';
+    modelsRoot.add(lake);
+    for (const strength of [0.35, 0]) {
+      adapter.resetScopedCapabilities();
+      (adapter as unknown as { applyWaterStyles(styles: unknown[]): void }).applyWaterStyles([{
+        scope: { target: 'water', tag: 'water' }, recipe: 'calm-lake', seaState: 'large',
+        waveStrength: strength, waveSpeed: 0.3, waveScale: 1.3, foamStrength: 0.8
+      }]);
+      const sea = (ocean.material as unknown as THREE.ShaderMaterial).uniforms;
+      expect(sea.uOceanSpectrumEnabled.value).toBe(true);
+      const totalAmplitude = sea.uOceanWaveComponents.value.reduce((sum: number, wave: THREE.Vector4) => sum + wave.z, 0);
+      expect(totalAmplitude).toBeCloseTo(strength === 0 ? 0 : 1.9);
+      expect((lake.material as unknown as THREE.ShaderMaterial).uniforms.uOceanSpectrumEnabled.value).toBe(false);
+    }
 
     adapter.resetScopedCapabilities();
+    lake.geometry.dispose();
     originalMaterial.dispose();
     ocean.geometry.dispose();
     shoreTexture.dispose();

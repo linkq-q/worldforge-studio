@@ -8,5 +8,6 @@ export * from './environment/water/WaterMaskGenerator.js';
 export * from './environment/water/WaterPartResolver.js';
 export * from './environment/water/WaterSceneCapture.js';
 export * from './environment/water/WaterSurface.js';
+export * from './environment/water/OceanWaveSpectrum.js';
 export * from './environment/water/WaterfallSurface.js';
 export * from './environment/water/WaterWrapSurface.js';

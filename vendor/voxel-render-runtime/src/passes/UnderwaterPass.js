@@ -1,14 +1,19 @@
 import * as THREE from 'three';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import {
+  createOceanWaveUniforms, OCEAN_TERRAIN_GLSL, OCEAN_SWASH_GLSL, OCEAN_WAVE_SPECTRUM_GLSL
+} from '../environment/water/OceanWaveSpectrum.js';
 
 const UnderwaterShader = {
   uniforms: {
+    ...createOceanWaveUniforms(),
     tDiffuse: { value: null },
     tDepth: { value: null },
     uProjectionMatrixInverse: { value: new THREE.Matrix4() },
     uCameraMatrixWorld: { value: new THREE.Matrix4() },
     uCameraPosition: { value: new THREE.Vector3() },
     uCameraFar: { value: 1000 },
+    uCameraSurfaceHeight: { value: 0 },
     uWaterLevel: { value: 0 },
     uSubmersion: { value: 0 },
     uTime: { value: 0 },
@@ -40,6 +45,7 @@ const UnderwaterShader = {
     uniform mat4 uCameraMatrixWorld;
     uniform vec3 uCameraPosition;
     uniform float uCameraFar;
+    uniform float uCameraSurfaceHeight;
     uniform float uWaterLevel;
     uniform float uSubmersion;
     uniform float uTime;
@@ -55,6 +61,14 @@ const UnderwaterShader = {
     uniform float uScatterStrength;
     varying vec2 vUv;
 
+    uniform bool uShoreWaveEnabled;
+    uniform float uShoreWaveStrength;
+    uniform float uShoreWaveRange;
+    uniform float uShoreWaveSpeed;
+    ${OCEAN_TERRAIN_GLSL}
+    ${OCEAN_SWASH_GLSL}
+    ${OCEAN_WAVE_SPECTRUM_GLSL}
+
     vec3 worldPositionAtDepth(float depthSample) {
       vec4 clip = vec4(vUv * 2.0 - 1.0, depthSample * 2.0 - 1.0, 1.0);
       vec4 view = uProjectionMatrixInverse * clip;
@@ -68,6 +82,7 @@ const UnderwaterShader = {
     }
 
     float waterWaveOffset(vec2 worldXZ) {
+      if (uOceanSpectrumEnabled) return oceanSpectrumHeightAt(worldXZ);
       vec2 primary = safeDirection(uPrimaryWaveDirection, vec2(1.0, 0.25));
       vec2 secondary = safeDirection(uSecondaryWaveDirection, vec2(-0.35, 1.0));
       vec2 detail = safeDirection(primary + secondary, vec2(0.6, 1.0));
@@ -82,9 +97,8 @@ const UnderwaterShader = {
       return uWaterLevel + waterWaveOffset(worldXZ);
     }
 
-    vec2 waterSurfaceSlope(vec2 worldXZ) {
+    vec2 waterSurfaceSlope(vec2 worldXZ, float center) {
       float sampleStep = max(0.04, 0.08 / max(uWaveScale, 0.001));
-      float center = waterSurfaceHeight(worldXZ);
       return vec2(
         waterSurfaceHeight(worldXZ + vec2(sampleStep, 0.0)) - center,
         waterSurfaceHeight(worldXZ + vec2(0.0, sampleStep)) - center
@@ -114,18 +128,20 @@ const UnderwaterShader = {
       vec3 rayDirection = cameraToScene / max(length(cameraToScene), 0.00001);
       float waterDistance = sceneDistance;
 
-      float cameraSurfaceHeight = waterSurfaceHeight(uCameraPosition.xz);
+      float cameraSurfaceHeight = uOceanSpectrumEnabled ? uCameraSurfaceHeight : waterSurfaceHeight(uCameraPosition.xz);
       float cameraSurfaceDelta = uCameraPosition.y - cameraSurfaceHeight;
       float verticalDelta = scenePosition.y - uCameraPosition.y;
       bool cameraUnderwater = cameraSurfaceDelta <= 0.0;
-      bool sceneUnderwater = scenePosition.y <= waterSurfaceHeight(scenePosition.xz);
+      float sceneSurfaceHeight = waterSurfaceHeight(scenePosition.xz);
+      bool sceneUnderwater = scenePosition.y <= sceneSurfaceHeight;
 
       // Near the interface, use a world-space probe in front of the camera. This
       // preserves a readable moving silhouette instead of projecting one flat
       // infinite plane across the screen.
       float probeDistance = min(sceneDistance, mix(4.0, 8.0, clamp(sceneDistance / 80.0, 0.0, 1.0)));
       vec3 probePosition = uCameraPosition + rayDirection * probeDistance;
-      float waterlineSlope = (waterSurfaceHeight(probePosition.xz) - uCameraPosition.y)
+      float probeSurfaceHeight = waterSurfaceHeight(probePosition.xz);
+      float waterlineSlope = (probeSurfaceHeight - uCameraPosition.y)
         / max(probeDistance, 0.001);
       float waterlineDelta = rayDirection.y - waterlineSlope;
       bool usesNearWaterline = depthSample >= 0.9999 || sceneDistance > probeDistance;
@@ -156,13 +172,13 @@ const UnderwaterShader = {
       );
       float passActivation = smoothstep(0.015, 0.18, uSubmersion);
       float submergedPixel = step(0.0001, waterDistance) * passActivation;
-      vec2 waveSlope = waterSurfaceSlope(probePosition.xz);
+      vec2 waveSlope = submergedPixel > 0.0 ? waterSurfaceSlope(probePosition.xz, probeSurfaceHeight) : vec2(0.0);
       float refractionStrength = (0.0012 + nearSurface * 0.0028)
         * (0.35 + 0.65 * clamp(waterDistance / 6.0, 0.0, 1.0));
       vec2 refractedUv = clamp(vUv + waveSlope * refractionStrength * submergedPixel, 0.002, 0.998);
       vec3 refractedColor = texture2D(tDiffuse, refractedUv).rgb;
 
-      float surfaceDepth = max(0.0, waterSurfaceHeight(scenePosition.xz) - scenePosition.y);
+      float surfaceDepth = max(0.0, sceneSurfaceHeight - scenePosition.y);
       float caustic = causticBands(scenePosition.xz)
         * (1.0 - smoothstep(0.5, 9.0, surfaceDepth))
         * (1.0 - smoothstep(18.0, 70.0, sceneDistance))

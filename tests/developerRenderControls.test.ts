@@ -99,6 +99,9 @@ describe('developer render controls', () => {
     expect(waveSlider).toContain('step="0.01"');
     expect(html).toContain('HDRI 环境反射');
     expect(html).toContain('HDRI 反射曝光');
+    expect(html).toContain('海况（海洋）');
+    expect(html).toContain('data-dev-param="seaState"');
+    for (const label of ['保持当前参数', '轻浪', '中浪', '大浪']) expect(html).toContain(label);
     expect(html).not.toContain('data-dev-param="reflectionStrength"');
     expect(html).not.toContain('data-dev-param="reflectionDistortion"');
     expect(html).not.toContain('data-dev-param="reflectionFresnel"');

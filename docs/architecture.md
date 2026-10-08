@@ -129,6 +129,10 @@ Directional shadows use one map-fitted shadow camera configured by `lighting.ts`
 
 开发者模式编辑的仍是普通渲染方案，不生成第二套数据。每个方案可以独立决定参数是否向 AI/开发者开放、开放范围、枚举白名单和控件形式。“当前效果”与“开放策略”分离：数值参数先在 capability 的完整安全范围内用滑条和精确数值框实时预览，再由开发者填写允许 AI/开发者使用的子区间。水体开放 HDRI 环境反射强度和曝光；结构化水面的平面反射由运行时统一管理，暂不额外开放方案参数。保存时复制为新方案，不覆盖内置预设。
 
+水体风格的 `seaState` 仅作用于海洋。`custom`（含缺省值）保留原有水面；`light/moderate/large` 使用四分量 Gerstner 长涌浪与交叉风浪。在强度 0.35、速度 0.3、尺度 1.3 时，标称峰谷高度上界为 0.4/1.5/3.8 m，主波长为 14/24/40 m；这是艺术档位，不是气象海况等级。现有强度、速度和尺度参数相对这些基准调整，显式零强度仍保持平水。
+
+浪形采用水平位移与竖直位移共同求值，遵循深水色散关系 `omega² = gk`；顶点切线的水平 Jacobian 用于生成压缩浪峰白沫。水下采样共用波谱和近岸/网格衰减，反解水平位移后判断水线。实现沿用已有渲染调度和四波预算，不增加 FFT 或泡沫历史缓冲。方法参考 [GPU Gems 的 Gerstner 实现](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models)及 [NVIDIA 的 Jacobian 白帽说明](https://developer.download.nvidia.com/assets/gameworks/downloads/regular/events/cgdc15/CGDC2015_ocean_simulation_en.pdf)；GPU 验证入口为 `tests/manual/oceanSeaStates.html`，真实场景对比入口为 `tests/manual/harborWaterReview.html`。
+
 ## 初版暂不实现
 
 - Three.js 多版本兼容层

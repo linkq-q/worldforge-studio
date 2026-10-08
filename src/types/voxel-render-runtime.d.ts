@@ -325,6 +325,18 @@ declare module '@voxel-studio/render-runtime/outline' {
 }
 
 declare module '@voxel-studio/render-runtime/environment' {
+  export interface OceanSeaStateControls {
+    strength?: number;
+    speed?: number;
+    scale?: number;
+    direction?: number;
+    sharpness?: number;
+    foamStrength?: number;
+  }
+  export function createOceanWaveUniforms(): Record<string, { value: unknown }>;
+  export function bindOceanWaveUniforms(target: Record<string, { value: unknown }>, source?: Record<string, { value: unknown }>): void;
+  export function sampleOceanWaveDisplacement(uniforms: Record<string, { value: unknown }>, x: number, z: number, time: number): [number, number, number];
+  export function sampleOceanWaveHeight(uniforms: Record<string, { value: unknown }>, x: number, z: number, time: number): number;
   export const PANORAMA_EXTENSIONS: string[];
   export function loadPanoramaTexture(
     url: string,
@@ -378,6 +390,7 @@ declare module '@voxel-studio/render-runtime/environment' {
     ): void;
     importState(state: Record<string, unknown>): void;
     setWaterMode(mode: 'cartoon' | 'realistic' | 'hybrid'): void;
+    setOceanSeaState(state: 'custom' | 'light' | 'moderate' | 'large', controls?: OceanSeaStateControls): void;
     setWaterEnvMap(texture: import('three').Texture | null): void;
     setWaterReflectionParams(params: Record<string, unknown>): void;
     setPlanarReflectionParams(params: Record<string, unknown>): void;

@@ -1,0 +1,231 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Ocean sea states — production GPU regression</title>
+<style>body{margin:24px;background:#111820;color:#dce8ed;font:14px/1.45 monospace}#views{display:flex;flex-wrap:wrap;gap:16px}figure{margin:0}canvas{width:320px;height:240px;image-rendering:auto}figcaption{padding:5px 0}pre{white-space:pre-wrap}</style>
+</head><body><h1>Ocean sea states GPU regression</h1><div id="views"></div><pre id="output">Running...</pre>
+<script type="module">
+import * as THREE from 'three';
+import { WaterSurface } from '/vendor/voxel-render-runtime/src/environment/water/WaterSurface.js';
+import { createUnderwaterPass, UnderwaterShader } from '/vendor/voxel-render-runtime/src/passes/UnderwaterPass.js';
+import { bindUnderwaterDepth, configureUnderwaterPass, underwaterWaveProfileFromUniforms,
+  underwaterSurfaceLevel } from '/src/client/underwaterRuntime.ts';
+
+const result = { passed: false, errors: [], cases: {} };
+const show = () => { window.result = result; document.querySelector('#output').textContent = JSON.stringify(result, null, 2); };
+const resources = [];
+const keep = value => { resources.push(value); return value; };
+try {
+  const renderer = keep(new THREE.WebGLRenderer({ antialias: false }));
+  renderer.setSize(256, 192);
+  renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
+    result.errors.push([gl.getProgramInfoLog(program), gl.getShaderInfoLog(vertex), gl.getShaderInfoLog(fragment)].filter(Boolean).join('\n'));
+  };
+  if (!renderer.extensions.has('EXT_color_buffer_float')) throw Error('Float GPU readback is required; this page cannot verify geometry on this device.');
+  const scene = new THREE.Scene(), root = new THREE.Group();
+  scene.background = new THREE.Color('#91adba'); scene.add(root);
+  const camera = new THREE.PerspectiveCamera(60, 4 / 3, 0.01, 300);
+  camera.position.set(0, 8, 32); camera.lookAt(0, 0, -20); camera.updateMatrixWorld();
+  // The editor near-ocean grid is 4 m. Capture exactly those real vertices,
+  // avoiding a dense test-only mesh that conceals interpolation limitations.
+  const segments = 32, count = segments + 1, extent = 128;
+  const surface = keep(new WaterSurface(scene, renderer, root, { size: extent, segments, waterLevel: 0 }));
+  const u = surface.material.uniforms;
+  result.interfaceReady = typeof surface.setOceanSeaState === 'function'
+    && surface.material.vertexShader.includes('vOceanCompression');
+  if (!result.interfaceReady) throw Error('Production sea-state API / compression varying is not implemented yet.');
+  const terrain = keep(new THREE.DataTexture(new Float32Array([-30, -30, -30, -30]), 2, 2, THREE.RedFormat, THREE.FloatType));
+  surface.setOceanTerrainTexture(terrain, { terrainSize: [2, 2], mapSize: [extent, extent], level: 0, sinkTarget: -30 });
+  u.uOceanNearVertexSpacing.value = extent / segments;
+  surface.importState({ uUseDirectionalWaves: true, uFoamStrength: 0, uContactFoamEnabled: false,
+    uShoreFoamStrength: 0, uShoreWaveStrength: 0, uShoreWaveEnabled: true,
+    uWhitecapEnabled: true, uToonPatternEnabled: false, uHighlightEnabled: false,
+    uToonSparkleEnabled: false, uOpacity: 1 });
+  const controls = { strength: 0.35, speed: 0.3, scale: 1.3, foamStrength: 0.8 };
+  const target = (width, height, type = THREE.UnsignedByteType) => keep(new THREE.WebGLRenderTarget(width, height, {
+    type, format: THREE.RGBAFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false
+  }));
+  const fieldTarget = target(count, count, THREE.FloatType), foamTarget = target(count, count);
+  const heightTarget = target(count, count, THREE.FloatType), imageTarget = target(256, 192);
+  const sceneTarget = keep(new THREE.WebGLRenderTarget(256, 192));
+  sceneTarget.depthTexture = keep(new THREE.DepthTexture(256, 192, THREE.UnsignedIntType));
+  const postTarget = target(256, 192);
+
+  // Keep the entire production vertex shader. Only rasterization changes: each
+  // mesh vertex gets one pixel, so outputs contain no triangle interpolation.
+  const projection = 'gl_Position = vScreenPos;';
+  if (surface.material.vertexShader.split(projection).length !== 2) throw Error('Production vertex projection changed; update the capture hook.');
+  const vertexShader = surface.material.vertexShader.replace(projection,
+    `gl_Position = vec4((uv * ${segments}.0 + 0.5) / ${count}.0 * 2.0 - 1.0, 0.0, 1.0); gl_PointSize = 1.0;`);
+  const fieldMaterial = keep(new THREE.ShaderMaterial({ uniforms: u, vertexShader,
+    fragmentShader: 'varying vec3 vWorldPosition; varying float vOceanCompression; void main(){gl_FragColor=vec4(vWorldPosition,vOceanCompression);}',
+    depthTest: false, depthWrite: false, blending: THREE.NoBlending }));
+  const foamMaterial = keep(surface.material.clone());
+  foamMaterial.uniforms = u; foamMaterial.vertexShader = vertexShader;
+  foamMaterial.transparent = false; foamMaterial.depthTest = foamMaterial.depthWrite = false;
+  foamMaterial.blending = THREE.NoBlending;
+  const captureScene = new THREE.Scene(), points = new THREE.Points(surface.mesh.geometry, fieldMaterial);
+  points.frustumCulled = false; captureScene.add(points);
+  const pass = keep(createUnderwaterPass());
+  configureUnderwaterPass(pass, { mode: 'clear', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72 });
+  const productionPostMaterial = pass.material;
+  // Use the real waterSurfaceHeight helper, including the production inversion
+  // of horizontal Gerstner motion. No wave equation is copied into this test.
+  const postFunctions = UnderwaterShader.fragmentShader.slice(0, UnderwaterShader.fragmentShader.lastIndexOf('void main()'));
+  const heightMaterial = keep(new THREE.ShaderMaterial({
+    uniforms: { ...pass.uniforms, tTestSurface: { value: fieldTarget.texture } },
+    vertexShader: UnderwaterShader.vertexShader,
+    fragmentShader: `${postFunctions}\nuniform sampler2D tTestSurface; void main(){vec3 p=texture2D(tTestSurface,vUv).xyz;gl_FragColor=vec4(waterSurfaceHeight(p.xz),0.0,0.0,1.0);}`,
+    depthTest: false, depthWrite: false
+  }));
+  const maskHook = 'if (!cameraUnderwater && !sceneUnderwater) {';
+  if (UnderwaterShader.fragmentShader.split(maskHook).length !== 2) throw Error('Production underwater classification changed; update the capture hook.');
+  const maskMaterial = keep(productionPostMaterial.clone()); maskMaterial.uniforms = pass.uniforms;
+  maskMaterial.fragmentShader = UnderwaterShader.fragmentShader.replace(maskHook,
+    `gl_FragColor=vec4(cameraUnderwater?1.0:0.0,sceneUnderwater?1.0:0.0,0.0,1.0);return;${maskHook}`);
+
+  function setup(state, time = 0, extra = {}) {
+    surface.setOceanSeaState(state, { ...controls, ...extra });
+    surface.update(0, camera, null); u.uTime.value = time;
+  }
+  function field() {
+    points.material = fieldMaterial;
+    renderer.setRenderTarget(fieldTarget); renderer.render(captureScene, camera);
+    const values = new Float32Array(count * count * 4);
+    renderer.readRenderTargetPixels(fieldTarget, 0, 0, count, count, values);
+    return values;
+  }
+  function summary(values, flat) {
+    let min = Infinity, max = -Infinity, lateral = 0, square = 0, compression = 0;
+    for (let i = 0; i < values.length; i += 4) {
+      min = Math.min(min, values[i + 1]); max = Math.max(max, values[i + 1]);
+      square += values[i + 1] ** 2; compression = Math.max(compression, values[i + 3]);
+      lateral = Math.max(lateral, Math.hypot(values[i] - flat[i], values[i + 2] - flat[i + 2]));
+    }
+    return { min, max, peakToTrough: max - min, rms: Math.sqrt(square / (count * count)), lateral, compression,
+      finite: values.every(Number.isFinite) };
+  }
+  function motion(first, second) {
+    let sum = 0;
+    for (let i = 1; i < first.length; i += 4) sum += (first[i] - second[i]) ** 2;
+    return Math.sqrt(sum / (count * count));
+  }
+  function foam(values, mode) {
+    surface.setWaterMode(mode); u.uWaterDebugMode.value = 18; points.material = foamMaterial;
+    renderer.setRenderTarget(foamTarget); renderer.render(captureScene, camera);
+    const bytes = new Uint8Array(count * count * 4);
+    renderer.readRenderTargetPixels(foamTarget, 0, 0, count, count, bytes);
+    let peak = 0, lit = 0, sum = 0, weighted = 0, compression = 0;
+    for (let i = 0; i < bytes.length; i += 4) {
+      const amount = bytes[i] / 255;
+      peak = Math.max(peak, amount); if (amount > 0.1) lit++;
+      sum += amount; weighted += amount * values[i + 3]; compression += values[i + 3];
+    }
+    return { peak, coverage: lit / (count * count), mean: sum / (count * count),
+      foamCompression: weighted / Math.max(sum, 1e-9), meanCompression: compression / (count * count) };
+  }
+  function bind(time = 0) {
+    const profile = underwaterWaveProfileFromUniforms(u);
+    bindUnderwaterDepth(pass, sceneTarget.depthTexture, camera, 0, 1, time, profile);
+    return profile;
+  }
+  function heightAgreement(values, time) {
+    bind(time); pass.material = heightMaterial; pass.render(renderer, heightTarget, sceneTarget);
+    const heights = new Float32Array(values.length);
+    renderer.readRenderTargetPixels(heightTarget, 0, 0, count, count, heights);
+    let maxError = 0, sum = 0;
+    for (let i = 0; i < values.length; i += 4) {
+      const error = Math.abs(heights[i] - values[i + 1]); maxError = Math.max(maxError, error); sum += error;
+    }
+    pass.material = productionPostMaterial;
+    return { maxError, meanError: sum / (count * count) };
+  }
+  function pixels(renderTarget) {
+    const bytes = new Uint8Array(256 * 192 * 4);
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, 256, 192, bytes);
+    return bytes;
+  }
+  function tile(label, bytes) {
+    const figure = document.createElement('figure'), canvas = document.createElement('canvas'), caption = document.createElement('figcaption');
+    canvas.width = 256; canvas.height = 192; caption.textContent = label;
+    const image = new ImageData(256, 192);
+    for (let y = 0; y < 192; y++) image.data.set(bytes.subarray(y * 256 * 4, (y + 1) * 256 * 4), (191 - y) * 256 * 4);
+    canvas.getContext('2d').putImageData(image, 0, 0); figure.append(canvas, caption); document.querySelector('#views').append(figure);
+  }
+  function lowView(state) {
+    camera.position.set(0, 3, 32); camera.lookAt(0, 0, -32); camera.updateMatrixWorld();
+    setup(state); surface.setWaterMode('realistic'); u.uWaterDebugMode.value = 0;
+    renderer.setRenderTarget(imageTarget); renderer.render(scene, camera);
+    const bytes = pixels(imageTarget); tile(`${state} · low view · 4 m grid`, bytes);
+    let sum = 0, square = 0;
+    for (let i = 0; i < bytes.length; i += 4) { sum += bytes[i]; square += bytes[i] ** 2; }
+    const mean = sum / (256 * 192);
+    return { mean, deviation: Math.sqrt(Math.max(0, square / (256 * 192) - mean ** 2)) };
+  }
+
+  const base = new Float32Array(count * count * 4);
+  const position = surface.mesh.geometry.getAttribute('position'), uv = surface.mesh.geometry.getAttribute('uv');
+  for (let i = 0; i < position.count; i++) {
+    const index = (Math.round(uv.getY(i) * segments) * count + Math.round(uv.getX(i) * segments)) * 4;
+    base.set([position.getX(i), position.getY(i), position.getZ(i), 0], index);
+  }
+  setup('large', 0, { strength: 0 });
+  const flat = field(); result.cases.zeroStrength = { ...summary(flat, base), foam: foam(flat, 'realistic') };
+  for (const state of ['light', 'moderate', 'large']) {
+    setup(state); const first = field(); const metrics = summary(first, flat);
+    const realistic = foam(first, 'realistic'), cartoon = foam(first, 'cartoon');
+    const waterlineAgreement = heightAgreement(first, 0);
+    setup(state, 2); const second = field();
+    result.cases[state] = { ...metrics, motionRms: motion(first, second), realistic, cartoon, waterlineAgreement, lowView: lowView(state) };
+  }
+  setup('large'); u.uWhitecapEnabled.value = false;
+  const disabled = field(); result.cases.whitecapsDisabled = foam(disabled, 'realistic'); u.uWhitecapEnabled.value = true;
+
+  function crossing(offset, time = 0, fixedHeight = null, visible = false) {
+    setup('large', time); const profile = underwaterWaveProfileFromUniforms(u);
+    const waterY = underwaterSurfaceLevel(0, 1, 1, time, profile);
+    camera.position.set(1, fixedHeight ?? waterY + offset, 1); camera.lookAt(1, camera.position.y, -40); camera.updateMatrixWorld();
+    surface.mesh.visible = false; renderer.setRenderTarget(sceneTarget); renderer.render(scene, camera); surface.mesh.visible = true;
+    surface.update(0, camera, sceneTarget.depthTexture); u.uTime.value = time; bind(time);
+    pass.material = maskMaterial; pass.render(renderer, postTarget, sceneTarget); const bytes = pixels(postTarget);
+    let below = 0, water = 0;
+    for (let i = 0; i < bytes.length; i += 4) { below += bytes[i] / 255; water += bytes[i + 1] / 255; }
+    const metrics = { cameraY: camera.position.y, cpuSurfaceY: waterY, cameraUnderwater: below / (256 * 192), waterPixels: water / (256 * 192) };
+    if (visible) {
+      surface.setWaterMode('realistic'); u.uWaterDebugMode.value = 0; u.uUnderwaterPostProcess.value = true;
+      renderer.setRenderTarget(imageTarget); renderer.render(scene, camera);
+      pass.material = productionPostMaterial; pass.render(renderer, postTarget, imageTarget); tile(`large · waterline ${offset > 0 ? '+' : ''}${offset} m`, pixels(postTarget));
+    }
+    pass.material = productionPostMaterial;
+    return { metrics, bytes };
+  }
+  const above = crossing(0.3, 0, null, true), at = crossing(0, 0, null, true), below = crossing(-0.3, 0, null, true);
+  const moved = crossing(0, 2, at.metrics.cameraY);
+  let maskMotion = 0;
+  for (let i = 1; i < moved.bytes.length; i += 4) maskMotion += Math.abs(at.bytes[i] - moved.bytes[i]) / 255;
+  result.cases.crossing = { above: above.metrics, at: at.metrics, below: below.metrics, later: moved.metrics, maskMotion: maskMotion / (256 * 192) };
+  const { light, moderate, large, zeroStrength, whitecapsDisabled } = result.cases;
+  const hasCrest = value => value.peak > 0.2 && value.coverage > 0.002 && value.coverage < 0.65
+    && value.foamCompression > value.meanCompression + 0.025;
+  result.checks = {
+    amplitude: light.peakToTrough > 0.15 && light.peakToTrough < 0.9
+      && moderate.peakToTrough > 0.7 && moderate.peakToTrough < 3
+      && large.peakToTrough > 2 && large.peakToTrough < 7
+      && moderate.rms > light.rms * 1.5 && large.rms > moderate.rms * 1.5,
+    movingGeometry: [light, moderate, large].every(value => value.finite && value.lateral > 0.01 && value.motionRms > 0.015),
+    compressedCrests: [moderate, large].every(value => hasCrest(value.realistic) && hasCrest(value.cartoon)),
+    zeroStrength: zeroStrength.peakToTrough < 0.00001 && zeroStrength.lateral < 0.00001
+      && zeroStrength.compression < 0.00001 && zeroStrength.foam.peak === 0,
+    whitecapsDisabled: whitecapsDisabled.peak === 0,
+    synchronizedWaterline: [light, moderate, large].every(value => value.waterlineAgreement.maxError < 0.08),
+    lowView: [light, moderate, large].every(value => value.lowView.mean > 3 && value.lowView.deviation > 2),
+    crossing: above.metrics.cameraUnderwater === 0 && below.metrics.cameraUnderwater === 1
+      && at.metrics.waterPixels > 0.02 && at.metrics.waterPixels < 0.98 && result.cases.crossing.maskMotion > 0.005
+  };
+  result.passed = Object.values(result.checks).every(Boolean) && result.errors.length === 0;
+} catch (error) {
+  result.errors.push(error.stack || String(error));
+} finally {
+  show();
+  for (const resource of resources.reverse()) resource.dispose();
+}
+if (!result.passed) throw Error('Ocean sea-state GPU regression failed; inspect window.result and the production-rendered views.');
+</script></body></html>

@@ -12,6 +12,7 @@
  */
 
 import * as THREE from 'three';
+import { OCEAN_TERRAIN_GLSL, OCEAN_SWASH_GLSL, OCEAN_WAVE_SPECTRUM_GLSL, createOceanWaveUniforms, configureOceanSeaState } from './OceanWaveSpectrum.js';
 import { RENDER_ORDER } from '../../render/RenderOrders.js';
 import {
   DEPTH_UTILS_GLSL as WATER_DEPTH_UTILS_GLSL,
@@ -62,118 +63,6 @@ const PRIMARY_GERSTNER_PHASE_GLSL = /* glsl */ `
   }
 `;
 
-const OCEAN_TERRAIN_GLSL = /* glsl */ `
-  uniform sampler2D tOceanTerrain;
-  uniform bool uUseOceanTerrain;
-  uniform vec2 uOceanTerrainSize;
-  uniform vec2 uOceanMapSize;
-  uniform vec2 uOceanMapCenter;
-  uniform float uOceanLevel;
-  uniform float uOceanTerrainApronWidth;
-  uniform float uOceanTerrainSinkTarget;
-  uniform bool uOceanTerrainBounded;
-  uniform vec4 uOceanTerrainBounds;
-  uniform float uOceanWaveGeometryFadeStart;
-  uniform float uOceanWaveGeometryFadeEnd;
-  uniform float uOceanNearVertexSpacing;
-
-  bool outsideOceanTerrain(vec2 worldXZ) {
-    return uOceanTerrainBounded && (any(lessThan(worldXZ, uOceanTerrainBounds.xy))
-      || any(greaterThan(worldXZ, uOceanTerrainBounds.zw)));
-  }
-
-  float sampleOceanTerrainHeight(vec2 worldXZ) {
-    // Streamed worlds end at a vertical cut; their padded depth field has no
-    // rendered seabed outside that cut to support transparent shallows.
-    if (outsideOceanTerrain(worldXZ)) return uOceanTerrainSinkTarget;
-    vec2 safeMapSize = max(uOceanMapSize, vec2(0.0001));
-    vec2 terrainSpan = max(uOceanTerrainSize - 1.0, vec2(1.0));
-    vec2 uv = (worldXZ - uOceanMapCenter) / safeMapSize + 0.5;
-    vec2 grid = uv * terrainSpan;
-    vec2 clampedGrid = clamp(grid, vec2(0.0), terrainSpan);
-    vec2 cell = min(floor(clampedGrid), uOceanTerrainSize - 2.0);
-    vec2 f = clampedGrid - cell;
-    vec2 texel = 1.0 / uOceanTerrainSize;
-    vec2 a = (cell + 0.5) * texel;
-    float h00 = texture2D(tOceanTerrain, a).r;
-    float h10 = texture2D(tOceanTerrain, a + vec2(texel.x, 0.0)).r;
-    float h01 = texture2D(tOceanTerrain, a + vec2(0.0, texel.y)).r;
-    float h11 = texture2D(tOceanTerrain, a + texel).r;
-    if (any(notEqual(grid, clampedGrid))) {
-      float edgeHeight = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
-      float distanceOutside = length((grid - clampedGrid) * safeMapSize / terrainSpan);
-      float t = smoothstep(0.0, max(uOceanTerrainApronWidth, 0.001), distanceOutside);
-      // New coast fields already contain a deep padded floor. Extending the
-      // finite texture must never raise that floor back toward sinkTarget,
-      // otherwise its square edge appears as a bright/dark trench on the sea.
-      return mix(edgeHeight, min(edgeHeight, uOceanTerrainSinkTarget), t);
-    }
-    if (mod(cell.x + cell.y, 2.0) < 0.5) {
-      if (f.x + f.y <= 1.0) return h00 + (h10 - h00) * f.x + (h01 - h00) * f.y;
-      return h11 + (h01 - h11) * (1.0 - f.x) + (h10 - h11) * (1.0 - f.y);
-    }
-    if (f.x <= f.y) return h00 + (h11 - h01) * f.x + (h01 - h00) * f.y;
-    return h00 + (h10 - h00) * f.x + (h11 - h10) * f.y;
-  }
-
-`;
-
-const OCEAN_SWASH_GLSL = /* glsl */ `
-  float oceanSwashNoise(vec2 p) {
-    vec2 cell = floor(p), f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    vec4 h = fract(sin(vec4(
-      dot(cell, vec2(127.1, 311.7)),
-      dot(cell + vec2(1.0, 0.0), vec2(127.1, 311.7)),
-      dot(cell + vec2(0.0, 1.0), vec2(127.1, 311.7)),
-      dot(cell + 1.0, vec2(127.1, 311.7))
-    )) * 43758.5453);
-    return mix(mix(h.x, h.y, f.x), mix(h.z, h.w, f.x), f.y);
-  }
-
-  float oceanSwashPhase(vec2 p, float ground) {
-    return fract(uTime * uShoreWaveSpeed * 0.1 + 0.10 * sin(uTime * 0.29) - ground * 0.18
-      + oceanSwashNoise(p * 0.19) * 0.28 + oceanSwashNoise(p * 0.43) * 0.10);
-  }
-
-  float oceanSwashCrest(vec2 p) {
-    vec2 warp = p + vec2(oceanSwashNoise(p * 0.23), oceanSwashNoise(p * 0.23 + 7.0)) * 3.0;
-    float strength = clamp(uShoreWaveStrength, 0.0, 2.5);
-    return (0.12 + 0.06 * oceanSwashNoise(warp * 0.38 + vec2(uTime * 0.035, -uTime * 0.021))) * strength;
-  }
-
-  float oceanSwashTrough(vec2 p) {
-    return -0.025 - 0.035 * oceanSwashNoise(p * 0.31 + vec2(-uTime * 0.018, uTime * 0.025));
-  }
-
-  float oceanWaveDepthRange() {
-    // WorldForge's authored island shelves are intentionally shallow (often
-    // about 0.25 m below sea level). Treat only the final shoreline band as
-    // swash so the playable ocean still retains its open-water wave spectrum.
-    return max(0.16, uShoreWaveRange * 0.42);
-  }
-
-  float computeOceanSwashHeight(vec2 p, float openWave) {
-    if (uShoreWaveStrength <= 0.0) return openWave;
-    float ground = sampleOceanTerrainHeight(p) - uOceanLevel;
-    float phase = oceanSwashPhase(p, ground);
-    float push = smoothstep(0.0, 0.30, phase) * (1.0 - smoothstep(0.30, 1.0, phase));
-    float swash = mix(oceanSwashTrough(p), oceanSwashCrest(p), push);
-    float shore = smoothstep(-oceanWaveDepthRange(), -0.025, ground);
-    return mix(openWave * 1.3, swash, shore);
-  }
-
-  float oceanWaveGeometryFade(vec2 worldXZ) {
-    vec2 fromMapCenter = abs(worldXZ - uOceanMapCenter);
-    float distanceFromMapCenter = max(fromMapCenter.x, fromMapCenter.y);
-    return 1.0 - smoothstep(
-      uOceanWaveGeometryFadeStart,
-      max(uOceanWaveGeometryFadeEnd, uOceanWaveGeometryFadeStart + 0.001),
-      distanceFromMapCenter
-    );
-  }
-`;
-
 // ============================================================
 // Vertex Shader
 // ============================================================
@@ -191,6 +80,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   varying vec4 vScreenPos;
   varying vec2 vUv;
   varying float vDisplacement;
+  varying float vOceanCompression;
 
   uniform float uTime;
   uniform float uWaveScale;
@@ -412,6 +302,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   }
 
   ${OCEAN_SWASH_GLSL}
+  ${OCEAN_WAVE_SPECTRUM_GLSL}
 
   float sampleShoreDistanceForVertex(vec3 localPosition) {
     if (!uUseShoreDistance) return 1.0;
@@ -462,6 +353,12 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   vec3 computeDisplacedPosition(vec3 localPosition, float oceanWaveFade) {
     vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
     float shallowWaterHeight = sampleShallowWaterHeight(worldBase.xz);
+    if (uOceanSpectrumEnabled) {
+      mat2 derivative;
+      vec3 spectrum = oceanSpectrumDisplacement(worldBase.xz, derivative);
+      if (uUseOceanTerrain) shallowWaterHeight *= smoothstep(0.025, 0.2, uOceanLevel - sampleOceanTerrainHeight(worldBase.xz));
+      return localPosition + spectrum + vec3(0.0, shallowWaterHeight, 0.0);
+    }
     vec3 waveOffset = uUseDirectionalWaves && !uUseRiverFlow
       ? computeDirectionalWaveDisplacement(worldBase.xz)
       : vec3(0.0, computeVertexWaveHeight(worldBase.xz), 0.0);
@@ -496,6 +393,11 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     float eps = 0.1;
     vec3 displacedX = computeDisplacedPosition(position + vec3(eps, 0.0, 0.0), oceanWaveFade);
     vec3 displacedZ = computeDisplacedPosition(position + vec3(0.0, 0.0, eps), oceanWaveFade);
+    vec2 tangentX = (displacedX.xz - displaced.xz) / eps;
+    vec2 tangentZ = (displacedZ.xz - displaced.xz) / eps;
+    float horizontalJacobian = tangentX.x * tangentZ.y - tangentX.y * tangentZ.x;
+    vOceanCompression = uOceanSpectrumEnabled && uOceanSpectrumHeight > 0.0
+      ? clamp(1.0 - horizontalJacobian, 0.0, 1.0) : 0.0;
     vec3 waveNormal = normalize(cross(displacedZ - displaced, displacedX - displaced));
     // Keep authored river slope while adding the local wave perturbation.
     vec3 perturbedNormal = normalize(normal + (waveNormal - vec3(0.0, 1.0, 0.0)) * normal.y);
@@ -553,6 +455,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   varying vec4 vScreenPos;
   varying vec2 vUv;
   varying float vDisplacement;
+  varying float vOceanCompression;
 
   uniform sampler2D tDepth;
   uniform mat4 uWaterViewProjection;
@@ -918,6 +821,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   }
 
   ${OCEAN_SWASH_GLSL}
+  ${OCEAN_WAVE_SPECTRUM_GLSL}
 
   float oceanObjectDistance(vec3 worldHit, vec3 waterWorld, float radius) {
     float heightGap = waterWorld.y - worldHit.y;
@@ -1217,7 +1121,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     vec3 waveNormal = normalize(vWorldNormal);
     float waveWhitecap = 0.0;
     float waveWhitecapShadow = 0.0;
-    if (uWaterMode < 0.5 && uWhitecapEnabled && uUseDirectionalWaves) {
+    if (uWaterMode < 0.5 && uWhitecapEnabled && uUseDirectionalWaves && !uOceanSpectrumEnabled) {
       float crestPhase;
       float crestProfile = computePrimaryCrestProfile(vReflectionWorldPosition.xz, crestPhase);
       float ridgeBand = smoothstep(
@@ -1239,6 +1143,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         * mix(0.2, 1.0, leeSide) * whitecapBreakup * min(uWhitecapStrength, 1.0);
     }
 
+    float spectrumCrestFoam = uWhitecapEnabled && uOceanSpectrumEnabled && uOceanSpectrumHeight > 0.0
+      ? smoothstep(0.14, 0.5, vOceanCompression)
+        * smoothstep(0.0, uOceanSpectrumHeight * 0.3, vDisplacement)
+        * uOceanCrestFoamStrength * mix(0.72, 1.0, noise2D(vReflectionWorldPosition.xz * 0.7))
+      : 0.0;
     // Ocean object contacts are added after the authored shore/whitecap styling.
     float baseFoam = clamp(foam1 + foam2, 0.0, 1.0) * uFoamOpacity * uFoamStrength * hasDepth;
     float foamCoverage = clamp(baseFoam + (uUseOceanTerrain ? 0.0 : contactFoam)
@@ -1273,6 +1182,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
 
     // Object contact stays subtle even when the authored shore foam uses hard bands.
     if (uUseOceanTerrain) foam = max(foam, contactFoam);
+    foam = max(foam, spectrumCrestFoam);
 
     // === 2. 颜色深度渐变（含卡通色阶 + 深水颜色 + ShoreDistance 驱动） ===
     float depthFactor = clamp(depthDiff * uDepthStrength, 0.0, 1.0);
@@ -1715,7 +1625,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       return;
     }
     if (uWaterDebugMode > 17.5 && uWaterDebugMode < 18.5) {
-      gl_FragColor = vec4(vec3(waveWhitecap), 1.0);
+      gl_FragColor = vec4(vec3(max(waveWhitecap, spectrumCrestFoam)), 1.0);
       return;
     }
     if (uWaterDebugMode > 18.5 && uWaterDebugMode < 19.5) {
@@ -1857,6 +1767,7 @@ export class WaterSurface {
       fragmentShader: WATER_FRAGMENT_SHADER,
       extensions: { derivatives: true },
       uniforms: {
+        ...createOceanWaveUniforms(),
         tDepth: { value: null },
         uWaterViewProjection: { value: new THREE.Matrix4() },
         uWaterInverseViewProjection: { value: new THREE.Matrix4() },
@@ -3477,6 +3388,10 @@ export class WaterSurface {
    * 不影响其他参数与可见性）
    * @param {'cartoon'|'realistic'|'hybrid'} mode
    */
+  setOceanSeaState(state, controls = {}) {
+    configureOceanSeaState(this.material.uniforms, state, controls);
+  }
+
   setWaterMode(mode) {
     const index = WATER_MODE_NAMES.indexOf(mode);
     if (index === -1) {
