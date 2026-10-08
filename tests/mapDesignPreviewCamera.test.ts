@@ -92,3 +92,22 @@ it('frames a restored world preview again after leaving and returning to its sav
   await hooks.draft(draft(1));await Promise.resolve();
   expect(e.camera.position.y).toBeGreaterThan(200);
 });
+
+it('frames the rendered mountain heights instead of assuming a height proportional to world width',()=>{
+  const {e,draft}=fixture(true), map=draft(1).map;
+  const group=new THREE.Group();
+  const geometry=new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-320,-390,-320),new THREE.Vector3(320,801,320)
+  ]);
+  group.add(new THREE.Mesh(geometry));
+  e.renderedMap={group};
+  e.frameMap(map,new THREE.Vector3(0,0,1));
+  e.camera.updateMatrixWorld();
+  for(const point of [new THREE.Vector3(-320,-390,-320),new THREE.Vector3(320,801,320)]) {
+    const projected=point.project(e.camera);
+    expect(Math.abs(projected.y)).toBeLessThan(1);
+    expect(projected.z).toBeLessThan(1);
+  }
+  expect(e.orbit.target.y).toBeCloseTo((801-390)/2);
+  geometry.dispose();
+});

@@ -121,7 +121,7 @@ import {
   resolvedMapObjectLight
 } from './mapLocalLights';
 import { buildModelGroup } from './modelRenderer';
-import { RenderSceneRuntime } from './renderSceneRuntime';
+import { RenderSceneRuntime, mapFramingBounds } from './renderSceneRuntime';
 import { RenderStats, type RenderDebugDetails } from './renderStats';
 import {
   AdaptiveRenderQuality,
@@ -1447,6 +1447,7 @@ export class MapEditor {
     }
     if (!draftRecovery && savedMap.world) this.frameWorldTown(savedMap, new URLSearchParams(location.search).get('town') ?? undefined);
     await this.refreshScene();
+    if (!draftRecovery && savedMap.world && !savedMap.world.bundle.plan.towns.length) this.frameMap(savedMap);
     if (!draftRecovery) {
       try {
         const plan = await loadBrowserMapPlan(savedMap.id);
@@ -6805,6 +6806,7 @@ export class MapEditor {
     this.terrainRefreshHandle = requestAnimationFrame(() => {
       this.terrainRefreshHandle = 0;
       if (this.state.map) this.renderedMap?.refreshTerrain(this.state.map);
+      this.renderScene?.invalidateCameraBounds();
     });
   }
 
@@ -7202,6 +7204,7 @@ export class MapEditor {
     }
     syncRoomOpeningFromObjectInPlace(this.state.map!, object);
     this.renderedMap?.syncObjectTransform(object.id);
+    this.renderScene?.invalidateCameraBounds();
     this.markDirty(false);
     this.renderObjectInspector();
   }
@@ -7833,8 +7836,7 @@ export class MapEditor {
     if (!this.camera || !this.orbit) return;
     if (!town) {
       if (!map.world) return;
-      const size = map.world.bundle.plan.recipe.size;
-      this.frameBox(new THREE.Box3(new THREE.Vector3(-size / 2, -16, -size / 2), new THREE.Vector3(size / 2, size * 0.15, size / 2)));
+      this.frameBox(mapFramingBounds(map));
       this.setViewName('世界全景');
       return;
     }
@@ -7851,19 +7853,8 @@ export class MapEditor {
 
   private frameMap(map = this.state.map, direction?: THREE.Vector3): void {
     if (!map) return;
-    const bounds = getMapBounds(map);
-    if (map.world) {
-      const size = map.world.bundle.plan.recipe.size;
-      this.frameBox(new THREE.Box3(new THREE.Vector3(-size / 2, -16, -size / 2), new THREE.Vector3(size / 2, size * 0.15, size / 2)), direction);
-      this.setViewName('世界全景');
-      return;
-    }
-    const box = new THREE.Box3(
-      new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
-      new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
-    );
-    this.frameBox(box, direction);
-    this.setViewName('全景视图');
+    this.frameBox(mapFramingBounds(map, this.renderedMap?.group), direction);
+    this.setViewName(map.world ? '世界全景' : '全景视图');
   }
 
   private focusSelection(): void {
@@ -7875,13 +7866,8 @@ export class MapEditor {
 
   private setView(view: keyof typeof VIEW_DIRECTIONS): void {
     if (!this.state.map) return;
-    const bounds = getMapBounds(this.state.map);
-    if (this.state.map.world) bounds.maxY = this.state.map.world.bundle.plan.recipe.size * 0.15;
     this.frameBox(
-      new THREE.Box3(
-        new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
-        new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
-      ),
+      mapFramingBounds(this.state.map, this.renderedMap?.group),
       VIEW_DIRECTIONS[view]
     );
     this.setViewName({

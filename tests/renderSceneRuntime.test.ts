@@ -384,6 +384,54 @@ describe('RenderSceneRuntime sizing', () => {
   });
 });
 
+describe('camera clipping during navigation', () => {
+  it('keeps tall terrain and the sea bed inside the far plane after zooming, orbiting and focusing', () => {
+    const map = createEmptyMap('large mountain world', 'mountain-world', [1200, 4096, 1200]);
+    const camera = new THREE.PerspectiveCamera(55, 1.6, 0.1, 1500);
+    const group = new THREE.Group();
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-600, -390, -600), new THREE.Vector3(600, 801, 600)
+    ]);
+    group.add(new THREE.Mesh(geometry));
+    const runtime = Object.assign(Object.create(RenderSceneRuntime.prototype), {
+      map, camera, rendered: { group, update: vi.fn() },
+      weather: { update: () => ({ enabled: false }) },
+      applyWeatherFrame: vi.fn(), updateRainRipples: vi.fn(),
+      atmosphereFx: { update: vi.fn() },
+      adapter: {
+        getContentVisibilityDistance: () => camera.far,
+        isUnderwaterEnabled: () => false, tick: vi.fn(), render: vi.fn()
+      }
+    }) as RenderSceneRuntime;
+    for (const position of [[0, 300, 1800], [7000, 6000, -12000], [-9000, -500, 6000]]) {
+      // Focusing a small object used to reset the far plane to this value.
+      camera.far = 1500;
+      camera.position.set(...position as [number, number, number]);
+      camera.lookAt(0, 200, 0);
+      camera.updateMatrixWorld();
+      runtime.renderFrame(0, 0);
+      for (const vertex of [new THREE.Vector3(-600, -390, -600), new THREE.Vector3(600, 801, 600)]) {
+        expect(vertex.project(camera).z).toBeLessThan(1);
+      }
+      expect(camera.near).toBe(0.1);
+      expect(runtime.rendered!.update).toHaveBeenLastCalledWith(0, camera, camera.far);
+    }
+    camera.position.set(0, 300, 1800);
+    camera.lookAt(0, 200, 0);
+    camera.updateMatrixWorld();
+    const measure = vi.spyOn(group, 'updateWorldMatrix');
+    runtime.renderFrame(0, 0);
+    runtime.renderFrame(0, 0);
+    expect(measure).not.toHaveBeenCalled();
+    group.children[0].position.z = -30000;
+    runtime.invalidateCameraBounds();
+    runtime.renderFrame(0, 0);
+    expect(new THREE.Vector3(600, 801, -29400).project(camera).z).toBeLessThan(1);
+    expect(measure).toHaveBeenCalled();
+    geometry.dispose();
+  });
+});
+
 describe('rain water ripples', () => {
   it('samples rain impacts inside a natural water body near the camera', () => {
     const map = createEmptyMap('rain lake', 'rain-lake', [24, 8, 24]);

@@ -11,7 +11,7 @@ import { configureRendererOutput } from './renderOutputPipeline';
 import { compileSceneArt } from '../shared/sceneArt';
 import type { RenderedMap } from './mapRenderer';
 import type { Vec3 } from '../shared/protocol';
-import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
+import { DEFAULT_SUN_POSITION, TERRAIN_MIN_HEIGHT, getMapBounds, type EditableMap } from '../shared/map';
 import { isPointInsideWaterBody } from '../shared/mapWater';
 import type { RenderScheme } from '../shared/renderScheme';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
@@ -50,6 +50,23 @@ import {
 /** Background used when no render scheme is applied. */
 const NEUTRAL_BACKGROUND = 0x111719;
 const NEUTRAL_OUTDOOR_BACKGROUND = 0x94afb6;
+
+/** Full-world framing uses the resident terrain, including peaks and the sea bed. */
+export function mapFramingBounds(map: EditableMap, group?: THREE.Object3D): THREE.Box3 {
+  const bounds = getMapBounds(map);
+  const box = new THREE.Box3(
+    new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
+    new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
+  );
+  if (map.world && group) {
+    const renderedBounds = new THREE.Box3().setFromObject(group);
+    if (!renderedBounds.isEmpty()) {
+      box.min.y = Math.min(0, renderedBounds.min.y);
+      box.max.y = Math.max(0, renderedBounds.max.y);
+    }
+  }
+  return box;
+}
 
 /**
  * The slice of a `RenderSceneRuntime` that `applyRenderScheme` touches. Stated
@@ -98,8 +115,7 @@ export interface RenderSceneRuntimeOptions {
  */
 export class RenderSceneRuntime {
   readonly scene = new THREE.Scene();
-  // The HDRI dome is a fixed-radius sphere centred on the origin, so the far
-  // plane has to clear HDRI_DOME_RADIUS plus however far the camera moves out.
+  // The frame loop fits the far plane to the world and the current camera.
   readonly camera = new THREE.PerspectiveCamera(55, 1, 0.1, HDRI_DOME_RADIUS * 3);
   readonly renderer: THREE.WebGLRenderer;
   readonly sunLight = new THREE.DirectionalLight(0xfff0ce, 2.5);
@@ -136,6 +152,10 @@ export class RenderSceneRuntime {
   private rainRippleSequence = 0;
   private unsubscribeContentChanges: (() => void) | null = null;
   private contentRefreshQueued = false;
+  private cameraBounds = new THREE.Box3();
+  private cameraBoundsMap: EditableMap | null = null;
+  private cameraBoundsDirty = true;
+  private readonly cameraBoundsCenter = new THREE.Vector3();
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
@@ -206,6 +226,7 @@ export class RenderSceneRuntime {
       } : undefined
     );
     this.rendered = rendered;
+    this.refreshCameraBounds();
     this.syncAtmosphereFx();
     if (!rendered) return;
     rendered.setLightingQuality(this.adaptiveQuality);
@@ -233,6 +254,7 @@ export class RenderSceneRuntime {
 
   /** Advances animated capabilities (grass, water, effects) and draws a frame. */
   renderFrame(deltaTime: number, elapsedSeconds: number): void {
+    this.updateCameraClipping();
     const weatherFrame = this.weather.update(deltaTime);
     this.applyWeatherFrame(weatherFrame);
     this.updateRainRipples(weatherFrame, deltaTime, elapsedSeconds);
@@ -318,11 +340,44 @@ export class RenderSceneRuntime {
     queueMicrotask(() => {
       this.contentRefreshQueued = false;
       if (this.rendered !== rendered) return;
+      this.refreshCameraBounds();
       this.meshRegistry.clear();
       this.indexRenderedMeshes(rendered);
       this.applyScheme(this.currentScheme);
       this.updateLighting();
     });
+  }
+
+  private refreshCameraBounds(): void {
+    this.cameraBounds ??= new THREE.Box3();
+    this.cameraBounds.makeEmpty();
+    if (this.map) {
+      this.cameraBounds.copy(mapFramingBounds(this.map));
+      this.cameraBounds.min.y = TERRAIN_MIN_HEIGHT;
+    }
+    if (this.rendered?.group) this.cameraBounds.union(new THREE.Box3().setFromObject(this.rendered.group));
+    this.cameraBoundsMap = this.map;
+    this.cameraBoundsDirty = false;
+  }
+
+  /** Notify the runtime after moving/scaling live meshes without rebuilding the map. */
+  invalidateCameraBounds(): void {
+    this.cameraBoundsDirty = true;
+  }
+
+  private updateCameraClipping(): void {
+    if (this.cameraBoundsDirty || !this.cameraBounds || this.cameraBoundsMap !== this.map) this.refreshCameraBounds();
+    const center = this.cameraBoundsCenter ?? new THREE.Vector3();
+    // A sphere enclosing the map stays valid at every orbit angle. Bounds are
+    // refreshed on content changes, never by traversing the world every frame.
+    const worldDistance = this.cameraBounds.isEmpty() ? 0
+      : this.camera.position.distanceTo(this.cameraBounds.getCenter(center))
+        + this.cameraBounds.getSize(center).length() * 0.5;
+    const skyDistance = this.camera.position.length() + HDRI_DOME_RADIUS;
+    const far = Math.max(1500, worldDistance * 1.05, skyDistance * 1.05);
+    if (Math.abs(this.camera.far - far) < 1) return;
+    this.camera.far = far;
+    this.camera.updateProjectionMatrix();
   }
 
   private syncAtmosphereFx(): void {
