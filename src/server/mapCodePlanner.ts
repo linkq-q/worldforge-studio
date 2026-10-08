@@ -76,7 +76,9 @@ import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
 import { distanceToWater, isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
 import { createMapStreetGrid, mapGuidePolyline, sampleMapGuide, type MapPlannedBlock } from '../shared/mapGuide';
 import { createUrbanLayout, type UrbanLayoutOptions } from '../shared/mapUrbanLayout';
-import { validateWorldMapState, worldMapTerrainContext, type WorldMapState } from '../shared/worldMapState';
+import { validateWorldMapState, validateWorldEntityReferences, worldMapTerrainContext, worldEntityRows, WORLD_ENTITY_KINDS,
+  type WorldMapState, type WorldEntityKind, type WorldEntityReference } from '../shared/worldMapState';
+import { seedFromString } from '../shared/mapSeed';
 import { diagnoseWorldBundle, validateWorldPlan, worldPlanKey } from '../shared/worldPlanning';
 import { createWaterfrontUrbanLayout, type WaterfrontUrbanLayoutOptions } from '../shared/mapWaterfrontLayout';
 import {
@@ -1307,6 +1309,8 @@ function executeMapCodePlanInternal(
   const requirements = new Map<string, CodeAssetRequirement>();
   const worldAssetReferences = new Set<string>();
   let authoredWorldState: WorldMapState | null = null;
+  const worldReferences = new Map((map.world?.references ?? []).map(item => [`${item.kind}\0${item.key}`, {...item}]));
+  const renamedWorldReferences = new Set<string>();
   const unresolvedAssetIds = new Set<string>();
   const foundationWarnings: string[] = [];
   const missingAssetBindings = new Set<string>();
@@ -1584,9 +1588,43 @@ function executeMapCodePlanInternal(
   let appearancePlan = options.appearancePlan;
   let appearanceDeclared = false;
   const publishWorld = (input: unknown, revision: number): void => {
-    const candidate = input as WorldMapState;
+    const candidate = structuredClone(input) as WorldMapState;
     if (!candidate || !candidate.bundle || !Array.isArray(candidate.bundle.patches)
       || !Array.isArray(candidate.assets)) throw new Error('invalid_map_code_world_edit');
+    // Semantic declarations only bind entities actually present in this edit. IDs and geometry remain authored.
+    const rows = worldEntityRows(candidate), references = new Map<string, WorldEntityReference>();
+    const namedCollections: Array<[WorldEntityKind, Array<{id: string; name?: string}>]> = [
+      ['water', candidate.bundle.plan.recipe.waterBodies ?? []], ['road', candidate.bundle.plan.roads],
+      ['town', candidate.bundle.plan.towns], ['region', candidate.bundle.plan.featureGraph?.regions ?? []],
+      ['path', candidate.bundle.plan.featureGraph?.paths ?? []]
+    ];
+    const candidateReferences = candidate.references === undefined ? [] : validateWorldEntityReferences(candidate.references);
+    const currentReferences = (authoredWorldState ?? currentEnvironmentMap().world)?.references ?? [];
+    for (const item of candidateReferences) {
+      const previous = worldReferences.get(`${item.kind}\0${item.key}`);
+      if (previous && previous.id !== item.id) throw new Error(`world_reference_identity_conflict:${item.kind}:${item.key}`);
+      if (!rows.some(row=>row.kind===item.kind && row.id===item.id)
+        && !currentReferences.some(old=>old.kind===item.kind && old.key===item.key && old.id===item.id)) {
+        throw new Error(`unknown_world_reference_target:${item.kind}:${item.id}`);
+      }
+    }
+    for (const item of [...candidateReferences, ...worldReferences.values()]) {
+      const row = rows.find(row => row.kind === item.kind && row.id === item.id);
+      if (!row) continue;
+      const key = `${item.kind}\0${item.key}`, previous = references.get(key);
+      if (previous && previous.id !== item.id) throw new Error(`world_reference_identity_conflict:${item.kind}:${item.key}`);
+      const authoredName = namedCollections.find(([kind])=>kind===item.kind)?.[1].find(entity=>entity.id===item.id)?.name;
+      const metadataName = candidateReferences.find(reference=>reference.kind===item.kind && reference.id===item.id)?.name;
+      const name = renamedWorldReferences.has(key) ? worldReferences.get(key)!.name : authoredName ?? metadataName ?? item.name;
+      references.set(key, {...item, name});
+    }
+    for (const [kind, entities] of namedCollections) for (const entity of entities) {
+      const reference = [...references.values()].find(item => item.kind === kind && item.id === entity.id);
+      if (reference && (entity.name === undefined || renamedWorldReferences.has(`${kind}\0${reference.key}`))) {
+        entity.name = reference.name;
+      }
+    }
+    if (candidate.references !== undefined || references.size) candidate.references = [...references.values()];
     const plan = validateWorldPlan({...candidate.bundle.plan, revision,
       ...(options.worldEditPolicy ? {generationPolicy:options.worldEditPolicy} : {})});
     if (options.worldTerrainPolicy === 'recipe') assertDesignRecipeTerrain(plan.recipe, map.world?.bundle.plan.recipe);
@@ -1600,6 +1638,8 @@ function executeMapCodePlanInternal(
       bundle:{plan, patches:candidate.bundle.patches.map(patch => ({...patch,worldKey}))}});
     authoredWorldState = {...world, assets:world.assets.map(binding =>
       ({...binding,assetId:originalBindings.find(original => original.key === binding.key)!.assetId}))};
+    for (const item of world.references ?? []) worldReferences.set(`${item.kind}\0${item.key}`, {...item});
+    renamedWorldReferences.clear();
     worldAssetReferences.clear();
     for (const binding of authoredWorldState.assets) {
       if (isCodeAssetPlaceholder(binding.assetId)) worldAssetReferences.add(binding.assetId);
@@ -1636,6 +1676,57 @@ function executeMapCodePlanInternal(
       const world = authoredWorldState ?? currentEnvironmentMap().world;
       if (!world) throw new Error('map_code_world_unavailable');
       return structuredClone(world);
+    },
+    worldRef(kind: WorldEntityKind, input: string | {key?: string; name?: string; id?: string}): string {
+      record('worldRef');
+      if (!WORLD_ENTITY_KINDS.includes(kind)) throw new Error('invalid_world_reference_kind');
+      const declaration = typeof input === 'string' ? {key: input} : input;
+      if (!declaration || typeof declaration !== 'object' || Array.isArray(declaration)
+        || Object.keys(declaration).some(key => !['key', 'name', 'id'].includes(key))) throw new Error('invalid_world_reference_declaration');
+      const semanticText = (value: unknown) => {
+        if (typeof value !== 'string' || !value.trim() || value.length > 160) throw new Error('invalid_world_reference_declaration');
+        return value.trim();
+      };
+      const world = authoredWorldState ?? currentEnvironmentMap().world;
+      const rows = world ? worldEntityRows(world).filter(row => row.kind === kind) : [];
+      if (declaration.key === undefined) {
+        const name = declaration.name === undefined ? undefined : semanticText(declaration.name);
+        const matches = rows.filter(row => declaration.id !== undefined ? row.id === declaration.id : row.name === name);
+        if (matches.length > 1) throw new Error(`world_reference_ambiguous_name:${JSON.stringify({kind,name,candidates:matches})}`);
+        if (matches.length !== 1 || name !== undefined && matches[0].name !== name) {
+          throw new Error(`unknown_world_reference:${JSON.stringify({kind,name,id:declaration.id,candidates:rows.slice(0,16)})}`);
+        }
+        return matches[0].ref;
+      }
+      const key = semanticText(declaration.key), identity = `${kind}\0${key}`;
+      const previous = worldReferences.get(identity);
+      const id = declaration.id ?? previous?.id ?? `world-${kind}-${seedFromString(`${map.id}\0${kind}\0${key}`).toString(36)}`;
+      if (typeof id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(id)) throw new Error('invalid_world_reference_id');
+      if (kind === 'water' && id === 'sea') throw new Error('world_reference_reserved_id:sea is the implicit ocean; use it directly as a water target');
+      if (previous && previous.id !== id || [...worldReferences.values()].some(item=>item.kind===kind && item.id===id && item.key!==key)) {
+        throw new Error(`world_reference_identity_conflict:${kind}:${key}:${id}`);
+      }
+      if (!previous && declaration.id === undefined && rows.some(row=>row.id===id)) {
+        throw new Error(`world_reference_id_collision:${kind}:${key}:${id}:choose an explicit id`);
+      }
+      const name = declaration.name === undefined ? previous?.name ?? rows.find(row=>row.id===id)?.name ?? key : semanticText(declaration.name);
+      worldReferences.set(identity, {kind,key,id,name});
+      if (declaration.name !== undefined) renamedWorldReferences.add(identity);
+      return id;
+    },
+    worldEntities(kind?: WorldEntityKind, options: {offset?: number; limit?: number} = {}) {
+      record('worldEntities');
+      if (kind !== undefined && !WORLD_ENTITY_KINDS.includes(kind)) throw new Error('invalid_world_reference_kind');
+      if (!options || typeof options !== 'object' || Array.isArray(options)
+        || Object.keys(options).some(key=>!['offset','limit'].includes(key))) throw new Error('invalid_world_reference_query');
+      const offset=options.offset??0, limit=options.limit??32;
+      if (!Number.isInteger(offset) || offset<0 || offset>1_000_000 || !Number.isInteger(limit) || limit<1 || limit>64) {
+        throw new Error('invalid_world_reference_query');
+      }
+      const world = authoredWorldState ?? currentEnvironmentMap().world;
+      const rows = world ? worldEntityRows(world).filter(row=>kind===undefined || row.kind===kind) : [];
+      return {total:rows.length,offset,limit,items:rows.slice(offset,offset+limit),
+        nextOffset:offset+limit<rows.length?offset+limit:null};
     },
     editWorld(edit: (state: WorldMapState) => WorldMapState | void): void {
       record('editWorld');
@@ -3424,7 +3515,7 @@ function executeMapCodePlanInternal(
   const exposedKeys = minimalMode ? new Set<string>(MINIMAL_MAP_CODE_API_KEYS)
     : mainMode ? new Set<string>(MAIN_MAP_CODE_API_KEYS) : null;
   if (mainMode && options.continuousSession) {
-    for (const key of ['report', 'createWorld', 'worldState', 'editWorld', 'move', 'removeObject',
+    for (const key of ['report', 'createWorld', 'worldState', 'worldRef', 'worldEntities', 'editWorld', 'move', 'removeObject',
       'updateWater', 'removeWater', 'noChange', 'waterPoint']) exposedKeys!.add(key);
   }
   const spatialReadKeys = new Set(['assetSpace', 'sightline', 'passage', 'connectionGap']);

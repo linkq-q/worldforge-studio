@@ -1,6 +1,6 @@
 import type {MapDesignToolObservation} from '../shared/mapDesignFeedback';
 
-const observed = new Set(['environmentSample', 'assetSpace', 'sightline', 'passage', 'connectionGap', 'waterPoint']);
+const observed = new Set(['environmentSample', 'assetSpace', 'sightline', 'passage', 'connectionGap', 'waterPoint', 'worldRef', 'worldEntities']);
 
 /** Preserve getters and synchronously snapshot facts before authored code can mutate them. */
 export function mapCodeObservedApi<T extends object>(api: T, phase: MapDesignToolObservation['phase'],

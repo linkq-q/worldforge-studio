@@ -20,7 +20,7 @@ import { MapDesignFeedbackCollector, readMapDesignFeedback } from './mapDesignFe
 const MAX_STEPS_PER_RUN = 48;
 const MAX_TRANSCRIPT_CHARS = 400_000;
 const MAX_MESSAGE_CHARS = 12_000;
-const CAPABILITY_VERSION = 11;
+const CAPABILITY_VERSION = 12;
 
 interface DesignState {
   schemaVersion: 1;
@@ -729,6 +729,7 @@ export class MapDesignSessionManager {
           state.view.progress = {phase:'planning',label:'已停用整场高度替换；原草稿保留，请改用 WorldRecipe 后继续'};
         }
         this.appendTool(state, 'capabilities-updated', {version:CAPABILITY_VERSION,
+          worldIdentity:{declare:'api.worldRef(kind,{key,name?,id?}) returns a stable reference string; use it for declarations and relationships',query:'api.worldEntities(kind?,{offset,limit}) or observe world/references returns actual entities with semantic key, name and ref',replay:'Chinese keys are allowed; display-name edits and declaration order do not change identity. Existing IDs and seeds are preserved.'},
           retiredTerrainDeclaration:retiredDeclaration, retainedDraftRequiresRecipe:retiredDraft,
             assetWorkflow:state.options.requirePlanApproval ? {stage:state.view.stage,assetDeclarationsAllowed:true,assetGenerationAllowed:state.view.stage==='generating-assets',instruction:'During planning, requireAsset declares future assets without paid generation. Declare the full prompt table and placements, then finish completed requests user approval. Zero generated assets before approval is expected.'} : undefined,
           editableProgram:{characters:state.editableCode.length,sha256:createHash('sha256').update(state.editableCode).digest('hex'),source:'latest submitted program, including executions that failed; the complete scene draft remains separately preserved'},

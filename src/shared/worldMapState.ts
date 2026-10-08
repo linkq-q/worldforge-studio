@@ -38,8 +38,54 @@ export interface WorldGenerationReview {
   diagnostics: string[];
   complete: boolean;
 }
+export const WORLD_ENTITY_KINDS = ['world', 'water', 'road', 'town', 'terrain-brush', 'biome-patch', 'ecology',
+  'region', 'path', 'anchor', 'settlement', 'mobility-route', 'poi', 'intentional-empty'] as const;
+export type WorldEntityKind = typeof WORLD_ENTITY_KINDS[number];
+/** A semantic key identifies an entity; its display name can change independently. */
+export interface WorldEntityReference { kind: WorldEntityKind; key: string; id: string; name: string }
+export interface WorldEntityRow { kind: WorldEntityKind; id: string; ref: string; key: string | null; name: string }
 /** Persist intent and the pending whitebox review; render/collision chunks are derived. */
-export interface WorldMapState { bundle: WorldBundle; assets: WorldAssetBinding[]; review?: WorldGenerationReview }
+export interface WorldMapState {
+  bundle: WorldBundle; assets: WorldAssetBinding[]; review?: WorldGenerationReview; references?: WorldEntityReference[];
+}
+
+export function validateWorldEntityReferences(input: unknown): WorldEntityReference[] {
+  if (!Array.isArray(input) || input.length > 2048) throw new Error('invalid_world_references');
+  const semanticKeys = new Set<string>(), targetKeys = new Set<string>();
+  return input.map((item: WorldEntityReference) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)
+      || Object.keys(item).some(key => !['kind', 'key', 'id', 'name'].includes(key))
+      || !WORLD_ENTITY_KINDS.includes(item.kind)
+      || typeof item.key !== 'string' || !item.key.trim() || item.key.length > 160
+      || typeof item.name !== 'string' || !item.name.trim() || item.name.length > 160
+      || typeof item.id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(item.id)) {
+      throw new Error('invalid_world_reference');
+    }
+    const key = item.key.trim(), name = item.name.trim(), semanticKey = `${item.kind}\0${key}`;
+    const targetKey = `${item.kind}\0${item.id}`;
+    if (semanticKeys.has(semanticKey) || targetKeys.has(targetKey)) throw new Error('world_reference_identity_conflict');
+    semanticKeys.add(semanticKey); targetKeys.add(targetKey);
+    return {kind: item.kind, key, id: item.id, name};
+  });
+}
+
+/** Enumerate authored entities, never unused declarations or guessed name aliases. */
+export function worldEntityRows(world: WorldMapState): WorldEntityRow[] {
+  const plan = world.bundle.plan;
+  const groups: Array<[WorldEntityKind, Array<{id: string; name?: string}>]> = [
+    ['world', [plan]], ['water', plan.recipe.waterBodies ?? []], ['road', plan.roads], ['town', plan.towns],
+    ['terrain-brush', plan.recipe.terrainBrushes ?? []], ['biome-patch', plan.recipe.biomePatches ?? []],
+    ['ecology', plan.ecology], ['region', plan.featureGraph?.regions ?? []], ['path', plan.featureGraph?.paths ?? []],
+    ['anchor', plan.featureGraph?.anchors ?? []], ['settlement', plan.settlementPlan?.settlements ?? []],
+    ['mobility-route', plan.mobilityPlan?.routes ?? []], ['poi', plan.explorationPlan?.pointsOfInterest ?? []],
+    ['intentional-empty', plan.intentionalEmptyAreas ?? []]
+  ];
+  return groups.flatMap(([kind, entities]) => entities.map(entity => {
+    const reference = world.references?.find(item => item.kind === kind && item.id === entity.id);
+    return {kind, id: entity.id, ref: entity.id, key: reference?.key ?? null,
+      name: entity.name ?? reference?.name ?? entity.id};
+  }));
+}
 
 export function worldBuildingRole(building: Pick<TownBuilding, 'use'>): WorldAssetBinding['role'] {
   if (/landmark|castle|cathedral|palace|hall|驿|堡|宫|教堂|地标/i.test(building.use)) return 'landmark';
@@ -51,7 +97,7 @@ export function worldBuildingRole(building: Pick<TownBuilding, 'use'>): WorldAss
 export function validateWorldMapState(input: unknown): WorldMapState {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('invalid_world_map');
   const value = input as WorldMapState;
-  if (Object.keys(value).some(key => !['bundle', 'assets', 'review'].includes(key))
+  if (Object.keys(value).some(key => !['bundle', 'assets', 'review', 'references'].includes(key))
     || !Array.isArray(value.assets) || value.assets.length > 64) throw new Error('invalid_world_map');
   const keys = new Set<string>();
   const assets = value.assets.map(binding => {
@@ -78,7 +124,13 @@ export function validateWorldMapState(input: unknown): WorldMapState {
   }
   // An unbound explicit building keeps its authored footprint as a greybox.
   const review = value.review === undefined ? undefined : validateWorldGenerationReview(value.review, bundle);
-  return {bundle, assets, ...(review ? {review} : {})};
+  let references: WorldEntityReference[] | undefined;
+  if (value.references !== undefined) {
+    references = validateWorldEntityReferences(value.references);
+    const targets = new Set(worldEntityRows({bundle, assets}).map(item => `${item.kind}\0${item.id}`));
+    if (references.some(item => !targets.has(`${item.kind}\0${item.id}`))) throw new Error('unknown_world_reference_target');
+  }
+  return {bundle, assets, ...(review ? {review} : {}), ...(references ? {references} : {})};
 }
 
 function validateWorldGenerationReview(input: unknown, bundle: WorldBundle): WorldGenerationReview {

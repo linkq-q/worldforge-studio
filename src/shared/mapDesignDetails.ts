@@ -1,5 +1,6 @@
 import type { EditableMap, MapAsset } from './map';
 import { inspectModelSpace } from './modelBounds';
+import { worldEntityRows } from './worldMapState';
 
 const TEXT_CHUNK_SIZE = 2000;
 const PAGE_CHAR_BUDGET = 24_000;
@@ -142,13 +143,16 @@ function materialFacts(asset: MapAsset) {
 
 function observeWorld(map: EditableMap, query: RecordValue, offset: number, limit: number) {
   const sections = ['overview', 'designSemantics', 'featureGraph', 'settlementPlan', 'mobilityPlan', 'explorationPlan',
-    'intentionalEmptyAreas', 'towns', 'roads', 'ecology', 'assets', 'patches'];
+    'intentionalEmptyAreas', 'towns', 'roads', 'ecology', 'assets', 'patches', 'references'];
   const selectedSection = section(query.section, sections, 'overview'), world = map.world, plan = world?.bundle.plan;
   const identity = { worldPlanId: plan?.id ?? null, worldPlanRevision: plan?.revision ?? null,
     experienceMode: map.designSemantics.experienceMode, intent: map.designSemantics.intent,
     source: 'stored-design-declarations-and-current-world-plan' };
   const records: RecordValue[] = [];
   const add = (collection: string, values: unknown[]) => records.push(...values.map(value => ({ collection, value })));
+  if (selectedSection === 'references') return {...identity, section: selectedSection,
+    ...page(world ? worldEntityRows(world) : [], offset, limit),
+    limits: ['ref is the exact storage ID accepted by world relationship fields. key is immutable semantic identity; name is a display label.']};
   if (selectedSection === 'overview') {
     return { ...identity, concept: plan?.concept ?? null, sections,
       counts: { groups: map.designSemantics.groups.length, relations: map.designSemantics.relations.length,

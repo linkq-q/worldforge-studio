@@ -38,6 +38,7 @@ export type WorldTerrainBrush =
   | (WorldTerrainBrushBase & { mode: 'grade'; heights: number[]; strength?: number });
 interface WorldWaterBodyBase {
   id: string;
+  name?: string;
   region: WorldTerrainRegion;
   /** Optional river width at each control point; omitted keeps region.width throughout. */
   widths?: number[];
@@ -385,10 +386,11 @@ export function validateWorldRecipe(input: WorldRecipe): WorldRecipe {
         || raw.shorelineSmoothness !== undefined && (!Number.isFinite(raw.shorelineSmoothness) || raw.shorelineSmoothness < 0 || raw.shorelineSmoothness > 1)
         || raw.shorelineIrregularity !== undefined && (!Number.isFinite(raw.shorelineIrregularity) || raw.shorelineIrregularity < 0 || raw.shorelineIrregularity > 1)
         || raw.shorelineProfile !== undefined && raw.shorelineProfile !== 'steep' && raw.shorelineProfile !== 'gentle'
-        || raw.seed !== undefined && (!Number.isInteger(raw.seed) || raw.seed < 0 || raw.seed > 0xffffffff)) throw new Error('invalid_world_water_body');
+        || raw.seed !== undefined && (!Number.isInteger(raw.seed) || raw.seed < 0 || raw.seed > 0xffffffff)
+        || raw.name !== undefined && (typeof raw.name !== 'string' || !raw.name.trim() || raw.name.length > 160)) throw new Error('invalid_world_water_body');
       const id = safeId(raw.id);
       const common = {
-        id, region: shape,
+        id, ...(raw.name !== undefined ? {name: raw.name.trim()} : {}), region: shape,
         ...(raw.widths ? { widths: [...raw.widths] } : {}), depth: raw.depth,
         shorelineSmoothness: raw.shorelineSmoothness ?? 0.82,
         shorelineIrregularity: raw.shorelineIrregularity ?? (raw.type === 'lake' ? 0.16 : 0),
@@ -1222,7 +1224,7 @@ function prepareValidatedWorldWaterBodies(
     const levels = source.levels ?? points.map(() => 0);
     const authored: MapWaterBody = {
       id: source.id,
-      name: source.id,
+      name: source.name ?? source.id,
       type: source.type,
       level: levels.reduce((sum, value) => sum + value, 0) / levels.length,
       levels: [...levels],
