@@ -982,6 +982,8 @@ export class RenderRuntimeAdapter {
 
   private updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void {
     for (const binding of this.waterBindings) {
+      const underwaterPostProcess = binding.surface.material.uniforms.uUnderwaterPostProcess;
+      if (underwaterPostProcess) underwaterPostProcess.value = this.underwaterPass.enabled;
       if (shouldUseStructuredWaterMaterialDetail(binding.mesh.userData.waterShore as WaterShoreBinding | undefined)) {
         syncWaterSurfaceLight(binding.surface.material, this.scene.userData.directionalLight ?? null);
       }

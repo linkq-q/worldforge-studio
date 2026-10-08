@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import { WaterfallSurface, WaterSurface } from '@voxel-studio/render-runtime/environment';
 import {
   RenderRuntimeAdapter,
   shouldBindRenderPlanWaterSurface,
@@ -7,6 +8,33 @@ import {
 } from '../src/client/renderRuntimeAdapter';
 
 describe('render-plan water ownership', () => {
+  it('delegates underwater absorption only while the post-process is active', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    const surface = new WaterSurface(scene, {} as THREE.WebGLRenderer, new THREE.Group(), { size: 1, segments: 1 });
+    const renderer = { domElement: { clientWidth: 1, clientHeight: 1 } } as THREE.WebGLRenderer;
+    const waterfall = new WaterfallSurface(scene, renderer, new THREE.Group(), { width: 1, height: 1, segmentsX: 1, segmentsY: 1 });
+    const underwaterPass = { enabled: false };
+    const waterBindings = [surface, waterfall].map(water => ({ mesh: water.mesh, surface: water, usesSceneDepth: false }));
+    const adapter = Object.assign(Object.create(RenderRuntimeAdapter.prototype), {
+      scene, camera, underwaterPass, waterBindings
+    }) as { updateWater(deltaTime: number, depth: THREE.DepthTexture | null): void };
+
+    for (const enabled of [false, true, false]) {
+      underwaterPass.enabled = enabled;
+      adapter.updateWater(0, null);
+      expect(surface.material.uniforms.uUnderwaterPostProcess?.value).toBe(enabled);
+    }
+    underwaterPass.enabled = true;
+    const rebuilt = new WaterSurface(scene, renderer, new THREE.Group(), { size: 1, segments: 1 });
+    waterBindings.splice(0, waterBindings.length, { mesh: rebuilt.mesh, surface: rebuilt, usesSceneDepth: false });
+    adapter.updateWater(0, null);
+    expect(rebuilt.material.uniforms.uUnderwaterPostProcess.value).toBe(true);
+    rebuilt.dispose();
+    surface.dispose();
+    waterfall.dispose();
+  });
+
   it('leaves material-tag model water under its dedicated runtime', () => {
     const naturalWater = new THREE.Mesh();
     const modelWater = new THREE.Mesh();

@@ -1,0 +1,128 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Underwater surface GPU regression</title></head>
+<body><pre id="output">Running...</pre><script type="module">
+import * as THREE from 'three';
+import { WaterSurface } from '/vendor/voxel-render-runtime/src/environment/water/WaterSurface.js';
+import { createUnderwaterPass } from '/vendor/voxel-render-runtime/src/passes/UnderwaterPass.js';
+import { bindUnderwaterDepth, configureUnderwaterPass } from '/src/client/underwaterRuntime.ts';
+
+// Read pixels from the production water material and underwater pass. Switching
+// the object behind the surface between red and blue measures actual visibility.
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(16, 16);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0, 0, 0);
+const root = new THREE.Group();
+scene.add(root);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 200);
+camera.up.set(0, 0, -1);
+const surface = new WaterSurface(scene, renderer, root, { size: 200, segments: 1, waterLevel: 0 });
+surface.importState({
+  uOpacity: 1, uWaveHeight: 0, uFoamStrength: 0, uContactFoamEnabled: false,
+  uWhitecapEnabled: false, uShoreWaveEnabled: false, uHighlightEnabled: false,
+  uToonSparkleEnabled: false, uToonPatternEnabled: false, uFresnelStrength: 0
+});
+const subject = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+subject.rotation.x = -Math.PI / 2;
+scene.add(subject);
+const capture = new THREE.WebGLRenderTarget(16, 16);
+capture.depthTexture = new THREE.DepthTexture(16, 16, THREE.UnsignedIntType);
+const waterTarget = new THREE.WebGLRenderTarget(16, 16);
+const output = new THREE.WebGLRenderTarget(16, 16);
+const pass = createUnderwaterPass();
+configureUnderwaterPass(pass, { mode: 'clear', tint: '#19747d', visibilityDistance: 35, scatterStrength: 0.72 });
+const flatWave = { amplitude: 0, scale: 1, speed: 0, primaryDirection: [1, 0], secondaryDirection: [0, 1], foamColor: '#ffffff', edgeStrength: 0 };
+const oceanTerrain = new THREE.DataTexture(new Float32Array([-50, -50, -50, -50]), 2, 2, THREE.RedFormat, THREE.FloatType);
+oceanTerrain.needsUpdate = true;
+const lakeDepth = new THREE.DataTexture(new Uint8Array([127, 255, 255, 255]), 1, 1);
+lakeDepth.needsUpdate = true;
+const u = surface.material.uniforms;
+u.tOceanTerrain.value = oceanTerrain;
+u.uOceanTerrainSize.value.set(2, 2);
+u.uOceanMapSize.value.set(200, 200);
+u.uOceanLevel.value = 0;
+u.uOceanTerrainSinkTarget.value = -50;
+u.uOceanTerrainBounds.value.set(-100, -100, 100, 100);
+u.tTerrainWaterDepth.value = lakeDepth;
+u.uShoreWorldSize.value = 200;
+u.tWaterSceneColor.value = capture.texture;
+u.tWaterSceneDepth.value = capture.depthTexture;
+
+function pixel(depth, color, postprocess = true, sky = false) {
+  if (u.uUnderwaterPostProcess) u.uUnderwaterPostProcess.value = postprocess;
+  camera.position.set(0, -depth, 0);
+  camera.lookAt(0, depth > 0 ? 1 : -1, 0);
+  camera.updateMatrixWorld();
+  subject.position.y = depth > 0 ? 4 : -4;
+  subject.visible = !sky;
+  subject.material.color.setRGB(...color);
+  scene.background.setRGB(...color);
+  surface.mesh.visible = false;
+  renderer.setRenderTarget(capture);
+  renderer.render(scene, camera);
+  surface.mesh.visible = true;
+  surface.update(0, camera, capture.depthTexture);
+  renderer.setRenderTarget(waterTarget);
+  renderer.render(scene, camera);
+  if (postprocess) {
+    bindUnderwaterDepth(pass, capture.depthTexture, camera, 0, 1, 0, flatWave);
+    pass.render(renderer, output, waterTarget);
+  }
+  const rgba = new Uint8Array(4);
+  renderer.readRenderTargetPixels(postprocess ? output : waterTarget, 8, 8, 1, 1, rgba);
+  return Array.from(rgba);
+}
+
+function visibility(depth, postprocess = true, sky = false) {
+  const red = pixel(depth, [1, 0, 0], postprocess, sky);
+  const blue = pixel(depth, [0, 0, 1], postprocess, sky);
+  return { red, blue, contrast: (Math.abs(red[0] - blue[0]) + Math.abs(red[2] - blue[2])) / 510 };
+}
+
+const cases = [];
+// Front-face pixels recorded before the fix; allow one byte for GPU rounding.
+const aboveBaseline = [
+  [[20, 38, 51], [20, 38, 51]], [[44, 44, 58], [20, 44, 82]],
+  [[20, 38, 51], [20, 38, 51]], [[8, 19, 28], [8, 19, 28]],
+  [[20, 38, 51], [20, 38, 51]], [[8, 19, 27], [8, 19, 27]]
+];
+for (const kind of ['plain', 'lake', 'ocean']) {
+  u.uHasTerrainWaterDepth.value = kind === 'lake';
+  u.uHasWaterSceneColor.value = kind === 'lake';
+  u.uUseOceanTerrain.value = kind === 'ocean';
+  u.uOceanTerrainBounded.value = kind === 'ocean';
+  surface.material.depthWrite = kind === 'ocean';
+  surface.material.forceSinglePass = kind === 'ocean';
+  for (const mode of ['cartoon', 'realistic']) {
+    surface.setWaterMode(mode);
+    const shallow = visibility(0.25), middle = visibility(8), deep = visibility(40);
+    const noPostprocess = [0.25, 8, 40].map(depth => visibility(depth, false).contrast);
+    const sky = visibility(0.25, true, true);
+    const above = visibility(-2, false);
+    // The user's saved scheme uses opacity 0.6. Depth absorption must still
+    // tend toward opaque water instead of being capped at that surface value.
+    u.uOpacity.value = 0.6;
+    const translucentNoPostprocess = [0.25, 8, 40].map(depth => visibility(depth, false).contrast);
+    u.uOpacity.value = 1;
+    const unchangedAbove = [above.red, above.blue].every((pixel, index) =>
+      aboveBaseline[cases.length][index].every((value, channel) => Math.abs(pixel[channel] - value) <= 1));
+    const passed = shallow.contrast > 0.65 && sky.contrast > 0.65
+      && middle.contrast < shallow.contrast - 0.1 && deep.contrast < middle.contrast - 0.1
+      && deep.contrast < shallow.contrast * 0.4 && unchangedAbove
+      && noPostprocess[0] > 0.65 && noPostprocess[1] < noPostprocess[0] - 0.1
+      && noPostprocess[2] < noPostprocess[1] - 0.1 && noPostprocess[2] < noPostprocess[0] * 0.4
+      && translucentNoPostprocess[0] > 0.65 && translucentNoPostprocess[1] < translucentNoPostprocess[0] - 0.1
+      && translucentNoPostprocess[2] < translucentNoPostprocess[1] - 0.1
+      && translucentNoPostprocess[2] < translucentNoPostprocess[0] * 0.4
+      // Keep the existing post-process transmission: a second absorption layer
+      // would reduce the measured 40 m contrast to about 0.05.
+      && middle.contrast > 0.6 && deep.contrast > 0.2;
+    cases.push({ kind, mode, passed, visibility: [shallow.contrast, middle.contrast, deep.contrast], noPostprocess, translucentNoPostprocess, sky: sky.contrast, unchangedAbove });
+  }
+}
+window.result = { passed: cases.every(entry => entry.passed), cases };
+document.querySelector('#output').textContent = JSON.stringify(window.result, null, 2);
+pass.dispose();surface.dispose();subject.geometry.dispose();subject.material.dispose();
+capture.dispose();waterTarget.dispose();output.dispose();oceanTerrain.dispose();lakeDepth.dispose();renderer.dispose();
+if (!window.result.passed) throw new Error('The shallow underside hides the scene or visibility does not decrease with depth');
+</script></body></html>

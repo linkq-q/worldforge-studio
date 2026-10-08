@@ -634,6 +634,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uFlowSpeed;
 
   uniform bool uHasDepthTexture;
+  uniform bool uUnderwaterPostProcess;
 
   uniform bool uUseCartoonBands;
   uniform float uBandHardness;
@@ -1695,6 +1696,23 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       // shallow pixel. Transmit only when actual scene geometry is behind it.
       if (uOceanTerrainBounded && uHasDepthTexture && depthSample >= 1.0) alpha = 1.0;
     }
+    // Three flips winding for the back pass of double-sided transparent water.
+    #ifdef FLIP_SIDED
+      bool underside = gl_FrontFacing;
+    #else
+      bool underside = !gl_FrontFacing;
+    #endif
+    if (underside) {
+      // Column depth occludes the bed from above, not the sky from below.
+      float undersideNdotV = clamp(abs(dot(finalWaterNormal, normalize(vViewDir))), 0.0, 1.0);
+      alpha = min(alpha, mix(0.04, 0.35, pow(1.0 - undersideNdotV, 5.0)));
+      // Old render schemes can omit UnderwaterPass. Absorb along the water-side
+      // path here in that case, using the existing per-depth absorption controls.
+      if (!uUnderwaterPostProcess) {
+        float transmission = exp(-viewDistance * max(uAbsorptionStrength * uAbsorptionDepthScale, 0.0));
+        alpha = 1.0 - (1.0 - alpha) * transmission;
+      }
+    }
     float riverMouthFade = uUseRiverFlow ? clamp(vRiverMouthFade, 0.0, 1.0) : 1.0;
     if (hasTerrainDepth && uHasWaterSceneColor) {
       vec3 detailView = mat3(viewMatrix) * (finalWaterNormal - baseNormal);
@@ -1853,6 +1871,7 @@ export class WaterSurface {
 
         // === v1: 深度纹理状态 / 卡通色阶 / 接触泡沫 / 接触波纹 / Debug 可视化 ===
         uHasDepthTexture: { value: false },
+        uUnderwaterPostProcess: { value: false },
 
         // v4: cartoon 默认开色阶（shader 内 mode 1 realistic 不量化，安全）
         uUseCartoonBands: { value: true },
