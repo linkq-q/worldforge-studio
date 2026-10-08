@@ -9,7 +9,9 @@
     aside{position:absolute;left:12px;top:12px;max-width:650px;padding:10px;background:#122029dc;border-radius:6px}
     button{margin:3px;padding:6px 10px;border:1px solid #78929b;border-radius:4px;background:#263c48;color:white;cursor:pointer}
     button[aria-pressed="true"]{background:#356b77;border-color:#adf1e4}
-    #status,#stats{margin:5px 3px;white-space:pre-wrap}
+    #status,#stats,#sample-result{margin:5px 3px;white-space:pre-wrap}
+    small{display:block;margin:5px 3px;color:#c0d5dc}
+    a{margin:5px 3px;color:#b7f3e7}
   </style>
 </head>
 <body>
@@ -21,12 +23,16 @@
       <button id="motion" aria-pressed="false">固定轨迹运动</button>
     </div>
     <div>
-      <button data-mode="baseline">基线 A</button><button data-mode="current">当前 B</button>
-      <button id="pause" aria-pressed="true">播放波浪</button><button id="reset">固定 t=12 秒</button>
+      <button data-mode="baseline">最初参数参考</button><button data-mode="current">本轮优化</button>
+      <button id="pause" aria-pressed="false">暂停波浪</button><button id="reset">固定 t=12 秒</button>
+      <button id="step">推进 0.8 秒</button><button id="sample">采样 10 秒</button>
       <button id="download">下载当前截图</button>
     </div>
+    <small>两个选项共用当前 shader；最初参数参考仅回拨参数。历史版本请对照已保存的同机位截图。</small>
     <div id="status">读取真实海港地图和渲染方案…</div>
     <div id="stats"></div>
+    <div id="sample-result"></div>
+    <a id="screenshot-download" hidden>保存截图</a>
   </aside>
   <script type="module">
     import { createMapViewer } from '/src/client/mapViewer.ts';
@@ -76,8 +82,11 @@
       };
       let view = shots[query.get('view')] ? query.get('view') : 'harbor';
       let mode = query.get('mode') === 'baseline' ? 'baseline' : 'current';
-      let elapsed = 12, paused = true, moving = false, motionTime = 0;
+      let elapsed = 12, paused = false, moving = false, motionTime = 0;
       let previous = performance.now(), frameSum = 0, cpuSum = 0, samples = 0, lastReport = previous;
+      let sampling = null;
+      let screenshotUrl = null;
+      const sampleButton = document.querySelector('#sample'), sampleResult = document.querySelector('#sample-result');
       const baselines = new Map();
       const original = {
         uRealisticSpecularStrength: 0.85,
@@ -86,7 +95,8 @@
         uPlanarReflectionStrength: 0,
         uContactFoamEnabled: false
       };
-      // This page alone replays the pre-change settings; no map or scheme is saved.
+      // Parameter reference only: both options keep the current shader code.
+      // This page never saves a map or scheme.
       function applyComparison() {
         if (adapter.waterReflection) adapter.waterReflection.enabled = mode === 'current';
         for (const { surface } of adapter.waterBindings) {
@@ -112,7 +122,7 @@
         camera.updateMatrixWorld();
       }
       function updateLabel() {
-        status.textContent = `${mode === 'baseline' ? '基线 A' : '当前 B'} · ${view} · 波浪 t=${elapsed.toFixed(2)} 秒 · ${paused ? '已冻结' : '播放中'}`;
+        status.textContent = `${mode === 'baseline' ? '最初参数参考' : '本轮优化'} · ${view} · 波浪 t=${elapsed.toFixed(2)} 秒 · ${paused ? '已冻结' : '播放中'}`;
       }
       function draw(delta = 0) {
         setCamera();
@@ -124,8 +134,15 @@
         runtime.renderFrame(delta, elapsed);
       }
       function resetSamples() { frameSum = cpuSum = samples = 0; lastReport = performance.now(); }
+      function cancelSampling() {
+        if (!sampling) return;
+        sampling = null; sampleButton.disabled = false;
+        sampleResult.textContent = '采样取消：页面、视角、参数或播放状态已改变。';
+      }
+      document.addEventListener('visibilitychange', () => { if (document.hidden) cancelSampling(); });
       document.querySelectorAll('[data-view]').forEach(button => {
         button.onclick = () => {
+          cancelSampling();
           view = button.dataset.view; motionTime = 0;
           document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', item === button));
           resetSamples(); draw(); updateLabel();
@@ -133,28 +150,47 @@
         button.setAttribute('aria-pressed', button.dataset.view === view);
       });
       document.querySelectorAll('[data-mode]').forEach(button => button.onclick = () => {
+        cancelSampling();
         mode = button.dataset.mode; applyComparison(); resetSamples(); draw(); updateLabel();
       });
       const pause = document.querySelector('#pause'), motion = document.querySelector('#motion');
       pause.onclick = () => {
+        cancelSampling();
         paused = !paused; pause.textContent = paused ? '播放波浪' : '暂停波浪';
         pause.setAttribute('aria-pressed', paused); updateLabel();
       };
-      motion.onclick = () => { moving = !moving; motionTime = 0; motion.setAttribute('aria-pressed', moving); resetSamples(); };
-      document.querySelector('#reset').onclick = () => {
-        elapsed = 12; motionTime = 0; paused = true; moving = false;
+      motion.onclick = () => { cancelSampling(); moving = !moving; motionTime = 0; motion.setAttribute('aria-pressed', moving); resetSamples(); };
+      function freezeAt(time) {
+        cancelSampling(); elapsed = time; motionTime = 0; paused = true; moving = false;
         pause.textContent = '播放波浪'; pause.setAttribute('aria-pressed', 'true'); motion.setAttribute('aria-pressed', 'false');
+        adapter.waterReflection?.forceUpdate();
         resetSamples(); draw(); updateLabel();
+      }
+      document.querySelector('#reset').onclick = () => freezeAt(12);
+      document.querySelector('#step').onclick = () => freezeAt(elapsed + 0.8);
+      sampleButton.onclick = () => {
+        elapsed = 12; motionTime = 0;
+        adapter.waterReflection?.forceUpdate();
+        draw(); resetSamples();
+        sampling = { start: 0, frameTimes: [], cpuSum: 0,
+          captures: adapter.waterReflection?.getStats().renderCount ?? 0,
+          label: `${view} · ${mode === 'baseline' ? '最初参数参考' : '本轮优化'} · ${moving ? '运动镜头' : '固定镜头'} · ${paused ? '冻结波浪' : '播放波浪'}` };
+        sampleButton.disabled = true;
+        sampleResult.textContent = `从 t=12 秒开始采样 10 秒 · ${sampling.label}`;
       };
       document.querySelector('#download').onclick = () => {
         draw();
         const filename = `harbor-water-${view}-${mode}-t${elapsed.toFixed(2)}.png`;
         canvas.toBlob(blob => {
           if (!blob) { status.textContent = '截图失败'; return; }
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
+          const link = document.querySelector('#screenshot-download');
+          if (screenshotUrl) URL.revokeObjectURL(screenshotUrl);
+          screenshotUrl = URL.createObjectURL(blob);
+          link.href = screenshotUrl;
           link.download = filename;
-          link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+          link.textContent = `保存截图 · ${filename}`;
+          link.hidden = false;
+          link.click();
         }, 'image/png');
       };
       addEventListener('resize', () => viewer.setSize(innerWidth, innerHeight));
@@ -168,8 +204,34 @@
         const delta = Math.min(0.05, interval / 1000);
         if (!paused) elapsed += delta;
         if (moving) motionTime += delta;
+        if (sampling?.start) {
+          const sampleTime = (now - sampling.start) / 1000;
+          if (!paused) elapsed = 12 + sampleTime;
+          if (moving) motionTime = sampleTime;
+        }
         const start = performance.now(); draw(paused ? 0 : delta);
-        cpuSum += performance.now() - start; frameSum += interval; samples++;
+        const cpu = performance.now() - start;
+        cpuSum += cpu; frameSum += interval; samples++;
+        if (sampling) {
+          if (!sampling.start) {
+            sampling.start = now;
+            sampling.captures = adapter.waterReflection?.getStats().renderCount ?? 0;
+          }
+          else {
+            sampling.frameTimes.push(interval); sampling.cpuSum += cpu;
+            if (now - sampling.start >= 10000) {
+              const times = sampling.frameTimes.sort((a, b) => a - b), count = times.length;
+              const mean = times.reduce((sum, time) => sum + time, 0) / count;
+              const p95 = times[Math.ceil(count * 0.95) - 1];
+              const captures = (adapter.waterReflection?.getStats().renderCount ?? 0) - sampling.captures;
+              const result = { label: sampling.label, frames: count, durationMs: now - sampling.start,
+                rafMeanMs: mean, rafP95Ms: p95, cpuMeanMs: sampling.cpuSum / count, reflectionCaptures: captures };
+              window.review.lastSample = result;
+              sampleResult.textContent = `10 秒采样 · ${result.label}\nRAF 均值 ${mean.toFixed(1)} ms · p95 ${p95.toFixed(1)} ms · CPU 均值 ${result.cpuMeanMs.toFixed(1)} ms（非 GPU 耗时）\n${count} 帧 · 反射抓取增加 ${captures} 次`;
+              sampling = null; sampleButton.disabled = false;
+            }
+          }
+        }
         if (now - lastReport > 1000) {
           const reflection = adapter.waterReflection?.getStats();
           stats.textContent = `RAF 均值 ${(frameSum / samples).toFixed(1)} ms · CPU 提交 ${(cpuSum / samples).toFixed(1)} ms（非 GPU 耗时）`

@@ -185,7 +185,8 @@ describe('WaterSurface shader', () => {
       'waveOffset.y = computeOceanSwashHeight(worldBase.xz, waveOffset.y)'
     );
     expect(surface.material.fragmentShader).toContain('if (oceanWaterDepth <= 0.025) discard;');
-    expect(surface.material.fragmentShader).toContain('shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))');
+    // The animated foam coverage itself is read back on the GPU in waterObjectContact.html.
+    expect(surface.material.fragmentShader).toContain('oceanSwashPhase(vWorldPosition.xz, oceanGroundHeight - uOceanLevel)');
     expect(surface.material.fragmentShader).toContain('foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);');
     expect(surface.material.fragmentShader).toContain('float oceanDeepOcclusion = smoothstep(0.2, 0.8, oceanDepthFraction);');
     expect(surface.material.fragmentShader).toContain('alpha = mix(alpha, 1.0, oceanDeepOcclusion);');

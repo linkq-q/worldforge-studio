@@ -555,6 +555,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   varying float vDisplacement;
 
   uniform sampler2D tDepth;
+  uniform mat4 uWaterViewProjection;
+  uniform mat4 uWaterInverseViewProjection;
   uniform float uCameraNear;
   uniform float uCameraFar;
   uniform float uTime;
@@ -917,6 +919,15 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
 
   ${OCEAN_SWASH_GLSL}
 
+  float oceanObjectDistance(vec3 worldHit, vec3 waterWorld, float radius) {
+    float heightGap = waterWorld.y - worldHit.y;
+    float distance = length(worldHit.xz - waterWorld.xz);
+    if (heightGap < -0.025 || heightGap > 0.35 || distance >= radius) return radius;
+    // A sloping seabed must be checked at the hit, not below the water pixel.
+    if (worldHit.y - sampleOceanTerrainHeight(worldHit.xz) <= 0.18) return radius;
+    return distance;
+  }
+
   void main() {
     // ============================================
     // Step 0: 计算屏幕 UV（用于深度纹理采样）
@@ -1040,21 +1051,52 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
 
     // === 1b. Contact Foam（接触泡沫：水陆交界处的泡沫带，noise 扰动外缘） ===
     float contactFoam = 0.0;
-    if (uContactFoamEnabled && (!uUseOceanTerrain || (uHasDepthTexture && depthSample < 1.0
-        && cameraPosition.y > uOceanLevel && sceneDepthDiff >= 0.0 && sceneDepthDiff < 0.25))) {
+    float oceanContactRange = clamp(uContactFoamEnd + uContactFoamWidth, 0.001, 0.65);
+    float oceanContactDistance = oceanContactRange;
+    if (uUseOceanTerrain && uContactFoamEnabled && uContactFoamStrength > 0.0 && uHasDepthTexture
+        && cameraPosition.y > uOceanLevel && distance(cameraPosition, vWorldPosition) < 150.0) {
+      if (depthSample < 1.0 && sceneDepthDiff >= 0.0 && sceneDepthDiff < oceanContactRange) {
+        vec3 worldHit = cameraPosition + (vWorldPosition - cameraPosition)
+          * (contactSceneDepth / max(waterDepth, 0.0001));
+        if (oceanObjectDistance(worldHit, vWorldPosition, oceanContactRange) < oceanContactRange) {
+          oceanContactDistance = sceneDepthDiff;
+        }
+      }
+      if (oceanContactDistance >= oceanContactRange) {
+        // Expand a visible waterline onto the surrounding water. Four world-space
+        // probes reuse shared depth; they do not require an object-mask render pass.
+        for (int i = 0; i < 4; i++) {
+          vec2 direction = i == 0 ? vec2(1.0, 0.0) : i == 1 ? vec2(-1.0, 0.0)
+            : i == 2 ? vec2(0.0, 1.0) : vec2(0.0, -1.0);
+          // Probe inside the band: a full-radius step can see the dry hull above
+          // the waterline and miss the wet side beside the strongest foam core.
+          vec3 probe = vWorldPosition + vec3(direction.x * oceanContactRange * 0.65, -0.15, direction.y * oceanContactRange * 0.65);
+          vec4 clip = uWaterViewProjection * vec4(probe, 1.0);
+          if (clip.w <= 0.0) continue;
+          vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
+          if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) continue;
+          float sampleDepth = texture2D(tDepth, uv).r;
+          if (sampleDepth >= 1.0) continue;
+          vec4 reconstructed = uWaterInverseViewProjection * vec4(uv * 2.0 - 1.0, sampleDepth * 2.0 - 1.0, 1.0);
+          vec3 worldHit = reconstructed.xyz / reconstructed.w;
+          oceanContactDistance = min(oceanContactDistance, oceanObjectDistance(worldHit, vWorldPosition, oceanContactRange));
+        }
+      }
+    }
+    if (uContactFoamEnabled && (!uUseOceanTerrain || oceanContactDistance < oceanContactRange)) {
       float foamNoise = fbmNoise(vWorldPosition.xz * uContactFoamNoiseScale, uTime * uContactFoamPulse);
       float contactFoamEdge = uContactFoamEnd + foamNoise * uContactFoamWidth;
       float band = smoothstep(contactFoamEdge, uContactFoamStart, depthDiff);
       contactFoam = band * smoothstep(uContactFoamBreakup, 1.0, foamNoise) * uContactFoamStrength * hasDepth;
       if (uUseOceanTerrain) {
-        // Keep object intersections separate from the terrain-owned colour and shore.
-        // This narrow band reuses the local seabed height instead of sampling terrain again.
-        vec3 sceneWorld = cameraPosition + (vWorldPosition - cameraPosition)
-          * (contactSceneDepth / max(waterDepth, 0.0001));
-        float aboveBed = smoothstep(0.06, 0.18, sceneWorld.y - oceanGroundHeight);
-        float objectBand = 1.0 - smoothstep(0.0, max(min(contactFoamEdge, 0.25), 0.001), sceneDepthDiff);
-        contactFoam = objectBand * aboveBed * smoothstep(uContactFoamBreakup, 1.0, foamNoise)
-          * min(uContactFoamStrength, 0.35);
+        float pulse = 0.5 + 0.5 * sin(primaryGerstnerPhase(vReflectionWorldPosition.xz));
+        // Breakup removes sections; it must not also collapse the entire white
+        // band. Keep a readable core and let the outer edge retreat with the wave.
+        float edge = oceanContactRange * mix(0.8, 1.0, pulse);
+        float core = 1.0 - smoothstep(edge * 0.55, edge * 0.95, oceanContactDistance);
+        float tail = (1.0 - smoothstep(edge * 0.1, edge, oceanContactDistance)) * 0.4;
+        float breakup = smoothstep(uContactFoamBreakup - 0.08, uContactFoamBreakup + 0.08, foamNoise);
+        contactFoam = max(core, tail) * breakup * clamp(uContactFoamStrength, 0.0, 1.0);
       }
     }
 
@@ -1081,11 +1123,18 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float shoreMask = 1.0 - smoothstep(0.0, max(uShoreFoamWidth, 0.0001), foamDist);
       shoreFoam = shoreMask * shoreBreakup * uShoreFoamStrength;
       if (uUseOceanTerrain) {
-        float oceanFoamWidth = 0.09 + 0.025
-          * sin(vWorldPosition.x * 3.1 + uTime * 1.6)
-          * sin(vWorldPosition.z * 2.7 - uTime * 1.1);
-        shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))
-          * uShoreFoamStrength;
+        float oceanFoamWidth = clamp(0.07 + uShoreFoamWidth * 0.7, 0.08, 0.22);
+        shoreFoam = 0.0;
+        if (oceanWaterDepth < oceanFoamWidth * 1.15) {
+          // Follow the same advancing/retreating swash as the shore geometry.
+          float phase = oceanSwashPhase(vWorldPosition.xz, oceanGroundHeight - uOceanLevel);
+          float push = smoothstep(0.0, 0.30, phase) * (1.0 - smoothstep(0.30, 1.0, phase));
+          oceanFoamWidth *= mix(0.65, 1.15, push);
+          float core = 1.0 - smoothstep(0.025, max(0.05, oceanFoamWidth * 0.55), oceanWaterDepth);
+          float tail = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth)) * 0.45;
+          float froth = smoothstep(uShoreWaveBreakup - 0.1, uShoreWaveBreakup + 0.1, shoreFroth);
+          shoreFoam = max(core, tail) * froth * uShoreFoamStrength;
+        }
       }
     }
 
@@ -1440,6 +1489,12 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       // Normal 扰动 UV（模拟水面波动对倒影的扭曲）
       float planarDistortion = uPlanarReflectionDistortion * uPlanarReflectionDistortionScale * uWaterNormalStrength;
       vec2 planarSlope = uWaterMode < 0.5 ? rippleSlope : finalWaterNormal.xz;
+      if (uUseOceanTerrain) {
+        // Ocean waves remain visible in both styles and follow camera screen axes.
+        // Detail strength already shaped finalWaterNormal; do not attenuate macro waves again.
+        planarDistortion = uPlanarReflectionDistortion * uPlanarReflectionDistortionScale;
+        planarSlope = (mat3(viewMatrix) * vec3(finalWaterNormal.x, 0.0, finalWaterNormal.z)).xy;
+      }
       planarUv += planarSlope * planarDistortion;
 
       // 透视裁剪：UV 超出 [0,1] 范围外不采样（倒影纹理不重复）
@@ -1803,6 +1858,8 @@ export class WaterSurface {
       extensions: { derivatives: true },
       uniforms: {
         tDepth: { value: null },
+        uWaterViewProjection: { value: new THREE.Matrix4() },
+        uWaterInverseViewProjection: { value: new THREE.Matrix4() },
         uUseSceneWaterLight: { value: false },
         uSceneWaterLightDirection: { value: new THREE.Vector3(0.5, 1.0, 0.3).normalize() },
         uSceneWaterLightColor: { value: new THREE.Color(1, 1, 1) },
@@ -2200,6 +2257,10 @@ export class WaterSurface {
     this._expireRippleDecals();
     uniforms.uCameraNear.value = camera.near;
     uniforms.uCameraFar.value = camera.far;
+    if (uniforms.uUseOceanTerrain.value && uniforms.uContactFoamEnabled.value) {
+      uniforms.uWaterViewProjection.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      uniforms.uWaterInverseViewProjection.value.multiplyMatrices(camera.matrixWorld, camera.projectionMatrixInverse);
+    }
 
     // 深度纹理：区分真实深度纹理与默认占位纹理
     if (depthTexture) {

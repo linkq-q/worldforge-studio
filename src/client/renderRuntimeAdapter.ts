@@ -685,9 +685,12 @@ export class RenderRuntimeAdapter {
         const riverFlow = Boolean(mesh.geometry.getAttribute('riverFlow'));
         surface.material.uniforms.uUseRiverFlow.value = riverFlow;
         surface.material.uniforms.uRiverRapids.value = mesh.userData.isSpillway ? 1 : 0;
-        const waveStrength = style?.waveStrength ?? recipe.waveStrength;
-        const waveSpeed = style?.waveSpeed ?? recipe.waveSpeed;
-        const foamStrength = style?.foamStrength ?? recipe.foamStrength;
+        // Unstyled oceans need a swell of their own; an explicitly selected lake
+        // recipe or authored zero still retains its calm-water controls.
+        const defaultOcean = !style && mesh.userData.waterBodyType === 'ocean';
+        const waveStrength = style?.waveStrength ?? (defaultOcean ? 0.75 : recipe.waveStrength);
+        const waveSpeed = style?.waveSpeed ?? (defaultOcean ? 0.75 : recipe.waveSpeed);
+        const foamStrength = style?.foamStrength ?? (defaultOcean ? 0.8 : recipe.foamStrength);
         const waveHeightScale = mesh.userData.waterBodyType === 'ocean' ? 0.2 : 0.12;
         const waveDirection = style?.waveDirection === undefined
           ? undefined
@@ -793,8 +796,14 @@ export class RenderRuntimeAdapter {
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
           surface.importState({
-            uContactFoamEnabled: true, uContactFoamStart: 0, uContactFoamEnd: 0.12,
-            uContactFoamWidth: 0.08, uContactFoamStrength: 0.3, uContactFoamBreakup: 0.2
+            uContactFoamEnabled: true, uContactFoamStart: 0, uContactFoamEnd: 0.32,
+            uContactFoamWidth: 0.22, uContactFoamStrength: Math.min(1, foamStrength * 1.15),
+            uContactFoamBreakup: 0.36,
+            uShoreFoamWidth: style?.shoreFoamWidth ?? 0.12,
+            // These crossing swells remain below the 4 m near mesh's Nyquist
+            // limit; the previous 1.25/2.1 wave numbers were filtered away.
+            directionalWaves: { secondaryScale: 0.5, secondaryStrength: 0.4,
+              secondarySpeed: -0.8, midScale: 0.58, midStrength: 0.22 }
           });
           const splash = syncWaterSurfaceOcean(surface, ocean);
           const oceanLod = mesh.geometry.userData.oceanLod as {
@@ -864,7 +873,8 @@ export class RenderRuntimeAdapter {
         groups.set(key, group);
       }
       group.members.push({ mesh, surface });
-      surface.setPlanarReflectionParams({ strength: 0.5, distortion: 0.035, fresnelBoost: 1.25 });
+      surface.setPlanarReflectionParams({ strength: 0.5,
+        distortion: mesh.userData.waterBodyType === 'ocean' ? 0.12 : 0.035, fresnelBoost: 1.25 });
     }
     this.waterReflectionGroups = [...groups.values()];
     if (!this.waterReflectionGroups.length) return;

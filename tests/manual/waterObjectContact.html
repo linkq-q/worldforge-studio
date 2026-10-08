@@ -38,9 +38,11 @@ capture.depthTexture = new THREE.DepthTexture(size, size, THREE.UnsignedIntType)
 const output = new THREE.WebGLRenderTarget(size, size);
 const pixels = new Uint8Array(size * size * 4);
 
-function sample({ level = -0.025, bed = -3, sky = false, depth = true, below = false, debug = 2, mode = 'realistic' } = {}) {
+function sample({ level = -0.025, bed = -3, sky = false, depth = true, below = false,
+  debug = 2, mode = 'realistic', time = 0, eye = null, strength = 0.3, end = 0.12, width = 0.08 } = {}) {
   terrain.image.data.fill(bed); terrain.needsUpdate = true;
-  camera.position.set(0, below ? -4 : 4, 0); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
+  camera.up.set(0, eye ? 1 : 0, eye ? 0 : -1);
+  camera.position.set(...(eye || [0, below ? -4 : 4, 0])); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
   subject.position.y = level; subject.visible = !sky;
   surface.mesh.visible = false;
   renderer.setRenderTarget(capture); renderer.render(scene, camera);
@@ -49,6 +51,10 @@ function sample({ level = -0.025, bed = -3, sky = false, depth = true, below = f
   subject.visible = false;
   surface.setWaterMode(mode);
   surface.update(0, camera, depth ? capture.depthTexture : null);
+  u.uTime.value = time;
+  u.uContactFoamStrength.value = strength;
+  u.uContactFoamEnd.value = end;
+  u.uContactFoamWidth.value = width;
   u.uWaterDebugMode.value = debug;
   renderer.setRenderTarget(output); renderer.render(scene, camera);
   renderer.readRenderTargetPixels(output, 0, 0, size, size, pixels);
@@ -62,11 +68,96 @@ const sky = sample({ sky: true }), missingDepth = sample({ depth: false });
 const foreground = sample({ level: 0.1 }), underside = sample({ below: true, level: 0.025 });
 const cartoon = sample({ mode: 'cartoon', debug: 3 });
 const realistic = sample({ debug: 3 });
-const passed = contact.peak > 5 && contact.lit > 8 && contact.peak < 100
+
+const bright = { strength: 0.85, end: 0.28, width: 0.16 };
+const brightCore = sample({ ...bright, level: -0.015 });
+// The expanded white core reaches about half the configured 0.44 m band.
+// Probe the retreating tail at 75% of that band, still above the 0.35 m cutoff.
+const brightTail = sample({ ...bright, level: -0.33 });
+const brightDeep = sample({ ...bright, level: -0.8 });
+// Freeze noise advection: motion must come from the wave/contact band itself.
+u.uContactFoamPulse.value = 0;
+const contactMotion = [0, 1, 2, 3].map(time => sample({ ...bright, level: -0.22, time }));
+// Measure only water 15..40 cm OUTSIDE a vertical hull's XZ footprint.
+// Bright pixels painted on a submerged horizontal face cannot satisfy this case.
+function outsideHull() {
+  let peak = 0, lit = 0, sum = 0, count = 0;
+  const point = new THREE.Vector3();
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    point.set((x + 0.5) / size * 2 - 1, (y + 0.5) / size * 2 - 1, 0.5).unproject(camera).sub(camera.position);
+    if (point.y >= 0) continue;
+    point.multiplyScalar(-camera.position.y / point.y).add(camera.position);
+    const distance = Math.hypot(Math.max(Math.abs(point.x) - 1, 0), Math.max(Math.abs(point.z) - 0.5, 0));
+    if (distance < 0.15 || distance > 0.4) continue;
+    const value = pixels[(y * size + x) * 4];
+    peak = Math.max(peak, value); sum += value; count++; if (value > 40) lit++;
+  }
+  return { peak, mean: sum / Math.max(count, 1), lit, count };
+}
+const planeGeometry = subject.geometry, hullGeometry = new THREE.BoxGeometry(2, 1.6, 1);
+subject.geometry = hullGeometry; subject.rotation.x = 0;
+sample({ ...bright, level: 0, eye: [0, 2.5, 4] });
+const verticalHull = outsideHull();
+sample({ ...bright, level: 1.2, eye: [0, 2.5, 4] });
+const floatingHull = outsideHull();
+sample({ ...bright, level: -1.5, eye: [0, 2.5, 4] });
+const deepHull = outsideHull();
+subject.geometry = planeGeometry; subject.rotation.x = -Math.PI / 2; hullGeometry.dispose();
+u.uContactFoamEnabled.value = false;
+u.uUseShoreDistance.value = true;
+u.uShoreFoamStrength.value = 0.8;
+u.uShoreFoamWidth.value = 0.18;
+u.uShoreWaveSpeed.value = 0.75;
+const shoreCore = sample({ bed: -0.04, debug: 11 });
+const shoreMotion = [0, 1, 2, 3].map(time => sample({ bed: -0.13, debug: 11, time }));
+const offshore = sample({ bed: -0.6, debug: 11 });
+u.uUseShoreDistance.value = false;
+
+// A world-X slope must disturb reflection horizontally when viewed from Z,
+// vertically when viewed from X, and in both water modes. The gradient makes
+// the actual production planar sampling offset readable in pixel channels.
+const normal = surface.mesh.geometry.getAttribute('normal');
+for (let i = 0; i < normal.count; i++) normal.setXYZ(i, 0.2, 1, 0);
+normal.needsUpdate = true;
+const gradient = new Uint8Array(64 * 64 * 4);
+for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+  const i = (y * 64 + x) * 4; gradient[i] = x / 63 * 255; gradient[i + 1] = y / 63 * 255; gradient[i + 3] = 255;
+}
+const reflection = new THREE.DataTexture(gradient, 64, 64);
+reflection.minFilter = reflection.magFilter = THREE.LinearFilter; reflection.needsUpdate = true;
+u.tPlanarReflection.value = reflection; u.uHasPlanarReflection.value = true;
+u.uPlanarReflectionMatrix.value.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+u.uPlanarReflectionDebugMode.value = 1;
+surface.importState({ uWaterColor: '#000000', uShallowColor: '#000000', uDepthColor: '#000000',
+  uRealisticSpecularStrength: 0, uHighlightEnabled: false, uToonSparkleEnabled: false,
+  uFresnelStrength: 0, uRealisticFresnelOpacity: 0, uUseWaterEnvReflection: false, uUseWaterAbsorption: false, uOpacity: 1 });
+u.uPlanarReflectionDistortion.value = 0;
+const reflectionFlat = sample({ debug: 0, eye: [0, 4, 4] });
+u.uPlanarReflectionDistortion.value = 0.2;
+const reflectionFront = sample({ debug: 0, eye: [0, 4, 4] });
+const reflectionSide = sample({ debug: 0, eye: [4, 4, 0] });
+const reflectionCartoon = sample({ debug: 0, eye: [0, 4, 4], mode: 'cartoon' });
+u.uWaterNormalStrength.value = 0;
+const reflectionWithoutDetail = sample({ debug: 0, eye: [0, 4, 4] });
+const oldCoverage = contact.peak > 5 && contact.lit > 8 && contact.peak < 100
   && [deepObject, shallowBed, sky, missingDepth, foreground, underside].every(value => value.peak === 0)
   && cartoon.peak > 5 && realistic.peak > 5;
-window.result = { passed, contact, deepObject, shallowBed, sky, missingDepth, foreground, underside, cartoon, realistic };
+const visibleFoam = brightCore.peak > 140 && brightTail.mean > 0 && brightTail.mean < brightCore.mean
+  && brightDeep.peak === 0 && shoreCore.peak > 140 && offshore.peak === 0
+  && Math.max(...contactMotion.map(value => value.mean)) - Math.min(...contactMotion.map(value => value.mean)) > 1
+  && Math.max(...shoreMotion.map(value => value.mean)) - Math.min(...shoreMotion.map(value => value.mean)) > 1;
+const reflectionAxes = reflectionFront.center[0] > reflectionFlat.center[0] + 6
+  && Math.abs(reflectionSide.center[0] - reflectionFlat.center[0]) <= 2
+  && reflectionSide.center[1] < reflectionFlat.center[1] - 3
+  && Math.abs(reflectionCartoon.center[0] - reflectionFront.center[0]) <= 2
+  && Math.abs(reflectionWithoutDetail.center[0] - reflectionFront.center[0]) <= 2;
+const outwardFoam = verticalHull.peak > 100 && verticalHull.lit > 10 && floatingHull.peak === 0 && deepHull.peak === 0;
+const passed = oldCoverage && visibleFoam && reflectionAxes && outwardFoam;
+window.result = { passed, oldCoverage, visibleFoam, reflectionAxes, outwardFoam, verticalHull,
+  floatingHull, deepHull, contact, deepObject, shallowBed, sky, missingDepth,
+  foreground, underside, cartoon, realistic, brightCore, brightTail, brightDeep, contactMotion, shoreCore, shoreMotion,
+  offshore, reflectionFlat, reflectionFront, reflectionSide, reflectionCartoon, reflectionWithoutDetail };
 document.querySelector('#output').textContent = JSON.stringify(window.result, null, 2);
-surface.dispose();subject.geometry.dispose();subject.material.dispose();terrain.dispose();capture.dispose();output.dispose();renderer.dispose();
+surface.dispose();subject.geometry.dispose();subject.material.dispose();terrain.dispose();reflection.dispose();capture.dispose();output.dispose();renderer.dispose();
 if (!passed) throw Error('Ocean contact must detect nearby objects without whitening seabeds, sky, foreground objects, or the underside');
 </script></body></html>

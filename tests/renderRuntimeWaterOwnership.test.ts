@@ -54,7 +54,7 @@ describe('render-plan water ownership', () => {
     expect(structuredWaterShoreTransition('ocean').transparency).toBe(0);
   });
 
-  it('applies the lake surface detail material to terrain-bound ocean water', () => {
+  it('gives an unstyled ocean visible waves and foam while preserving authored controls', () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera();
     const modelsRoot = new THREE.Group();
@@ -76,7 +76,8 @@ describe('render-plan water ownership', () => {
     const adapter = Object.create(RenderRuntimeAdapter.prototype) as RenderRuntimeAdapter;
     Object.assign(adapter as unknown as Record<string, unknown>, {
       renderer: {}, scene, camera, modelsRoot, waterBindings: [], waterDetailTexture: null,
-      waterSceneCapture: null, waterEnvironmentMap: null, waterInteractionAt: new Map()
+      waterSceneCapture: null, waterEnvironmentMap: null, waterInteractionAt: new Map(),
+      materialBaselines: new Map(), effectRuntime: { removeFromObject3D: vi.fn() }
     });
 
     (adapter as unknown as { applyWaterStyles(styles: []): void }).applyWaterStyles([]);
@@ -84,7 +85,12 @@ describe('render-plan water ownership', () => {
     const material = ocean.material as unknown as THREE.ShaderMaterial;
     expect(material.uniforms.uUseWaterNormalMaps.value).toBe(true);
     expect(material.uniforms.uHighlightIntensity.value).toBeCloseTo(0.06);
-    expect(material.uniforms.uWaveHeight.value).toBeCloseTo(0.04);
+    expect(material.uniforms.uWaveHeight.value).toBeGreaterThan(0.1);
+    expect(material.uniforms.uWaveSpeed.value).toBeGreaterThan(0.5);
+    expect(material.uniforms.uShoreFoamStrength.value).toBeGreaterThan(0.6);
+    expect(material.uniforms.uContactFoamStrength.value).toBeGreaterThan(0.6);
+    // Secondary swells must survive the real ocean mesh's vertex filter.
+    expect(material.uniforms.uSecondaryWaveScale.value * 4).toBeLessThan(2.4);
     expect(material.uniforms.uOceanWaveGeometryFadeStart.value).toBe(112);
     expect(material.uniforms.uOceanWaveGeometryFadeEnd.value).toBe(128);
     expect(material.uniforms.uOceanNearVertexSpacing.value).toBe(4);
@@ -96,7 +102,19 @@ describe('render-plan water ownership', () => {
     adapter.addWaterInteraction('ocean', 0, 0, 0.55);
     expect(material.uniforms.uUseShallowWaterHeight.value).toBe(true);
 
-    material.dispose();
+    adapter.resetScopedCapabilities();
+    (adapter as unknown as { applyWaterStyles(styles: unknown[]): void }).applyWaterStyles([{
+      scope: { target: 'water', tag: 'water' }, recipe: 'calm-lake',
+      waveStrength: 0, waveSpeed: 0, foamStrength: 0, shoreFoamWidth: 0.03
+    }]);
+    const authored = (ocean.material as unknown as THREE.ShaderMaterial).uniforms;
+    expect(authored.uWaveHeight.value).toBe(0);
+    expect(authored.uWaveSpeed.value).toBe(0);
+    expect(authored.uShoreFoamStrength.value).toBe(0);
+    expect(authored.uContactFoamStrength.value).toBe(0);
+    expect(authored.uShoreFoamWidth.value).toBe(0.03);
+
+    adapter.resetScopedCapabilities();
     originalMaterial.dispose();
     ocean.geometry.dispose();
     shoreTexture.dispose();
