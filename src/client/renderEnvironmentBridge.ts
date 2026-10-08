@@ -50,7 +50,7 @@ export function shouldUseSceneDepthForWater(
   binding: WaterShoreBinding | undefined,
   ocean?: Pick<WaterOceanTerrainBinding, 'terrainBounds'>
 ): boolean {
-  return Boolean(ocean?.terrainBounds) || !binding?.texture?.isTexture;
+  return Boolean(ocean) || !binding?.texture?.isTexture;
 }
 
 export function shouldUseStructuredWaterMaterialDetail(binding: WaterShoreBinding | undefined): boolean {

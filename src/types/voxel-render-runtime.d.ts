@@ -176,6 +176,7 @@ declare module '@voxel-studio/render-runtime' {
     setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
   }
   export class PlanarReflectionPass {
+    enabled: boolean;
     constructor(options: {
       renderer: import('three').WebGLRenderer;
       scene: import('three').Scene;
@@ -183,8 +184,10 @@ declare module '@voxel-studio/render-runtime' {
       waterMesh?: import('three').Mesh | null;
       width?: number;
       height?: number;
+      excludeObjects?: import('three').Object3D[];
     });
     setWaterSurfaces(surfaces: PlanarReflectionSurface[]): void;
+    setPresentationConfig(config: { resolutionScale?: number; maxSize?: number; samples?: number }): unknown;
     syncToRendererSize(): void;
     forceUpdate(): void;
     render(): void;

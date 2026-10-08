@@ -176,6 +176,13 @@ describe('render environment bridge', () => {
     texture.dispose();
   });
 
+  it('requests scene depth for object intersections on an unbounded ocean', () => {
+    const texture = new THREE.Texture();
+    const shore = { texture, center: [0, 0] as [number, number], size: 96 };
+    expect(shouldUseSceneDepthForWater(shore, {})).toBe(true);
+    texture.dispose();
+  });
+
   it('keeps ocean and lake material detail independent from terrain depth', () => {
     const texture = new THREE.Texture();
     const oceanShore = { texture, center: [0, 0] as [number, number], size: 4096 };

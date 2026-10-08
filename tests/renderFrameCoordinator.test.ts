@@ -41,6 +41,17 @@ function createHarness(needsPrePass = true, captureWater = false) {
 }
 
 describe('RenderFrameCoordinator', () => {
+  it('captures planar reflections before scene depth and detaches them when water is cleared', () => {
+    const { coordinator, order } = createHarness(true);
+    coordinator.registerPass({ name: 'base', enabled: true } as never, 'base', 0, true);
+    coordinator.setPlanarReflectionPass({ render: () => order.push('reflection') });
+    coordinator.renderFrame(1 / 60, 1);
+    expect(order).toEqual(['reflection', 'prepass', 'water:depth', 'composer']);
+    order.length = 0;
+    coordinator.setPlanarReflectionPass(null);
+    coordinator.renderFrame(1 / 60, 2);
+    expect(order).toEqual(['prepass', 'water:depth', 'composer']);
+  });
   it('captures shared water background once each frame before water and skips it without demand', () => {
     const active = createHarness(false, true);
     active.coordinator.registerPass({name:'base',enabled:true} as never,'base',0,true);

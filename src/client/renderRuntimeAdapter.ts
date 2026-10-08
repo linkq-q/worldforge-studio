@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { PlanarReflectionPass, type PlanarReflectionSurface } from '@voxel-studio/render-runtime';
 import {
   ARTISTIC_OUTLINE_PRESETS,
   createBoundaryIdPass,
@@ -81,6 +82,10 @@ interface WaterBinding {
   usesSceneDepth: boolean;
 }
 
+interface WaterReflectionGroup extends PlanarReflectionSurface {
+  members: Array<{ mesh: THREE.Mesh; surface: WaterSurface }>;
+}
+
 type InteractiveWaterSurface = WaterSurface & {
   setRippleDecalParams(params: Record<string, unknown>): void;
   addRippleDecalPoint(x: number, z: number): number;
@@ -117,6 +122,13 @@ export class RenderRuntimeAdapter {
   private readonly waterBindings: WaterBinding[] = [];
   private waterDetailTexture: THREE.DataTexture | null = null;
   private waterSceneCapture: WaterSceneCapture | null = null;
+  private waterReflection: PlanarReflectionPass | null = null;
+  private waterReflectionGroups: WaterReflectionGroup[] = [];
+  private waterReflectionSurfaces: WaterReflectionGroup[] = [];
+  private readonly waterReflectionExclusions: THREE.Object3D[] = [];
+  private waterReflectionElapsed = 0;
+  private readonly waterReflectionFrustum = new THREE.Frustum();
+  private readonly waterReflectionProjection = new THREE.Matrix4();
   private readonly waterInteractionAt = new Map<string, number>();
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
@@ -331,6 +343,7 @@ export class RenderRuntimeAdapter {
     waterEnvironmentMap: THREE.Texture | null = this.waterEnvironmentMap
   ): void {
     this.waterEnvironmentMap = waterEnvironmentMap;
+    this.waterReflection?.forceUpdate();
     this.syncMaterialEnvironment?.(environmentMap, waterEnvironmentMap);
     // Shared primitive batches carry their tag base recipe on the material,
     // rather than on a per-node mesh, so HDRI changes need this parallel sync.
@@ -411,10 +424,19 @@ export class RenderRuntimeAdapter {
     if (!this.modelsRoot) return;
     for (const theme of materialThemes) this.applyMaterialTheme(theme);
     this.applyWaterStyles(waterStyles);
+    this.applyWaterReflection();
     this.applyEffectRecipes(effects);
   }
 
   resetScopedCapabilities(): void {
+    if (this.waterReflection) {
+      this.frameCoordinator.setPlanarReflectionPass(null);
+      this.waterReflection.dispose();
+      this.waterReflection = null;
+      this.waterReflectionGroups = [];
+      this.waterReflectionSurfaces = [];
+      this.waterReflectionExclusions.length = 0;
+    }
     this.waterInteractionAt.clear();
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;
@@ -440,6 +462,7 @@ export class RenderRuntimeAdapter {
   }
 
   tick(deltaTime: number, elapsedSeconds: number, waterLevel: number | null = null): void {
+    if (this.waterReflection) this.waterReflectionElapsed += deltaTime;
     this.pendingDeltaTime = deltaTime;
     this.pendingElapsedSeconds = elapsedSeconds;
     if (this.underwaterMode === 'off' || waterLevel === null) {
@@ -741,13 +764,13 @@ export class RenderRuntimeAdapter {
             surface.setWaterNormalTexture('A', this.waterDetailTexture);
             surface.setWaterNormalTexture('B', this.waterDetailTexture);
             surface.importState({
-              waterNormals: { enabled: true, strength: 0.8, scaleA: 0.075, scaleB: 0.113,
+              waterNormals: { enabled: true, strength: 0.45, scaleA: 0.075, scaleB: 0.113,
                 speedA: -0.014, speedB: -0.009, directionA: [1, 0.25], directionB: [0.8, -0.3], mix: 0.5 },
               uRealisticFresnelBias: 0.02,
               uRealisticFresnelColor: '#ffffff',
               uRealisticSpecularNormalInfluence: 1,
-              uRealisticSpecularStrength: 0.85,
-              uRealisticSpecularPower: 320,
+              uRealisticSpecularStrength: 0.42,
+              uRealisticSpecularPower: 160,
               reflection: { fresnelInfluence: 1, tint: '#ffffff', normalInfluence: 1 },
               uHighlightIntensity: 0.06,
               uHighlightMax: 0.12,
@@ -769,6 +792,10 @@ export class RenderRuntimeAdapter {
         }
         const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
         if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
+          surface.importState({
+            uContactFoamEnabled: true, uContactFoamStart: 0, uContactFoamEnd: 0.12,
+            uContactFoamWidth: 0.08, uContactFoamStrength: 0.3, uContactFoamBreakup: 0.2
+          });
           const splash = syncWaterSurfaceOcean(surface, ocean);
           const oceanLod = mesh.geometry.userData.oceanLod as {
             nearHalfSize?: number;
@@ -816,6 +843,93 @@ export class RenderRuntimeAdapter {
     }
   }
 
+  private applyWaterReflection(): void {
+    const groups = new Map<string, WaterReflectionGroup>();
+    for (const { mesh, surface } of this.waterBindings) {
+      if (!(surface instanceof WaterSurface) || !['ocean', 'lake'].includes(mesh.userData.waterBodyType)) continue;
+      mesh.updateWorldMatrix(true, false);
+      const normal = new THREE.Vector3(0, 1, 0).transformDirection(mesh.matrixWorld);
+      mesh.geometry.computeBoundingBox();
+      const bounds = mesh.geometry.boundingBox;
+      if (normal.y < 0.9999 || !bounds || bounds.max.y - bounds.min.y > 0.001) continue;
+      const key = mesh.getWorldPosition(new THREE.Vector3()).y.toFixed(4);
+      let group = groups.get(key);
+      if (!group) {
+        const members: WaterReflectionGroup['members'] = [];
+        group = {
+          mesh, members,
+          setPlanarReflectionTexture: texture => members.forEach(member => member.surface.setPlanarReflectionTexture(texture)),
+          setPlanarReflectionMatrix: matrix => members.forEach(member => member.surface.setPlanarReflectionMatrix(matrix))
+        };
+        groups.set(key, group);
+      }
+      group.members.push({ mesh, surface });
+      surface.setPlanarReflectionParams({ strength: 0.5, distortion: 0.035, fresnelBoost: 1.25 });
+    }
+    this.waterReflectionGroups = [...groups.values()];
+    if (!this.waterReflectionGroups.length) return;
+    this.waterReflection = new PlanarReflectionPass({
+      renderer: this.renderer, scene: this.scene, camera: this.camera,
+      excludeObjects: this.waterReflectionExclusions
+    });
+    // One half-resolution target per visible water level, capped for large/DPR displays.
+    this.waterReflection.setPresentationConfig({ resolutionScale: 0.5, maxSize: 1024, samples: 0 });
+    this.waterReflectionElapsed = 0;
+    this.frameCoordinator.setPlanarReflectionPass({ render: () => this.renderWaterReflection() });
+  }
+
+  private renderWaterReflection(): void {
+    const pass = this.waterReflection;
+    if (!pass?.enabled) return;
+    this.camera.updateMatrixWorld(true);
+    this.waterReflectionProjection.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+    this.waterReflectionFrustum.setFromProjectionMatrix(this.waterReflectionProjection);
+    const eye = this.camera.getWorldPosition(new THREE.Vector3());
+    const sphere = new THREE.Sphere();
+    const visible = this.waterReflectionGroups.map(group => {
+      let coverage = 0;
+      for (const { mesh } of group.members) {
+        let shown = true;
+        for (let node: THREE.Object3D | null = mesh; node; node = node.parent) shown &&= node.visible;
+        if (!shown) continue;
+        mesh.updateWorldMatrix(true, false);
+        if (eye.y <= mesh.getWorldPosition(_waterWorldPosition).y || !this.waterReflectionFrustum.intersectsObject(mesh)) continue;
+        if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
+        sphere.copy(mesh.geometry.boundingSphere!).applyMatrix4(mesh.matrixWorld);
+        coverage = Math.max(coverage, sphere.radius ** 2 / Math.max(1, sphere.center.distanceToSquared(eye)));
+      }
+      return { group, coverage };
+    }).filter(entry => entry.coverage > 0).sort((a, b) => b.coverage - a.coverage).slice(0, 3).map(entry => entry.group);
+    // Keep target ownership stable when the same planes merely swap projected size.
+    visible.sort((a, b) => this.waterReflectionGroups.indexOf(a) - this.waterReflectionGroups.indexOf(b));
+    if (!visible.length) {
+      for (const group of this.waterReflectionSurfaces) group.setPlanarReflectionTexture(null);
+      return;
+    }
+    if (visible.length !== this.waterReflectionSurfaces.length || visible.some((group, index) => group !== this.waterReflectionSurfaces[index])) {
+      for (const old of this.waterReflectionSurfaces) if (!visible.includes(old)) old.setPlanarReflectionTexture(null);
+      pass.setWaterSurfaces(visible);
+      this.waterReflectionSurfaces = visible;
+    }
+    if (this.waterReflectionElapsed >= 1 / 15) {
+      pass.forceUpdate();
+      this.waterReflectionElapsed %= 1 / 15;
+    }
+    this.waterReflectionExclusions.length = 0;
+    // Keep sky/environment meshes and scene lights; editor roots and helper overlays are not scenery.
+    for (const child of this.scene.children) {
+      if (child !== this.contentRoot && !child.userData.isEnvironmentObject && !(child as THREE.Light).isLight) {
+        this.waterReflectionExclusions.push(child);
+      }
+    }
+    this.contentRoot?.traverse(object => {
+      if (object.userData.editorHelper || object.userData.isEditorObject || object.userData.isHelper || object.userData.isWater) {
+        this.waterReflectionExclusions.push(object);
+      }
+    });
+    pass.render();
+  }
+
   private applyEffectRecipes(recipes: RuntimeEffectRecipe[]): void {
     if (!this.modelsRoot) return;
     const byTarget = new Map<THREE.Object3D, RuntimeEffectRecipe[]>();
@@ -848,6 +962,7 @@ export class RenderRuntimeAdapter {
     this.pixelRatio = pixelRatio;
     if (pixelRatioChanged) this.composer.setPixelRatio(pixelRatio);
     this.composer.setSize(this.width, this.height);
+    this.waterReflection?.syncToRendererSize();
     const drawingSize = this.renderer.getDrawingBufferSize(new THREE.Vector2());
     const drawWidth = Math.max(1, drawingSize.x);
     const drawHeight = Math.max(1, drawingSize.y);

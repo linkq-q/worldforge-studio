@@ -74,6 +74,10 @@ export class RenderFrameCoordinator {
     this.pipeline.registerPass(pass, 'mainComposer', order, { id, enabled });
   }
 
+  setPlanarReflectionPass(pass: { render(): void; enabled?: boolean } | null): void {
+    this.pipeline.setPlanarReflectionPass(pass);
+  }
+
   setPassEnabled(id: string, enabled: boolean): void {
     this.pipeline.setPassEnabled(id, enabled);
     this.pipeline.syncComposer();

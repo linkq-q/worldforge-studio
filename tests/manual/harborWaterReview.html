@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>海港水面 · 同机位对比</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101719;color:#fff;font:13px system-ui}
+    canvas{display:block;width:100%;height:100%}
+    aside{position:absolute;left:12px;top:12px;max-width:650px;padding:10px;background:#122029dc;border-radius:6px}
+    button{margin:3px;padding:6px 10px;border:1px solid #78929b;border-radius:4px;background:#263c48;color:white;cursor:pointer}
+    button[aria-pressed="true"]{background:#356b77;border-color:#adf1e4}
+    #status,#stats{margin:5px 3px;white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <aside>
+    <div>
+      <button data-view="harbor">港湾全景</button><button data-view="boat">近船</button>
+      <button data-view="low">低视角</button><button data-view="underwater">水下</button>
+      <button id="motion" aria-pressed="false">固定轨迹运动</button>
+    </div>
+    <div>
+      <button data-mode="baseline">基线 A</button><button data-mode="current">当前 B</button>
+      <button id="pause" aria-pressed="true">播放波浪</button><button id="reset">固定 t=12 秒</button>
+      <button id="download">下载当前截图</button>
+    </div>
+    <div id="status">读取真实海港地图和渲染方案…</div>
+    <div id="stats"></div>
+  </aside>
+  <script type="module">
+    import { createMapViewer } from '/src/client/mapViewer.ts';
+
+    const query = new URLSearchParams(location.search);
+    const api = query.get('api') || 'http://127.0.0.1:8797';
+    const status = document.querySelector('#status'), stats = document.querySelector('#stats');
+    const canvas = document.querySelector('canvas');
+    const fetchJson = async path => {
+      const response = await fetch(`${api}/api/editor/${path}`);
+      if (!response.ok) throw Error(`${path}: HTTP ${response.status}`);
+      return response.json();
+    };
+
+    try {
+      const startedAt = performance.now();
+      status.textContent = '1/4 · 读取地图与方案 API…';
+      const [{ map }, { renderSchemes }] = await Promise.all([
+        fetchJson(`maps/${encodeURIComponent(query.get('map') || 'map-ca1c5805-269d-4471')}`),
+        fetchJson('render-schemes')
+      ]);
+      const schemeId = query.get('scheme') || map.renderSchemeId || 'render-879bd00b-d64c-465b';
+      const scheme = renderSchemes.find(entry => entry.id === schemeId);
+      if (!scheme) throw Error(`找不到方案 ${schemeId}`);
+      const assets = new Map((map.assets || []).map(asset => [asset.id, asset]));
+      const missing = [...new Set(map.objects.map(object => object.assetId).filter(Boolean))]
+        .filter(id => !assets.get(id)?.modelJson);
+      status.textContent = `2/4 · 地图已读取，${map.objects.length} 个对象，补充 ${missing.length} 个资产…`;
+      for (const id of missing) {
+        status.textContent = `2/4 · 读取资产 ${id}…`;
+        assets.set(id, (await fetchJson(`assets/${encodeURIComponent(id)}`)).asset);
+      }
+      map.assets = [...assets.values()];
+
+      status.textContent = `3/4 · 构建真实场景和渲染方案，${assets.size} 个资产…`;
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const viewer = await createMapViewer({ canvas, map, scheme, pixelRatio: 1, autoStart: false,
+        hdriUrl: file => `${api}/api/editor/hdri/${encodeURIComponent(file)}` });
+      status.textContent = `4/4 · 场景已构建，准备首帧（${((performance.now() - startedAt) / 1000).toFixed(1)} 秒）…`;
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const { runtime, camera } = viewer, adapter = runtime.adapter;
+      const shots = {
+        harbor: { position: [65, 14, 7], target: [-5, 1.8, 0] },
+        boat: { position: [30, 4.5, -2], target: [10, 0.8, -12] },
+        low: { position: [42, 0.65, 9], target: [5, 1.1, 5] },
+        underwater: { position: [25, -1.1, -7], target: [15, 0.1, -12] }
+      };
+      let view = shots[query.get('view')] ? query.get('view') : 'harbor';
+      let mode = query.get('mode') === 'baseline' ? 'baseline' : 'current';
+      let elapsed = 12, paused = true, moving = false, motionTime = 0;
+      let previous = performance.now(), frameSum = 0, cpuSum = 0, samples = 0, lastReport = previous;
+      const baselines = new Map();
+      const original = {
+        uRealisticSpecularStrength: 0.85,
+        uRealisticSpecularPower: 320,
+        uWaterNormalStrength: 0.8,
+        uPlanarReflectionStrength: 0,
+        uContactFoamEnabled: false
+      };
+      // This page alone replays the pre-change settings; no map or scheme is saved.
+      function applyComparison() {
+        if (adapter.waterReflection) adapter.waterReflection.enabled = mode === 'current';
+        for (const { surface } of adapter.waterBindings) {
+          const uniforms = surface.material.uniforms;
+          if (!baselines.has(surface)) {
+            baselines.set(surface, Object.fromEntries(Object.keys(original)
+              .filter(key => uniforms[key]).map(key => [key, uniforms[key].value])));
+          }
+          for (const [key, value] of Object.entries(mode === 'baseline' ? original : baselines.get(surface))) {
+            if (uniforms[key]) uniforms[key].value = value;
+          }
+        }
+        document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', button.dataset.mode === mode));
+      }
+      function setCamera() {
+        const shot = shots[view];
+        camera.position.set(...shot.position);
+        if (moving) {
+          camera.position.z += Math.sin(motionTime * 0.5) * 9;
+          camera.position.x += Math.sin(motionTime * 0.25) * 3;
+        }
+        camera.lookAt(...shot.target);
+        camera.updateMatrixWorld();
+      }
+      function updateLabel() {
+        status.textContent = `${mode === 'baseline' ? '基线 A' : '当前 B'} · ${view} · 波浪 t=${elapsed.toFixed(2)} 秒 · ${paused ? '已冻结' : '播放中'}`;
+      }
+      function draw(delta = 0) {
+        setCamera();
+        // WaterSurface advances its own clock with delta; align it to the exact
+        // same absolute time before every frame, including A/B screenshots.
+        for (const { surface } of adapter.waterBindings) {
+          if (surface.material.uniforms.uTime) surface.material.uniforms.uTime.value = elapsed - delta;
+        }
+        runtime.renderFrame(delta, elapsed);
+      }
+      function resetSamples() { frameSum = cpuSum = samples = 0; lastReport = performance.now(); }
+      document.querySelectorAll('[data-view]').forEach(button => {
+        button.onclick = () => {
+          view = button.dataset.view; motionTime = 0;
+          document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', item === button));
+          resetSamples(); draw(); updateLabel();
+        };
+        button.setAttribute('aria-pressed', button.dataset.view === view);
+      });
+      document.querySelectorAll('[data-mode]').forEach(button => button.onclick = () => {
+        mode = button.dataset.mode; applyComparison(); resetSamples(); draw(); updateLabel();
+      });
+      const pause = document.querySelector('#pause'), motion = document.querySelector('#motion');
+      pause.onclick = () => {
+        paused = !paused; pause.textContent = paused ? '播放波浪' : '暂停波浪';
+        pause.setAttribute('aria-pressed', paused); updateLabel();
+      };
+      motion.onclick = () => { moving = !moving; motionTime = 0; motion.setAttribute('aria-pressed', moving); resetSamples(); };
+      document.querySelector('#reset').onclick = () => {
+        elapsed = 12; motionTime = 0; paused = true; moving = false;
+        pause.textContent = '播放波浪'; pause.setAttribute('aria-pressed', 'true'); motion.setAttribute('aria-pressed', 'false');
+        resetSamples(); draw(); updateLabel();
+      };
+      document.querySelector('#download').onclick = () => {
+        draw();
+        const filename = `harbor-water-${view}-${mode}-t${elapsed.toFixed(2)}.png`;
+        canvas.toBlob(blob => {
+          if (!blob) { status.textContent = '截图失败'; return; }
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        }, 'image/png');
+      };
+      addEventListener('resize', () => viewer.setSize(innerWidth, innerHeight));
+      viewer.setSize(innerWidth, innerHeight);
+      applyComparison(); draw(); updateLabel();
+      window.viewer = viewer;
+      window.review = { shots, draw, get state() { return { view, mode, elapsed, paused, moving }; } };
+      window.ready = true;
+      function frame(now) {
+        const interval = now - previous; previous = now;
+        const delta = Math.min(0.05, interval / 1000);
+        if (!paused) elapsed += delta;
+        if (moving) motionTime += delta;
+        const start = performance.now(); draw(paused ? 0 : delta);
+        cpuSum += performance.now() - start; frameSum += interval; samples++;
+        if (now - lastReport > 1000) {
+          const reflection = adapter.waterReflection?.getStats();
+          stats.textContent = `RAF 均值 ${(frameSum / samples).toFixed(1)} ms · CPU 提交 ${(cpuSum / samples).toFixed(1)} ms（非 GPU 耗时）`
+            + `\n反射抓取 ${reflection?.renderCount ?? 0} 次 · 跳过 ${reflection?.skipCount ?? 0} 次 · DPR 1 · ${canvas.width}×${canvas.height}`;
+          updateLabel(); resetSamples();
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    } catch (error) {
+      status.textContent = String(error); window.reviewError = String(error); throw error;
+    }
+  </script>
+</body>
+</html>

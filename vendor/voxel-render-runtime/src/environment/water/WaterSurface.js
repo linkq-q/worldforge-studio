@@ -933,6 +933,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
 
     vec4 waterViewPos = viewMatrix * vec4(vWorldPosition, 1.0);
     float waterDepth = abs(waterViewPos.z);
+    // Object contact needs metre-scale perspective depth; keep the authored
+    // legacy depth response below unchanged for existing water styles.
+    float contactSceneDepth = uCameraNear * uCameraFar
+      / (uCameraFar - depthSample * (uCameraFar - uCameraNear));
+    float sceneDepthDiff = contactSceneDepth - waterDepth;
     float depthDiff = max(sceneLinearDepth - waterDepth, 0.0);
 
     vec2 terrainDepthUv = (vWorldPosition.xz - uShoreWorldCenter) / max(uShoreWorldSize, 0.0001);
@@ -944,9 +949,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       / max(terrainDepthSample.b, 0.001);
     float hasDepth = uHasDepthTexture ? 1.0 : 0.0;
     float oceanWaterDepth = 1000000.0;
+    float oceanGroundHeight = 0.0;
     if (uUseOceanTerrain) {
       float oceanSurfaceHeight = uOceanLevel + computeOceanSwashHeight(vWorldPosition.xz, 0.0);
-      oceanWaterDepth = oceanSurfaceHeight - sampleOceanTerrainHeight(vWorldPosition.xz);
+      oceanGroundHeight = sampleOceanTerrainHeight(vWorldPosition.xz);
+      oceanWaterDepth = oceanSurfaceHeight - oceanGroundHeight;
       if (oceanWaterDepth <= 0.025) discard;
       depthDiff = 0.0;
       hasDepth = 0.0;
@@ -1033,13 +1040,23 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
 
     // === 1b. Contact Foam（接触泡沫：水陆交界处的泡沫带，noise 扰动外缘） ===
     float contactFoam = 0.0;
-    if (uContactFoamEnabled) {
+    if (uContactFoamEnabled && (!uUseOceanTerrain || (uHasDepthTexture && depthSample < 1.0
+        && cameraPosition.y > uOceanLevel && sceneDepthDiff >= 0.0 && sceneDepthDiff < 0.25))) {
       float foamNoise = fbmNoise(vWorldPosition.xz * uContactFoamNoiseScale, uTime * uContactFoamPulse);
       float contactFoamEdge = uContactFoamEnd + foamNoise * uContactFoamWidth;
       float band = smoothstep(contactFoamEdge, uContactFoamStart, depthDiff);
-      contactFoam = band * smoothstep(uContactFoamBreakup, 1.0, foamNoise) * uContactFoamStrength;
+      contactFoam = band * smoothstep(uContactFoamBreakup, 1.0, foamNoise) * uContactFoamStrength * hasDepth;
+      if (uUseOceanTerrain) {
+        // Keep object intersections separate from the terrain-owned colour and shore.
+        // This narrow band reuses the local seabed height instead of sampling terrain again.
+        vec3 sceneWorld = cameraPosition + (vWorldPosition - cameraPosition)
+          * (contactSceneDepth / max(waterDepth, 0.0001));
+        float aboveBed = smoothstep(0.06, 0.18, sceneWorld.y - oceanGroundHeight);
+        float objectBand = 1.0 - smoothstep(0.0, max(min(contactFoamEdge, 0.25), 0.001), sceneDepthDiff);
+        contactFoam = objectBand * aboveBed * smoothstep(uContactFoamBreakup, 1.0, foamNoise)
+          * min(uContactFoamStrength, 0.35);
+      }
     }
-    contactFoam *= hasDepth;
 
     // === 1d. Shore Noise（共用于 Shore Foam / Shore Wave 的 breakup 噪声） ===
     float shoreNoise = 0.0;
@@ -1173,9 +1190,10 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         * mix(0.2, 1.0, leeSide) * whitecapBreakup * min(uWhitecapStrength, 1.0);
     }
 
-    // All dynamic foam sources share one coverage field; Toon Pattern remains a separate hand-drawn detail layer.
+    // Ocean object contacts are added after the authored shore/whitecap styling.
     float baseFoam = clamp(foam1 + foam2, 0.0, 1.0) * uFoamOpacity * uFoamStrength * hasDepth;
-    float foamCoverage = clamp(baseFoam + contactFoam + shoreFoam + shoreWave + rippleDecal + waveWhitecap, 0.0, 1.0);
+    float foamCoverage = clamp(baseFoam + (uUseOceanTerrain ? 0.0 : contactFoam)
+      + shoreFoam + shoreWave + rippleDecal + waveWhitecap, 0.0, 1.0);
     float foamShadow = clamp(waveWhitecapShadow + shoreWaveShadow, 0.0, 1.0) * uFoamShadowStrength;
     if (uUseOceanTerrain) {
       float oceanShoreIsolation = smoothstep(
@@ -1203,6 +1221,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         foam = smoothstep(0.34, 0.46, foam);
       }
     }
+
+    // Object contact stays subtle even when the authored shore foam uses hard bands.
+    if (uUseOceanTerrain) foam = max(foam, contactFoam);
 
     // === 2. 颜色深度渐变（含卡通色阶 + 深水颜色 + ShoreDistance 驱动） ===
     float depthFactor = clamp(depthDiff * uDepthStrength, 0.0, 1.0);

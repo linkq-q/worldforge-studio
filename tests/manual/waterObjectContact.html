@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Ocean object contact GPU regression</title></head>
+<body><pre id="output">Running...</pre><script type="module">
+import * as THREE from 'three';
+import { WaterSurface } from '/vendor/voxel-render-runtime/src/environment/water/WaterSurface.js';
+
+// Render actual scene depth, then read the production water shader's contact
+// and final-foam debug outputs. A shallow seabed must never look like a hull.
+const size = 64, renderer = new THREE.WebGLRenderer();
+renderer.setSize(size, size);
+const scene = new THREE.Scene(), root = new THREE.Group();
+scene.background = new THREE.Color(0, 0, 0);
+scene.add(root);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 100);
+camera.up.set(0, 0, -1);
+const surface = new WaterSurface(scene, renderer, root, { size: 20, segments: 1, waterLevel: 0 });
+surface.importState({
+  uWaveHeight: 0, uFoamStrength: 0, uContactFoamEnabled: true,
+  uContactFoamStart: 0, uContactFoamEnd: 0.12, uContactFoamWidth: 0.08,
+  uContactFoamStrength: 0.3, uContactFoamBreakup: 0.2,
+  uWhitecapEnabled: false, uShoreWaveEnabled: false, uShoreWaveStrength: 0,
+  uShoreFoamStrength: 0, uToonPatternEnabled: false, uToonFoamHardCut: true
+});
+const u = surface.material.uniforms;
+const terrain = new THREE.DataTexture(new Float32Array([-3, -3, -3, -3]), 2, 2, THREE.RedFormat, THREE.FloatType);
+terrain.needsUpdate = true;
+u.tOceanTerrain.value = terrain;
+u.uUseOceanTerrain.value = true;
+u.uOceanTerrainSize.value.set(2, 2);
+u.uOceanMapSize.value.set(20, 20);
+u.uOceanLevel.value = 0;
+u.uOceanTerrainSinkTarget.value = -3;
+const subject = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+subject.rotation.x = -Math.PI / 2;
+scene.add(subject);
+const capture = new THREE.WebGLRenderTarget(size, size);
+capture.depthTexture = new THREE.DepthTexture(size, size, THREE.UnsignedIntType);
+const output = new THREE.WebGLRenderTarget(size, size);
+const pixels = new Uint8Array(size * size * 4);
+
+function sample({ level = -0.025, bed = -3, sky = false, depth = true, below = false, debug = 2, mode = 'realistic' } = {}) {
+  terrain.image.data.fill(bed); terrain.needsUpdate = true;
+  camera.position.set(0, below ? -4 : 4, 0); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
+  subject.position.y = level; subject.visible = !sky;
+  surface.mesh.visible = false;
+  renderer.setRenderTarget(capture); renderer.render(scene, camera);
+  surface.mesh.visible = true;
+  // Keep depth from the capture, but show only the water diagnostic output.
+  subject.visible = false;
+  surface.setWaterMode(mode);
+  surface.update(0, camera, depth ? capture.depthTexture : null);
+  u.uWaterDebugMode.value = debug;
+  renderer.setRenderTarget(output); renderer.render(scene, camera);
+  renderer.readRenderTargetPixels(output, 0, 0, size, size, pixels);
+  let peak = 0, sum = 0, lit = 0;
+  for (let i = 0; i < pixels.length; i += 4) { peak = Math.max(peak, pixels[i]); sum += pixels[i]; if (pixels[i] > 2) lit++; }
+  return { peak, mean: sum / (size * size), lit, center: Array.from(pixels.slice((32 * size + 32) * 4, (32 * size + 32) * 4 + 4)) };
+}
+const contact = sample(), deepObject = sample({ level: -0.6 });
+const shallowBed = sample({ level: -0.06, bed: -0.06 });
+const sky = sample({ sky: true }), missingDepth = sample({ depth: false });
+const foreground = sample({ level: 0.1 }), underside = sample({ below: true, level: 0.025 });
+const cartoon = sample({ mode: 'cartoon', debug: 3 });
+const realistic = sample({ debug: 3 });
+const passed = contact.peak > 5 && contact.lit > 8 && contact.peak < 100
+  && [deepObject, shallowBed, sky, missingDepth, foreground, underside].every(value => value.peak === 0)
+  && cartoon.peak > 5 && realistic.peak > 5;
+window.result = { passed, contact, deepObject, shallowBed, sky, missingDepth, foreground, underside, cartoon, realistic };
+document.querySelector('#output').textContent = JSON.stringify(window.result, null, 2);
+surface.dispose();subject.geometry.dispose();subject.material.dispose();terrain.dispose();capture.dispose();output.dispose();renderer.dispose();
+if (!passed) throw Error('Ocean contact must detect nearby objects without whitening seabeds, sky, foreground objects, or the underside');
+</script></body></html>
