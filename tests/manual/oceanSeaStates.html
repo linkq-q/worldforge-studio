@@ -113,13 +113,14 @@ try {
     renderer.setRenderTarget(foamTarget); renderer.render(captureScene, camera);
     const bytes = new Uint8Array(count * count * 4);
     renderer.readRenderTargetPixels(foamTarget, 0, 0, count, count, bytes);
-    let peak = 0, lit = 0, sum = 0, weighted = 0, compression = 0;
+    let peak = 0, lit = 0, solid = 0, sum = 0, weighted = 0, compression = 0;
     for (let i = 0; i < bytes.length; i += 4) {
       const amount = bytes[i] / 255;
       peak = Math.max(peak, amount); if (amount > 0.1) lit++;
+      if (amount > 0.98) solid++;
       sum += amount; weighted += amount * values[i + 3]; compression += values[i + 3];
     }
-    return { peak, coverage: lit / (count * count), mean: sum / (count * count),
+    return { peak, coverage: lit / (count * count), solidFraction: solid / Math.max(lit, 1), mean: sum / (count * count),
       foamCompression: weighted / Math.max(sum, 1e-9), meanCompression: compression / (count * count) };
   }
   function bind(time = 0) {
@@ -212,6 +213,8 @@ try {
       && moderate.rms > light.rms * 1.5 && large.rms > moderate.rms * 1.5,
     movingGeometry: [light, moderate, large].every(value => value.finite && value.lateral > 0.01 && value.motionRms > 0.015),
     compressedCrests: [moderate, large].every(value => hasCrest(value.realistic) && hasCrest(value.cartoon)),
+    solidBrokenFoam: [moderate, large].every(value => value.realistic.peak > 0.98
+      && value.realistic.solidFraction > 0.35 && value.cartoon.solidFraction > 0.35),
     zeroStrength: zeroStrength.peakToTrough < 0.00001 && zeroStrength.lateral < 0.00001
       && zeroStrength.compression < 0.00001 && zeroStrength.foam.peak === 0,
     whitecapsDisabled: whitecapsDisabled.peak === 0,

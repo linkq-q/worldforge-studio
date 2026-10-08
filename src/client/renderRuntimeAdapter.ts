@@ -21,7 +21,7 @@ import {
   createExponentialFogPass,
   createUnderwaterPass
 } from '@voxel-studio/render-runtime/postprocess';
-import { WaterSurface, WaterfallSurface, WaterSceneCapture } from '@voxel-studio/render-runtime/environment';
+import { WaterSurface, WaterfallSurface, WaterSceneCapture, OceanBreakers } from '@voxel-studio/render-runtime/environment';
 import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
 import { applyRenderPlanWaterBaseState, DEFAULT_WATER_STATE } from './defaultWaterState';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
@@ -83,6 +83,7 @@ interface WaterBinding {
   originalMaterial: THREE.Material | THREE.Material[];
   surface: WaterSurface | WaterfallSurface;
   usesSceneDepth: boolean;
+  breakers?: OceanBreakers;
 }
 
 interface WaterReflectionGroup extends PlanarReflectionSurface {
@@ -442,6 +443,7 @@ export class RenderRuntimeAdapter {
     }
     this.waterInteractionAt.clear();
     for (const binding of this.waterBindings.splice(0)) {
+      binding.breakers?.dispose();
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
       if (binding.mesh.userData.waterShore?.depthTexture) delete binding.mesh.userData.isWaterRefractionBody;
@@ -683,6 +685,7 @@ export class RenderRuntimeAdapter {
           });
       root.remove(surface.mesh);
       surface.mesh.geometry.dispose();
+      let breakers: OceanBreakers | undefined;
       if (surface instanceof WaterSurface) {
         applyRenderPlanWaterBaseState(surface);
         const riverFlow = Boolean(mesh.geometry.getAttribute('riverFlow'));
@@ -844,6 +847,11 @@ export class RenderRuntimeAdapter {
             sharpness: style?.waveSharpness,
             foamStrength
           });
+          if (style?.seaState === 'moderate' || style?.seaState === 'large') {
+            breakers = new OceanBreakers(surface.material.uniforms);
+            breakers.enabled = true;
+            mesh.add(breakers.group);
+          }
         }
       }
       const uniforms = surface.material.uniforms;
@@ -851,12 +859,14 @@ export class RenderRuntimeAdapter {
       const originalMaterial = mesh.material;
       mesh.material = surface.material;
       mesh.renderOrder = Math.max(mesh.renderOrder, 8);
+      if (breakers) for (const child of breakers.group.children) child.renderOrder = mesh.renderOrder + 1;
       mesh.userData.skipShaderApply = true;
       mesh.userData.isWater = true;
       this.waterBindings.push({
         mesh,
         originalMaterial,
         surface,
+        breakers,
         usesSceneDepth: shouldUseSceneDepthForWater(
           mesh.userData.waterShore as WaterShoreBinding | undefined,
           mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined
@@ -1126,6 +1136,7 @@ export class RenderRuntimeAdapter {
         syncWaterSurfaceLight(binding.surface.material, this.scene.userData.directionalLight ?? null);
       }
       binding.surface.update(deltaTime, this.camera, binding.usesSceneDepth ? depthTexture : null);
+      binding.breakers?.update(this.camera, Number(binding.surface.material.uniforms.uTime.value));
     }
   }
 

@@ -334,9 +334,19 @@ declare module '@voxel-studio/render-runtime/environment' {
     foamStrength?: number;
   }
   export function createOceanWaveUniforms(): Record<string, { value: unknown }>;
+  export function configureOceanSeaState(uniforms: Record<string, { value: unknown }>, state: 'custom' | 'light' | 'moderate' | 'large', controls?: OceanSeaStateControls): void;
   export function bindOceanWaveUniforms(target: Record<string, { value: unknown }>, source?: Record<string, { value: unknown }>): void;
   export function sampleOceanWaveDisplacement(uniforms: Record<string, { value: unknown }>, x: number, z: number, time: number): [number, number, number];
   export function sampleOceanWaveHeight(uniforms: Record<string, { value: unknown }>, x: number, z: number, time: number): number;
+  export class OceanBreakers {
+    constructor(uniforms: Record<string, { value: unknown }>);
+    enabled: boolean;
+    group: import('three').Group;
+    ribbon: import('three').Mesh<import('three').InstancedBufferGeometry, import('three').ShaderMaterial>;
+    spray: import('three').Points<import('three').BufferGeometry, import('three').ShaderMaterial>;
+    update(camera: import('three').Camera, time: number): void;
+    dispose(): void;
+  }
   export const PANORAMA_EXTENSIONS: string[];
   export function loadPanoramaTexture(
     url: string,

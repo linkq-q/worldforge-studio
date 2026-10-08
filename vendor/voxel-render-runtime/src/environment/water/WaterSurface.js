@@ -1143,11 +1143,23 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         * mix(0.2, 1.0, leeSide) * whitecapBreakup * min(uWhitecapStrength, 1.0);
     }
 
-    float spectrumCrestFoam = uWhitecapEnabled && uOceanSpectrumEnabled && uOceanSpectrumHeight > 0.0
-      ? smoothstep(0.14, 0.5, vOceanCompression)
+    float spectrumCrestFoam = 0.0;
+    if (uWhitecapEnabled && uOceanSpectrumEnabled && uOceanSpectrumHeight > 0.0 && uOceanCrestFoamStrength > 0.0) {
+      float source = smoothstep(0.14, 0.5, vOceanCompression)
         * smoothstep(0.0, uOceanSpectrumHeight * 0.3, vDisplacement)
-        * uOceanCrestFoamStrength * mix(0.72, 1.0, noise2D(vReflectionWorldPosition.xz * 0.7))
-      : 0.0;
+        * uOceanCrestFoamStrength;
+      // Compression is the generation source, not translucent white paint.
+      // Vary occupied area with strength; the inside of each broken patch stays
+      // dense white, with antialiasing confined to the ragged boundary.
+      vec2 foamUV = vReflectionWorldPosition.xz
+        - uOceanWaveComponents[0].xy * uTime * 0.28;
+      float clumps = noise2D(foamUV * 1.15 + noise2D(foamUV * 0.27) * 1.8);
+      float pores = noise2D(foamUV * 7.0 + vec2(uTime * 0.12, -uTime * 0.09));
+      float edge = source - mix(0.26, 0.88, clumps) + (pores - 0.5) * 0.12;
+      float aa = clamp(fwidth(edge), 0.008, 0.055);
+      spectrumCrestFoam = smoothstep(-aa, aa, edge)
+        * (1.0 - smoothstep(0.78, 0.84, pores));
+    }
     // Ocean object contacts are added after the authored shore/whitecap styling.
     float baseFoam = clamp(foam1 + foam2, 0.0, 1.0) * uFoamOpacity * uFoamStrength * hasDepth;
     float foamCoverage = clamp(baseFoam + (uUseOceanTerrain ? 0.0 : contactFoam)

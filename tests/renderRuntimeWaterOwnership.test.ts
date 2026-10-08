@@ -130,9 +130,13 @@ describe('render-plan water ownership', () => {
       const totalAmplitude = sea.uOceanWaveComponents.value.reduce((sum: number, wave: THREE.Vector4) => sum + wave.z, 0);
       expect(totalAmplitude).toBeCloseTo(strength === 0 ? 0 : 1.9);
       expect((lake.material as unknown as THREE.ShaderMaterial).uniforms.uOceanSpectrumEnabled.value).toBe(false);
+      expect(ocean.getObjectByName('OceanBreakers')).toBeDefined();
+      expect(ocean.getObjectByName('OceanBreakers')!.children.every(child => child.renderOrder > ocean.renderOrder)).toBe(true);
+      expect(lake.getObjectByName('OceanBreakers')).toBeUndefined();
     }
 
     adapter.resetScopedCapabilities();
+    expect(ocean.getObjectByName('OceanBreakers')).toBeUndefined();
     lake.geometry.dispose();
     originalMaterial.dispose();
     ocean.geometry.dispose();
