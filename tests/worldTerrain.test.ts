@@ -866,6 +866,50 @@ describe('composable world terrain operations', () => {
     expect(reversedWater.riverSamples.at(-1)!.width).toBeLessThan(1);
   });
 
+  it.each(['authored', 'terrain-fit'] as const)('clips a %s river into the implicit ocean even when its outlet lies in a sea-level receiving lake', surfaceMode => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [10, -10], feather: 0
+    }], waterBodies: [{
+      id: 'harbor', type: 'lake', region: { kind: 'circle', center: [100, 0], radius: 18 },
+      levels: [0], depth: 12, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }, {
+      id: 'harbor-river', type: 'river',
+      region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
+      ...(surfaceMode === 'authored' ? { surfaceMode: 'authored', levels: [2, 0] } : { surfaceMode: 'terrain-fit' }),
+      depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    const authored = structuredClone(recipe);
+    const withoutLake = createWorldTerrainContext({ ...recipe, waterBodies: recipe.waterBodies!.slice(1) }).waterBodies[0];
+    const river = createWorldTerrainContext(recipe).waterBodies.find(water => water.source.id === 'harbor-river')!;
+
+    expect(river.mapWater.levels?.at(-1)).toBe(-0.03);
+    expect(river.mapWater.points).toEqual(withoutLake.mapWater.points);
+    expect(river.mapWater.levels).toEqual(withoutLake.mapWater.levels);
+    expect(recipe).toEqual(authored);
+  });
+
+  it.each([
+    { name: 'elevated lake', lakeLevel: 5, terrainEnd: -10 },
+    { name: 'below-sea-level lake', lakeLevel: -4, terrainEnd: -10 },
+    { name: 'inland sea-level lake on dry terrain', lakeLevel: 0, terrainEnd: 5 }
+  ])('preserves an authored river connection to a $name', ({ lakeLevel, terrainEnd }) => {
+    const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
+      id: 'receiver-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },
+      heights: [10, terrainEnd], feather: 0
+    }], waterBodies: [{
+      id: 'receiver', type: 'lake', region: { kind: 'circle', center: [100, 0], radius: 18 },
+      levels: [lakeLevel], depth: 12, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }, {
+      id: 'connected-river', type: 'river', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 12 },
+      levels: [8, lakeLevel], depth: 2, shorelineSmoothness: 0, shorelineIrregularity: 0
+    }] });
+    const river = createWorldTerrainContext(recipe).waterBodies[1];
+
+    expect(river.mapWater.points.at(-1)).toEqual([100, 0]);
+    expect(river.mapWater.levels?.at(-1)).toBe(lakeLevel);
+  });
+
   it('keeps a lake-connected river source open instead of tapering the junction', () => {
     const recipe = validateWorldRecipe({ ...original, reliefProfile: 'compact', terrainBrushes: [{
       id: 'coast-grade', mode: 'grade', region: { kind: 'path', points: [[-100, 0], [100, 0]], width: 180 },

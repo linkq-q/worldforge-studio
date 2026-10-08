@@ -775,15 +775,6 @@ export function prepareWorldWaterBodies(input: WorldRecipe): PreparedWorldWaterB
   return createWorldTerrainContext(input).waterBodies;
 }
 
-function worldWaterEndpointConnected(
-  waters: readonly WorldWaterBody[],
-  waterIndex: number,
-  point: readonly [number, number]
-): boolean {
-  return waters.some((water, index) => index !== waterIndex
-    && regionSample(water.region, point[0], point[1]).inside);
-}
-
 function mixRiverPathSample(start: RiverPathSample, end: RiverPathSample, t: number): RiverPathSample {
   return {
     point: [mix(start.point[0], end.point[0], t), mix(start.point[1], end.point[1], t)],
@@ -952,10 +943,15 @@ function materializeRiverSamples(water: MapWaterBody, samples: readonly RiverPat
 function worldWaterEndpointConnection(
   waters: readonly WorldWaterBody[],
   waterIndex: number,
-  point: readonly [number, number]
+  point: readonly [number, number],
+  terrainHeightAt: (x: number, z: number) => number
 ): WorldWaterBody | undefined {
   return waters.find((water, index) => index !== waterIndex
-    && regionSample(water.region, point[0], point[1]).inside);
+    && regionSample(water.region, point[0], point[1]).inside
+    // The ocean owns sea-level basins on already submerged terrain. They must
+    // not keep a river ribbon extending offshore without its derived mouth fade.
+    && !(water.type === 'lake' && Math.abs(water.levels[0]) <= 1e-6
+      && terrainHeightAt(point[0], point[1]) <= 0));
 }
 
 function connectedWaterLevel(water: WorldWaterBody | undefined, point: readonly [number, number]): number | undefined {
@@ -1163,8 +1159,8 @@ function prepareTerrainFitRiver(
 ): MapWaterBody | null {
   let mapWater = materializeRiverSamples(authored, riverPathSamples(authored));
   const sourceRegion = source.region as Extract<WorldTerrainRegion, { kind: 'path' }>;
-  const sourceConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points[0]);
-  const outletConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points.at(-1)!);
+  const sourceConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points[0], terrainHeightAt);
+  const outletConnection = worldWaterEndpointConnection(waters, waterIndex, sourceRegion.points.at(-1)!, terrainHeightAt);
   mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt,
     [Boolean(sourceConnection), Boolean(outletConnection)], true, diagnostics);
   let samples = riverPathSamples(mapWater);
@@ -1253,8 +1249,8 @@ function prepareValidatedWorldWaterBodies(
       mapWater = fitted;
     } else if (terrainHeightAt && mapWater.type === 'river' && region.kind === 'path') {
       mapWater = clipRiverAtImplicitOcean(mapWater, terrainHeightAt, [
-        worldWaterEndpointConnected(waters, waterIndex, region.points[0]),
-        worldWaterEndpointConnected(waters, waterIndex, region.points.at(-1)!)
+        Boolean(worldWaterEndpointConnection(waters, waterIndex, region.points[0], terrainHeightAt)),
+        Boolean(worldWaterEndpointConnection(waters, waterIndex, region.points.at(-1)!, terrainHeightAt))
       ]);
     }
     const riverSamples = mapWater.type === 'river' ? riverPathSamples(mapWater) : [];

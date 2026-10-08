@@ -10,7 +10,9 @@ function depthAt(mesh: THREE.Mesh, x: number, z: number) {
   const col = Math.floor(((x-binding.center[0])/binding.size+0.5)*image.width);
   const row = Math.floor((0.5-(z-binding.center[1])/binding.size)*image.height);
   const i=(row*image.width+col)*4;
-  return {depth:(image.data[i]*256+image.data[i+1])/65535*64, valid:image.data[i+2]};
+  return {depth:(image.data[i]*256+image.data[i+1])/65535*64, valid:image.data[i+2],
+    x:binding.center[0]+((col+0.5)/image.width-0.5)*binding.size,
+    z:binding.center[1]+(0.5-(row+0.5)/image.height)*binding.size};
 }
 function dispose(group: THREE.Group) {
   for(const object of group.children) {
@@ -30,6 +32,47 @@ describe('terrain water depth', () => {
     expect(depthAt(mesh,32,0).valid).toBe(255);
     expect(depthAt(mesh,32,0).depth).toBeCloseTo(5,2);
     dispose(group);
+  });
+  it('keeps authoritative sloping depth across the owner boundary without resampling the terrain for every texture pixel', () => {
+    const map=createEmptyMap();
+    map.terrain.heights.fill(1.5);
+    map.waterBodies=[{...lake,points:[[-12,-12],[40,-12],[40,12],[-12,12]]}];
+    let sourceCalls=0;
+    const height=(x:number,z:number)=>-3+x*0.1+z*0.05;
+    const group=buildStructuredWaterGroup(map,null,(x,z)=>{sourceCalls++;return height(x,z);});
+    const mesh=group.children[0] as THREE.Mesh;
+    try {
+      for(const x of [0,map.box.size[0]/2-0.25,map.box.size[0]/2+0.25,32]) {
+        const sample=depthAt(mesh,x,0);
+        expect(sample.valid).toBe(255);
+        expect(sample.depth).toBeCloseTo(lake.level-height(sample.x,sample.z),2);
+      }
+      const image=mesh.userData.waterShore.depthTexture.image;
+      let coveredPixels=0;
+      for(let i=2;i<image.data.length;i+=4) if(image.data[i]===255) coveredPixels++;
+      expect(coveredPixels).toBeGreaterThan(1000);
+      expect(sourceCalls).toBeLessThan(coveredPixels/8);
+    } finally {dispose(group);}
+  });
+  it('samples nonlinear authoritative depth exactly when visible terrain is finer than the water texture', () => {
+    const map=createEmptyMap();
+    map.terrain={resolutionX:257,resolutionZ:257,heights:Array(257*257).fill(1.5)};
+    map.waterBodies=[lake];
+    let sourceCalls=0;
+    const height=(x:number,z:number)=>-3+Math.sin(x*8)*0.8+Math.cos(z*7)*0.5;
+    const group=buildStructuredWaterGroup(map,null,(x,z)=>{sourceCalls++;return height(x,z);});
+    const mesh=group.children[0] as THREE.Mesh;
+    try {
+      for(const [x,z] of [[0,0],[0.17,0.23],[-2.3,3.7],[7.4,-5.1]]) {
+        const sample=depthAt(mesh,x,z);
+        expect(sample.valid).toBe(255);
+        expect(sample.depth).toBeCloseTo(lake.level-height(sample.x,sample.z),2);
+      }
+      const image=mesh.userData.waterShore.depthTexture.image;
+      let coveredPixels=0;
+      for(let i=2;i<image.data.length;i+=4) if(image.data[i]===255) coveredPixels++;
+      expect(sourceCalls).toBe(coveredPixels);
+    } finally {dispose(group);}
   });
   it('keeps structural water invalid inside a connected river-lake mesh', () => {
     const map=createEmptyMap();

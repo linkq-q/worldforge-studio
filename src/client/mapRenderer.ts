@@ -1628,6 +1628,32 @@ function createCompositeWaterShoreBinding(
   // B marks valid terrain-backed water, including mixed lake/spillway surfaces.
   const depthData = !coast && map.sceneMode !== 'indoor' && waters.some((water) => water.type !== 'ocean' && water.carveTerrain !== false)
     ? new Uint8Array(resolution * resolution * 4) : null;
+  let sampleDepthHeight = terrainHeightAt;
+  const depthStepX = Math.min(1, map.box.size[0] / (map.terrain.resolutionX - 1));
+  const depthStepZ = Math.min(1, map.box.size[2] / (map.terrain.resolutionZ - 1));
+  if (depthData && terrainHeightAt && size / resolution < Math.min(depthStepX, depthStepZ)) {
+    // The water texture can be much denser than visible terrain. Sample its
+    // authoritative source once per height-grid vertex, across the whole body.
+    const heights = new Map<string, number>();
+    const gridHeight = (x: number, z: number): number => {
+      const key = `${x}:${z}`;
+      let height = heights.get(key);
+      if (height === undefined) {
+        height = terrainHeightAt(x * depthStepX, z * depthStepZ);
+        heights.set(key, height);
+      }
+      return height;
+    };
+    sampleDepthHeight = (x, z) => {
+      const gx = x / depthStepX, gz = z / depthStepZ;
+      const ix = Math.floor(gx), iz = Math.floor(gz);
+      return THREE.MathUtils.lerp(
+        THREE.MathUtils.lerp(gridHeight(ix, iz), gridHeight(ix + 1, iz), gx - ix),
+        THREE.MathUtils.lerp(gridHeight(ix, iz + 1), gridHeight(ix + 1, iz + 1), gx - ix),
+        gz - iz
+      );
+    };
+  }
   const depthOwners = waters.map((water, index) => ({ water, boundary: boundaries[index], samples: riverPathSamples(water) }))
     .sort((a, b) => Number(a.water.type === 'river') - Number(b.water.type === 'river'));
   for (let row = 0; row < resolution; row += 1) {
@@ -1642,8 +1668,8 @@ function createCompositeWaterShoreBinding(
         const canSampleTerrain = insideLocalTerrain || terrainHeightAt;
         if (owner && canSampleTerrain && owner.water.carveTerrain !== false) {
           const level = owner.water.type === 'river' ? sampleRiverProfile(x, z, owner.samples).level : owner.water.level;
-          const terrainHeight = terrainHeightAt
-            ? terrainHeightAt(x, z)
+          const terrainHeight = sampleDepthHeight
+            ? sampleDepthHeight(x, z)
             : sampleTerrainHeight(map, x, z);
           const encoded = Math.round(THREE.MathUtils.clamp((level - terrainHeight) / 64, 0, 1) * 65535);
           const offset = (row * resolution + column) * 4;
